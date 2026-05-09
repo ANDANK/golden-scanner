@@ -108,9 +108,53 @@ def get_price_history(ticker: str, period: str = "6mo", interval: str = "1d") ->
     return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
 
 
+def _fetch_info_from_download(ticker: str) -> dict:
+    """
+    Build a minimal info dict from yf.download() + actions=True.
+    Uses the V8 chart API — no crumb needed, works on cloud IPs.
+    Used as fallback when Ticker.info is blocked.
+    """
+    df = yf.download(ticker, period="2y", interval="1d",
+                     progress=False, auto_adjust=True, actions=True,
+                     multi_level_index=False)
+    if df is None or df.empty:
+        return {}
+    close = df["Close"].dropna()
+    price = float(close.iloc[-1]) if len(close) else 0.0
+    if price <= 0:
+        return {}
+
+    divs = df["Dividends"].dropna() if "Dividends" in df.columns else pd.Series(dtype=float)
+    divs = divs[divs > 0]
+    result: dict = {"currentPrice": price, "regularMarketPrice": price,
+                    "sector": "Unknown", "dividendYield": 0.0,
+                    "dividendRate": 0.0, "lastDividendValue": 0.0}
+    if not divs.empty:
+        last_div   = float(divs.iloc[-1])
+        last_date  = divs.index[-1]
+        freq_days  = int((divs.index[-1] - divs.index[-2]).days) if len(divs) >= 2 else 91
+        freq_days  = max(25, min(freq_days, 200))
+        annual_div = last_div * (365 / freq_days)
+        next_ex    = last_date + pd.Timedelta(days=freq_days)
+        result.update({
+            "lastDividendValue": last_div,
+            "dividendRate":      round(annual_div, 4),
+            "dividendYield":     annual_div / price,
+            "exDividendDate":    int(pd.Timestamp(next_ex).timestamp()),
+        })
+    return result
+
+
 def _fetch_info(ticker: str) -> dict:
-    info = yf.Ticker(ticker, session=YF_SESSION).info
-    return info if info else {}
+    # Try Ticker.info first (requires crumb — works locally, may be blocked on cloud)
+    try:
+        info = yf.Ticker(ticker, session=YF_SESSION).info
+        if info and len(info) > 10:   # real info has 50+ keys; empty fallback has ~5
+            return info
+    except Exception:
+        pass
+    # Fallback: build from download — always works
+    return _fetch_info_from_download(ticker)
 
 
 @st.cache_data(ttl=300, show_spinner=False)

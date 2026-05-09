@@ -43,7 +43,11 @@ html, body, [data-testid="stApp"] {{
 #MainMenu, footer {{ visibility: hidden; }}
 /* Hide header only on desktop — on mobile the header IS the hamburger/nav bar */
 @media (min-width: 769px) {{ header {{ visibility: hidden; }} }}
-[data-testid="stDecoration"] {{ display: none; }}
+/* Hide fork / share / deploy toolbar buttons on all screen sizes */
+[data-testid="stToolbarActions"],
+[data-testid="stDecoration"],
+button[title="Fork this app"],
+button[aria-label="Fork this app"] {{ display: none !important; }}
 [data-testid="stSidebarNav"],
 [data-testid="stSidebarNavItems"],
 [data-testid="stSidebarNavSeparator"],
