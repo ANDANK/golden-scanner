@@ -262,7 +262,7 @@ def build_breakout_chart(df: pd.DataFrame, ticker: str,
             fill=None, name="BB Upper"), row=1, col=1)
         fig.add_trace(go.Scatter(x=df_p.index, y=bb_lo,
             line=dict(color=GOLD, width=0.8, dash="dot"),
-            fill="tonexty", fillcolor=f"{GOLD}08", name="BB Lower"), row=1, col=1)
+            fill="tonexty", fillcolor="rgba(245,200,66,0.05)", name="BB Lower"), row=1, col=1)
 
     # ── MACD ──
     if show_macd:
