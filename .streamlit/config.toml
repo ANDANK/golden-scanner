@@ -1,0 +1,15 @@
+[client]
+showSidebarNavigation = false
+
+[runner]
+magicEnabled = false
+
+[server]
+headless = true
+
+[theme]
+base = "dark"
+backgroundColor = "#0A0A0F"
+secondaryBackgroundColor = "#111118"
+textColor = "#F1F1F1"
+primaryColor = "#F5C842"
