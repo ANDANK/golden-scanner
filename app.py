@@ -328,15 +328,22 @@ if not st.session_state["authenticated"]:
     st.stop()
 
 
+# ── Pre-render nav fixes (MUST be before any widget with key="nav_page") ──
+# on_click callback used by all Home buttons — fires before widget renders
+def _go_home():
+    st.session_state["nav_page"] = "🏠  Market Overview"
+
+# If a separator row somehow got selected, reset it now before radio renders
+_cur_nav = st.session_state.get("nav_page", "🏠  Market Overview")
+if _cur_nav and "──" in _cur_nav:
+    st.session_state["nav_page"] = "🏠  Market Overview"
+
 # ── Sidebar Navigation ─────────────────────────────────────────
 with st.sidebar:
     st.markdown('<div class="gs-logo">✦ GOLDEN SCANNER</div>', unsafe_allow_html=True)
     st.markdown('<div class="gs-tagline">Precision Trading Intelligence</div>', unsafe_allow_html=True)
 
-    # Home button
-    if st.button("🏠  Home", use_container_width=True):
-        st.session_state["nav_page"] = "🏠  Market Overview"
-        st.rerun()
+    st.button("🏠  Home", use_container_width=True, on_click=_go_home)
 
     st.markdown(f'<div style="color:{TEXT_MUTED};font-size:10px;text-transform:uppercase;letter-spacing:1px;margin:8px 0 8px">Navigate</div>', unsafe_allow_html=True)
 
@@ -378,18 +385,11 @@ with st.sidebar:
     st.markdown(f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center">Data via YFinance · Refreshes every 5 min<br>⚠️ Not financial advice</div>', unsafe_allow_html=True)
 
 
-# ── Block separator selection — redirect to home ───────────────
-if page and "──" in page:
-    st.session_state["nav_page"] = "🏠  Market Overview"
-    st.rerun()
-
-# ── Home button visible in main content on every non-home page ─
+# ── Home button in main content (uses on_click — safe after radio renders) ─
 if page and page != "🏠  Market Overview" and "──" not in page:
     _c1, _c2 = st.columns([1, 11])
     with _c1:
-        if st.button("🏠 Home", key="_main_home", use_container_width=True):
-            st.session_state["nav_page"] = "🏠  Market Overview"
-            st.rerun()
+        st.button("🏠 Home", key="_main_home", use_container_width=True, on_click=_go_home)
     st.markdown(f'<div style="height:2px;background:linear-gradient(90deg,{GOLD}44,transparent);margin-bottom:8px"></div>', unsafe_allow_html=True)
 
 # ── Page Router ────────────────────────────────────────────────
