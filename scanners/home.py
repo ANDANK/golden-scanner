@@ -50,7 +50,7 @@ def _strategy_table(strategies: list) -> str:
         f'<th style="{hdr}">Strategy</th>'
         f'<th style="{hdr};text-align:center;width:80px">Signal</th>'
         f'<th style="{hdr};width:130px">Score</th>'
-        f'<th style="{hdr}">Current Reading</th>'
+        f'<th class="gs-note-col" style="{hdr}">Current Reading</th>'
         f'</tr>'
     )
     rows = []
@@ -69,12 +69,13 @@ def _strategy_table(strategies: list) -> str:
             f'<td style="{name_s}">{name_html}</td>'
             f'<td style="{sig_s}">{_sig(s["signal"])}</td>'
             f'<td style="{score_s}">{_score_bar(s["score"])}</td>'
-            f'<td style="{note_s}">{s["note"]}</td>'
+            f'<td class="gs-note-col" style="{note_s}">{s["note"]}</td>'
             f'</tr>'
         )
-    wrap_s = f"overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:8px;margin-top:8px"
+    wrap_s = f"overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid {BORDER_COLOR};border-radius:8px;margin-top:8px"
     tbl_s  = "width:100%;border-collapse:collapse;font-family:'Inter',sans-serif"
-    return f'<div style="{wrap_s}"><table style="{tbl_s}"><thead>{header}</thead><tbody>{"".join(rows)}</tbody></table></div>'
+    mobile_css = "<style>@media(max-width:600px){.gs-note-col{display:none!important}}</style>"
+    return f'{mobile_css}<div style="{wrap_s}"><table style="{tbl_s}"><thead>{header}</thead><tbody>{"".join(rows)}</tbody></table></div>'
 
 
 # ── Indicator fetching ───────────────────────────────────────────

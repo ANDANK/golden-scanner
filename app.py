@@ -51,33 +51,88 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 .st-emotion-cache-1rtdyuf,
 .st-emotion-cache-eczf2c {{ display: none !important; }}
 
-/* ── Force sidebar ALWAYS visible, wide enough for all nav items ── */
-section[data-testid="stSidebar"] {{
-    transform: translateX(0) !important;
-    min-width: 310px !important;
-    width: 310px !important;
-    visibility: visible !important;
-    display: block !important;
-}}
-section[data-testid="stSidebar"] > div:first-child {{
-    transform: translateX(0) !important;
-    width: 310px !important;
-    min-width: 310px !important;
-}}
 /* Radio items: disable pointer on separator rows */
 [data-testid="stSidebar"] div[data-testid="stRadio"] label:has(> div > p:empty),
 [data-testid="stSidebar"] div[data-testid="stRadio"] [data-baseweb="radio"]:has(+ div > p:empty) {{
     pointer-events: none;
     opacity: 0.45;
 }}
-/* Hide collapse button so user cannot accidentally close it again */
-[data-testid="stSidebarCollapseButton"],
-[data-testid="stSidebarCollapsedControl"],
-button[title="Close sidebar"],
-button[title="Collapse sidebar"],
-button[aria-label="Close sidebar"],
-button[aria-label="Collapse sidebar"] {{
-    display: none !important;
+
+/* ── Desktop: force sidebar always visible ── */
+@media (min-width: 769px) {{
+    section[data-testid="stSidebar"] {{
+        transform: translateX(0) !important;
+        min-width: 310px !important;
+        width: 310px !important;
+        visibility: visible !important;
+        display: block !important;
+    }}
+    section[data-testid="stSidebar"] > div:first-child {{
+        transform: translateX(0) !important;
+        width: 310px !important;
+        min-width: 310px !important;
+    }}
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="stSidebarCollapsedControl"],
+    button[title="Close sidebar"], button[title="Collapse sidebar"],
+    button[aria-label="Close sidebar"], button[aria-label="Collapse sidebar"] {{
+        display: none !important;
+    }}
+}}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {{
+    /* Give main content breathing room below the native hamburger */
+    .block-container {{
+        padding-left: 0.6rem !important;
+        padding-right: 0.6rem !important;
+        padding-top: 3.5rem !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }}
+    /* Bigger tap targets */
+    .stButton > button {{
+        min-height: 48px !important;
+        font-size: 15px !important;
+    }}
+    /* Sidebar radio: taller rows for finger tapping */
+    [data-testid="stSidebar"] div[data-testid="stRadio"] label {{
+        padding: 8px 4px !important;
+        min-height: 40px !important;
+    }}
+    /* Tabs: scroll horizontally instead of wrapping */
+    .stTabs [data-baseweb="tab-list"] {{
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }}
+    .stTabs [data-baseweb="tab"] {{
+        white-space: nowrap !important;
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        flex-shrink: 0 !important;
+    }}
+    /* Metrics: smaller so they fit */
+    [data-testid="stMetricValue"] {{
+        font-size: 20px !important;
+    }}
+    /* Password screen: hide side spacer columns, make form full-width */
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child,
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:last-child {{
+        display: none !important;
+    }}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2) {{
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 100% !important;
+    }}
+    /* Prevent DataFrames / tables from blowing out layout */
+    [data-testid="stDataFrame"] {{
+        max-width: 100% !important;
+        overflow-x: auto !important;
+    }}
+    /* Logo: smaller on phone */
+    .gs-logo {{ font-size: 20px !important; }}
 }}
 
 /* Sidebar */
@@ -265,10 +320,10 @@ function checkSidebarState() {
     var sidebar = p.querySelector('section[data-testid="stSidebar"]');
     var fab = document.getElementById('gs-menu-fab');
     if (!sidebar || !fab) return;
+    // On mobile: leave sidebar alone — native hamburger controls it
+    if (window.parent.innerWidth <= 768) { fab.style.display = 'none'; return; }
     var expanded = sidebar.getAttribute('aria-expanded');
-    // Show FAB only when sidebar is collapsed
     fab.style.display = (expanded === 'false') ? 'block' : 'none';
-    // Also auto-click to expand
     if (expanded === 'false') expandSidebar();
   } catch(e) {}
 }
