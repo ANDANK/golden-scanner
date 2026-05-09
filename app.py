@@ -40,7 +40,9 @@ html, body, [data-testid="stApp"] {{
 }}
 
 /* Hide Streamlit branding & auto multipage nav */
-#MainMenu, footer, header {{ visibility: hidden; }}
+#MainMenu, footer {{ visibility: hidden; }}
+/* Hide header only on desktop — on mobile the header IS the hamburger/nav bar */
+@media (min-width: 769px) {{ header {{ visibility: hidden; }} }}
 [data-testid="stDecoration"] {{ display: none; }}
 [data-testid="stSidebarNav"],
 [data-testid="stSidebarNavItems"],
@@ -81,34 +83,25 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 
 /* ── Mobile ── */
 @media (max-width: 768px) {{
-    /* Breathing room so content doesn't hide under the hamburger */
+    /* Style the visible Streamlit header bar on mobile */
+    header {{
+        background: {BG_CARD} !important;
+        border-bottom: 1px solid {BORDER_COLOR} !important;
+    }}
+    /* Style the hamburger / sidebar toggle buttons inside the header */
+    header button, header [data-testid="stBaseButton-headerNoPadding"] {{
+        color: {GOLD} !important;
+        font-size: 22px !important;
+    }}
+    /* Content breathing room below the header */
     .block-container {{
         padding-left: 0.6rem !important;
         padding-right: 0.6rem !important;
-        padding-top: 4rem !important;
+        padding-top: 1rem !important;
         max-width: 100vw !important;
         overflow-x: hidden !important;
     }}
-    /* ── Make the native hamburger button big and gold so it's impossible to miss ── */
-    [data-testid="stSidebarCollapsedControl"] {{
-        display: flex !important;
-        align-items: center !important;
-        position: fixed !important;
-        top: 10px !important;
-        left: 10px !important;
-        z-index: 9999999 !important;
-        background: {GOLD} !important;
-        border-radius: 8px !important;
-        padding: 6px 10px !important;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.5) !important;
-    }}
-    [data-testid="stSidebarCollapsedControl"] button {{
-        color: #0A0A0F !important;
-        font-size: 20px !important;
-        background: transparent !important;
-        border: none !important;
-    }}
-    /* Sidebar overlay: full-height, scrollable */
+    /* Sidebar: full-height scrollable overlay on mobile */
     section[data-testid="stSidebar"] > div:first-child {{
         overflow-y: auto !important;
         height: 100vh !important;

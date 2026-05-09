@@ -4,17 +4,27 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import streamlit as st
-import requests
 import time
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Tuple, Callable, Any
 import warnings
 warnings.filterwarnings("ignore")
 
-# Shared requests session that mimics a browser — prevents Yahoo Finance from
-# rate-limiting / blocking Streamlit Cloud's cloud IP. Import this in scanners
-# that call yf.Ticker() directly: `from data_loader import YF_SESSION`
-YF_SESSION = requests.Session()
+try:
+    import requests_cache
+    # In-memory cache — avoids re-hitting Yahoo Finance for the same ticker
+    # within the same Streamlit session. 5-min TTL matches our st.cache_data TTL.
+    YF_SESSION = requests_cache.CachedSession(
+        "gs_yf_cache",
+        backend="memory",
+        expire_after=300,
+    )
+except ImportError:
+    import requests
+    YF_SESSION = requests.Session()
+
+# Browser-like headers prevent Yahoo Finance from rate-limiting cloud IPs.
+# Import this in any scanner that calls yf.Ticker() directly.
 YF_SESSION.headers.update({
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

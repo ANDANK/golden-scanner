@@ -11,6 +11,7 @@ from __future__ import annotations
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
+import time
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -66,6 +67,7 @@ def scan_div_cc(tickers, ex_div_days_max, div_amt_min, price_min, price_max,
         for i, ticker in enumerate(tickers):
             progress.progress((i + 1) / len(tickers))
             diag.seen(ticker)
+            time.sleep(0.15)  # throttle — avoid Yahoo Finance rate-limit on cloud
             try:
                 info = get_info(ticker)
                 if not info:
