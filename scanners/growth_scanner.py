@@ -156,6 +156,20 @@ def render():
             st.markdown("<br>", unsafe_allow_html=True)
             render_results_table(df)
             diag.render()
+
+            st.markdown(
+                f'<div style="color:{TEXT_MUTED};font-size:12px;margin:20px 0 6px">&#128200; Charts &amp; Price History</div>',
+                unsafe_allow_html=True,
+            )
+            for idx, (_, row) in enumerate(df.iterrows()):
+                ticker = str(row["Ticker"])
+                chg    = float(row.get("Change %", 0))
+                score  = int(row.get("Score", 0))
+                label  = f"📈  {ticker}   ·   ${row['Price']:.2f}   ·   {chg:+.2f}%   ·   Score {score}/100"
+                with st.expander(label, expanded=(idx == 0)):
+                    df_c = get_price_history(ticker, period="6mo")
+                    if not df_c.empty:
+                        st.plotly_chart(mini_chart(df_c, ticker), use_container_width=True)
     else:
         st.markdown(f"""
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">

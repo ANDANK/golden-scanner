@@ -999,42 +999,48 @@ def render():
     if not run:
         # Landing card ─────────────────────────────────────────
         features = [
-            ("📈", "Trend Stack",   "Price > EMA20 > SMA50 > SMA200 · Slope analysis"),
-            ("📡", "MACD",          "Daily + Weekly · Cross · Histogram · Slope"),
-            ("💪", "RSI Gauge",     "Visual zone bar · Daily + Weekly · All 5 zones"),
-            ("🌊", "Volume & OBV",  "Volume spike · OBV direction · Money Flow Index"),
-            ("🌀", "Bollinger Bands","Squeeze · %B · Band width · Breakout detection"),
-            ("🚀", "Breakouts",     "20/50-day high · Volume-confirmed · Near-zone"),
-            ("🔥", "Short Squeeze", "Short% float · Days to cover · Squeeze rating"),
-            ("⚡", "ATR & Vol",     "ATR% · Expanding / Contracting · Volatility regime"),
-            ("🏆", "Relative Strength","RS vs SPY · RS vs Sector ETF · Leader or laggard"),
+            ("&#128200;", "Trend Stack",        "Price &gt; EMA20 &gt; SMA50 &gt; SMA200 &middot; Slope analysis"),
+            ("&#128225;", "MACD",               "Daily + Weekly &middot; Cross &middot; Histogram &middot; Slope"),
+            ("&#128170;", "RSI Gauge",           "Visual zone bar &middot; Daily + Weekly &middot; All 5 zones"),
+            ("&#127754;", "Volume &amp; OBV",    "Volume spike &middot; OBV direction &middot; Money Flow Index"),
+            ("&#127744;", "Bollinger Bands",     "Squeeze &middot; %B &middot; Band width &middot; Breakout detection"),
+            ("&#128640;", "Breakouts",           "20/50-day high &middot; Volume-confirmed &middot; Near-zone"),
+            ("&#128293;", "Short Squeeze",       "Short% float &middot; Days to cover &middot; Squeeze rating"),
+            ("&#9889;",   "ATR &amp; Vol",       "ATR% &middot; Expanding / Contracting &middot; Volatility regime"),
+            ("&#127942;", "Relative Strength",   "RS vs SPY &middot; RS vs Sector ETF &middot; Leader or laggard"),
         ]
-        st.markdown(f"""
-<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:12px;
-            padding:40px;text-align:center;margin-top:8px">
-  <div style="font-size:52px;margin-bottom:16px">🔬</div>
-  <div style="font-size:24px;color:{GOLD};font-family:'Cormorant Garamond',serif;margin-bottom:10px">
-    Deep Technical Analysis Panel
-  </div>
-  <div style="color:{TEXT_MUTED};font-size:14px;max-width:580px;margin:0 auto 28px;line-height:1.8">
-    Enter up to <b style="color:{TEXT_PRIMARY}">4 tickers</b> above and click <b style="color:{TEXT_PRIMARY}">▶ Analyze</b>.
-    Each ticker gets a full multi-color, dual-timeframe technical report
-    with hover tooltips, composite scores, and an interactive chart.
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:760px;margin:0 auto;text-align:left">
-    {''.join(f"""
-    <div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:8px;padding:14px 16px">
-      <div style="font-size:20px;margin-bottom:6px">{ic}</div>
-      <div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:4px">{ti}</div>
-      <div style="color:{TEXT_MUTED};font-size:11px;line-height:1.5">{de}</div>
-    </div>""" for ic, ti, de in features)}
-  </div>
-  <div style="margin-top:24px;display:flex;justify-content:center;gap:20px;flex-wrap:wrap">
-    {_badge("Green = Bullish",  "bull")}
-    {_badge("Yellow = Neutral / Watch", "warn")}
-    {_badge("Red = Bearish",    "bear")}
-  </div>
-</div>""", unsafe_allow_html=True)
+
+        def _feat_card(ic, ti, de):
+            return (
+                f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
+                f'border-radius:8px;padding:14px 16px">'
+                f'<div style="font-size:20px;margin-bottom:6px">{ic}</div>'
+                f'<div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:4px">{ti}</div>'
+                f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.5">{de}</div>'
+                f'</div>'
+            )
+
+        cards_html = "".join(_feat_card(ic, ti, de) for ic, ti, de in features)
+        st.markdown(
+            f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:12px;'
+            f'padding:40px;text-align:center;margin-top:8px">'
+            f'<div style="font-size:52px;margin-bottom:16px">&#128302;</div>'
+            f'<div style="font-size:24px;color:{GOLD};font-family:\'Cormorant Garamond\',serif;margin-bottom:10px">'
+            f'Deep Technical Analysis Panel</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:14px;max-width:580px;margin:0 auto 28px;line-height:1.8">'
+            f'Enter up to <b style="color:{TEXT_PRIMARY}">4 tickers</b> above and click '
+            f'<b style="color:{TEXT_PRIMARY}">&#9658; Analyze</b>. '
+            f'Each ticker gets a full multi-color, dual-timeframe technical report '
+            f'with hover tooltips, composite scores, and an interactive chart.</div>'
+            f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;'
+            f'max-width:760px;margin:0 auto;text-align:left">{cards_html}</div>'
+            f'<div style="margin-top:24px;display:flex;justify-content:center;gap:20px;flex-wrap:wrap">'
+            f'{_badge("Green = Bullish","bull")}'
+            f'{_badge("Yellow = Neutral / Watch","warn")}'
+            f'{_badge("Red = Bearish","bear")}'
+            f'</div></div>',
+            unsafe_allow_html=True,
+        )
         return
 
     # Ticker pill bar (shown when running)

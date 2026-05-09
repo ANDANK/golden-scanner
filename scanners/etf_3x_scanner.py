@@ -156,11 +156,31 @@ def render():
             st.markdown("<br>", unsafe_allow_html=True)
             render_results_table(df)
 
-            st.markdown(f"""
-            <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-left:3px solid {ACCENT_RED};border-radius:6px;padding:12px 16px;margin-top:16px;color:{TEXT_MUTED};font-size:12px">
-                ⚠️ <b>Risk Warning:</b> 3× leveraged ETFs experience volatility decay over time — they are designed for <b>short-term directional trades only</b>.
-                Never hold through high-volatility periods or overnight without conviction. ATR Warning column indicates current volatility level.
-            </div>""", unsafe_allow_html=True)
+            st.markdown(
+                f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-left:3px solid {ACCENT_RED};'
+                f'border-radius:6px;padding:12px 16px;margin-top:16px;color:{TEXT_MUTED};font-size:12px">'
+                f'&#9888;&#65039; <b>Risk Warning:</b> 3&times; leveraged ETFs experience volatility decay over time &mdash; '
+                f'they are designed for <b>short-term directional trades only</b>. '
+                f'Never hold through high-volatility periods or overnight without conviction. '
+                f'ATR Warning column indicates current volatility level.</div>',
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                f'<div style="color:{TEXT_MUTED};font-size:12px;margin:20px 0 6px">&#128200; Charts &amp; Price History</div>',
+                unsafe_allow_html=True,
+            )
+            for idx, (_, row) in enumerate(df.iterrows()):
+                ticker    = str(row["Ticker"])
+                name      = str(row.get("Name", ""))
+                direction = str(row.get("Direction", ""))
+                chg       = float(row.get("Change %", 0))
+                score     = int(row.get("Score", 0))
+                label     = f"📈  {ticker}   ·   {name}   ·   {direction}   ·   {chg:+.2f}%   ·   Score {score}/100"
+                with st.expander(label, expanded=(idx == 0)):
+                    df_c = get_price_history(ticker, period="3mo")
+                    if not df_c.empty:
+                        st.plotly_chart(mini_chart(df_c, ticker), use_container_width=True)
     else:
         st.markdown(f"""
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">

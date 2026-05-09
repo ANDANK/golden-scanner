@@ -168,28 +168,36 @@ def render():
             empty_state("No momentum setups found. Widen filters or expand universe.")
             diag.render(hide_when_clean=False)
         else:
-            # Top pick
             top = df.iloc[0]
-            st.markdown(f"""
-            <div style="background:linear-gradient(135deg,{BG_CARD},{BG_PANEL});border:1px solid {GOLD}55;
-                        border-left:4px solid {GOLD};border-radius:8px;padding:16px 20px;margin-bottom:20px">
-                <div style="color:{TEXT_MUTED};font-size:10px;text-transform:uppercase;letter-spacing:1.5px">🏆 Top Momentum Pick</div>
-                <div style="display:flex;align-items:baseline;gap:12px;margin-top:4px">
-                    <span style="color:{GOLD};font-size:28px;font-family:'Cormorant Garamond',serif;font-weight:700">{top['Ticker']}</span>
-                    <span style="color:{TEXT_PRIMARY};font-size:18px">${top['Price']:.2f}</span>
-                    <span style="color:{ACCENT_GREEN if top['Change %']>=0 else ACCENT_RED};font-size:14px">{top['Change %']:+.2f}%</span>
-                    <span style="color:{TEXT_MUTED};font-size:13px">RSI {top['RSI']:.1f} · Vol {top['Vol Ratio']:.1f}× · Score {top['Score']}/100</span>
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-            # Chart of top pick
-            with st.expander(f"📈 Chart: {top['Ticker']}", expanded=True):
-                df_chart = get_price_history(top["Ticker"], period="6mo")
-                if not df_chart.empty:
-                    st.plotly_chart(mini_chart(df_chart, top["Ticker"]), use_container_width=True)
+            st.markdown(
+                f'<div style="background:linear-gradient(135deg,{BG_CARD},{BG_PANEL});border:1px solid {GOLD}55;'
+                f'border-left:4px solid {GOLD};border-radius:8px;padding:12px 20px;margin-bottom:16px">'
+                f'<div style="color:{TEXT_MUTED};font-size:10px;text-transform:uppercase;letter-spacing:1.5px">&#127942; Top Momentum Pick</div>'
+                f'<div style="display:flex;align-items:baseline;gap:12px;margin-top:4px;flex-wrap:wrap">'
+                f'<span style="color:{GOLD};font-size:26px;font-family:\'Cormorant Garamond\',serif;font-weight:700">{top["Ticker"]}</span>'
+                f'<span style="color:{TEXT_PRIMARY};font-size:17px">${top["Price"]:.2f}</span>'
+                f'<span style="color:{ACCENT_GREEN if top["Change %"]>=0 else ACCENT_RED};font-size:14px">{top["Change %"]:+.2f}%</span>'
+                f'<span style="color:{TEXT_MUTED};font-size:13px">RSI {top["RSI"]:.1f} &middot; Vol {top["Vol Ratio"]:.1f}&times; &middot; Score {top["Score"]}/100</span>'
+                f'</div></div>',
+                unsafe_allow_html=True,
+            )
 
             render_results_table(df)
             diag.render()
+
+            st.markdown(
+                f'<div style="color:{TEXT_MUTED};font-size:12px;margin:20px 0 6px">&#128200; Charts &amp; Price History</div>',
+                unsafe_allow_html=True,
+            )
+            for idx, (_, row) in enumerate(df.iterrows()):
+                ticker = str(row["Ticker"])
+                chg    = float(row.get("Change %", 0))
+                score  = int(row.get("Score", 0))
+                label  = f"📈  {ticker}   ·   ${row['Price']:.2f}   ·   {chg:+.2f}%   ·   Score {score}/100"
+                with st.expander(label, expanded=(idx == 0)):
+                    df_c = get_price_history(ticker, period="6mo")
+                    if not df_c.empty:
+                        st.plotly_chart(mini_chart(df_c, ticker), use_container_width=True)
 
     else:
         st.markdown(f"""
