@@ -352,12 +352,13 @@ with st.sidebar:
         key="nav_page",
         options=[
             "🏠  Market Overview",
-            "── COMBINED ──",
-            "🔀  Combined Scan",
+            "── STOCKS ──",
+            "🔀  Golden Scan",
+            "🔬  Deep Analysis",
+            "📰  Headlines & Catalysts",
             "── ETF ──",
             "📊  ETF Trends",
             "⚡📊  3× Leveraged ETFs",
-            "📰  Headlines & Catalysts",
             "── OPTIONS ──",
             "💰  Cash-Secured Puts",
             "📦  Covered Calls",
@@ -367,8 +368,6 @@ with st.sidebar:
             "── DIVIDEND ──",
             "💵  Upcoming Dividends",
             "📅  Dividend + CC Capture",
-            "── DEEP ANALYSIS ──",
-            "🔬  Deep Analysis",
             "── INFO ──",
             "ℹ️  About & Guide",
         ],
@@ -390,7 +389,7 @@ if page and page != "🏠  Market Overview" and "──" not in page:
 if page == "🏠  Market Overview":
     from scanners.home import render
     render()
-elif page == "🔀  Combined Scan":
+elif page == "🔀  Golden Scan":
     from scanners.combined_scanner import render
     render()
 elif page == "⚡  Momentum":

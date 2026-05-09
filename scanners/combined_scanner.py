@@ -351,7 +351,7 @@ def _render_combined_table(df: pd.DataFrame):
 
 def render():
     section_header(
-        "🔀", "Combined Scan",
+        "✦", "Golden Scan",
         "All scanners · One merged table · Multi-signal tickers ranked first",
     )
 
@@ -394,7 +394,7 @@ def render():
             f'padding:32px;text-align:center;margin-top:8px">'
             f'<div style="font-size:40px;margin-bottom:12px">&#128257;</div>'
             f'<div style="font-size:22px;color:{GOLD};font-family:\'Cormorant Garamond\',serif;'
-            f'margin-bottom:8px">All-in-One Signal Aggregator</div>'
+            f'margin-bottom:8px">✦ Golden Scan</div>'
             f'<div style="color:{TEXT_MUTED};font-size:13px;max-width:560px;margin:0 auto 24px;line-height:1.8">'
             f'Runs every scanner simultaneously, merges results, and surfaces tickers confirmed '
             f'by multiple independent signals. Multi-signal picks are ranked first.</div>'
