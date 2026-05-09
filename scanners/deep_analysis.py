@@ -471,6 +471,27 @@ def compute_analysis(ticker: str) -> dict | None:
         if hist_pos_d:        bp += 15
         buy_pressure_score = min(100, bp)
 
+        # ── Consolidated Signal ──────────────────────────────────
+        raw_composite = (momentum_score * 0.35 + trend_score * 0.35 + buy_pressure_score * 0.30)
+        bias = 0
+        if full_stack:              bias += 8
+        elif not above_sma50:       bias -= 10
+        if cross_d and hist_pos_d:  bias += 5
+        elif not cross_d:           bias -= 5
+        if 55 <= rsi_d <= 68:       bias += 5
+        elif rsi_d > 75:            bias -= 8
+        elif rsi_d < 30:            bias -= 4
+        if rs_spy >= 1.05:          bias += 4
+        elif rs_spy < 0.92:         bias -= 4
+        composite = int(round(max(0, min(100, raw_composite + bias))))
+
+        if composite >= 60:
+            signal, signal_pct, signal_color = "BUY",     composite,           ACCENT_GREEN
+        elif composite <= 40:
+            signal, signal_pct, signal_color = "SELL",    100 - composite,     ACCENT_RED
+        else:
+            signal, signal_pct, signal_color = "NEUTRAL", composite,           YELLOW
+
         return dict(
             ticker=ticker, name=name, sector=sector, sector_etf=sector_etf,
             price=price, chg_pct=chg_pct,
@@ -494,6 +515,7 @@ def compute_analysis(ticker: str) -> dict | None:
             rs_spy_level=rs_level(rs_spy),   rs_spy_label=rs_label(rs_spy),
             rs_sec_level=rs_level(rs_sector), rs_sec_label=rs_label(rs_sector),
             momentum_score=momentum_score, trend_score=trend_score, buy_pressure_score=buy_pressure_score,
+            signal=signal, signal_pct=signal_pct, signal_color=signal_color,
             df_d=df_d, df_w=df_w,
         )
     except Exception as e:
@@ -649,35 +671,49 @@ def render_ticker_panel(a: dict):
     with header_col:
         sma200_str = f"${a['sma200_v']:.2f}" if a["sma200_v"] else "—"
         trend_lbl  = "Strong Uptrend ✅" if a["full_stack"] else ("Moderate Trend ⚠️" if a["partial"] else "Downtrend ❌")
-        st.markdown(f"""
-<div style="background:linear-gradient(135deg,{BG_CARD} 0%,{BG_PANEL} 100%);
-            border:1px solid {BORDER_COLOR};border-left:5px solid {GOLD};
-            border-radius:10px;padding:18px 24px;margin-bottom:0">
-  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:flex-start">
-    <div>
-      <div style="color:{GOLD};font-size:34px;font-family:'Cormorant Garamond',serif;
-                  font-weight:700;letter-spacing:2px;line-height:1">{ticker}</div>
-      <div style="color:{TEXT_PRIMARY};font-size:14px;margin-top:4px">{a['name']}</div>
-      <div style="color:{TEXT_MUTED};font-size:11px">{a['sector']}</div>
-    </div>
-    <div style="text-align:right">
-      <div style="color:{TEXT_PRIMARY};font-size:30px;font-family:'Cormorant Garamond',serif;font-weight:700;line-height:1">
-        ${a['price']:.2f}
-      </div>
-      <div style="color:{chg_col};font-size:15px;font-weight:600;margin-top:4px">
-        {'▲' if a['chg_pct'] >= 0 else '▼'} {a['chg_pct']:+.2f}%
-      </div>
-    </div>
-  </div>
-  <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-    {_badge(trend_lbl, a['trend_level'])}
-    <span style="color:{TEXT_MUTED};font-size:12px">
-      EMA20 <b style="color:{ACCENT_GREEN if a['above_ema20'] else ACCENT_RED}">${a['ema20_v']:.2f}</b>
-      &nbsp;·&nbsp; SMA50 <b style="color:{ACCENT_GREEN if a['above_sma50'] else ACCENT_RED}">${a['sma50_v']:.2f}</b>
-      &nbsp;·&nbsp; SMA200 <b style="color:{ACCENT_GREEN if a['above_sma200'] else (TEXT_MUTED if not a['sma200_v'] else ACCENT_RED)}">{sma200_str}</b>
-    </span>
-  </div>
-</div>""", unsafe_allow_html=True)
+        sig        = a["signal"]
+        sig_pct    = a["signal_pct"]
+        sig_color  = a["signal_color"]
+        sig_icon   = "▲" if sig == "BUY" else ("▼" if sig == "SELL" else "◆")
+        arrow_ud   = "▲" if a["chg_pct"] >= 0 else "▼"
+        above_e20c = ACCENT_GREEN if a["above_ema20"] else ACCENT_RED
+        above_s50c = ACCENT_GREEN if a["above_sma50"] else ACCENT_RED
+        above_s200c = (ACCENT_GREEN if a["above_sma200"] else (TEXT_MUTED if not a["sma200_v"] else ACCENT_RED))
+        st.markdown(
+            f'<div style="background:linear-gradient(135deg,{BG_CARD} 0%,{BG_PANEL} 100%);'
+            f'border:1px solid {BORDER_COLOR};border-left:5px solid {sig_color};'
+            f'border-radius:10px;padding:18px 24px;margin-bottom:0">'
+            f'<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:flex-start">'
+            f'<div>'
+            f'<div style="color:{GOLD};font-size:34px;font-family:\'Cormorant Garamond\',serif;'
+            f'font-weight:700;letter-spacing:2px;line-height:1">{ticker}</div>'
+            f'<div style="color:{TEXT_PRIMARY};font-size:14px;margin-top:4px">{a["name"]}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:11px">{a["sector"]}</div>'
+            f'</div>'
+            f'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'
+            f'<div style="color:{TEXT_PRIMARY};font-size:30px;font-family:\'Cormorant Garamond\',serif;font-weight:700;line-height:1">'
+            f'${a["price"]:.2f}</div>'
+            f'<div style="color:{chg_col};font-size:15px;font-weight:600">{arrow_ud} {a["chg_pct"]:+.2f}%</div>'
+            f'<div style="background:{sig_color}22;border:2px solid {sig_color};border-radius:8px;'
+            f'padding:6px 18px;text-align:center;min-width:110px">'
+            f'<div style="color:{sig_color};font-size:11px;font-weight:700;text-transform:uppercase;'
+            f'letter-spacing:1.5px">{sig_icon} {sig}</div>'
+            f'<div style="color:{sig_color};font-size:26px;font-weight:800;line-height:1.1">{sig_pct}%</div>'
+            f'<div style="color:{sig_color}99;font-size:9px;text-transform:uppercase;letter-spacing:0.8px">confidence</div>'
+            f'</div>'
+            f'</div>'
+            f'</div>'
+            f'<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">'
+            f'{_badge(trend_lbl, a["trend_level"])}'
+            f'<span style="color:{TEXT_MUTED};font-size:12px">'
+            f'EMA20 <b style="color:{above_e20c}">${a["ema20_v"]:.2f}</b>'
+            f'&nbsp;&middot;&nbsp; SMA50 <b style="color:{above_s50c}">${a["sma50_v"]:.2f}</b>'
+            f'&nbsp;&middot;&nbsp; SMA200 <b style="color:{above_s200c}">{sma200_str}</b>'
+            f'</span>'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
     with weekly_spark_col:
         st.markdown(f"""
@@ -965,8 +1001,8 @@ def render():
   <div style="color:{GOLD};font-size:12px;font-weight:700;text-transform:uppercase;
               letter-spacing:1.2px;margin-bottom:10px">🔬 Enter Tickers to Analyze</div>
   <div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:10px">
-    Type 1–4 stock symbols separated by commas, then click <b style="color:{TEXT_PRIMARY}">▶ Analyze</b>.
-    Example: <span style="color:{GOLD};font-family:'DM Mono',monospace">AAPL, MSFT, NVDA, TSLA</span>
+    Type 1–5 stock symbols separated by commas, then click <b style="color:{TEXT_PRIMARY}">▶ Analyze</b>.
+    Example: <span style="color:{GOLD};font-family:'DM Mono',monospace">AAPL, MSFT, NVDA, TSLA, META</span>
   </div>
 </div>""", unsafe_allow_html=True)
 
@@ -987,13 +1023,13 @@ def render():
 
     import re
     raw     = [t.upper() for t in re.split(r"[\s,;]+", ticker_input.strip()) if t.strip()]
-    tickers = raw[:4]
+    tickers = raw[:5]
 
-    if len(raw) > 4:
-        st.warning(f"Only the first 4 tickers will be analyzed. Dropped: {', '.join(raw[4:])}")
+    if len(raw) > 5:
+        st.warning(f"Only the first 5 tickers will be analyzed. Dropped: {', '.join(raw[5:])}")
 
     if not tickers:
-        st.info("Enter 1–4 ticker symbols above and click **▶ Analyze**.")
+        st.info("Enter 1–5 ticker symbols above and click **▶ Analyze**.")
         return
 
     if not run:
@@ -1028,7 +1064,7 @@ def render():
             f'<div style="font-size:24px;color:{GOLD};font-family:\'Cormorant Garamond\',serif;margin-bottom:10px">'
             f'Deep Technical Analysis Panel</div>'
             f'<div style="color:{TEXT_MUTED};font-size:14px;max-width:580px;margin:0 auto 28px;line-height:1.8">'
-            f'Enter up to <b style="color:{TEXT_PRIMARY}">4 tickers</b> above and click '
+            f'Enter up to <b style="color:{TEXT_PRIMARY}">5 tickers</b> above and click '
             f'<b style="color:{TEXT_PRIMARY}">&#9658; Analyze</b>. '
             f'Each ticker gets a full multi-color, dual-timeframe technical report '
             f'with hover tooltips, composite scores, and an interactive chart.</div>'
