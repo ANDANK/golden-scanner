@@ -352,6 +352,8 @@ with st.sidebar:
         key="nav_page",
         options=[
             "🏠  Market Overview",
+            "── COMBINED ──",
+            "🔀  Combined Scan",
             "── STOCKS ──",
             "⚡  Momentum",
             "🏛  Trend Stack",
@@ -395,6 +397,9 @@ if page and page != "🏠  Market Overview" and "──" not in page:
 # ── Page Router ────────────────────────────────────────────────
 if page == "🏠  Market Overview":
     from scanners.home import render
+    render()
+elif page == "🔀  Combined Scan":
+    from scanners.combined_scanner import render
     render()
 elif page == "⚡  Momentum":
     from scanners.momentum_scanner import render
