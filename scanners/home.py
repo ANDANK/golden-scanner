@@ -532,60 +532,27 @@ def render():
 
     if market:
         icons = {"S&P 500": "📈", "NASDAQ": "💹", "DOW": "🏦", "VIX": "⚡", "Gold": "🥇", "10Y Yield": "💵"}
-        cols = st.columns(len(market))
-        for i, (name, data) in enumerate(market.items()):
+        for name, data in market.items():
             val, chg = data["value"], data["change"]
             color = ACCENT_GREEN if chg >= 0 else ACCENT_RED
             sign = "+" if chg >= 0 else ""
             card_s = (f"background:{BG_CARD};border:1px solid {BORDER_COLOR};"
-                      f"border-top:2px solid {color};border-radius:8px;padding:14px;text-align:center")
-            with cols[i]:
-                st.markdown(
-                    f'<div style="{card_s}">'
-                    f'<div style="font-size:18px">{icons.get(name, "📊")}</div>'
-                    f'<div style="color:{TEXT_MUTED};font-size:10px;letter-spacing:1px;text-transform:uppercase;margin:4px 0">{name}</div>'
-                    f'<div style="color:{TEXT_PRIMARY};font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700">{val:,.2f}</div>'
-                    f'<div style="color:{color};font-size:12px;font-weight:600">{sign}{chg:.2f}%</div>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
+                      f"border-left:3px solid {color};border-radius:6px;"
+                      f"padding:8px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:5px")
+            st.markdown(
+                f'<div style="{card_s}">'
+                f'<span style="font-size:16px;margin-right:8px">{icons.get(name, "📊")}</span>'
+                f'<span style="color:{TEXT_MUTED};font-size:11px;letter-spacing:1px;text-transform:uppercase;flex:1">{name}</span>'
+                f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;margin-right:16px">{val:,.2f}</span>'
+                f'<span style="color:{color};font-size:13px;font-weight:600;min-width:64px;text-align:right">{sign}{chg:.2f}%</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ── Instrument Pulse ────────────────────────────────────────
-    st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Instrument Pulse</div>', unsafe_allow_html=True)
-
-    pulse_tickers = ["QQQ", "TQQQ", "SPY", "SPXL", "SOXL", "SQQQ", "SOXS", "IWM", "GLD", "SLV", "TSLA"]
-    with st.spinner("Loading instruments…"):
-        batch_df = get_batch_quotes(pulse_tickers)
-
-    if not batch_df.empty:
-        row1, row2 = pulse_tickers[:6], pulse_tickers[6:]
-        for batch in (row1, row2):
-            cols = st.columns(len(batch))
-            for j, tkr in enumerate(batch):
-                rows = batch_df[batch_df["Ticker"] == tkr]
-                if rows.empty:
-                    continue
-                row = rows.iloc[0]
-                chg   = float(row.get("Change %", 0) or 0)
-                price = float(row.get("Price", 0) or 0)
-                color = ACCENT_GREEN if chg >= 0 else ACCENT_RED
-                bg    = _rgba(ACCENT_GREEN, 0.07) if chg >= 0 else _rgba(ACCENT_RED, 0.07)
-                sign  = "+" if chg >= 0 else ""
-                card_s = (f"background:{bg};border:1px solid {color}44;"
-                          f"border-radius:6px;padding:10px 12px;text-align:center;margin-bottom:6px")
-                with cols[j]:
-                    st.markdown(
-                        f'<div style="{card_s}">'
-                        f'<div style="color:{GOLD};font-family:\'DM Mono\',monospace;font-weight:700;font-size:13px">{tkr}</div>'
-                        f'<div style="color:{TEXT_PRIMARY};font-size:14px;font-weight:600;margin:2px 0">${price:,.2f}</div>'
-                        f'<div style="color:{color};font-size:12px;font-weight:600">{sign}{chg:.2f}%</div>'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:4px;margin-bottom:16px">⚠️ Market data may be delayed up to 15 minutes.</div>',
+        unsafe_allow_html=True,
+    )
 
     # ── Strategy Analysis ───────────────────────────────────────
     st.markdown(f'<div style="color:{GOLD};font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Strategy Signals — Live</div>', unsafe_allow_html=True)
@@ -608,7 +575,7 @@ def render():
         }
 
     tab1, tab2, tab3, tab4 = st.tabs([
-        "📈  TQQQ Strategies",
+        "📈  QQQ Strategies",
         "📊  SPY Strategies",
         "⚡  TSLA Options",
         "🔄  Common Strategies",
@@ -617,7 +584,7 @@ def render():
     with tab1:
         desc_s = f"color:{TEXT_MUTED};font-size:12px;padding:8px 0 4px 0"
         st.markdown(
-            f'<div style="{desc_s}">5 TQQQ strategies scored on live QQQ and VIX readings. '
+            f'<div style="{desc_s}">5 QQQ strategies scored on live QQQ and VIX readings. '
             f'<b style="color:{TEXT_PRIMARY}">QQQ</b> is the regime signal; '
             f'<b style="color:{TEXT_PRIMARY}">TQQQ</b> is the trading vehicle.</div>',
             unsafe_allow_html=True,
