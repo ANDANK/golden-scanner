@@ -395,6 +395,44 @@ def _run_buttons():
     return run
 
 
+def _render_with_charts(df: pd.DataFrame, show_bb=False, show_macd=True,
+                        show_volume=True, has_bt=False):
+    """
+    Unified results layout:
+      1. Results table (top — the primary output)
+      2. Per-ticker chart expanders below (first expanded, rest collapsed)
+    """
+    display_df = df.drop(columns=["_bt", "_ticker"], errors="ignore")
+    render_results_table(display_df)
+
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:12px;font-weight:600;letter-spacing:1px;'
+        f'text-transform:uppercase;margin:20px 0 8px">📈 Charts & Technical Detail</div>',
+        unsafe_allow_html=True,
+    )
+    for idx, (_, row) in enumerate(df.iterrows()):
+        ticker = str(row.get("_ticker") or row["Ticker"])
+        chg    = float(row.get("Change %", 0))
+        score  = int(row.get("Score", 0))
+        label  = f"📈  {ticker}   ·   {chg:+.2f}%   ·   Score {score}/100"
+        with st.expander(label, expanded=(idx == 0)):
+            df_c = get_price_history(ticker, period="6mo")
+            if not df_c.empty:
+                st.plotly_chart(
+                    build_breakout_chart(df_c, ticker,
+                                        show_bb=show_bb,
+                                        show_macd=show_macd,
+                                        show_volume=show_volume),
+                    use_container_width=True,
+                )
+            else:
+                st.warning(f"No chart data available for {ticker}.")
+            if has_bt:
+                bt = row.get("_bt") or {}
+                if bt:
+                    _backtest_card(bt, f"{ticker} Historical Signal Performance")
+
+
 def _sidebar_universe(label="Tech Hacker"):
     with st.sidebar:
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ {label} Filters</div>',
@@ -538,20 +576,7 @@ def render_macd_cross():
         with col3: metric_card("Avg Vol Ratio", f"{df['Vol Ratio'].mean():.2f}×", color=ACCENT_GREEN)
         with col4: metric_card("Avg Score", f"{df['Score'].mean():.0f}/100", color=GOLD)
 
-        # Backtest summary for top pick
-        if run_bt and top.get("_bt"):
-            _backtest_card(top["_bt"], f"{top['Ticker']} Historical Signal Performance")
-
-        # Chart top pick
-        with st.expander(f"📈 Chart: {top['Ticker']}", expanded=True):
-            df_c = get_price_history(top["Ticker"], period="6mo")
-            if not df_c.empty:
-                st.plotly_chart(build_breakout_chart(df_c, top["Ticker"],
-                                show_bb=False, show_macd=True, show_volume=True),
-                                use_container_width=True)
-
-        display_df = df.drop(columns=["_bt","_ticker"], errors="ignore")
-        render_results_table(display_df)
+        _render_with_charts(df, show_bb=False, show_macd=True, show_volume=True, has_bt=run_bt)
     else:
         _scanner_idle("📡", "MACD Power Cross",
                       "Earliest phase of breakout — momentum ignition signal", [
@@ -695,14 +720,7 @@ def render_trend_stack():
         with col3: metric_card("Avg RS vs SPY", f"{df['RS vs SPY'].mean():.3f}", color=ACCENT_GREEN)
         with col4: metric_card("Full Stack", str((df["Stack"] == "✅ Full").sum()), color=GOLD)
 
-        with st.expander(f"📈 Chart: {top['Ticker']}", expanded=True):
-            df_c = get_price_history(top["Ticker"], period="6mo")
-            if not df_c.empty:
-                st.plotly_chart(build_breakout_chart(df_c, top["Ticker"],
-                                show_bb=True, show_macd=True, show_volume=True),
-                                use_container_width=True)
-
-        render_results_table(df)
+        _render_with_charts(df, show_bb=True, show_macd=True, show_volume=True, has_bt=False)
     else:
         _scanner_idle("🏛", "Trend Stack Breakout",
                       "When all moving averages align, breakouts have highest continuation probability", [
@@ -841,13 +859,6 @@ def render_squeeze():
         with col3: metric_card("Already Firing", str((df["Firing!"] == "🔥").sum()), color=ACCENT_GREEN)
         with col4: metric_card("MACD Up", str((df["MACD Up"] == "✅").sum()), color=GOLD)
 
-        with st.expander(f"📈 Chart: {top['Ticker']}", expanded=True):
-            df_c = get_price_history(top["Ticker"], period="6mo")
-            if not df_c.empty:
-                st.plotly_chart(build_breakout_chart(df_c, top["Ticker"],
-                                show_bb=True, show_macd=True, show_volume=True),
-                                use_container_width=True)
-
         st.markdown(f"""
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-left:3px solid {GOLD};
                     border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:{TEXT_MUTED}">
@@ -857,7 +868,7 @@ def render_squeeze():
             <b>Firing!</b> = price already breaking above upper BB — squeeze releasing
         </div>""", unsafe_allow_html=True)
 
-        render_results_table(df)
+        _render_with_charts(df, show_bb=True, show_macd=True, show_volume=True, has_bt=False)
     else:
         _scanner_idle("🌀", "Volatility Squeeze",
                       "Finds coiled-spring setups before explosive expansion moves", [
@@ -1002,18 +1013,7 @@ def render_hvb():
         with col3: metric_card("50D Breaks", str((df["Breaks 50D"] == "✅").sum()), color=ACCENT_BLUE)
         with col4: metric_card("Avg Score", f"{df['Score'].mean():.0f}/100", color=GOLD)
 
-        if run_bt and top.get("_bt"):
-            _backtest_card(top["_bt"], f"{top['Ticker']} HVB Historical Performance")
-
-        with st.expander(f"📈 Chart: {top['Ticker']}", expanded=True):
-            df_c = get_price_history(top["Ticker"], period="6mo")
-            if not df_c.empty:
-                st.plotly_chart(build_breakout_chart(df_c, top["Ticker"],
-                                show_bb=False, show_macd=False, show_volume=True),
-                                use_container_width=True)
-
-        display_df = df.drop(columns=["_bt","_ticker"], errors="ignore")
-        render_results_table(display_df)
+        _render_with_charts(df, show_bb=False, show_macd=False, show_volume=True, has_bt=run_bt)
     else:
         _scanner_idle("🐋", "High-Volume Breakout",
                       "Institutions leave footprints — volume spikes reveal big money moves", [
@@ -1180,45 +1180,16 @@ def render_multifactor():
         with col4: metric_card("7/7 Conditions", str((df["Conditions"] == "7/7").sum()), color=GOLD)
         with col5: metric_card("Avg Score", f"{df['Score'].mean():.0f}/100", color=ACCENT_BLUE)
 
-        # Conditions breakdown chart
-        if len(df) >= 2:
-            with st.expander("📊 Conditions Distribution", expanded=False):
-                cond_counts = df["Conditions"].value_counts().sort_index()
-                fig = go.Figure(go.Bar(
-                    x=cond_counts.index.tolist(),
-                    y=cond_counts.values.tolist(),
-                    marker_color=[GOLD if c == "7/7" else ACCENT_BLUE for c in cond_counts.index],
-                    text=cond_counts.values.tolist(),
-                    textposition="outside",
-                ))
-                fig.update_layout(
-                    paper_bgcolor=BG_CARD, plot_bgcolor=BG_PANEL,
-                    font_color=TEXT_PRIMARY, height=180,
-                    margin=dict(l=10,r=10,t=10,b=10),
-                    xaxis=dict(gridcolor=BORDER_COLOR),
-                    yaxis=dict(gridcolor=BORDER_COLOR),
-                    showlegend=False,
-                )
-                st.plotly_chart(fig, use_container_width=True)
-
-        with st.expander(f"📈 Chart: {top['Ticker']}", expanded=True):
-            df_c = get_price_history(top["Ticker"], period="6mo")
-            if not df_c.empty:
-                st.plotly_chart(build_breakout_chart(df_c, top["Ticker"],
-                                show_bb=True, show_macd=True, show_volume=True),
-                                use_container_width=True)
-
-        render_results_table(df)
-
         st.markdown(f"""
         <div style="background:{BG_PANEL};border:1px solid {GOLD}33;border-left:3px solid {GOLD};
-                    border-radius:6px;padding:12px 16px;margin-top:16px;
+                    border-radius:6px;padding:12px 16px;margin-bottom:12px;
                     color:{TEXT_MUTED};font-size:12px">
-            <b style="color:{GOLD}">🎯 How to read Conditions X/7:</b>
-            Each of the 7 core factors (Trend · RSI · MACD · Volume · ATR · Breakout · RS) scores as 1.
-            7/7 = every single condition aligned. These are the rarest, highest-probability setups.
-            Anything ≥ 6/7 is still a high-quality breakout candidate.
+            <b style="color:{GOLD}">🎯 Conditions X/7:</b>
+            Each of 7 factors (Trend · RSI · MACD · Volume · ATR · Breakout · RS) scores 1.
+            7/7 = every condition aligned — rarest, highest-probability setups.
         </div>""", unsafe_allow_html=True)
+
+        _render_with_charts(df, show_bb=True, show_macd=True, show_volume=True, has_bt=False)
     else:
         _scanner_idle("🎯", "Multi-Factor Breakout",
                       "The highest-quality breakout scanner — all 7 signals must agree", [
