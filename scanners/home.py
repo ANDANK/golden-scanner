@@ -581,11 +581,12 @@ def render():
             "META": _get_ind("META"),
         }
 
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📈  QQQ Strategies",
         "📊  SPY Strategies",
         "⚡  TSLA Options",
         "🔄  Common Strategies",
+        "📱  Social Trends",
     ])
 
     with tab1:
@@ -623,6 +624,10 @@ def render():
             unsafe_allow_html=True,
         )
         st.markdown(_strategy_table(_common_strategies(all_inst)), unsafe_allow_html=True)
+
+    with tab5:
+        from scanners.social_trends import render_social_trends
+        render_social_trends()
 
     # ── Disclaimer ──────────────────────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
