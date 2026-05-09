@@ -533,22 +533,28 @@ def render():
 
     if market:
         icons = {"S&P 500": "📈", "NASDAQ": "💹", "DOW": "🏦", "VIX": "⚡", "Gold": "🥇", "10Y Yield": "💵"}
+        cards_html = []
         for name, data in market.items():
             val, chg = data["value"], data["change"]
             color = ACCENT_GREEN if chg >= 0 else ACCENT_RED
             sign = "+" if chg >= 0 else ""
             card_s = (f"background:{BG_CARD};border:1px solid {BORDER_COLOR};"
-                      f"border-left:3px solid {color};border-radius:6px;"
-                      f"padding:8px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:5px")
-            st.markdown(
+                      f"border-top:3px solid {color};border-radius:6px;"
+                      f"padding:10px 14px;flex:1 1 120px")
+            cards_html.append(
                 f'<div style="{card_s}">'
-                f'<span style="font-size:16px;margin-right:8px">{icons.get(name, "📊")}</span>'
-                f'<span style="color:{TEXT_MUTED};font-size:11px;letter-spacing:1px;text-transform:uppercase;flex:1">{name}</span>'
-                f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;margin-right:16px">{val:,.2f}</span>'
-                f'<span style="color:{color};font-size:13px;font-weight:600;min-width:64px;text-align:right">{sign}{chg:.2f}%</span>'
-                f'</div>',
-                unsafe_allow_html=True,
+                f'<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">'
+                f'<span style="font-size:14px">{icons.get(name, "📊")}</span>'
+                f'<span style="color:{TEXT_MUTED};font-size:9px;letter-spacing:1.2px;text-transform:uppercase">{name}</span>'
+                f'</div>'
+                f'<div style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;line-height:1.2">{val:,.2f}</div>'
+                f'<div style="color:{color};font-size:12px;font-weight:600;margin-top:2px">{sign}{chg:.2f}%</div>'
+                f'</div>'
             )
+        st.markdown(
+            f'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px">{"".join(cards_html)}</div>',
+            unsafe_allow_html=True,
+        )
 
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:4px;margin-bottom:16px">⚠️ Market data may be delayed up to 15 minutes.</div>',

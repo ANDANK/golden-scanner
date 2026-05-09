@@ -8,13 +8,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import *
 from utils import *
-from data_loader import get_price_history, get_batch_quotes
+from data_loader import get_price_history, get_batch_quotes, YF_SESSION
 
 
 @st.cache_data(ttl=180, show_spinner=False)
 def get_news(ticker: str):
     try:
-        t = yf.Ticker(ticker)
+        t = yf.Ticker(ticker, session=YF_SESSION)
         news = t.news
         return news[:5] if news else []
     except Exception:

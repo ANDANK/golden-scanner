@@ -1,7 +1,6 @@
 # app.py — Golden Scanner Main Entry
 
 import streamlit as st
-import streamlit.components.v1 as components
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -12,7 +11,7 @@ st.set_page_config(
     page_title="Golden Scanner",
     page_icon="✦",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ── Global CSS ─────────────────────────────────────────────────
@@ -82,20 +81,45 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 
 /* ── Mobile ── */
 @media (max-width: 768px) {{
-    /* Give main content breathing room below the native hamburger */
+    /* Breathing room so content doesn't hide under the hamburger */
     .block-container {{
         padding-left: 0.6rem !important;
         padding-right: 0.6rem !important;
-        padding-top: 3.5rem !important;
+        padding-top: 4rem !important;
         max-width: 100vw !important;
         overflow-x: hidden !important;
     }}
-    /* Bigger tap targets */
+    /* ── Make the native hamburger button big and gold so it's impossible to miss ── */
+    [data-testid="stSidebarCollapsedControl"] {{
+        display: flex !important;
+        align-items: center !important;
+        position: fixed !important;
+        top: 10px !important;
+        left: 10px !important;
+        z-index: 9999999 !important;
+        background: {GOLD} !important;
+        border-radius: 8px !important;
+        padding: 6px 10px !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.5) !important;
+    }}
+    [data-testid="stSidebarCollapsedControl"] button {{
+        color: #0A0A0F !important;
+        font-size: 20px !important;
+        background: transparent !important;
+        border: none !important;
+    }}
+    /* Sidebar overlay: full-height, scrollable */
+    section[data-testid="stSidebar"] > div:first-child {{
+        overflow-y: auto !important;
+        height: 100vh !important;
+        padding-bottom: 40px !important;
+    }}
+    /* Bigger tap targets for all buttons */
     .stButton > button {{
         min-height: 48px !important;
         font-size: 15px !important;
     }}
-    /* Sidebar radio: taller rows for finger tapping */
+    /* Sidebar radio rows: bigger for finger tap */
     [data-testid="stSidebar"] div[data-testid="stRadio"] label {{
         padding: 8px 4px !important;
         min-height: 40px !important;
@@ -112,11 +136,11 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
         padding: 6px 10px !important;
         flex-shrink: 0 !important;
     }}
-    /* Metrics: smaller so they fit */
+    /* Metrics: tighter on small screens */
     [data-testid="stMetricValue"] {{
         font-size: 20px !important;
     }}
-    /* Password screen: hide side spacer columns, make form full-width */
+    /* Password screen: make form full-width */
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child,
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:last-child {{
         display: none !important;
@@ -126,12 +150,12 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
         width: 100% !important;
         min-width: 100% !important;
     }}
-    /* Prevent DataFrames / tables from blowing out layout */
+    /* DataFrames: scroll instead of overflow */
     [data-testid="stDataFrame"] {{
         max-width: 100% !important;
         overflow-x: auto !important;
     }}
-    /* Logo: smaller on phone */
+    /* Logo: compact on phone */
     .gs-logo {{ font-size: 20px !important; }}
 }}
 
@@ -274,68 +298,6 @@ hr {{ border-color: {BORDER_COLOR}; }}
 }}
 </style>
 """, unsafe_allow_html=True)
-
-# ── Auto-expand sidebar + floating ☰ fallback button ──────────
-components.html("""
-<style>
-  #gs-menu-fab {
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    z-index: 999999;
-    background: #F5C842;
-    color: #0A0A0F;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 18px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.5);
-    display: none;
-  }
-</style>
-<button id="gs-menu-fab" title="Open sidebar" onclick="expandSidebar()">☰</button>
-<script>
-function expandSidebar() {
-  try {
-    var p = window.parent.document;
-    // Try the collapsed-control expand button
-    var btn = p.querySelector('[data-testid="stSidebarCollapsedControl"] button');
-    if (btn) { btn.click(); return; }
-    // Fallback: any button near top-left with an expand icon
-    var btns = p.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-      var t = btns[i].getAttribute('aria-label') || btns[i].title || '';
-      if (t.toLowerCase().includes('open') || t.toLowerCase().includes('expand')) {
-        btns[i].click(); return;
-      }
-    }
-  } catch(e) {}
-}
-
-function checkSidebarState() {
-  try {
-    var p = window.parent.document;
-    var sidebar = p.querySelector('section[data-testid="stSidebar"]');
-    var fab = document.getElementById('gs-menu-fab');
-    if (!sidebar || !fab) return;
-    // On mobile: leave sidebar alone — native hamburger controls it
-    if (window.parent.innerWidth <= 768) { fab.style.display = 'none'; return; }
-    var expanded = sidebar.getAttribute('aria-expanded');
-    fab.style.display = (expanded === 'false') ? 'block' : 'none';
-    if (expanded === 'false') expandSidebar();
-  } catch(e) {}
-}
-
-// Poll every 800ms — shows FAB and auto-expands when collapsed
-setInterval(checkSidebarState, 800);
-// Also run immediately after delays
-setTimeout(checkSidebarState, 300);
-setTimeout(checkSidebarState, 800);
-setTimeout(checkSidebarState, 2000);
-</script>
-""", height=50, scrolling=False)
 
 # ── Password Gate ──────────────────────────────────────────────
 if "authenticated" not in st.session_state:

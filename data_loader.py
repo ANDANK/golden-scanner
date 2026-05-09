@@ -4,11 +4,27 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import streamlit as st
+import requests
 import time
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Tuple, Callable, Any
 import warnings
 warnings.filterwarnings("ignore")
+
+# Shared requests session that mimics a browser — prevents Yahoo Finance from
+# rate-limiting / blocking Streamlit Cloud's cloud IP. Import this in scanners
+# that call yf.Ticker() directly: `from data_loader import YF_SESSION`
+YF_SESSION = requests.Session()
+YF_SESSION.headers.update({
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br",
+})
 
 
 # ── Resilience: retry + stale-cache fallback ───────────────────
@@ -83,7 +99,7 @@ def get_price_history(ticker: str, period: str = "6mo", interval: str = "1d") ->
 
 
 def _fetch_info(ticker: str) -> dict:
-    info = yf.Ticker(ticker).info
+    info = yf.Ticker(ticker, session=YF_SESSION).info
     return info if info else {}
 
 
@@ -95,7 +111,7 @@ def get_info(ticker: str) -> dict:
 
 
 def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
-    t = yf.Ticker(ticker)
+    t = yf.Ticker(ticker, session=YF_SESSION)
     dates = t.options
     if not dates:
         return pd.DataFrame(), pd.DataFrame(), []

@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import *
 from utils import section_header, empty_state, metric_card
+from data_loader import YF_SESSION
 
 
 DIVIDEND_UNIVERSE = [
@@ -55,7 +56,7 @@ ETF_KEYWORDS = ["etf","fund","trust","index","shares","ishares","vanguard",
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_dividend_info(ticker: str) -> dict:
     try:
-        t    = yf.Ticker(ticker)
+        t    = yf.Ticker(ticker, session=YF_SESSION)
         info = t.info or {}
 
         name       = info.get("shortName") or info.get("longName") or ticker
