@@ -1,4 +1,4 @@
-# pages/about.py — About & User Guide
+# scanners/about.py — About & User Guide
 
 import streamlit as st
 import sys, os
@@ -7,215 +7,440 @@ from config import *
 from utils import section_header
 
 
+def _expander(icon: str, title: str, what: str, how_to_use: str, tip: str = ""):
+    with st.expander(f"{icon}  {title}", expanded=False):
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:13px;line-height:1.8;margin-bottom:10px">{what}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div style="color:{TEXT_PRIMARY};font-size:13px;line-height:1.9">'
+            f'<b style="color:{GOLD}">How to use it:</b><br>{how_to_use}</div>',
+            unsafe_allow_html=True,
+        )
+        if tip:
+            st.markdown(
+                f'<div style="background:{BG_PANEL};border-left:3px solid {GOLD};'
+                f'padding:8px 14px;border-radius:4px;color:{TEXT_MUTED};'
+                f'font-size:12px;margin-top:10px">&#128161; {tip}</div>',
+                unsafe_allow_html=True,
+            )
+
+
 def render():
     section_header("ℹ️", "About & Guide",
-                   "How to use Golden Scanner · Strategy guides · Disclaimer")
+                   "How to use Golden Scanner · Feature reference · Disclaimer")
 
-    # ── Hero ──────────────────────────────────────────────────
-    st.markdown(f"""
-    <div style="background:linear-gradient(135deg,{BG_CARD},{BG_PANEL});border:1px solid {GOLD}44;
-                border-radius:12px;padding:32px;text-align:center;margin-bottom:28px">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:42px;color:{GOLD};font-weight:700;letter-spacing:3px">
-            ✦ GOLDEN SCANNER
-        </div>
-        <div style="color:{TEXT_MUTED};font-size:13px;letter-spacing:3px;text-transform:uppercase;margin:8px 0 16px">
-            Precision Trading Intelligence Platform
-        </div>
-        <div style="color:{TEXT_PRIMARY};font-size:15px;max-width:600px;margin:0 auto;line-height:1.8">
-            A professional-grade multi-scanner platform designed to surface high-probability 
-            trade setups across stocks, options, and ETFs — reducing noise so you can act faster 
-            with more conviction.
-        </div>
-    </div>""", unsafe_allow_html=True)
+    # ── Hero ──────────────────────────────────────────────────────
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,{BG_CARD},{BG_PANEL});'
+        f'border:1px solid {GOLD}44;border-radius:12px;padding:32px;'
+        f'text-align:center;margin-bottom:28px">'
+        f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:40px;'
+        f'color:{GOLD};font-weight:700;letter-spacing:3px">&#10022; GOLDEN SCANNER</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:12px;letter-spacing:3px;'
+        f'text-transform:uppercase;margin:8px 0 16px">Precision Trading Intelligence Platform</div>'
+        f'<div style="color:{TEXT_PRIMARY};font-size:15px;max-width:620px;margin:0 auto;line-height:1.9">'
+        f'A professional-grade multi-scanner platform that surfaces high-probability trade setups '
+        f'across stocks, options, ETFs, and market trends — cutting through noise so you can act '
+        f'with speed and conviction.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
-    # ── Scanner Guide ─────────────────────────────────────────
-    tabs = st.tabs(["📖 How It Works", "📊 Stock Scanners", "🎯 Options Scanners", "📈 ETF Scanners", "⚙️ Signal Score", "⚠️ Disclaimer"])
+    tabs = st.tabs([
+        "&#128210; Getting Started",
+        "&#128257; Scanners",
+        "&#128241; Social Trends",
+        "&#127919; Options",
+        "&#9889; 3&#215; Leveraged",
+        "&#128181; Dividends",
+        "&#128202; Reading Results",
+        "&#9888;&#65039; Disclaimer",
+    ])
 
+    # ── Tab 1: Getting Started ─────────────────────────────────────
     with tabs[0]:
-        st.markdown(f"""
-        <div style="color:{TEXT_PRIMARY};line-height:1.9;font-size:14px">
-        <h3 style="color:{GOLD};font-family:'Cormorant Garamond',serif">Getting Started</h3>
+        st.markdown(
+            f'<div style="color:{TEXT_PRIMARY};line-height:1.9;font-size:14px">'
 
-        <p><b style="color:{TEXT_PRIMARY}">1. Pick a Scanner</b> — Use the sidebar to navigate to the scanner that matches your trading style and timeframe.</p>
+            f'<h3 style="color:{GOLD};font-family:\'Cormorant Garamond\',serif">Quick Start</h3>'
+            f'<p><b>1. Choose a section</b> from the sidebar. Start with <b style="color:{GOLD}">Market Overview</b> '
+            f'for a pulse on current market conditions and strategy signals.</p>'
+            f'<p><b>2. Run a scan</b> by clicking &#9654; Run Scan. Stock scans typically complete in 30–90 seconds. '
+            f'Options scans take 1–3 minutes as they retrieve live options data per ticker.</p>'
+            f'<p><b>3. Read results</b> sorted by Signal Score (highest conviction first). '
+            f'Use column headers to re-sort by any metric.</p>'
+            f'<p><b>4. Adjust filters</b> in the sidebar to tighten or widen the scan criteria. '
+            f'Default values are calibrated for quality — change them when you want a broader or narrower view.</p>'
+            f'<p><b>5. Export</b> any result set to CSV using the &#11015; Export button below the table.</p>'
 
-        <p><b style="color:{TEXT_PRIMARY}">2. Set Your Filters</b> — Each scanner has a filter panel in the sidebar. 
-        Start with default values (already calibrated for quality signals), then adjust to your risk tolerance.</p>
+            f'<h3 style="color:{GOLD};font-family:\'Cormorant Garamond\',serif;margin-top:24px">Navigation</h3>'
+            f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0">',
+            unsafe_allow_html=True,
+        )
 
-        <p><b style="color:{TEXT_PRIMARY}">3. Run the Scan</b> — Click ▶ Run Scan. 
-        Stock scans run in ~30–60 seconds. Options scans take 60–180 seconds due to API calls per ticker.</p>
+        nav_items = [
+            ("&#127968;", "Market Overview", "Live market indices + strategy signals for SPY, QQQ, TSLA"),
+            ("&#128241;", "Social Trends", "Financial news, Reddit discussions, YouTube — signal-scored"),
+            ("&#128257;", "Golden Scan", "All stock scanners merged — multi-signal picks ranked first"),
+            ("&#128300;", "Stock Analysis", "Deep single-ticker technical breakdown across multiple timeframes"),
+            ("&#9889;&#128202;", "3&#215; Leveraged ETFs", "High-velocity directional momentum setups"),
+            ("&#9889;&#128200;", "3&#215; ETF Options", "Premium selling on leveraged instruments"),
+            ("&#128176;", "Cash-Secured Puts", "Income from selling puts on stocks you want to own"),
+            ("&#128230;", "Covered Calls", "Monthly income by selling calls against shares you hold"),
+            ("&#128248;", "LEAPS", "Long-dated calls as a capital-efficient stock replacement"),
+            ("&#128200;", "ETF Options", "Premium selling on broad, liquid ETF options"),
+            ("&#128181;", "Upcoming Dividends", "Ex-dividend plays with strong chart setups"),
+            ("&#128197;", "Dividend + CC Capture", "Combine dividend income with covered call premium"),
+        ]
+        cards = "".join(
+            f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:8px;padding:10px 14px">'
+            f'<div style="font-size:16px;margin-bottom:4px">{icon}</div>'
+            f'<div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:3px">{name}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.5">{desc}</div>'
+            f'</div>'
+            for icon, name, desc in nav_items
+        )
+        st.markdown(
+            f'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:12px 0">'
+            f'{cards}</div>',
+            unsafe_allow_html=True,
+        )
 
-        <p><b style="color:{TEXT_PRIMARY}">4. Read the Results</b> — Results are sorted by Score (0–100).
-        Higher score = more criteria aligned = higher conviction setup. Click column headers to re-sort.</p>
+        st.markdown(
+            f'<h3 style="color:{GOLD};font-family:\'Cormorant Garamond\',serif;margin-top:24px">Tips</h3>'
+            f'<ul style="color:{TEXT_PRIMARY};font-size:13px;line-height:2.2">'
+            f'<li>Start with <b>Golden Scan</b> each morning — tickers appearing in multiple scanners have the highest conviction</li>'
+            f'<li>Check <b>Social Trends</b> first to see what the market is talking about before trading</li>'
+            f'<li>For options, always confirm the underlying stock trend before selling premium</li>'
+            f'<li>3&#215; ETF trades should be sized conservatively — they move fast in both directions</li>'
+            f'<li>Data refreshes every 5 minutes. Use the &#128260; Refresh button to force an update</li>'
+            f'<li>The Score column ranks quality — it is a relative ranking tool, not a binary buy/sell trigger</li>'
+            f'</ul>'
+            f'<p style="color:{TEXT_MUTED};font-size:12px;margin-top:8px">'
+            f'Data is sourced from Yahoo Finance. Options data may carry a short delay. '
+            f'Fundamental data (P/E, earnings growth) is end-of-day.</p>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
-        <p><b style="color:{TEXT_PRIMARY}">5. Export & Trade</b> — Download results as CSV with the ⬇ Export button.
-        Do your own due diligence before trading any setup.</p>
-
-        <h3 style="color:{GOLD};font-family:'Cormorant Garamond',serif;margin-top:24px">Data Sources</h3>
-        <p>All data is sourced from <b>Yahoo Finance (yfinance)</b>, updated every 5 minutes via Streamlit caching.
-        Options data may have 15-minute delays. Fundamental data (P/E, ROE, etc.) is updated daily.</p>
-
-        <h3 style="color:{GOLD};font-family:'Cormorant Garamond',serif;margin-top:24px">Tips for Best Results</h3>
-        <ul style="line-height:2.2">
-            <li>Run momentum scans during the first hour of the trading session for freshest signals</li>
-            <li>Cross-reference options setups with the underlying stock trend before trading</li>
-            <li>Use the Score column as a ranking tool, not a binary buy/sell signal</li>
-            <li>For 3× ETFs: only trade with conviction and use very small position sizes</li>
-            <li>Cache is cleared automatically every 5 min — use 🔄 Clear Cache to force refresh</li>
-        </ul>
-        </div>""", unsafe_allow_html=True)
-
+    # ── Tab 2: Scanners ────────────────────────────────────────────
     with tabs[1]:
-        scanners = [
-            ("⚡ Momentum", "Finds stocks in strong uptrends with institutional accumulation signals.",
-             ["Price > 50 SMA > 200 SMA (trend alignment)", "RSI 55–68 (momentum sweet spot — not overbought)",
-              "MACD histogram > 0 (bullish crossover)", "Volume ≥ 1.5× 20-day average (institutional participation)",
-              "Optional: 20-day high breakout", "ATR expanding (volatility confirming move)"],
-             "Best for swing trades (1–4 weeks). High-RS stocks relative to SPY are institutional favorites."),
-            ("💎 Value", "Identifies companies trading below intrinsic value with healthy balance sheets.",
-             ["P/E below 25 (adjustable)", "P/B below 3 (asset-based value floor)",
-              "ROE > 12% (management quality)", "Debt/Equity < 1 (balance sheet health)",
-              "Positive free cash flow", "Price above 200 SMA (trend confirmation)"],
-             "Best for position trades (1–6 months). Check 'Trap Risk' column — avoid High Debt + Low ROE combos."),
-            ("🚀 Growth", "Finds companies with accelerating revenue and earnings growth.",
-             ["Revenue growth > 15% YoY", "EPS growth > 12% YoY",
-              "Relative strength > 1.02 vs SPY", "Price above 50 SMA"],
-             "Best for trend-following after earnings beats. Higher RS = stronger institutional demand."),
-            ("📰 Headlines", "Captures news-driven explosive moves with volume confirmation.",
-             ["Price move > 3% (intraday or overnight)", "Volume spike ≥ 2× average",
-              "Gap detection ≥ 1.5%", "Catalyst tagging (Earnings, M&A, Upgrade)"],
-             "Best for same-day trading. High moves + high volume = real institutional reaction, not noise."),
-        ]
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:13px;padding:8px 0 16px">'
+            f'All stock scanners share a common universe of S&P 500 stocks and key ETFs. '
+            f'<b style="color:{GOLD}">Golden Scan</b> runs them all at once — use individual scanners '
+            f'when you want focused results for a specific strategy.</div>',
+            unsafe_allow_html=True,
+        )
 
-        for title, desc, criteria, tip in scanners:
-            with st.expander(title, expanded=False):
-                st.markdown(f"""
-                <div style="color:{TEXT_MUTED};font-size:13px;margin-bottom:10px">{desc}</div>
-                <b style="color:{GOLD};font-size:12px">CRITERIA:</b>
-                <ul style="color:{TEXT_PRIMARY};font-size:13px;line-height:2.0">
-                    {"".join(f"<li>{c}</li>" for c in criteria)}
-                </ul>
-                <div style="background:{BG_PANEL};border-left:3px solid {GOLD};padding:8px 12px;border-radius:4px;color:{TEXT_MUTED};font-size:12px">
-                    💡 {tip}
-                </div>""", unsafe_allow_html=True)
+        _expander("🔀", "Golden Scan",
+            "The flagship scanner. Runs every stock scanner simultaneously, merges all results into one table, "
+            "and ranks tickers by how many independent scanners confirmed them. A ticker showing up in three "
+            "different scanners — each looking at different signals — has much stronger confirmation than one "
+            "that appears in only one.",
+            "Set the universe size in the sidebar (default 200 tickers, key ETFs always included). "
+            "Toggle Value and Growth scanners on or off — they are slower due to fundamental data fetching. "
+            "Sort by Scanner Count to see the multi-confirmed picks at the top. "
+            "Est. Upside % shows the distance to the 52-week high as a rough target.",
+            "Multi-signal picks are not guarantees — they just mean multiple independent signals agree. "
+            "Still do your own research before trading any result."
+        )
+        _expander("⚡", "Momentum",
+            "Finds stocks in strong directional uptrends with healthy price action and above-average participation. "
+            "This scanner is looking for the kind of move where price, trend, momentum, and volume all "
+            "point in the same direction at the same time.",
+            "Best for swing trades lasting 1–4 weeks. Results with the highest scores show the cleanest "
+            "alignment across all signals. The top result (expanded by default) often represents the "
+            "clearest near-term opportunity in the scan.",
+            "Avoid chasing results that already moved significantly. Look for stocks just breaking out, "
+            "not ones already extended."
+        )
+        _expander("💎", "Value",
+            "Identifies companies that may be trading below their fundamental worth — solid businesses at "
+            "reasonable prices. This scanner looks at valuation ratios and balance sheet health together, "
+            "filtering for companies that are cheap for good reasons rather than bad ones.",
+            "Best for long-term position trades (3 months to 1 year). Check the Trap Risk column — "
+            "High risk means the low valuation may be a value trap rather than an opportunity. "
+            "Prefer results that are also above their long-term moving average.",
+            "Value investing requires patience. These setups are not short-term momentum plays."
+        )
+        _expander("🚀", "Growth",
+            "Surfaces companies with accelerating revenue and earnings expansion — businesses growing "
+            "meaningfully faster than the market. High growth stocks tend to attract institutional "
+            "buying, which creates sustained upward price pressure.",
+            "Best for trend-following positions held 1–6 months. The RS vs SPY column shows whether "
+            "the stock is outperforming the market — strong growth stocks should be leading the index, "
+            "not lagging it.",
+            "Earnings beats often cause growth stocks to gap up sharply. Consider running this scanner "
+            "after earnings season begins."
+        )
+        _expander("📰", "Headlines & Catalysts",
+            "Captures stocks making significant moves on catalysts — earnings surprises, analyst upgrades, "
+            "M&A news, or regulatory decisions. Volume confirms whether the move is a real institutional "
+            "reaction or just noise.",
+            "Best for same-day or next-day trades. Sort by Change % to see the biggest movers. "
+            "Check the Catalyst column to understand what's driving the move before trading it. "
+            "High volume on a big move = institutions reacting, not retail.",
+            "Catalyst-driven moves can reverse sharply once the news is digested. Use tight stops."
+        )
+        _expander("🔬", "Stock Analysis",
+            "A deep-dive single-ticker view that combines technical indicators across multiple timeframes "
+            "into one comprehensive panel. Unlike the scanners which scan many stocks quickly, "
+            "Stock Analysis goes deep on up to 5 individual tickers you specify.",
+            "Enter up to 5 tickers separated by commas, then click Analyze. Each ticker gets its own "
+            "panel showing trend direction, momentum, volume profile, and a consolidated Buy/Sell/Neutral "
+            "signal with confidence percentage. The interactive chart shows key indicators overlaid on price.",
+            "Use this after a scanner surfaces a setup — run the scanner to find candidates, then "
+            "use Stock Analysis to go deep on the best ones before deciding to trade."
+        )
 
+    # ── Tab 3: Social Trends ───────────────────────────────────────
     with tabs[2]:
-        options_guides = [
-            ("💰 Cash-Secured Puts (CSP)",
-             "Sell OTM puts on bullish stocks to collect premium with a controlled entry price.",
-             ["IV Rank > 30 (elevated premium environment)", "Delta 0.15–0.30 (OTM, less assignment risk)",
-              "Premium ≥ 1% of strike price", "Bid/ask spread < 5% (liquidity)", "Bullish underlying trend"],
-             "The ideal CSP: stock you want to own at a discount, with premium paying you to wait. Breakeven = Strike − Premium."),
-            ("📦 Covered Calls (CC)",
-             "Sell OTM calls against long stock to generate monthly income.",
-             ["Delta 0.15–0.25 (OTM — protects upside capture)", "Premium ≥ 0.8% of stock price",
-              "Price near resistance (natural ceiling for calls)", "DTE 21–45 days (theta sweet spot)"],
-             "Best when you expect sideways or mild upside. Yield % = (premium / stock price). Upside Cap = how much you can gain before stock is called away."),
-            ("🧨 LEAPS",
-             "Deep ITM long-dated calls (300+ days) as a leveraged stock replacement.",
-             ["Expiration ≥ 300 days (time decay is minimal)", "Delta 0.60–0.75 (acts like owning ~65–70% of a share)",
-              "IV Rank < 40 (buy when IV is low)", "Strong underlying trend (price > 50 SMA)"],
-             "Leverage ratio shows capital efficiency. A 2× ratio means your call controls equivalent exposure for half the capital of owning shares. Delta fades as time passes — monitor regularly."),
-        ]
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:13px;padding:8px 0 16px">'
+            f'Real-time market intelligence from financial news and social media, '
+            f'filtered for signal quality and scored by relevance.</div>',
+            unsafe_allow_html=True,
+        )
+        _expander("🔥", "Hot News",
+            "Aggregates financial news from major sources — Yahoo Finance, CNBC, Reuters, MarketWatch, "
+            "and Benzinga — filtered to show only market-relevant stories. Duplicate stories covering "
+            "the same ticker and event are merged into one card.",
+            "Each card shows a sentiment badge (Bullish / Bearish / Neutral) and a Signal Score. "
+            "Use the ticker filter at the top to see only news about a specific stock. "
+            "Turn on Signal Mode to show only the highest-conviction items.",
+            "The Trending Tickers panel at the top shows tickers mentioned in multiple articles "
+            "simultaneously — a strong indicator that the market is focused on those names."
+        )
+        _expander("💬", "Reddit",
+            "Monitors discussions across major investing subreddits. Posts are filtered for financial "
+            "relevance and minimum engagement — only posts with meaningful community discussion are shown. "
+            "Deep Dive posts (flaired as DD or Analysis) are highlighted with a star badge.",
+            "The Trending Tickers panel shows which tickers are being discussed most across all "
+            "subreddits combined with the sentiment breakdown. Use this to spot emerging crowd "
+            "sentiment shifts before they move price.",
+            "Social media sentiment is a lagging indicator for large moves but can be an early signal "
+            "for smaller-cap stocks. Use it as context, not as a primary trade signal."
+        )
+        _expander("🎥", "YouTube",
+            "Monitors financial YouTube channels for recent videos with actionable ticker analysis. "
+            "Activated when a YouTube API key is added to app secrets.",
+            "Add YOUTUBE_API_KEY to your Streamlit secrets to enable this section. "
+            "The channel list monitors well-known financial creators focused on stocks and options.",
+            "YouTube content is often educational rather than time-sensitive. Videos take time to produce "
+            "so they typically reflect analysis from 1–3 days ago."
+        )
+        _expander("🌐", "Combined Feed",
+            "All sources merged into a single unified feed, sorted by Signal Score. "
+            "The highest-scoring item combines strong recency, high engagement, specific ticker "
+            "mentions, and clear directional sentiment.",
+            "This is the fastest way to see what is moving markets right now. "
+            "Signal Mode filters to only show high-conviction items across all sources.",
+            "Use the ticker filter to research a specific stock across all social sources at once."
+        )
 
-        for title, desc, criteria, tip in options_guides:
-            with st.expander(title, expanded=False):
-                st.markdown(f"""
-                <div style="color:{TEXT_MUTED};font-size:13px;margin-bottom:10px">{desc}</div>
-                <b style="color:{GOLD};font-size:12px">CRITERIA:</b>
-                <ul style="color:{TEXT_PRIMARY};font-size:13px;line-height:2.0">
-                    {"".join(f"<li>{c}</li>" for c in criteria)}
-                </ul>
-                <div style="background:{BG_PANEL};border-left:3px solid {GOLD};padding:8px 12px;border-radius:4px;color:{TEXT_MUTED};font-size:12px">
-                    💡 {tip}
-                </div>""", unsafe_allow_html=True)
-
+    # ── Tab 4: Options ─────────────────────────────────────────────
     with tabs[3]:
-        etf_guides = [
-            ("📊 ETF Trends",
-             "Identifies sector ETFs in strong uptrends with relative strength leadership.",
-             ["Price > 50 SMA and 200 SMA", "Relative strength > 1.02 vs S&P 500",
-              "RSI 50–70 (trending not extended)", "Volume-based flow signal"],
-             "Sector rotation signals: when XLK outperforms, tech leads. When XLE leads, energy is in favor. Follow the money."),
-            ("📈 ETF Options",
-             "Premium selling on liquid ETF options — typically tighter spreads than single stocks.",
-             ["High AUM ETFs (SPY, QQQ, IWM, XLK, etc.)", "IV Rank > 25 for decent premium",
-              "Delta 0.15–0.30 for OTM", "Tight bid/ask spread (ETFs are more liquid)"],
-             "ETF options are preferred by institutional traders for premium selling due to no earnings risk and persistent liquidity."),
-            ("⚡📊 3× Leveraged ETFs",
-             "High-velocity directional plays — for short-term traders only.",
-             ["Price > 20 SMA and 50 SMA", "RSI 55–70 (momentum without extreme extension)",
-              "Volume ≥ 1.2× average", "Rising ATR (volatility fueling the move)"],
-             "3× ETFs lose value from volatility decay (beta slippage) when held long-term. Use for 1–5 day trades maximum with strict stops."),
-            ("⚡📈 3× ETF Options",
-             "Ultra-high premium from extreme implied volatility in leveraged instruments.",
-             ["IV Rank > 40 (these are always high-IV by nature)", "Premium % typically 3–10× normal ETFs",
-              "Short DTE (14–35 days) preferred due to extreme theta exposure"],
-             "Premium/Risk ratio (Prem % ÷ ATR %) is the key metric here. If ATR is 8% and premium is 4%, you're getting paid half the daily risk range — evaluate carefully."),
-        ]
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:13px;padding:8px 0 16px">'
+            f'All options scanners look for premium-selling opportunities — strategies where you '
+            f'collect income upfront and profit when the underlying stays within a range. '
+            f'Higher implied volatility = more premium collected.</div>',
+            unsafe_allow_html=True,
+        )
+        _expander("💰", "Cash-Secured Puts (CSP)",
+            "You sell a put option on a stock you are willing to own at a lower price. "
+            "The buyer pays you a premium upfront. If the stock stays above your strike price, "
+            "you keep the entire premium as profit. If it falls below, you buy the stock at "
+            "the strike — which you wanted anyway.",
+            "The scanner surfaces stocks with elevated option premiums and bullish trends — "
+            "the ideal environment for selling puts. Key columns: Strike (the price at which "
+            "you'd buy the stock), Premium % (annualized return if the put expires worthless), "
+            "and Breakeven (the price below which you start losing money).",
+            "Best candidates: stocks you would genuinely want to own at a 5–15% discount. "
+            "Never sell puts on stocks you are not comfortable holding."
+        )
+        _expander("📦", "Covered Calls (CC)",
+            "You sell a call option against shares you already own. The buyer pays you a premium. "
+            "If the stock stays below your strike, you keep shares plus premium. "
+            "If it rises above the strike, your shares get called away at that price — "
+            "you still profit, just not beyond the strike.",
+            "The scanner finds stocks with elevated premiums and sideways-to-mild-uptrend price action — "
+            "the sweet spot for covered calls. Key columns: Premium % (monthly income rate), "
+            "Upside Cap % (how much you can gain before the stock is called), "
+            "and DTE (days until expiration).",
+            "Best used as a recurring income strategy on stocks you already own and plan to hold."
+        )
+        _expander("🧨", "LEAPS",
+            "Long-dated deep-in-the-money call options that behave similarly to owning shares, "
+            "but require significantly less capital. Instead of buying 100 shares, you buy one "
+            "LEAP that gives you similar exposure for a fraction of the cost.",
+            "Key columns: Delta (how closely the option tracks the stock — higher is more stock-like), "
+            "Leverage Ratio (how much stock exposure you get per dollar invested), "
+            "and IV Rank (lower is better when buying options — you want to buy when premium is cheap). "
+            "Look for strong underlying trends — LEAPS work best in extended bull moves.",
+            "LEAPS require more monitoring than stock ownership. The option loses value as time passes, "
+            "even if the stock is flat. Set a reminder to review every 30–60 days."
+        )
+        _expander("📈", "ETF Options",
+            "Premium selling on major ETF options — SPY, QQQ, IWM, sector ETFs. "
+            "ETFs tend to have tighter bid/ask spreads and more predictable behavior than "
+            "individual stocks because they carry no single-company earnings risk.",
+            "These are ideal for traders who want to sell premium consistently without "
+            "the risk of a single stock gapping down on bad news. The same CSP and CC "
+            "strategies apply — the scanner applies them to a curated list of liquid ETFs.",
+            "ETF options are a favorite of institutional traders for exactly this reason: "
+            "diversified underlying + liquid options + no binary events."
+        )
 
-        for title, desc, criteria, tip in etf_guides:
-            with st.expander(title, expanded=False):
-                st.markdown(f"""
-                <div style="color:{TEXT_MUTED};font-size:13px;margin-bottom:10px">{desc}</div>
-                <b style="color:{GOLD};font-size:12px">CRITERIA:</b>
-                <ul style="color:{TEXT_PRIMARY};font-size:13px;line-height:2.0">
-                    {"".join(f"<li>{c}</li>" for c in criteria)}
-                </ul>
-                <div style="background:{BG_PANEL};border-left:3px solid {GOLD};padding:8px 12px;border-radius:4px;color:{TEXT_MUTED};font-size:12px">
-                    💡 {tip}
-                </div>""", unsafe_allow_html=True)
-
+    # ── Tab 5: 3× Leveraged ────────────────────────────────────────
     with tabs[4]:
-        st.markdown(f"""
-        <div style="color:{TEXT_PRIMARY};font-size:14px;line-height:1.9">
-        <h3 style="color:{GOLD};font-family:'Cormorant Garamond',serif">Signal Score (0–100)</h3>
-        <p>Every scanner result includes a composite <b>Signal Score</b> that aggregates multiple technical and fundamental factors into a single number.</p>
+        st.markdown(
+            f'<div style="background:{ACCENT_RED}15;border:1px solid {ACCENT_RED}44;border-radius:8px;'
+            f'padding:12px 16px;margin-bottom:16px;color:{TEXT_PRIMARY};font-size:13px">'
+            f'&#9888;&#65039; <b style="color:{ACCENT_RED}">Important:</b> 3&#215; leveraged instruments are designed for '
+            f'short-term directional trades only. They are not suitable for long-term holding. '
+            f'Always size positions conservatively.</div>',
+            unsafe_allow_html=True,
+        )
+        _expander("⚡📊", "3× Leveraged ETFs",
+            "Triple-leverage ETFs aim to deliver 3× the daily return of their benchmark index. "
+            "TQQQ tracks 3× QQQ. SOXL tracks 3× semiconductors. UPRO tracks 3× SPY. "
+            "In a strong directional trend, these can generate outsized returns quickly. "
+            "In choppy or sideways markets, they lose value due to compounding effects.",
+            "The scanner finds leveraged ETFs in strong momentum conditions with rising volatility — "
+            "the environment where they perform best. Direction filter lets you scan Bull (long) or "
+            "Bear (inverse) ETFs separately. ATR Warning column shows current volatility level "
+            "so you can size accordingly.",
+            "These are best held for 1–5 days in a clear trend. Exit at the first sign of reversal. "
+            "Never hold through high-volatility periods or unexpected market events."
+        )
+        _expander("⚡📈", "3× ETF Options",
+            "Options on 3× ETFs carry extreme implied volatility, which creates very high premiums. "
+            "This makes them attractive for premium sellers who understand the underlying risks. "
+            "The potential income is significantly higher than standard ETF options.",
+            "Premium % and ATR % are the two most important columns here. Premium/Risk ratio "
+            "tells you how much you are being paid relative to the instrument's daily movement range — "
+            "the higher this ratio, the better the risk/reward for the seller. Use short expirations.",
+            "The same volatility that generates high premium can work against you quickly. "
+            "Position sizes should be smaller than you would use for standard ETF options."
+        )
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0">
-        """, unsafe_allow_html=True)
-
-        score_ranges = [
-            (ACCENT_GREEN, "80–100", "🔥 Strong Setup", "Near-perfect alignment across all criteria. Highest conviction."),
-            ("#86EFAC", "60–79", "✅ Solid Setup", "Most criteria aligned. Good risk/reward."),
-            (TEXT_MUTED, "40–59", "⚪ Neutral", "Mixed signals. More work needed before trading."),
-            ("#FCA5A5", "20–39", "🔻 Weak", "Few criteria met. Avoid or wait for improvement."),
-            (ACCENT_RED, "0–19", "💀 Avoid", "Almost no criteria met. High risk, low reward."),
-        ]
-
-        for color, rng, label, desc in score_ranges:
-            st.markdown(f"""
-            <div style="background:{BG_CARD};border:1px solid {color}44;border-left:3px solid {color};
-                        border-radius:6px;padding:12px 16px;margin-bottom:8px">
-                <div style="color:{color};font-weight:700;font-size:16px">{rng} — {label}</div>
-                <div style="color:{TEXT_MUTED};font-size:13px;margin-top:4px">{desc}</div>
-            </div>""", unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:6px;padding:16px;margin-top:12px;color:{TEXT_MUTED};font-size:13px">
-            <b style="color:{TEXT_PRIMARY}">Score Components vary by scanner:</b><br><br>
-            <b>Momentum Score:</b> Trend alignment (30pts) + RSI range (20pts) + MACD (20pts) + Volume (15pts) + Breakout (10pts) + RS (5pts)<br><br>
-            <b>Value Score:</b> P/E level (25pts) + P/B level (20pts) + ROE strength (20pts) + Debt level (15pts) + FCF positive (10pts) + Price vs 200 SMA (10pts)<br><br>
-            <b>Options Score:</b> IV Rank level (30pts) + Delta in range (25pts) + Premium % (25pts) + Spread tightness (10pts) + Trend direction (10pts)
-        </div>""", unsafe_allow_html=True)
-
+    # ── Tab 6: Dividends ───────────────────────────────────────────
     with tabs[5]:
-        st.markdown(f"""
-        <div style="background:{BG_CARD};border:2px solid {ACCENT_RED}55;border-radius:10px;padding:28px;color:{TEXT_PRIMARY};line-height:1.9;font-size:14px">
-        <h3 style="color:{ACCENT_RED};font-family:'Cormorant Garamond',serif;font-size:22px">⚠️ Important Disclaimer</h3>
+        _expander("💵", "Upcoming Dividends",
+            "Identifies stocks approaching their ex-dividend date with strong technical setups. "
+            "To receive a dividend, you must own the stock before the ex-dividend date. "
+            "This scanner helps you find dividend-paying stocks that are also technically sound "
+            "— not just high-yield traps.",
+            "Key columns: Ex-Date (you must own shares before this date), Yield % (annual dividend "
+            "as a percentage of stock price), and DTE (days until ex-dividend). "
+            "Sort by Yield % to see the highest income opportunities. Check the Score column "
+            "to confirm the stock has a healthy technical setup.",
+            "A high dividend yield on a falling stock is often a warning sign, not an opportunity. "
+            "The technical score filters help avoid these situations."
+        )
+        _expander("📅", "Dividend + CC Capture",
+            "A two-income strategy: buy shares before the ex-dividend date to capture the dividend, "
+            "then simultaneously sell a covered call to collect additional premium. "
+            "Two income streams from one position.",
+            "The scanner finds stocks where the combination of dividend yield plus covered call premium "
+            "creates an attractive combined return. Total Return % column shows the combined income "
+            "potential. Review carefully — the call strike determines how much upside you retain "
+            "if the stock rallies.",
+            "This strategy works best on stable, dividend-paying companies that trade in a consistent range. "
+            "High-volatility dividend stocks can gap down after the ex-date, erasing the income."
+        )
 
-        <p><b>Golden Scanner is an educational and research tool only.</b> Nothing on this platform constitutes financial advice, investment advice, trading advice, or any other form of advice.</p>
+    # ── Tab 7: Reading Results ─────────────────────────────────────
+    with tabs[6]:
+        st.markdown(
+            f'<h3 style="color:{GOLD};font-family:\'Cormorant Garamond\',serif">Signal Score (0–100)</h3>'
+            f'<p style="color:{TEXT_MUTED};font-size:13px;line-height:1.8">Every result includes a composite '
+            f'Signal Score that combines multiple independent signals into one number. '
+            f'Use it to rank and prioritize — higher score means more signals aligned, not a guaranteed outcome.</p>',
+            unsafe_allow_html=True,
+        )
 
-        <p>The signals, scores, and data presented are generated algorithmically using publicly available market data. They are provided for <b>informational and educational purposes only</b> and should not be interpreted as recommendations to buy, sell, or hold any security.</p>
+        score_rows = [
+            (ACCENT_GREEN, "80 – 100", "&#128293; Strong Setup",
+             "Near-perfect alignment across all measured signals. Highest conviction — act with appropriate sizing."),
+            ("#86EFAC",    "60 – 79",  "&#9989; Solid Setup",
+             "Most signals aligned. Good risk/reward ratio. Worth detailed review before trading."),
+            (TEXT_MUTED,   "40 – 59",  "&#9898; Neutral",
+             "Mixed signals. Some criteria met, others not. Wait for stronger alignment or wider context."),
+            ("#FCA5A5",    "20 – 39",  "&#128315; Weak",
+             "Few signals aligned. Low-conviction setup. Avoid or monitor for improvement."),
+            (ACCENT_RED,   "0 – 19",   "&#128128; Avoid",
+             "Setup does not meet quality criteria. Move on."),
+        ]
+        for color, rng, label, desc in score_rows:
+            st.markdown(
+                f'<div style="background:{BG_CARD};border:1px solid {color}44;border-left:3px solid {color};'
+                f'border-radius:6px;padding:12px 16px;margin-bottom:8px">'
+                f'<div style="display:flex;justify-content:space-between;align-items:center">'
+                f'<span style="color:{color};font-weight:700;font-size:15px">{label}</span>'
+                f'<span style="color:{color};font-family:\'DM Mono\',monospace;font-size:13px">{rng}</span>'
+                f'</div>'
+                f'<div style="color:{TEXT_MUTED};font-size:12px;margin-top:5px">{desc}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
-        <p><b>Trading involves substantial risk of loss.</b> Options trading in particular carries significant leverage risk. 3× leveraged ETFs are complex instruments subject to volatility decay and are not suitable for most investors.</p>
+        st.markdown(
+            f'<h3 style="color:{GOLD};font-family:\'Cormorant Garamond\',serif;margin-top:24px">Common Columns</h3>',
+            unsafe_allow_html=True,
+        )
+        columns = [
+            ("RSI", "Relative Strength Index — measures momentum. Values above 50 indicate buying pressure. Very high RSI suggests the move may be overextended."),
+            ("Vol Ratio", "Current volume compared to recent average. Above 1.0 means more activity than usual, which confirms price moves are real."),
+            ("RS vs SPY", "Relative strength compared to the S&P 500. Above 1.0 means the stock is outperforming the index — a sign of institutional interest."),
+            ("ATR %", "Average True Range as a percentage — measures how much the stock typically moves per day. Use this to size positions and set stop distances."),
+            ("MACD Bull", "Whether short-term momentum is accelerating to the upside. ✅ = positive momentum. ❌ = momentum fading."),
+            ("Change %", "Today's price change as a percentage. Color-coded: green = up, red = down."),
+            ("Score", "The composite Signal Score. Higher = more signals aligned = higher conviction setup."),
+            ("Hold", "Recommended holding period for the strategy type. Not a hard rule — your risk management overrides this."),
+            ("Est. Upside %", "Rough estimate of potential upside to the 52-week high. A target zone, not a price prediction."),
+        ]
+        col_html = "".join(
+            f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;padding:10px 14px">'
+            f'<div style="color:{GOLD};font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;margin-bottom:4px">{col}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.6">{meaning}</div>'
+            f'</div>'
+            for col, meaning in columns
+        )
+        st.markdown(
+            f'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-top:8px">'
+            f'{col_html}</div>',
+            unsafe_allow_html=True,
+        )
 
-        <p>Past performance of any scanner criteria is <b>not indicative of future results.</b> Market conditions change, and historical patterns do not guarantee future performance.</p>
-
-        <p>Always consult a qualified financial advisor before making investment decisions. Always do your own due diligence. Never risk capital you cannot afford to lose.</p>
-
-        <div style="margin-top:20px;padding:16px;background:{BG_PANEL};border-radius:6px;color:{TEXT_MUTED};font-size:12px">
-            Data sourced from Yahoo Finance via yfinance. Options data may have 15-minute delays.
-            Fundamental data is end-of-day. Neither the platform nor its creators are registered investment advisors.
-            Use at your own risk.
-        </div>
-        </div>""", unsafe_allow_html=True)
+    # ── Tab 8: Disclaimer ──────────────────────────────────────────
+    with tabs[7]:
+        st.markdown(
+            f'<div style="background:{BG_CARD};border:2px solid {ACCENT_RED}44;border-radius:10px;'
+            f'padding:28px;color:{TEXT_PRIMARY};line-height:1.9;font-size:14px">'
+            f'<h3 style="color:{ACCENT_RED};font-family:\'Cormorant Garamond\',serif;font-size:22px">'
+            f'&#9888;&#65039; Important Disclaimer</h3>'
+            f'<p><b>Golden Scanner is an educational and research tool only.</b> Nothing on this platform '
+            f'constitutes financial advice, investment advice, trading advice, or any other form of advice.</p>'
+            f'<p>Signals, scores, and data are generated from publicly available market data for '
+            f'<b>informational and educational purposes only</b> and should not be interpreted as '
+            f'recommendations to buy, sell, or hold any security.</p>'
+            f'<p><b>Trading involves substantial risk of loss.</b> Options trading carries significant '
+            f'leverage risk. 3&#215; leveraged ETFs are complex instruments subject to volatility '
+            f'decay and compounding losses — they are not suitable for most investors.</p>'
+            f'<p>Past performance of any signals or scanner criteria is <b>not indicative of future results.</b> '
+            f'Markets change. Historical patterns do not guarantee future performance.</p>'
+            f'<p>Always consult a qualified financial advisor before making investment decisions. '
+            f'Always do your own due diligence. Never risk capital you cannot afford to lose.</p>'
+            f'<div style="margin-top:20px;padding:14px;background:{BG_PANEL};border-radius:6px;'
+            f'color:{TEXT_MUTED};font-size:12px">'
+            f'Data sourced from Yahoo Finance. Options data may have delays. '
+            f'Fundamental data is end-of-day. Neither this platform nor its creators are registered '
+            f'investment advisors. Use entirely at your own risk.</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )

@@ -273,25 +273,17 @@ hr {{ border-color: {BORDER_COLOR}; }}
     margin: 20px 0;
 }}
 
-/* Logo area */
-.gs-logo {{
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 26px;
-    font-weight: 700;
-    color: {GOLD};
-    letter-spacing: 2px;
-    text-align: center;
-    padding: 20px 0 8px 0;
-    border-bottom: 1px solid {BORDER_COLOR};
-    margin-bottom: 8px;
-}}
-.gs-tagline {{
-    color: {TEXT_MUTED};
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    text-align: center;
-    margin-bottom: 20px;
+/* Tiny sidebar home button */
+[data-testid="stSidebar"] [data-testid="stButton"]:has(button[title="Market Overview"]) button,
+[data-testid="stSidebar"] [data-testid="stButton"]:has(button[aria-label="Market Overview"]) button {{
+    background: transparent !important;
+    border: 1px solid {BORDER_COLOR} !important;
+    color: {GOLD} !important;
+    font-size: 18px !important;
+    padding: 4px 0 !important;
+    min-height: 36px !important;
+    width: 100% !important;
+    border-radius: 6px !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -340,12 +332,31 @@ if _cur_nav and "──" in _cur_nav:
 
 # ── Sidebar Navigation ─────────────────────────────────────────
 with st.sidebar:
-    st.markdown('<div class="gs-logo">✦ GOLDEN SCANNER</div>', unsafe_allow_html=True)
-    st.markdown('<div class="gs-tagline">Precision Trading Intelligence</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="display:flex;align-items:center;gap:10px;padding:16px 8px 6px 8px;border-bottom:1px solid {BORDER_COLOR};margin-bottom:6px">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+            <circle cx="18" cy="18" r="16" stroke="{GOLD}" stroke-width="1.5" fill="none" opacity="0.35"/>
+            <circle cx="18" cy="18" r="10" stroke="{GOLD}" stroke-width="1.5" fill="none" opacity="0.6"/>
+            <circle cx="18" cy="18" r="3" fill="{GOLD}" opacity="0.9"/>
+            <line x1="18" y1="2" x2="18" y2="8" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
+            <line x1="18" y1="28" x2="18" y2="34" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
+            <line x1="2" y1="18" x2="8" y2="18" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
+            <line x1="28" y1="18" x2="34" y2="18" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
+            <line x1="13" y1="18" x2="23" y2="18" stroke="{GOLD}" stroke-width="1" opacity="0.4"/>
+            <line x1="18" y1="13" x2="18" y2="23" stroke="{GOLD}" stroke-width="1" opacity="0.4"/>
+        </svg>
+        <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:{GOLD};letter-spacing:2px;line-height:1.1">GOLDEN SCANNER</div>
+            <div style="color:{TEXT_MUTED};font-size:9px;letter-spacing:2.5px;text-transform:uppercase;margin-top:2px">Precision Trading Intelligence</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.button("🏠  Home", use_container_width=True, on_click=_go_home)
+    _hcol1, _hcol2 = st.columns([1, 4])
+    with _hcol1:
+        st.button("🏠", key="_sidebar_home", help="Market Overview", use_container_width=True, on_click=_go_home)
 
-    st.markdown(f'<div style="color:{TEXT_MUTED};font-size:10px;text-transform:uppercase;letter-spacing:1px;margin:8px 0 8px">Navigate</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="color:{TEXT_MUTED};font-size:10px;text-transform:uppercase;letter-spacing:1px;margin:4px 0 6px">Navigate</div>', unsafe_allow_html=True)
 
     page = st.radio(
         "Navigation",
