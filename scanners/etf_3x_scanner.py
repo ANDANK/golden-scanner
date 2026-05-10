@@ -139,7 +139,11 @@ def render():
 
     if run:
         df = scan_3x_etfs(ETF_3X_UNIVERSE, rsi_min, rsi_max, vol_mult, price_min, direction_filter)
+        st.session_state["_3x_r"] = df
 
+    _3x_r = st.session_state.get("_3x_r")
+    if _3x_r is not None:
+        df = _3x_r
         if df.empty:
             empty_state("No 3× ETF setups found. Adjust RSI or volume filter.")
         else:

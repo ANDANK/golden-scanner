@@ -168,7 +168,11 @@ def render():
                        "XLE", "XLV", "EEM", "ARKK", "SOXX", "VNQ", "XLY"]
         df = scan_etf_options(liquid_etfs, iv_rank_min, delta_min, delta_max,
                               premium_pct_min, dte_min, dte_max, trade_type)
+        st.session_state["_etfopt_r"] = df
 
+    _etfopt_r = st.session_state.get("_etfopt_r")
+    if _etfopt_r is not None:
+        df = _etfopt_r
         if df.empty:
             empty_state("No ETF option setups found. Lower IV rank or premium threshold.")
         else:

@@ -375,7 +375,7 @@ def render():
             st.cache_data.clear()
             st.rerun()
 
-    if not run:
+    if not run and "_golden_r" not in st.session_state:
         # Legend
         cards = []
         for name, meta in SCANNER_META.items():
@@ -412,12 +412,16 @@ def render():
     status = st.empty()
     progress_bar = st.progress(0)
 
-    with st.spinner("Running all scanners…"):
-        df = run_combined(tickers, include_value, include_growth, status)
-        progress_bar.progress(1.0)
+    if run:
+        with st.spinner("Running all scanners…"):
+            df = run_combined(tickers, include_value, include_growth, status)
+            progress_bar.progress(1.0)
+        progress_bar.empty()
+        st.session_state["_golden_r"] = df
+    else:
+        progress_bar.empty()
 
-    progress_bar.empty()
-
+    df = st.session_state.get("_golden_r", pd.DataFrame())
     if df.empty:
         empty_state("No setups found across any scanner. Try increasing universe size or loosening filters.")
         return

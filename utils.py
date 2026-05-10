@@ -382,13 +382,26 @@ def _extract_price(row: pd.Series) -> str:
     return ""
 
 
+# ── Tracker callbacks (on_click — fire before rerun) ──────────
+def _cb_track(ticker, strategy, source, price_str):
+    from scanners.gsheet_helper import add_to_tracking
+    ok, msg = add_to_tracking(ticker, strategy, source, price_str)
+    notes = st.session_state.setdefault("_tracker_notes", [])
+    notes.append(("✅" if ok else "⚠️", msg))
+
+def _cb_watch(ticker, source, price_str):
+    from scanners.gsheet_helper import add_to_watchlist
+    ok, msg = add_to_watchlist(ticker, source, price_str)
+    notes = st.session_state.setdefault("_tracker_notes", [])
+    notes.append(("✅" if ok else "⚠️", msg))
+
+
 def render_tracker_widget(tickers: list, strategy: str = "Stock", source: str = "",
                           prices: dict | None = None):
-    """Per-row Track/Watch action strip — one row per ticker with buttons."""
+    """Per-row Track/Watch strip — one row per ticker with on_click buttons."""
     if not tickers:
         return
     import re, hashlib
-    from scanners.gsheet_helper import add_to_tracking, add_to_watchlist
 
     def _safe(s):
         return re.sub(r"[^a-zA-Z0-9]", "_", str(s))
@@ -400,46 +413,41 @@ def render_tracker_widget(tickers: list, strategy: str = "Stock", source: str = 
         f'text-transform:uppercase;margin:14px 0 4px">📌 Track &nbsp;/&nbsp; 👁 Watch</div>',
         unsafe_allow_html=True,
     )
-    # Compact CSS for the tiny action buttons in this strip
-    st.markdown("""
-    <style>
-    div[data-testid="stHorizontalBlock"]:has(button[kind="secondary"].tw-btn) button {
-        min-height: 32px !important; font-size: 12px !important; padding: 2px 6px !important;
-    }
-    </style>""", unsafe_allow_html=True)
 
     for i, ticker in enumerate(tickers):
-        price_str = (prices or {}).get(ticker, "")
+        price_str = (prices or {}).get(str(ticker), "")
         c_tkr, c_strat, c_price, c_trk, c_wch = st.columns([2, 2, 2, 1, 1])
         with c_tkr:
             st.markdown(
-                f'<div style="padding:4px 0;color:{GOLD};font-family:\'DM Mono\',monospace;'
+                f'<div style="padding:5px 0;color:{GOLD};font-family:\'DM Mono\',monospace;'
                 f'font-weight:700;font-size:13px">{ticker}</div>',
                 unsafe_allow_html=True,
             )
         with c_strat:
             st.markdown(
-                f'<div style="padding:4px 0;color:{TEXT_MUTED};font-size:12px">{strategy}</div>',
+                f'<div style="padding:5px 0;color:{TEXT_MUTED};font-size:12px">{strategy}</div>',
                 unsafe_allow_html=True,
             )
         with c_price:
             st.markdown(
-                f'<div style="padding:4px 0;color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;'
+                f'<div style="padding:5px 0;color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;'
                 f'font-size:12px">{"$" + price_str if price_str else "—"}</div>',
                 unsafe_allow_html=True,
             )
         with c_trk:
-            if st.button("📌 Track", key=f"trk_{key_base}_{i}_{_safe(ticker)}",
-                         use_container_width=True,
-                         help=f"Track {ticker} — {strategy}"):
-                ok, msg = add_to_tracking(ticker, strategy, source, price_str)
-                st.toast(msg, icon="✅" if ok else "⚠️")
+            st.button("📌 Track",
+                      key=f"trk_{key_base}_{i}_{_safe(ticker)}",
+                      use_container_width=True,
+                      help=f"Track {ticker} ({strategy}) — 100 shares or 1 contract",
+                      on_click=_cb_track,
+                      args=(ticker, strategy, source, price_str))
         with c_wch:
-            if st.button("👁 Watch", key=f"wch_{key_base}_{i}_{_safe(ticker)}",
-                         use_container_width=True,
-                         help=f"Add {ticker} to WatchList"):
-                ok, msg = add_to_watchlist(ticker, source, price_str)
-                st.toast(msg, icon="✅" if ok else "⚠️")
+            st.button("👁 Watch",
+                      key=f"wch_{key_base}_{i}_{_safe(ticker)}",
+                      use_container_width=True,
+                      help=f"Add {ticker} to WatchList",
+                      on_click=_cb_watch,
+                      args=(ticker, source, price_str))
 
 
 def render_results_table(df: pd.DataFrame, score_col: str = "Score",

@@ -179,7 +179,11 @@ def render():
     if run:
         df = scan_3x_options(OPTIONABLE_3X, iv_rank_min, delta_min, delta_max,
                              premium_pct_min, dte_min, dte_max)
+        st.session_state["_3xopt_r"] = df
 
+    _3xopt_r = st.session_state.get("_3xopt_r")
+    if _3xopt_r is not None:
+        df = _3xopt_r
         if df.empty:
             empty_state("No 3× ETF option setups. Lower premium % or IV rank threshold.")
         else:

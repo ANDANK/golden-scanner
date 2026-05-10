@@ -127,7 +127,11 @@ def render():
     if run:
         df = scan_value(tickers, pe_max, pb_max, roe_min, de_max,
                         div_filter, price_min, price_max)
+        st.session_state["_val_r"] = df
 
+    _val_r = st.session_state.get("_val_r")
+    if _val_r is not None:
+        df = _val_r
         if df.empty:
             empty_state("No value stocks matched. Try relaxing P/E, ROE, or D/E filters.")
         else:

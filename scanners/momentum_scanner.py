@@ -163,7 +163,11 @@ def render():
     if run:
         df, diag = scan_momentum(tickers, rsi_min, rsi_max, vol_mult, price_min, price_max,
                                  mcap_min, exclude_days)
+        st.session_state["_mom_r"] = (df, diag)
 
+    _mom_r = st.session_state.get("_mom_r")
+    if _mom_r is not None:
+        df, diag = _mom_r
         if df.empty:
             empty_state("No momentum setups found. Widen filters or expand universe.")
             diag.render(hide_when_clean=False)

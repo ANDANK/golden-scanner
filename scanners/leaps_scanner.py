@@ -156,7 +156,11 @@ def render():
 
     if run:
         df, diag = scan_leaps(tickers, dte_min, delta_min, delta_max, iv_rank_max, price_min, price_max)
+        st.session_state["_leaps_r"] = (df, diag)
 
+    _leaps_r = st.session_state.get("_leaps_r")
+    if _leaps_r is not None:
+        df, diag = _leaps_r
         if df.empty:
             empty_state("No LEAPS found. Check if long-dated options exist for these tickers, or lower DTE minimum.")
             diag.render(hide_when_clean=False)

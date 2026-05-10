@@ -140,7 +140,11 @@ def render():
 
     if run:
         df, diag = scan_growth(tickers, rev_growth_min, eps_growth_min, rs_min, price_min, price_max)
+        st.session_state["_growth_r"] = (df, diag)
 
+    _growth_r = st.session_state.get("_growth_r")
+    if _growth_r is not None:
+        df, diag = _growth_r
         if df.empty:
             empty_state("No growth leaders found. Lower Rev/EPS thresholds or RS minimum.")
             diag.render(hide_when_clean=False)

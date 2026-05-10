@@ -154,7 +154,11 @@ def render():
     if run:
         df, diag = scan_csp(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
                             spread_pct_max, dte_min, dte_max)
+        st.session_state["_csp_r"] = (df, diag)
 
+    _csp_r = st.session_state.get("_csp_r")
+    if _csp_r is not None:
+        df, diag = _csp_r
         if df.empty:
             empty_state("No CSP setups found. Try lowering IV Rank minimum or expanding DTE range.")
             diag.render(hide_when_clean=False)

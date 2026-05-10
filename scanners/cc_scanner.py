@@ -141,7 +141,11 @@ def render():
 
     if run:
         df, diag = scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max)
+        st.session_state["_cc_r"] = (df, diag)
 
+    _cc_r = st.session_state.get("_cc_r")
+    if _cc_r is not None:
+        df, diag = _cc_r
         if df.empty:
             empty_state("No covered call setups. Lower premium threshold or adjust DTE.")
             diag.render(hide_when_clean=False)

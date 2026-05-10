@@ -320,6 +320,13 @@ if not st.session_state["authenticated"]:
     st.stop()
 
 
+# ── Tracker notifications (on_click callbacks store here; shown every rerun) ──
+_pending = st.session_state.get("_tracker_notes", [])
+if _pending:
+    for _icon, _msg in _pending:
+        st.toast(_msg, icon=_icon)
+    st.session_state["_tracker_notes"] = []
+
 # ── Pre-render nav fixes (MUST be before any widget with key="nav_page") ──
 # on_click callback used by all Home buttons — fires before widget renders
 def _go_home():

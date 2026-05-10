@@ -113,45 +113,47 @@ def render():
 
     if run:
         df = scan_headlines(tickers, move_min, vol_spike, gap_filter)
+        st.session_state["_hdl_r"] = df
 
+    _hdl_r = st.session_state.get("_hdl_r")
+    if _hdl_r is not None:
+        df = _hdl_r
         if df.empty:
             empty_state("No headline movers found. Lower the Move % or Volume Spike threshold.")
-            return
+        else:
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                metric_card("Movers Found", str(len(df)), color=GOLD)
+            with col2:
+                bulls = (df["Direction"] == "🟢 Bullish").sum()
+                metric_card("Bullish", str(bulls), color=ACCENT_GREEN)
+            with col3:
+                bears = (df["Direction"] == "🔴 Bearish").sum()
+                metric_card("Bearish", str(bears), color=ACCENT_RED)
+            with col4:
+                max_move = df["Change %"].abs().max()
+                metric_card("Biggest Move", f"{max_move:.1f}%", color=GOLD)
 
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            metric_card("Movers Found", str(len(df)), color=GOLD)
-        with col2:
-            bulls = (df["Direction"] == "🟢 Bullish").sum()
-            metric_card("Bullish", str(bulls), color=ACCENT_GREEN)
-        with col3:
-            bears = (df["Direction"] == "🔴 Bearish").sum()
-            metric_card("Bearish", str(bears), color=ACCENT_RED)
-        with col4:
-            max_move = df["Change %"].abs().max()
-            metric_card("Biggest Move", f"{max_move:.1f}%", color=GOLD)
+            st.markdown("<br>", unsafe_allow_html=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
+            top = df.iloc[0]
+            st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🔥 Biggest Mover — Recent Headlines</div>', unsafe_allow_html=True)
 
-        # Show top mover with news headlines
-        top = df.iloc[0]
-        st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🔥 Biggest Mover — Recent Headlines</div>', unsafe_allow_html=True)
+            news = get_news(top["Ticker"])
+            chg_color = ACCENT_GREEN if top["Change %"] >= 0 else ACCENT_RED
 
-        news = get_news(top["Ticker"])
-        chg_color = ACCENT_GREEN if top["Change %"] >= 0 else ACCENT_RED
+            st.markdown(f"""
+            <div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:8px;padding:16px 20px;margin-bottom:16px">
+                <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
+                    <span style="color:{GOLD};font-size:24px;font-family:'Cormorant Garamond',serif;font-weight:700">{top['Ticker']}</span>
+                    <span style="color:{TEXT_PRIMARY};font-size:18px">${top['Price']:.2f}</span>
+                    <span style="color:{chg_color};font-size:16px;font-weight:600">{top['Change %']:+.2f}%</span>
+                    <span style="color:{TEXT_MUTED};font-size:12px">{top['Catalysts']}</span>
+                </div>
+                {''.join([f'<div style="padding:6px 0;border-bottom:1px solid {BORDER_COLOR};color:{TEXT_PRIMARY};font-size:13px">📰 {n.get("title","")}</div>' for n in news[:3]]) if news else f'<div style="color:{TEXT_MUTED};font-size:13px">No headlines available via API.</div>'}
+            </div>""", unsafe_allow_html=True)
 
-        st.markdown(f"""
-        <div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:8px;padding:16px 20px;margin-bottom:16px">
-            <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
-                <span style="color:{GOLD};font-size:24px;font-family:'Cormorant Garamond',serif;font-weight:700">{top['Ticker']}</span>
-                <span style="color:{TEXT_PRIMARY};font-size:18px">${top['Price']:.2f}</span>
-                <span style="color:{chg_color};font-size:16px;font-weight:600">{top['Change %']:+.2f}%</span>
-                <span style="color:{TEXT_MUTED};font-size:12px">{top['Catalysts']}</span>
-            </div>
-            {''.join([f'<div style="padding:6px 0;border-bottom:1px solid {BORDER_COLOR};color:{TEXT_PRIMARY};font-size:13px">📰 {n.get("title","")}</div>' for n in news[:3]]) if news else f'<div style="color:{TEXT_MUTED};font-size:13px">No headlines available via API.</div>'}
-        </div>""", unsafe_allow_html=True)
-
-        render_results_table(df, strategy="Stock", source="Headlines & Catalysts")
+            render_results_table(df, strategy="Stock", source="Headlines & Catalysts")
     else:
         st.markdown(f"""
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">

@@ -301,7 +301,11 @@ def render():
             tickers, ex_div_days_max, div_amt_min, price_min, price_max,
             cc_otm_max_pct, min_income_pct,
         )
+        st.session_state["_divcc_r"] = (df, diag)
 
+    _divcc_r = st.session_state.get("_divcc_r")
+    if _divcc_r is not None:
+        df, diag = _divcc_r
         if df.empty:
             empty_state(
                 "No setups found. Try: increase 'Max Days to Ex-Div', "
