@@ -361,7 +361,7 @@ def render():
             f'&#9881;&#65039; Combined Scan Settings</div>',
             unsafe_allow_html=True,
         )
-        universe_size = st.slider("Universe Size (tickers)", 30, len(SP500_SAMPLE), 120, 10)
+        universe_size = st.slider("Universe Size (tickers)", 30, len(SP500_SAMPLE), 200, 10)
         include_value  = st.checkbox("Include Value Scanner (slower)", value=False)
         include_growth = st.checkbox("Include Growth Scanner (slower)", value=False)
 

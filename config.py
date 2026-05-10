@@ -14,44 +14,55 @@ TEXT_PRIMARY = "#F1F1F1"
 TEXT_MUTED   = "#6B7280"
 BORDER_COLOR = "#2A2A3A"
 
-# ── Universe Definitions ───────────────────────────────────────
+# ── Universe — Stocks + ETFs combined ─────────────────────────
+# First 200 entries = default scan (mega-caps + key ETFs + large-caps)
+# Positions 1–20:   Top mega-cap stocks
+# Positions 21–40:  Key ETFs (always in default 200 scan)
+# Positions 41–200: Large-cap S&P 500 stocks
+# Positions 201+:   Extended S&P 500 + remaining ETFs
 SP500_SAMPLE = [
-    # Mega-cap & top tech
+    # ── Mega-cap stocks (1–20) ────────────────────────────────
     "AAPL","MSFT","NVDA","AMZN","GOOGL","META","BRK-B","LLY","AVGO","TSLA",
     "UNH","JPM","XOM","V","MA","PG","JNJ","HD","COST","MRK",
+    # ── Key ETFs (21–40) — included in default 200 scan ──────
+    "SPY","QQQ","IWM","DIA","VTI","VOO","GLD","SLV","TLT","HYG",
+    "XLK","XLF","XLE","XLV","XLI","XLU","XLP","XLY","SOXX","ARKK",
+    # ── Large-cap S&P 500 (41–200) ───────────────────────────
     "ABBV","CVX","CRM","BAC","PEP","ADBE","NFLX","TMO","ACN","WMT",
     "MCD","AMD","CSCO","ORCL","ABT","CAT","GS","TXN","INTU","QCOM",
     "MS","ISRG","AMAT","AMGN","BLK","MDT","SPGI","AXP","GILD","BKNG",
     "ADI","NOW","PLD","DUK","SO","NEE","SLB","CI","ELV","HUM",
     "DE","MMM","F","GM","INTC","GE","BA","RTX","LMT","HON",
     "ZTS","BSX","SYK","DHR","EW","REGN","VRTX","MRNA","PFE","BMY",
-    "KO","MDLZ","STZ","MO","PM","EL","CL","K","GIS","HSY",
+    "KO","MDLZ","STZ","MO","PM","EL","CL","KMB","GIS","HSY",
     "WFC","C","USB","PNC","TFC","COF","AIG","PRU","MET","AFL",
-    # Communications / Media
     "DIS","TMUS","VZ","T","CMCSA","CHTR","NWSA","PARA","WBD","FOXA",
-    # Consumer Discretionary
     "NKE","SBUX","LOW","TJX","ROST","DG","DLTR","ABNB","MAR","HLT",
-    # Consumer Staples
-    "KR","SYY","ADM","KMB","CHD","CLX","MNST","CHRW","COR","DPZ",
-    # Energy
+    "KR","SYY","ADM","CHD","CLX","MNST","CHRW","COR","DPZ","YUM",
     "COP","OXY","PSX","MPC","VLO","EOG","KMI","WMB","OKE","HES",
-    # Financials
     "SCHW","BX","KKR","AON","MMC","CB","TRV","ALL","PGR","MCO",
     "ICE","CME","NDAQ","BK","STT","NTRS","AMP","TROW","RJF","BEN",
-    # Healthcare
     "MCK","CAH","CNC","IQV","A","ILMN","IDXX","VEEV","ZBH","HCA",
-    # Industrials
+    # ── Extended S&P 500 stocks (201–330) ────────────────────
     "EMR","ETN","ITW","PH","ROK","FAST","GWW","URI","CMI","CARR",
     "OTIS","PCAR","GD","NOC","LHX","UNP","CSX","NSC","UPS","FDX",
-    # Tech (broader)
     "ADP","PAYX","FIS","FI","IBM","PANW","FTNT","SNPS","CDNS","ADSK",
     "WDAY","PLTR","SNOW","CRWD","NET","DDOG","MDB","OKTA","ZS","TEAM",
-    # Materials
     "ECL","SHW","LIN","APD","DD","DOW","NEM","FCX","NUE","ALB",
-    # Real Estate
     "AMT","EQIX","CCI","PSA","AVB","EQR","WELL","VTR","O","DLR",
+    "LULU","ETSY","RL","TPR","HAS","AZO","ORLY","TSCO","BBY","KMX",
+    "DVN","FANG","APA","MRO","HAL","BKR","CTRA","SRE","ED","EIX",
+    "MCHP","SWKS","KEYS","TER","MPWR","ZBRA","IT","CDW","VRSN","ANSS",
+    "CTSH","AKAM","EFX","BR","UBER","APTV","BWA","GPC","LKQ","PAYC",
+    "WAT","ALGN","RMD","DXCM","MTD","IEX","TFX","HOLX","BIO","VTRS",
+    "DAL","UAL","LUV","AAL","ODFL","JBHT","IR","GNRC","TT","EXPD",
+    "ZION","CFG","FITB","KEY","HBAN","RF","WRB","CINF","FAF","FHN",
+    # ── Remaining ETFs (331–350) ──────────────────────────────
+    "EEM","EFA","VEA","VWO","AGG","BND","LQD","MUB","VCIT","VCSH",
+    "ARKW","ARKG","IYR","VNQ","JETS","XRT","KRE","IAT","XLB","XLRE",
 ]
 
+# ETF_UNIVERSE kept for backward compatibility with etf_scanner.py
 ETF_UNIVERSE = [
     "SPY","QQQ","IWM","DIA","VTI","VOO","GLD","SLV","TLT","HYG",
     "XLK","XLF","XLE","XLV","XLI","XLU","XLP","XLY","XLB","XLRE",
@@ -101,18 +112,13 @@ LEAPS_DEFAULTS = {
 }
 
 # ── Options Strike Targeting ───────────────────────────────────
-# Single source of truth for per-scanner strike ranges and delta targets.
-# Used by data_loader.pick_strike() in CSP / CC / LEAPS scanners.
 OPTIONS_STRIKE_RANGES = {
-    # Cash-secured puts: OTM puts, target ~0.20 delta, ~91% of price as fallback
     "CSP":   {"min_pct": 0.75, "max_pct": 0.98, "target_delta": 0.22,
               "fallback_pct": 0.91, "is_call": False,
               "delta_floor": 0.05, "delta_ceiling": 0.50},
-    # Covered calls: OTM calls, target ~0.20 delta, ~5% OTM as fallback
     "CC":    {"min_pct": 1.01, "max_pct": 1.30, "target_delta": 0.20,
               "fallback_pct": 1.05, "is_call": True,
               "delta_floor": 0.05, "delta_ceiling": 0.50},
-    # LEAPS: deep ITM calls, target ~0.70 delta, ~88% of price as fallback
     "LEAPS": {"min_pct": 0.75, "max_pct": 0.99, "target_delta": 0.70,
               "fallback_pct": 0.88, "is_call": True,
               "delta_floor": 0.40, "delta_ceiling": 0.95},

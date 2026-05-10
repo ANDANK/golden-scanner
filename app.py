@@ -352,19 +352,19 @@ with st.sidebar:
         key="nav_page",
         options=[
             "🏠  Market Overview",
+            "📱  Social Trends",
             "── STOCKS ──",
             "🔀  Golden Scan",
-            "🔬  Deep Analysis",
+            "🔬  Stock Analysis",
             "📰  Headlines & Catalysts",
-            "── ETF ──",
-            "📊  ETF Trends",
+            "── 3X ──",
             "⚡📊  3× Leveraged ETFs",
+            "⚡📈  3× ETF Options",
             "── OPTIONS ──",
             "💰  Cash-Secured Puts",
             "📦  Covered Calls",
             "🧨  LEAPS",
             "📈  ETF Options",
-            "⚡📈  3× ETF Options",
             "── DIVIDEND ──",
             "💵  Upcoming Dividends",
             "📅  Dividend + CC Capture",
@@ -389,35 +389,23 @@ if page and page != "🏠  Market Overview" and "──" not in page:
 if page == "🏠  Market Overview":
     from scanners.home import render
     render()
+elif page == "📱  Social Trends":
+    from scanners.social_trends import render
+    render()
 elif page == "🔀  Golden Scan":
     from scanners.combined_scanner import render
     render()
-elif page == "⚡  Momentum":
-    from scanners.momentum_scanner import render
-    render()
-elif page == "💎  Value":
-    from scanners.value_scanner import render
-    render()
-elif page == "🚀  Growth":
-    from scanners.growth_scanner import render
+elif page == "🔬  Stock Analysis":
+    from scanners.deep_analysis import render
     render()
 elif page == "📰  Headlines & Catalysts":
     from scanners.headlines_scanner import render
     render()
-elif page == "📡  MACD Power Cross":
-    from scanners.technical_hackers import render_macd_cross as render
+elif page == "⚡📊  3× Leveraged ETFs":
+    from scanners.etf_3x_scanner import render
     render()
-elif page == "🏛  Trend Stack":
-    from scanners.technical_hackers import render_trend_stack as render
-    render()
-elif page == "🌀  Volatility Squeeze":
-    from scanners.technical_hackers import render_squeeze as render
-    render()
-elif page == "🐋  High-Volume Breakout":
-    from scanners.technical_hackers import render_hvb as render
-    render()
-elif page == "🎯  Multi-Factor Breakout":
-    from scanners.technical_hackers import render_multifactor as render
+elif page == "⚡📈  3× ETF Options":
+    from scanners.etf_3x_options_scanner import render
     render()
 elif page == "💰  Cash-Secured Puts":
     from scanners.csp_scanner import render
@@ -428,26 +416,14 @@ elif page == "📦  Covered Calls":
 elif page == "🧨  LEAPS":
     from scanners.leaps_scanner import render
     render()
-elif page == "📊  ETF Trends":
-    from scanners.etf_scanner import render
-    render()
 elif page == "📈  ETF Options":
     from scanners.etf_options_scanner import render
-    render()
-elif page == "⚡📊  3× Leveraged ETFs":
-    from scanners.etf_3x_scanner import render
-    render()
-elif page == "⚡📈  3× ETF Options":
-    from scanners.etf_3x_options_scanner import render
     render()
 elif page == "💵  Upcoming Dividends":
     from scanners.dividend_hacker import render
     render()
 elif page == "📅  Dividend + CC Capture":
     from scanners.dividend_cc_scanner import render
-    render()
-elif page == "🔬  Deep Analysis":
-    from scanners.deep_analysis import render
     render()
 elif page == "ℹ️  About & Guide":
     from scanners.about import render

@@ -19,28 +19,28 @@ from data_loader import get_price_history
 # ── Sentiment word sets ──────────────────────────────────────────
 
 BULL_WORDS = {
-    'buy', 'bull', 'bullish', 'breakout', 'surge', 'surges', 'rally', 'rallies',
-    'moon', 'calls', 'upside', 'beats', 'beat', 'strong', 'growth', 'bounce',
-    'oversold', 'support', 'accumulate', 'long', 'upgrade', 'outperform',
-    'record', 'gains', 'positive', 'optimistic', 'higher', 'momentum',
-    'demand', 'bottom', 'recovery', 'rebound', 'squeeze', 'breakout',
+    'buy','bull','bullish','breakout','surge','surges','rally','rallies',
+    'moon','calls','upside','beats','beat','strong','growth','bounce',
+    'oversold','support','accumulate','long','upgrade','outperform',
+    'record','gains','positive','optimistic','higher','momentum',
+    'demand','bottom','recovery','rebound',
 }
 BEAR_WORDS = {
-    'sell', 'bear', 'bearish', 'crash', 'drop', 'drops', 'fall', 'falls',
-    'puts', 'downside', 'miss', 'misses', 'weak', 'dump', 'short',
-    'resistance', 'overbought', 'warning', 'risk', 'caution', 'concern',
-    'downgrade', 'underperform', 'decline', 'loss', 'negative',
-    'lower', 'tariff', 'layoffs', 'bankruptcy', 'headwinds', 'recession',
-    'selloff', 'sellout', 'correction',
+    'sell','bear','bearish','crash','drop','drops','fall','falls',
+    'puts','downside','miss','misses','weak','dump','short',
+    'resistance','overbought','warning','risk','caution','concern',
+    'downgrade','underperform','decline','loss','negative',
+    'lower','tariff','layoffs','bankruptcy','headwinds','recession',
+    'selloff','correction',
 }
 FINANCE_KW = {
-    'stock', 'stocks', 'share', 'shares', 'market', 'earnings', 'revenue',
-    'quarter', 'fed', 'federal reserve', 'interest rate', 'inflation',
-    'nasdaq', 's&p', 'dow', 'etf', 'options', 'calls', 'puts', 'strike',
-    'crypto', 'bitcoin', 'ethereum', 'ipo', 'merger', 'acquisition',
-    'buyback', 'dividend', 'analyst', 'upgrade', 'downgrade', 'price target',
-    'sector', 'rally', 'selloff', 'bull', 'bear', 'trade', 'trading',
-    'hedge', 'portfolio', 'yield', 'bond', 'treasury', 'macro',
+    'stock','stocks','share','shares','market','earnings','revenue',
+    'quarter','fed','federal reserve','interest rate','inflation',
+    'nasdaq','s&p','dow','etf','options','calls','puts','strike',
+    'crypto','bitcoin','ethereum','ipo','merger','acquisition',
+    'buyback','dividend','analyst','upgrade','downgrade','price target',
+    'sector','rally','selloff','bull','bear','trade','trading',
+    'hedge','portfolio','yield','bond','treasury','macro',
 }
 
 # ── Feed sources ─────────────────────────────────────────────────
@@ -55,14 +55,8 @@ NEWS_FEEDS = [
 ]
 
 SUBREDDITS = [
-    "wallstreetbets", "stocks", "options", "investing",
-    "StockMarket", "SecurityAnalysis",
-]
-
-X_ACCOUNTS = [
-    "@KobeissiLetter", "@thestockwhale", "@MrMikeInvesting",
-    "@NoLimitGains", "@optionscjp", "@BobPisani",
-    "@timsstocklists", "@dailyfelixprehn", "@marktilbury",
+    "stocks", "investing", "options", "StockMarket",
+    "SecurityAnalysis", "wallstreetbets",
 ]
 
 YT_CHANNELS = [
@@ -88,9 +82,18 @@ NOISE_WORDS = {
     'THE','AND','FOR','ARE','BUT','NOT','YOU','ALL','CAN','WAS','ONE','OUR',
     'OUT','GET','HAS','HIM','HIS','HOW','ITS','WHO','DID','NOW','OWN','SAY',
     'SHE','TWO','WAY','MAY','NEW','USE','TOP','CEO','CFO','ETF','FED','IPO',
-    'GDP','SEC','USA','USD','EUR','IMF','ESG','CNBC','NYSE','NYSE','RSS',
+    'GDP','SEC','USA','USD','EUR','IMF','ESG','CNBC','NYSE','RSS',
 }
-HEADERS = {"User-Agent": "GoldenScanner/1.0 (financial-research)"}
+
+NEWS_HEADERS = {"User-Agent": "GoldenScanner/1.0 (financial-research-tool)"}
+REDDIT_JSON_HEADERS = {
+    "User-Agent": "GoldenScanner:v1.0 (financial market research; +https://github.com/ANDANK/golden-scanner)",
+    "Accept": "application/json",
+}
+REDDIT_RSS_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Accept": "application/rss+xml, application/xml, text/xml, */*",
+}
 
 
 # ── Helpers ──────────────────────────────────────────────────────
@@ -144,16 +147,19 @@ def _is_finance(text: str) -> bool:
 
 
 def _compute_score(recency: float, engagement: int, max_eng: int,
-                   tickers: list, sentiment_clarity: float) -> int:
-    eng_w = min(1.0, engagement / max(max_eng, 1))
+                   tickers: list, clarity: float) -> int:
+    eng_w  = min(1.0, engagement / max(max_eng, 1))
     tick_w = 1.0 if tickers else 0.3
-    return int(recency * 30 + eng_w * 30 + tick_w * 20 + sentiment_clarity * 20)
+    return int(recency * 30 + eng_w * 30 + tick_w * 20 + clarity * 20)
 
 
-def _parse_dt(pub_str: str) -> datetime:
-    for fn in (parsedate_to_datetime, lambda s: datetime.fromisoformat(s)):
+def _parse_dt(s: str) -> datetime:
+    for fn in (
+        parsedate_to_datetime,
+        lambda x: datetime.fromisoformat(x.replace("Z", "+00:00")),
+    ):
         try:
-            return fn(pub_str)
+            return fn(s)
         except Exception:
             pass
     return datetime.now(timezone.utc)
@@ -183,8 +189,7 @@ def _tech(ticker: str) -> dict:
         rsi_col = ACCENT_GREEN if 50 <= rsi <= 68 else (ACCENT_RED if rsi > 75 else TEXT_MUTED)
         return {
             "price": price, "chg": chg, "chg_col": chg_col,
-            "rsi": rsi, "rsi_col": rsi_col,
-            "trend": trend, "vol": vol_sig,
+            "rsi": rsi, "rsi_col": rsi_col, "trend": trend, "vol": vol_sig,
         }
     except Exception:
         return {}
@@ -193,12 +198,13 @@ def _tech(ticker: str) -> dict:
 def _tech_row_html(tickers: list) -> str:
     if not tickers:
         return ""
-    ticker = tickers[0]
-    snap = _tech(ticker)
+    snap = _tech(tickers[0])
     if not snap:
         return ""
-    sign = "+" if snap["chg"] >= 0 else ""
-    parts = [
+    ticker = tickers[0]
+    sign   = "+" if snap["chg"] >= 0 else ""
+    dot    = f'<span style="color:{BORDER_COLOR}"> &#183; </span>'
+    parts  = [
         f'<span style="color:{GOLD};font-weight:700;font-family:\'DM Mono\',monospace">${ticker}</span>',
         f'<span style="color:{snap["chg_col"]}">${snap["price"]:.2f} ({sign}{snap["chg"]:.2f}%)</span>',
         f'<span style="color:{TEXT_MUTED}">RSI <span style="color:{snap["rsi_col"]}">{snap["rsi"]}</span></span>',
@@ -206,22 +212,144 @@ def _tech_row_html(tickers: list) -> str:
     ]
     if snap["vol"]:
         parts.append(f'<span style="color:{TEXT_MUTED}">{snap["vol"]}</span>')
-    inner = ' <span style="color:{c}">&#183;</span> '.format(c=BORDER_COLOR).join(parts)
-    return (f'<div style="background:{BG_DARK};border-radius:4px;padding:6px 10px;'
-            f'margin-top:8px;font-size:11px;display:flex;flex-wrap:wrap;gap:8px">{inner}</div>')
+    return (
+        f'<div style="background:{BG_DARK};border-radius:4px;padding:6px 10px;'
+        f'margin-top:8px;font-size:11px;display:flex;flex-wrap:wrap;gap:8px">'
+        f'{dot.join(parts)}</div>'
+    )
 
 
-# ── Data fetchers ────────────────────────────────────────────────
+# ── Reddit fetchers (JSON + RSS fallback) ─────────────────────────
+
+def _reddit_json(sub: str) -> list:
+    try:
+        url  = f"https://www.reddit.com/r/{sub}/hot.json?limit=25&raw_json=1"
+        resp = requests.get(url, headers=REDDIT_JSON_HEADERS, timeout=10)
+        if resp.status_code != 200:
+            return []
+        posts = resp.json().get("data", {}).get("children", [])
+        items = []
+        for p in posts:
+            d        = p.get("data", {})
+            title    = d.get("title", "")
+            selftext = _strip_html(d.get("selftext", ""))[:300]
+            ups      = int(d.get("ups", 0))
+            comments = int(d.get("num_comments", 0))
+            flair    = d.get("link_flair_text") or ""
+            created  = d.get("created_utc", time.time())
+            plink    = d.get("permalink", "")
+            dt = datetime.fromtimestamp(created, tz=timezone.utc)
+            if ups < 50 and comments < 25:
+                continue
+            text = title + " " + selftext
+            if not _is_finance(text):
+                continue
+            if any(kw in title.lower() for kw in ['loss porn', 'gain porn', '🌈🐻']) and ups < 5000:
+                continue
+            tickers   = _extract_tickers(text)
+            sentiment, clarity = _score_sentiment(text)
+            is_dd = any(kw in flair.lower() for kw in ['dd', 'due diligence', 'analysis', 'research'])
+            items.append({
+                "source": f"r/{sub}", "title": title, "desc": selftext,
+                "link": f"https://reddit.com{plink}",
+                "dt": dt, "time_ago": _time_ago(dt),
+                "tickers": tickers, "sentiment": sentiment,
+                "clarity": clarity, "recency": _recency_w(dt),
+                "engagement": ups + comments * 3,
+                "ups": ups, "comments": comments,
+                "flair": flair, "is_dd": is_dd, "type": "reddit",
+            })
+        return items
+    except Exception:
+        return []
+
+
+def _reddit_rss(sub: str) -> list:
+    """RSS fallback — no vote counts but more reliably accessible."""
+    try:
+        url  = f"https://www.reddit.com/r/{sub}/hot/.rss?limit=25"
+        resp = requests.get(url, headers=REDDIT_RSS_HEADERS, timeout=10)
+        if resp.status_code != 200:
+            return []
+        ns   = {"atom": "http://www.w3.org/2005/Atom"}
+        root = ET.fromstring(resp.content)
+        items = []
+        for entry in root.findall("atom:entry", ns):
+            title   = _strip_html(entry.findtext("atom:title", "", ns))
+            link_el = entry.find("atom:link", ns)
+            link    = link_el.get("href", "") if link_el is not None else ""
+            updated = entry.findtext("atom:updated", "", ns)
+            content = _strip_html(entry.findtext("atom:content", "", ns))[:300]
+            dt = _parse_dt(updated)
+            if not title:
+                continue
+            text = title + " " + content
+            if not _is_finance(text):
+                continue
+            tickers   = _extract_tickers(text)
+            sentiment, clarity = _score_sentiment(text)
+            items.append({
+                "source": f"r/{sub}", "title": title, "desc": content,
+                "link": link, "dt": dt, "time_ago": _time_ago(dt),
+                "tickers": tickers, "sentiment": sentiment,
+                "clarity": clarity, "recency": _recency_w(dt),
+                "engagement": 100,  # neutral default (no count from RSS)
+                "ups": 0, "comments": 0,
+                "flair": "", "is_dd": False, "type": "reddit",
+            })
+        return items
+    except Exception:
+        return []
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _fetch_reddit() -> list:
+    items  = []
+    errors = 0
+    for i, sub in enumerate(SUBREDDITS):
+        if i > 0:
+            time.sleep(0.5)           # gentle rate-limit
+        result = _reddit_json(sub)
+        if not result:
+            result = _reddit_rss(sub)  # fallback to RSS
+        if result:
+            items.extend(result)
+        else:
+            errors += 1
+
+    if not items:
+        return []
+
+    max_eng = max((it["engagement"] for it in items), default=1)
+    for it in items:
+        it["score"] = _compute_score(
+            it["recency"], it["engagement"], max_eng, it["tickers"], it["clarity"]
+        )
+        if it.get("is_dd") and it["ups"] >= 200:
+            it["score"] = min(100, it["score"] + 15)
+
+    # Deduplicate by title prefix
+    seen, deduped = set(), []
+    for it in sorted(items, key=lambda x: -x["score"]):
+        key = it["title"][:60].lower()
+        if key not in seen:
+            seen.add(key)
+            deduped.append(it)
+
+    return deduped[:30]
+
+
+# ── News fetcher ──────────────────────────────────────────────────
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _fetch_news() -> list:
     items = []
     for src_name, url in NEWS_FEEDS:
         try:
-            resp = requests.get(url, headers=HEADERS, timeout=8)
+            resp = requests.get(url, headers=NEWS_HEADERS, timeout=8)
             if resp.status_code != 200:
                 continue
-            root = ET.fromstring(resp.content)
+            root    = ET.fromstring(resp.content)
             channel = root.find("channel") or root
             for item in list(channel.iter("item"))[:12]:
                 title = _strip_html(item.findtext("title") or "")
@@ -234,19 +362,17 @@ def _fetch_news() -> list:
                     continue
                 tickers   = _extract_tickers(text)
                 sentiment, clarity = _score_sentiment(text)
-                rw = _recency_w(dt)
                 items.append({
                     "source": src_name, "title": title, "desc": desc,
                     "link": link, "dt": dt, "time_ago": _time_ago(dt),
                     "tickers": tickers, "sentiment": sentiment,
-                    "clarity": clarity, "recency": rw,
+                    "clarity": clarity, "recency": _recency_w(dt),
                     "engagement": 0, "type": "news",
                     "ups": 0, "comments": 0,
                 })
         except Exception:
             continue
 
-    # Deduplicate: same tickers + first 50 chars of title
     seen, deduped = set(), []
     for it in sorted(items, key=lambda x: -x["recency"]):
         key = (tuple(it["tickers"]), it["title"][:50].lower())
@@ -261,66 +387,7 @@ def _fetch_news() -> list:
     return deduped[:20]
 
 
-@st.cache_data(ttl=300, show_spinner=False)
-def _fetch_reddit() -> list:
-    items = []
-    for sub in SUBREDDITS:
-        try:
-            url  = f"https://www.reddit.com/r/{sub}/hot.json?limit=20"
-            resp = requests.get(url, headers=HEADERS, timeout=8)
-            if resp.status_code != 200:
-                continue
-            posts = resp.json().get("data", {}).get("children", [])
-            for p in posts:
-                d        = p.get("data", {})
-                title    = d.get("title", "")
-                selftext = _strip_html(d.get("selftext", ""))[:300]
-                ups      = int(d.get("ups", 0))
-                comments = int(d.get("num_comments", 0))
-                flair    = d.get("link_flair_text") or ""
-                created  = d.get("created_utc", time.time())
-                permalink = d.get("permalink", "")
-                dt = datetime.fromtimestamp(created, tz=timezone.utc)
-
-                if ups < 80 and comments < 40:
-                    continue
-                text = title + " " + selftext
-                if not _is_finance(text):
-                    continue
-                # Skip low-effort meme posts
-                meme_kw = ['loss porn', 'gain porn', '🚀🚀🚀', '🌈🐻', 'yolo', 'apes']
-                if any(kw in title.lower() for kw in meme_kw) and ups < 5000:
-                    continue
-
-                tickers   = _extract_tickers(text)
-                sentiment, clarity = _score_sentiment(text)
-                rw = _recency_w(dt)
-                is_dd = any(kw in flair.lower() for kw in ['dd', 'due diligence', 'analysis', 'research'])
-                engagement = ups + comments * 3
-
-                items.append({
-                    "source": f"r/{sub}", "title": title, "desc": selftext,
-                    "link": f"https://reddit.com{permalink}",
-                    "dt": dt, "time_ago": _time_ago(dt),
-                    "tickers": tickers, "sentiment": sentiment,
-                    "clarity": clarity, "recency": rw,
-                    "engagement": engagement, "type": "reddit",
-                    "ups": ups, "comments": comments,
-                    "flair": flair, "is_dd": is_dd,
-                })
-        except Exception:
-            continue
-
-    max_eng = max((it["engagement"] for it in items), default=1)
-    for it in items:
-        it["score"] = _compute_score(it["recency"], it["engagement"], max_eng, it["tickers"], it["clarity"])
-        if it.get("is_dd") and it["ups"] >= 200:
-            it["score"] = min(100, it["score"] + 15)
-    items.sort(key=lambda x: -x["score"])
-    return items[:30]
-
-
-# ── Card rendering ───────────────────────────────────────────────
+# ── Card rendering ────────────────────────────────────────────────
 
 def _sent_badge(sentiment: str) -> str:
     cfg = {
@@ -358,27 +425,20 @@ def _ticker_tags(tickers: list) -> str:
 
 def _card(item: dict, show_engagement: bool = False):
     sentiment  = item.get("sentiment", "Neutral")
-    left_color = {
-        "Bullish": ACCENT_GREEN, "Bearish": ACCENT_RED
-    }.get(sentiment, BORDER_COLOR)
-
-    title   = item["title"][:120] + ("…" if len(item["title"]) > 120 else "")
-    desc    = item.get("desc", "")
-    link    = item.get("link", "#")
-    tickers = item.get("tickers", [])
-    score   = item.get("score", 0)
+    left_color = {"Bullish": ACCENT_GREEN, "Bearish": ACCENT_RED}.get(sentiment, BORDER_COLOR)
+    title      = item["title"][:120] + ("…" if len(item["title"]) > 120 else "")
+    desc       = item.get("desc", "")
+    link       = item.get("link", "#")
+    tickers    = item.get("tickers", [])
+    score      = item.get("score", 0)
 
     extra = ""
-    if show_engagement and (item.get("ups", 0) or item.get("comments", 0)):
-        extra = (
-            f'<span style="color:{TEXT_MUTED};font-size:10px">'
-            f'&#9650; {item["ups"]:,} &nbsp; &#128172; {item["comments"]:,}</span>'
-        )
+    if show_engagement and item.get("ups", 0):
+        extra = (f'<span style="color:{TEXT_MUTED};font-size:10px">'
+                 f'&#9650; {item["ups"]:,} &nbsp; &#128172; {item["comments"]:,}</span>')
     if item.get("is_dd"):
         extra += (f'&nbsp;<span style="background:{GOLD}22;color:{GOLD};border:1px solid {GOLD}44;'
                   f'padding:1px 6px;border-radius:3px;font-size:10px">&#11088; Deep Dive</span>')
-
-    tech_html = _tech_row_html(tickers)
 
     html = (
         f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR}55;'
@@ -386,13 +446,10 @@ def _card(item: dict, show_engagement: bool = False):
         f'<div style="display:flex;justify-content:space-between;align-items:center;'
         f'flex-wrap:wrap;gap:4px;margin-bottom:8px">'
         f'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
-        f'{_sent_badge(sentiment)}'
-        f'{_source_badge(item["source"])}'
+        f'{_sent_badge(sentiment)}{_source_badge(item["source"])}'
         f'<span style="color:{TEXT_MUTED};font-size:10px">{item["time_ago"]}</span>'
-        f'{extra}'
-        f'</div>'
-        f'{_score_badge(score)}'
-        f'</div>'
+        f'{extra}</div>'
+        f'{_score_badge(score)}</div>'
         f'<a href="{link}" target="_blank" style="color:{TEXT_PRIMARY};text-decoration:none">'
         f'<div style="font-size:13px;font-weight:600;line-height:1.5;margin-bottom:4px">{title}</div>'
         f'</a>'
@@ -400,140 +457,113 @@ def _card(item: dict, show_engagement: bool = False):
     if desc:
         html += f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.6">{desc}</div>'
     html += _ticker_tags(tickers)
-    html += tech_html
+    html += _tech_row_html(tickers)
     html += '</div>'
     st.markdown(html, unsafe_allow_html=True)
 
 
 def _cluster_cards(items: list):
-    ticker_sources = {}
+    ticker_info = {}
     for it in items:
         for t in it.get("tickers", []):
-            if t not in ticker_sources:
-                ticker_sources[t] = {"count": 0, "sentiments": [], "score": 0}
-            ticker_sources[t]["count"] += 1
-            ticker_sources[t]["sentiments"].append(it["sentiment"])
-            ticker_sources[t]["score"] = max(ticker_sources[t]["score"], it.get("score", 0))
+            if t not in ticker_info:
+                ticker_info[t] = {"count": 0, "sentiments": []}
+            ticker_info[t]["count"] += 1
+            ticker_info[t]["sentiments"].append(it["sentiment"])
 
-    clusters = [(t, v) for t, v in ticker_sources.items() if v["count"] >= 2]
+    clusters = [(t, v) for t, v in ticker_info.items() if v["count"] >= 2]
     if not clusters:
         return
     clusters.sort(key=lambda x: -x[1]["count"])
 
     cluster_html = ""
-    for ticker, info in clusters[:5]:
+    for ticker, info in clusters[:6]:
         sents  = info["sentiments"]
         bull_n = sents.count("Bullish")
         bear_n = sents.count("Bearish")
         neut_n = sents.count("Neutral")
-        dom = "Bullish" if bull_n > bear_n else ("Bearish" if bear_n > bull_n else "Neutral")
+        dom    = "Bullish" if bull_n > bear_n else ("Bearish" if bear_n > bull_n else "Neutral")
         dom_col = ACCENT_GREEN if dom == "Bullish" else (ACCENT_RED if dom == "Bearish" else TEXT_MUTED)
         cluster_html += (
             f'<div style="background:{BG_CARD};border:1px solid {dom_col}44;border-radius:6px;'
             f'padding:8px 14px;display:flex;justify-content:space-between;align-items:center">'
             f'<div style="display:flex;gap:10px;align-items:center">'
             f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;font-weight:700">${ticker}</span>'
-            f'<span style="color:{TEXT_MUTED};font-size:11px">Mentioned {info["count"]}x</span>'
+            f'<span style="color:{TEXT_MUTED};font-size:11px">{info["count"]}x mentioned</span>'
             f'</div>'
             f'<div style="display:flex;gap:6px;font-size:10px">'
             f'<span style="color:{ACCENT_GREEN}">&#128994; {bull_n}B</span>'
             f'<span style="color:{ACCENT_RED}">&#128308; {bear_n}Be</span>'
             f'<span style="color:{TEXT_MUTED}">&#9898; {neut_n}N</span>'
-            f'</div>'
-            f'</div>'
+            f'</div></div>'
         )
     st.markdown(
         f'<div style="color:{GOLD};font-size:11px;font-weight:700;text-transform:uppercase;'
         f'letter-spacing:1px;margin:12px 0 6px">&#128293; Trending Tickers</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;margin-bottom:16px">'
-        f'{cluster_html}</div>',
+        f'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));'
+        f'gap:6px;margin-bottom:16px">{cluster_html}</div>',
         unsafe_allow_html=True,
     )
 
 
-# ── Section renderers ────────────────────────────────────────────
+# ── Section renderers ─────────────────────────────────────────────
 
-def _render_hot_news(signal_mode: bool, ticker_filter: str, sent_filter: str):
+def _render_hot_news(signal_mode, ticker_filter, sent_filter):
     with st.spinner("Fetching financial news…"):
         items = _fetch_news()
     if not items:
-        st.warning("Could not reach news feeds. Check connectivity.")
+        st.warning("Could not fetch news feeds. Please try again shortly.")
         return
     if ticker_filter:
-        items = [it for it in items if any(ticker_filter.upper() in t for t in it["tickers"])
-                 or ticker_filter.upper() in it["title"].upper()]
+        items = [it for it in items if any(ticker_filter in t for t in it["tickers"])
+                 or ticker_filter in it["title"].upper()]
     if sent_filter != "All":
         items = [it for it in items if it["sentiment"] == sent_filter]
     if signal_mode:
         items = [it for it in items if it["score"] >= 60]
-
     _cluster_cards(items)
     for it in items:
         _card(it)
 
 
-def _render_reddit(signal_mode: bool, ticker_filter: str, sent_filter: str):
+def _render_reddit(signal_mode, ticker_filter, sent_filter):
     with st.spinner("Fetching Reddit posts…"):
         items = _fetch_reddit()
     if not items:
-        st.warning("Could not reach Reddit. Check connectivity.")
+        st.info(
+            "Reddit posts unavailable right now. This can happen due to temporary rate limiting. "
+            "Try refreshing in a minute.",
+            icon="ℹ️",
+        )
         return
     if ticker_filter:
-        items = [it for it in items if any(ticker_filter.upper() in t for t in it["tickers"])
-                 or ticker_filter.upper() in it["title"].upper()]
+        items = [it for it in items if any(ticker_filter in t for t in it["tickers"])
+                 or ticker_filter in it["title"].upper()]
     if sent_filter != "All":
         items = [it for it in items if it["sentiment"] == sent_filter]
     if signal_mode:
         items = [it for it in items if it["score"] >= 60]
-
     _cluster_cards(items)
     for it in items:
         _card(it, show_engagement=True)
 
 
-def _render_combined(signal_mode: bool, ticker_filter: str, sent_filter: str):
+def _render_combined(signal_mode, ticker_filter, sent_filter):
     with st.spinner("Fetching all feeds…"):
         news   = _fetch_news()
         reddit = _fetch_reddit()
-    all_items = news + reddit
-    all_items.sort(key=lambda x: -x.get("score", 0))
-
+    all_items = sorted(news + reddit, key=lambda x: -x.get("score", 0))
     if ticker_filter:
         all_items = [it for it in all_items
-                     if any(ticker_filter.upper() in t for t in it["tickers"])
-                     or ticker_filter.upper() in it["title"].upper()]
+                     if any(ticker_filter in t for t in it["tickers"])
+                     or ticker_filter in it["title"].upper()]
     if sent_filter != "All":
         all_items = [it for it in all_items if it["sentiment"] == sent_filter]
     if signal_mode:
         all_items = [it for it in all_items if it["score"] >= 60]
-
     _cluster_cards(all_items)
     for it in all_items:
         _card(it, show_engagement=True)
-
-
-def _render_x_placeholder():
-    accs = "".join(
-        f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;'
-        f'padding:8px 12px;font-size:12px;color:{GOLD};font-family:\'DM Mono\',monospace">{a}</div>'
-        for a in X_ACCOUNTS
-    )
-    st.markdown(
-        f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:12px;'
-        f'padding:28px 32px;text-align:center">'
-        f'<div style="font-size:32px;margin-bottom:8px">&#120143;</div>'
-        f'<div style="color:{GOLD};font-size:15px;font-weight:600;margin-bottom:6px">X / Twitter Integration</div>'
-        f'<div style="color:{TEXT_MUTED};font-size:12px;max-width:480px;margin:0 auto 20px;line-height:1.8">'
-        f'X API access requires a paid developer plan (~$100/mo Basic tier). '
-        f'When you have an API key, add <code style="color:{GOLD}">X_BEARER_TOKEN</code> to your '
-        f'Streamlit secrets and this section will activate automatically.</div>'
-        f'<div style="color:{TEXT_MUTED};font-size:11px;text-transform:uppercase;letter-spacing:1px;'
-        f'margin-bottom:10px">High-Signal Accounts to Follow</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));'
-        f'gap:6px;max-width:600px;margin:0 auto;text-align:left">{accs}</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
 
 
 def _render_yt_placeholder():
@@ -561,28 +591,30 @@ def _render_yt_placeholder():
     )
 
 
-# ── Main entry point ─────────────────────────────────────────────
+# ── Main entry point ──────────────────────────────────────────────
 
-def render_social_trends():
-    # Last updated + refresh row
+def render():
+    from utils import section_header
+    section_header("📱", "Social Trends",
+                   "Live financial news · Reddit · YouTube · Signal-scored & sentiment-tagged")
+
     now_str = datetime.now(timezone.utc).strftime("%H:%M UTC")
     col_a, col_b, col_c = st.columns([3, 1, 1])
     with col_a:
         st.markdown(
             f'<div style="color:{TEXT_MUTED};font-size:11px;padding-top:6px">'
             f'&#128337; Last updated {now_str} &nbsp;&#183;&nbsp; '
-            f'Auto-refreshed every 5 min &nbsp;&#183;&nbsp; '
             f'Sources: Yahoo Finance · CNBC · Reuters · MarketWatch · Benzinga · Reddit</div>',
             unsafe_allow_html=True,
         )
     with col_b:
-        signal_mode = st.checkbox("&#128300; Signal Mode", value=False, help="Show only items with Signal Score ≥ 60")
+        signal_mode = st.checkbox("&#128300; Signal Mode", value=False,
+                                  help="Show only items with Signal Score ≥ 60")
     with col_c:
         if st.button("&#128260; Refresh", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
 
-    # Global filter bar
     fc1, fc2 = st.columns([2, 1])
     with fc1:
         ticker_filter = st.text_input(
@@ -595,26 +627,18 @@ def render_social_trends():
             label_visibility="collapsed",
         )
 
-    # Sub-tabs
-    t_news, t_reddit, t_youtube, t_x, t_combined = st.tabs([
+    t_news, t_reddit, t_youtube, t_combined = st.tabs([
         "&#128293; Hot News",
         "&#128172; Reddit",
         "&#127909; YouTube",
-        "&#120143; X / Twitter",
         "&#127760; Combined Feed",
     ])
 
     with t_news:
         _render_hot_news(signal_mode, ticker_filter, sent_filter)
-
     with t_reddit:
         _render_reddit(signal_mode, ticker_filter, sent_filter)
-
     with t_youtube:
         _render_yt_placeholder()
-
-    with t_x:
-        _render_x_placeholder()
-
     with t_combined:
         _render_combined(signal_mode, ticker_filter, sent_filter)

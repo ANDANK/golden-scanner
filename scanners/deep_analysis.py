@@ -990,7 +990,7 @@ def render_ticker_panel(a: dict):
 
 def render():
     section_header(
-        "🔬", "Deep Technical Analysis",
+        "🔬", "Stock Analysis",
         "Multi-ticker · Daily + Weekly · 9 indicator modules · Composite scores · Interactive chart",
     )
 
