@@ -45,13 +45,20 @@ def _pnl_html(pnl: float, pct: float) -> str:
 def render():
     section_header("📌", "Tracking", "Positions you are actively monitoring")
 
-    # Storage indicator
+    # Storage indicator + Refresh button
     storage = "Google Sheets" if using_google_sheets() else "Local CSV (data/tracking.csv)"
-    st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:11px;margin-bottom:12px">'
-        f'Storage: <b style="color:{GOLD}">{storage}</b></div>',
-        unsafe_allow_html=True,
-    )
+    s1, s2 = st.columns([6, 1])
+    with s1:
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:11px;padding-top:6px">'
+            f'Storage: <b style="color:{GOLD}">{storage}</b></div>',
+            unsafe_allow_html=True,
+        )
+    with s2:
+        if st.button("🔄 Refresh", key="tracking_refresh", use_container_width=True,
+                     help="Fetch latest prices"):
+            st.cache_data.clear()
+            st.rerun()
 
     rows = get_tracking()
     if not rows:

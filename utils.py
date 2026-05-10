@@ -369,47 +369,77 @@ def _cell_color(col: str, val) -> str:
     return TEXT_PRIMARY
 
 
-def render_tracker_widget(tickers: list, strategy: str = "Stock", source: str = ""):
-    """Track / Watch button strip shown below every results table."""
+def _extract_price(row: pd.Series) -> str:
+    """Pull the best available price string from a result row."""
+    for col in ["Price", "Last", "Underlying", "Stock Price", "Spot", "Close", "Current"]:
+        if col in row.index:
+            try:
+                v = float(str(row[col]).replace("$", "").replace(",", ""))
+                if v > 0:
+                    return str(round(v, 2))
+            except Exception:
+                pass
+    return ""
+
+
+def render_tracker_widget(tickers: list, strategy: str = "Stock", source: str = "",
+                          prices: dict | None = None):
+    """Per-row Track/Watch action strip — one row per ticker with buttons."""
     if not tickers:
         return
+    import re, hashlib
     from scanners.gsheet_helper import add_to_tracking, add_to_watchlist
 
-    import hashlib
-    key_id = hashlib.md5(f"{strategy}{source}{tickers[:3]}".encode()).hexdigest()[:8]
+    def _safe(s):
+        return re.sub(r"[^a-zA-Z0-9]", "_", str(s))
+
+    key_base = hashlib.md5(f"{strategy}{source}{tickers[:3]}".encode()).hexdigest()[:6]
 
     st.markdown(
-        f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR}44;'
-        f'border-radius:6px;padding:10px 14px;margin-top:10px;display:flex;align-items:center;gap:8px">',
+        f'<div style="color:{GOLD};font-size:11px;font-weight:600;letter-spacing:1px;'
+        f'text-transform:uppercase;margin:14px 0 4px">📌 Track &nbsp;/&nbsp; 👁 Watch</div>',
         unsafe_allow_html=True,
     )
-    c1, c2, c3 = st.columns([5, 1, 1])
-    with c1:
-        selected = st.multiselect(
-            "label", tickers,
-            placeholder="Select tickers to track or watch…",
-            label_visibility="collapsed",
-            key=f"tw_sel_{key_id}",
-        )
-    with c2:
-        if st.button("📌 Track", key=f"tw_trk_{key_id}", use_container_width=True,
-                     help="Buy 100 shares (or 1 contract for options)"):
-            if not selected:
-                st.toast("Pick at least one ticker first.", icon="⚠️")
-            else:
-                for t in selected:
-                    ok, msg = add_to_tracking(t, strategy, source)
-                    st.toast(msg, icon="✅" if ok else "⚠️")
-    with c3:
-        if st.button("👁 Watch", key=f"tw_wch_{key_id}", use_container_width=True,
-                     help="Add to WatchList"):
-            if not selected:
-                st.toast("Pick at least one ticker first.", icon="⚠️")
-            else:
-                for t in selected:
-                    ok, msg = add_to_watchlist(t, source)
-                    st.toast(msg, icon="✅" if ok else "⚠️")
-    st.markdown("</div>", unsafe_allow_html=True)
+    # Compact CSS for the tiny action buttons in this strip
+    st.markdown("""
+    <style>
+    div[data-testid="stHorizontalBlock"]:has(button[kind="secondary"].tw-btn) button {
+        min-height: 32px !important; font-size: 12px !important; padding: 2px 6px !important;
+    }
+    </style>""", unsafe_allow_html=True)
+
+    for i, ticker in enumerate(tickers):
+        price_str = (prices or {}).get(ticker, "")
+        c_tkr, c_strat, c_price, c_trk, c_wch = st.columns([2, 2, 2, 1, 1])
+        with c_tkr:
+            st.markdown(
+                f'<div style="padding:4px 0;color:{GOLD};font-family:\'DM Mono\',monospace;'
+                f'font-weight:700;font-size:13px">{ticker}</div>',
+                unsafe_allow_html=True,
+            )
+        with c_strat:
+            st.markdown(
+                f'<div style="padding:4px 0;color:{TEXT_MUTED};font-size:12px">{strategy}</div>',
+                unsafe_allow_html=True,
+            )
+        with c_price:
+            st.markdown(
+                f'<div style="padding:4px 0;color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;'
+                f'font-size:12px">{"$" + price_str if price_str else "—"}</div>',
+                unsafe_allow_html=True,
+            )
+        with c_trk:
+            if st.button("📌 Track", key=f"trk_{key_base}_{i}_{_safe(ticker)}",
+                         use_container_width=True,
+                         help=f"Track {ticker} — {strategy}"):
+                ok, msg = add_to_tracking(ticker, strategy, source, price_str)
+                st.toast(msg, icon="✅" if ok else "⚠️")
+        with c_wch:
+            if st.button("👁 Watch", key=f"wch_{key_base}_{i}_{_safe(ticker)}",
+                         use_container_width=True,
+                         help=f"Add {ticker} to WatchList"):
+                ok, msg = add_to_watchlist(ticker, source, price_str)
+                st.toast(msg, icon="✅" if ok else "⚠️")
 
 
 def render_results_table(df: pd.DataFrame, score_col: str = "Score",
@@ -488,9 +518,12 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
     """
     st.markdown(table_html, unsafe_allow_html=True)
 
-    # Track / Watch widget
-    tickers = df["Ticker"].dropna().unique().tolist() if "Ticker" in df.columns else []
-    render_tracker_widget(tickers, strategy=strategy, source=source)
+    # Per-row Track / Watch strip
+    if "Ticker" in df.columns:
+        tickers = df["Ticker"].dropna().tolist()
+        prices  = {str(row["Ticker"]): _extract_price(row)
+                   for _, row in df.iterrows() if pd.notna(row.get("Ticker"))}
+        render_tracker_widget(tickers, strategy=strategy, source=source, prices=prices)
 
 
 def mini_chart(df: pd.DataFrame, ticker: str) -> go.Figure:

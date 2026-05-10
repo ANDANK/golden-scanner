@@ -129,7 +129,8 @@ def get_watchlist() -> list:
     return _csv_read(WATCHLIST_CSV, WATCHLIST_HEADERS)
 
 
-def add_to_tracking(ticker: str, strategy: str, source: str = "") -> tuple:
+def add_to_tracking(ticker: str, strategy: str, source: str = "",
+                    entry_price: str = "") -> tuple:
     """Returns (success: bool, message: str)."""
     ticker = ticker.upper().strip()
     existing = get_tracking()
@@ -138,7 +139,7 @@ def add_to_tracking(ticker: str, strategy: str, source: str = "") -> tuple:
 
     action = "Sell" if strategy in _SELL_STRATEGIES else "Buy"
     qty    = "1 contract" if strategy in _OPTION_STRATEGIES else "100 shares"
-    price  = _current_price(ticker)
+    price  = entry_price if entry_price else _current_price(ticker)
 
     row = {
         "Ticker":     ticker,
@@ -166,13 +167,13 @@ def add_to_tracking(ticker: str, strategy: str, source: str = "") -> tuple:
         return True, f"{ticker} added to Tracking ({action} {qty})"
 
 
-def add_to_watchlist(ticker: str, source: str = "") -> tuple:
+def add_to_watchlist(ticker: str, source: str = "", entry_price: str = "") -> tuple:
     ticker = ticker.upper().strip()
     existing = get_watchlist()
     if any(str(r.get("Ticker","")).upper() == ticker for r in existing):
         return False, f"{ticker} is already on your WatchList."
 
-    price = _current_price(ticker)
+    price = entry_price if entry_price else _current_price(ticker)
     row = {
         "Ticker":      ticker,
         "Added_Date":  datetime.now().strftime("%Y-%m-%d %H:%M"),

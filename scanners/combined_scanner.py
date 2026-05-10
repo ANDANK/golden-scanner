@@ -456,7 +456,8 @@ def render():
     )
     _render_combined_table(df)
 
-    # Track / Watch
-    from utils import render_tracker_widget
-    tickers = df["Ticker"].dropna().unique().tolist() if "Ticker" in df.columns else []
-    render_tracker_widget(tickers, strategy="Stock", source="Golden Scan")
+    # Per-row Track / Watch strip
+    from utils import render_tracker_widget, _extract_price
+    tickers = df["Ticker"].dropna().tolist() if "Ticker" in df.columns else []
+    prices  = {str(r["Ticker"]): _extract_price(r) for _, r in df.iterrows() if pd.notna(r.get("Ticker"))}
+    render_tracker_widget(tickers, strategy="Stock", source="Golden Scan", prices=prices)
