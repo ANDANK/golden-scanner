@@ -316,7 +316,7 @@ def render():
             with c4: metric_card("Avg Div/Share",   f"${df['Div/Share'].mean():.3f}",        color=GOLD)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df)
+            render_results_table(df, strategy="Dividend+CC", source="Dividend+CC Capture")
             diag.render()
 
             # Legend

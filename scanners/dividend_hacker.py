@@ -651,6 +651,11 @@ def render():
 
         render_dividend_table(df)
 
+        # Track / Watch
+        from utils import render_tracker_widget
+        tickers = df["Ticker"].dropna().unique().tolist() if "Ticker" in df.columns else []
+        render_tracker_widget(tickers, strategy="Dividend", source="Upcoming Dividends")
+
         st.markdown(
             f'<div style="color:{TEXT_MUTED};font-size:12px;margin:20px 0 8px">'
             f'▼ Expand any ticker for dividend history, payout trend, and event details</div>',

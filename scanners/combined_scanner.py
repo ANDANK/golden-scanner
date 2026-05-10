@@ -455,3 +455,8 @@ def render():
         unsafe_allow_html=True,
     )
     _render_combined_table(df)
+
+    # Track / Watch
+    from utils import render_tracker_widget
+    tickers = df["Ticker"].dropna().unique().tolist() if "Ticker" in df.columns else []
+    render_tracker_widget(tickers, strategy="Stock", source="Golden Scan")

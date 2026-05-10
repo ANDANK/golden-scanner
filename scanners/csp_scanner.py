@@ -168,7 +168,7 @@ def render():
                 metric_card("Bullish Underlying", f"{bull_pct:.0f}%", color=GOLD)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df)
+            render_results_table(df, strategy="CSP", source="Cash-Secured Puts")
             diag.render()
 
             st.markdown(f"""

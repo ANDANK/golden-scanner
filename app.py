@@ -364,6 +364,9 @@ with st.sidebar:
         options=[
             "🏠  Market Overview",
             "📱  Social Trends",
+            "── PORTFOLIO ──",
+            "📌  Tracking",
+            "👁  WatchList",
             "── STOCKS ──",
             "🔀  Golden Scan",
             "🔬  Stock Analysis",
@@ -402,6 +405,12 @@ if page == "🏠  Market Overview":
     render()
 elif page == "📱  Social Trends":
     from scanners.social_trends import render
+    render()
+elif page == "📌  Tracking":
+    from scanners.tracking_page import render
+    render()
+elif page == "👁  WatchList":
+    from scanners.watchlist_page import render
     render()
 elif page == "🔀  Golden Scan":
     from scanners.combined_scanner import render

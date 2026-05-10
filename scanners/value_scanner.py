@@ -146,7 +146,7 @@ def render():
                 metric_card("Clean (No Traps)", str(no_trap), color=GOLD)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df)
+            render_results_table(df, strategy="Stock", source="Value Scanner")
 
             st.markdown(
                 f'<div style="color:{TEXT_MUTED};font-size:12px;margin:20px 0 6px">&#128200; Charts &amp; Price History</div>',

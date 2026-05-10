@@ -161,7 +161,7 @@ def render():
                 metric_card("Top Sector", top_sector, color=ACCENT_BLUE)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df)
+            render_results_table(df, strategy="ETF", source="ETF Scanner")
 
             st.markdown(
                 f'<div style="color:{TEXT_MUTED};font-size:12px;margin:20px 0 6px">&#128200; Charts &amp; Price History</div>',

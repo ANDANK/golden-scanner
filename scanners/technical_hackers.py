@@ -396,14 +396,14 @@ def _run_buttons():
 
 
 def _render_with_charts(df: pd.DataFrame, show_bb=False, show_macd=True,
-                        show_volume=True, has_bt=False):
+                        show_volume=True, has_bt=False, strategy="Stock", source=""):
     """
     Unified results layout:
       1. Results table (top — the primary output)
       2. Per-ticker chart expanders below (first expanded, rest collapsed)
     """
     display_df = df.drop(columns=["_bt", "_ticker"], errors="ignore")
-    render_results_table(display_df)
+    render_results_table(display_df, strategy=strategy, source=source)
 
     st.markdown(
         f'<div style="color:{GOLD};font-size:12px;font-weight:600;letter-spacing:1px;'

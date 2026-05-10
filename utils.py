@@ -369,7 +369,51 @@ def _cell_color(col: str, val) -> str:
     return TEXT_PRIMARY
 
 
-def render_results_table(df: pd.DataFrame, score_col: str = "Score"):
+def render_tracker_widget(tickers: list, strategy: str = "Stock", source: str = ""):
+    """Track / Watch button strip shown below every results table."""
+    if not tickers:
+        return
+    from scanners.gsheet_helper import add_to_tracking, add_to_watchlist
+
+    import hashlib
+    key_id = hashlib.md5(f"{strategy}{source}{tickers[:3]}".encode()).hexdigest()[:8]
+
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR}44;'
+        f'border-radius:6px;padding:10px 14px;margin-top:10px;display:flex;align-items:center;gap:8px">',
+        unsafe_allow_html=True,
+    )
+    c1, c2, c3 = st.columns([5, 1, 1])
+    with c1:
+        selected = st.multiselect(
+            "label", tickers,
+            placeholder="Select tickers to track or watch…",
+            label_visibility="collapsed",
+            key=f"tw_sel_{key_id}",
+        )
+    with c2:
+        if st.button("📌 Track", key=f"tw_trk_{key_id}", use_container_width=True,
+                     help="Buy 100 shares (or 1 contract for options)"):
+            if not selected:
+                st.toast("Pick at least one ticker first.", icon="⚠️")
+            else:
+                for t in selected:
+                    ok, msg = add_to_tracking(t, strategy, source)
+                    st.toast(msg, icon="✅" if ok else "⚠️")
+    with c3:
+        if st.button("👁 Watch", key=f"tw_wch_{key_id}", use_container_width=True,
+                     help="Add to WatchList"):
+            if not selected:
+                st.toast("Pick at least one ticker first.", icon="⚠️")
+            else:
+                for t in selected:
+                    ok, msg = add_to_watchlist(t, source)
+                    st.toast(msg, icon="✅" if ok else "⚠️")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_results_table(df: pd.DataFrame, score_col: str = "Score",
+                         strategy: str = "Stock", source: str = ""):
     """Render results as a styled HTML table — always visible on any theme."""
     if df.empty:
         empty_state()
@@ -443,6 +487,10 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score"):
     </div>
     """
     st.markdown(table_html, unsafe_allow_html=True)
+
+    # Track / Watch widget
+    tickers = df["Ticker"].dropna().unique().tolist() if "Ticker" in df.columns else []
+    render_tracker_widget(tickers, strategy=strategy, source=source)
 
 
 def mini_chart(df: pd.DataFrame, ticker: str) -> go.Figure:

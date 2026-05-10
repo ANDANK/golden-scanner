@@ -154,7 +154,7 @@ def render():
                 metric_card("Avg EPS Growth", f"{df['EPS Growth %'].mean():.1f}%", color=ACCENT_BLUE)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df)
+            render_results_table(df, strategy="Stock", source="Growth Scanner")
             diag.render()
 
             st.markdown(

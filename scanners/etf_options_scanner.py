@@ -178,7 +178,7 @@ def render():
             with col3: metric_card("Avg IV Rank", f"{df['IV Rank'].mean():.0f}", color=ACCENT_BLUE)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df)
+            render_results_table(df, strategy="ETF Options", source="ETF Options")
 
             st.markdown(f"""
             <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:6px;padding:12px 16px;margin-top:16px;color:{TEXT_MUTED};font-size:12px">

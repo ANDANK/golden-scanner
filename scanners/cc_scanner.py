@@ -153,7 +153,7 @@ def render():
             with c4: metric_card("Avg DTE", f"{df['DTE'].mean():.0f}d", color=GOLD)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df)
+            render_results_table(df, strategy="CC", source="Covered Calls")
             diag.render()
 
             st.markdown(f"""

@@ -168,7 +168,7 @@ def render():
             with c4: metric_card("Avg IV Rank", f"{df['IV Rank'].mean():.0f}", color=GOLD)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df)
+            render_results_table(df, strategy="LEAPS", source="LEAPS Scanner")
             diag.render()
 
             st.markdown(f"""

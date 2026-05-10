@@ -182,7 +182,7 @@ def render():
                 unsafe_allow_html=True,
             )
 
-            render_results_table(df)
+            render_results_table(df, strategy="Stock", source="Momentum Scanner")
             diag.render()
 
             st.markdown(
