@@ -608,7 +608,7 @@ def render():
             unsafe_allow_html=True,
         )
     with col_b:
-        signal_mode = st.checkbox("&#128300; Signal Mode", value=False,
+        signal_mode = st.checkbox("&#128300; Signal score ≥ 60", value=False,
                                   help="Show only items with Signal Score ≥ 60")
     with col_c:
         if st.button("&#128260; Refresh", use_container_width=True):

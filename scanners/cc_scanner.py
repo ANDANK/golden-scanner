@@ -132,7 +132,12 @@ def render():
         dte_min, dte_max = st.slider("DTE Range", 1, 60, (1, 20))
         universe_size = st.slider("Universe Size", 10, len(SP500_SAMPLE), 200, 10)
 
+    include_etfs = st.checkbox("Include Liquid ETFs (SPY, QQQ, GLD…)", True,
+                              help="Adds 34 highly-liquid ETFs with active options chains")
+
     tickers = SP500_SAMPLE[:universe_size]
+    if include_etfs:
+        tickers = OPTIONS_ETF_UNIVERSE + [t for t in tickers if t not in OPTIONS_ETF_UNIVERSE]
     st.info("⏱ Options scanning takes 60–120 seconds depending on universe size.")
 
     col1, _ = st.columns([1, 5])

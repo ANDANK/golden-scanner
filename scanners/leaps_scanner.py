@@ -147,7 +147,12 @@ def render():
         price_max = st.number_input("Max Stock Price ($)", 50.0, 5000.0, 3000.0)
         universe_size = st.slider("Universe Size", 10, len(SP500_SAMPLE), 200, 5)
 
+    include_etfs = st.checkbox("Include Liquid ETFs (SPY, QQQ, GLD…)", True,
+                              help="Adds 34 highly-liquid ETFs with active options chains")
+
     tickers = SP500_SAMPLE[:universe_size]
+    if include_etfs:
+        tickers = OPTIONS_ETF_UNIVERSE + [t for t in tickers if t not in OPTIONS_ETF_UNIVERSE]
     st.info("⏱ LEAPS scan accesses long-dated expiries — may take 90–180 seconds.")
 
     col1, _ = st.columns([1, 5])

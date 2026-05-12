@@ -661,13 +661,9 @@ def render():
             st.download_button("⬇ Export CSV", export_df.to_csv(index=False),
                                f"dividend_hacker_{today}.csv", "text/csv", use_container_width=True)
 
-        render_dividend_table(df)
-
-        # Per-row Track / Watch strip
-        from utils import render_tracker_widget, _extract_price
-        tickers = df["Ticker"].dropna().tolist() if "Ticker" in df.columns else []
-        prices  = {str(r["Ticker"]): _extract_price(r) for _, r in df.iterrows() if pd.notna(r.get("Ticker"))}
-        render_tracker_widget(tickers, strategy="Dividend", source="Upcoming Dividends", prices=prices)
+        # Dividend table + inline Track/Watch buttons
+        from utils import render_results_table
+        render_results_table(df, strategy="Dividend", source="Upcoming Dividends")
 
         st.markdown(
             f'<div style="color:{TEXT_MUTED};font-size:12px;margin:20px 0 8px">'

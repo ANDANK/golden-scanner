@@ -258,10 +258,10 @@ def render():
 
     with st.sidebar:
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ Div-CC Filters</div>', unsafe_allow_html=True)
-        ex_div_days_max  = st.slider("Max Days to Ex-Dividend", 1, 8, 5)
+        ex_div_days_max  = st.slider("Max Days to Ex-Dividend", 1, 25, 5)
         div_amt_min      = st.number_input("Min Dividend / Share ($)", 0.01, 5.0, 0.05, step=0.01)
         min_income_pct   = st.slider("Min Total Income % (Premium + Div)", 0.1, 5.0, 0.5, 0.05)
-        cc_otm_max_pct   = st.slider("Max CC Strike OTM % above price", 0.0, 10.0, 3.0, 0.5)
+        cc_otm_max_pct   = st.slider("Max CC Strike OTM % above price", 0.0, 7.0, 3.0, 0.5)
         price_min        = st.number_input("Min Stock Price ($)", 1.0, 200.0, 5.0)
         price_max        = st.number_input("Max Stock Price ($)", 10.0, 2000.0, 600.0)
         universe_size    = st.slider("Universe Size", 10, len(DIV_CC_UNIVERSE),

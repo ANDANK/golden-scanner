@@ -452,16 +452,11 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # Full results
+    # Full results — inline Track/Watch buttons via render_results_table
     st.markdown(
         f'<div style="color:{GOLD};font-size:12px;font-weight:600;text-transform:uppercase;'
         f'letter-spacing:1px;margin-bottom:8px">&#128202; All Signals — Combined Results</div>',
         unsafe_allow_html=True,
     )
-    _render_combined_table(df)
-
-    # Per-row Track / Watch strip
-    from utils import render_tracker_widget, _extract_price
-    tickers = df["Ticker"].dropna().tolist() if "Ticker" in df.columns else []
-    prices  = {str(r["Ticker"]): _extract_price(r) for _, r in df.iterrows() if pd.notna(r.get("Ticker"))}
-    render_tracker_widget(tickers, strategy="Stock", source="Golden Scan", prices=prices)
+    from utils import render_results_table
+    render_results_table(df, strategy="Stock", source="Golden Scan")

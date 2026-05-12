@@ -62,6 +62,14 @@ SP500_SAMPLE = [
     "ARKW","ARKG","IYR","VNQ","JETS","XRT","KRE","IAT","XLB","XLRE",
 ]
 
+# NAV-4: Liquid ETFs with active options chains — merged into CSP/CC/LEAPS universe
+OPTIONS_ETF_UNIVERSE = [
+    "SPY","QQQ","IWM","DIA","GLD","SLV","TLT","HYG","LQD",
+    "XLK","XLF","XLE","XLV","XLI","XLU","XLP","XLY",
+    "GDX","GDXJ","EEM","EFA","ARKK","SOXX","SMH","VNQ","IBB",
+    "FXI","EWZ","KWEB","USO","UNG","UVXY","VXX",
+]
+
 # ETF_UNIVERSE kept for backward compatibility with etf_scanner.py
 ETF_UNIVERSE = [
     "SPY","QQQ","IWM","DIA","VTI","VOO","GLD","SLV","TLT","HYG",

@@ -43,6 +43,15 @@ html, body, [data-testid="stApp"] {{
 #MainMenu, footer {{ visibility: hidden; }}
 /* Hide header only on desktop — on mobile the header IS the hamburger/nav bar */
 @media (min-width: 769px) {{ header {{ visibility: hidden; }} }}
+
+/* NAV-1: Eliminate blank header space */
+.block-container {{
+    padding-top: 0.5rem !important;
+    padding-bottom: 1rem !important;
+}}
+[data-testid="stSidebar"] > div:first-child {{
+    padding-top: 0 !important;
+}}
 /* Hide fork / share / deploy toolbar buttons on all screen sizes */
 [data-testid="stToolbarActions"],
 [data-testid="stDecoration"],
@@ -273,17 +282,26 @@ hr {{ border-color: {BORDER_COLOR}; }}
     margin: 20px 0;
 }}
 
-/* Tiny sidebar home button */
-[data-testid="stSidebar"] [data-testid="stButton"]:has(button[title="Market Overview"]) button,
-[data-testid="stSidebar"] [data-testid="stButton"]:has(button[aria-label="Market Overview"]) button {{
-    background: transparent !important;
-    border: 1px solid {BORDER_COLOR} !important;
-    color: {GOLD} !important;
-    font-size: 18px !important;
-    padding: 4px 0 !important;
-    min-height: 36px !important;
+/* NAV-2: logo-click home button — invisible, overlaid on the logo header area */
+[data-testid="stSidebar"] > div:first-child > div:first-child > div:first-child > div:first-child .stButton button,
+[data-testid="stSidebar"] .stButton:first-of-type button {{
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
     width: 100% !important;
-    border-radius: 6px !important;
+    height: 80px !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    z-index: 999 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}}
+
+/* Admin section — dim, smaller text */
+[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(span:contains("ADMIN")) {{
+    font-size: 9px !important;
+    opacity: 0.4 !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -359,38 +377,41 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    _hcol1, _hcol2 = st.columns([1, 4])
-    with _hcol1:
-        st.button("🏠", key="_sidebar_home", help="Market Overview", use_container_width=True, on_click=_go_home)
-
-    st.markdown(f'<div style="color:{TEXT_MUTED};font-size:10px;text-transform:uppercase;letter-spacing:1px;margin:4px 0 6px">Navigate</div>', unsafe_allow_html=True)
+    # NAV-2: logo acts as home button (invisible button overlaid via CSS)
+    st.button("", key="_logo_home", on_click=_go_home, help="Go to Market Overview")
 
     page = st.radio(
         "Navigation",
         key="nav_page",
         options=[
+            # ── Top ──────────────────────────────────────
             "🏠  Market Overview",
             "📱  Social Trends",
-            "── PORTFOLIO ──",
-            "📌  Tracking",
-            "👁  WatchList",
+            # ── Stocks ───────────────────────────────────
             "── STOCKS ──",
             "🔀  Golden Scan",
             "🔬  Stock Analysis",
             "📰  Headlines & Catalysts",
-            "── 3X ──",
             "⚡📊  3× Leveraged ETFs",
-            "⚡📈  3× ETF Options",
+            # ── Options ──────────────────────────────────
             "── OPTIONS ──",
             "💰  Cash-Secured Puts",
             "📦  Covered Calls",
             "🧨  LEAPS",
-            "📈  ETF Options",
+            "⚡📈  3× ETF Options",
+            # ── Dividend ─────────────────────────────────
             "── DIVIDEND ──",
             "💵  Upcoming Dividends",
             "📅  Dividend + CC Capture",
+            # ── Portfolio ────────────────────────────────
+            "── PORTFOLIO ──",
+            "📌  Tracking",
+            "👁  WatchList",
+            # ── Info ─────────────────────────────────────
             "── INFO ──",
             "ℹ️  About & Guide",
+            # ── Admin ────────────────────────────────────
+            "── ADMIN ──",
         ],
         label_visibility="collapsed",
     )
@@ -410,7 +431,7 @@ with st.sidebar:
     st.markdown(f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center">Data via YFinance · Refreshes every 5 min<br>⚠️ Not financial advice</div>', unsafe_allow_html=True)
 
 
-# ── Home button in main content (uses on_click — safe after radio renders) ─
+# ── Main breadcrumb bar (shown on non-home pages) ─────────────
 if page and page != "🏠  Market Overview" and "──" not in page:
     _c1, _c2 = st.columns([1, 11])
     with _c1:
@@ -453,9 +474,6 @@ elif page == "📦  Covered Calls":
     render()
 elif page == "🧨  LEAPS":
     from scanners.leaps_scanner import render
-    render()
-elif page == "📈  ETF Options":
-    from scanners.etf_options_scanner import render
     render()
 elif page == "💵  Upcoming Dividends":
     from scanners.dividend_hacker import render
