@@ -408,9 +408,9 @@ def add_prepost_column(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ── Tracker callbacks (on_click — fire before rerun) ──────────
-def _cb_track(ticker, strategy, source, price_str):
+def _cb_track(ticker, strategy, source, price_str, extra_meta=None):
     from scanners.gsheet_helper import add_to_tracking
-    ok, msg = add_to_tracking(ticker, strategy, source, price_str)
+    ok, msg = add_to_tracking(ticker, strategy, source, price_str, extra_meta)
     notes = st.session_state.setdefault("_tracker_notes", [])
     notes.append(("✅" if ok else "⚠️", msg))
 
@@ -465,7 +465,7 @@ def render_tracker_widget(tickers: list, strategy: str = "Stock", source: str = 
                       use_container_width=True,
                       help=f"Track {ticker} ({strategy}) — 100 shares or 1 contract",
                       on_click=_cb_track,
-                      args=(ticker, strategy, source, price_str))
+                      args=(ticker, strategy, source, price_str, {}))
         with c_wch:
             st.button("👁 Watch",
                       key=f"wch_{key_base}_{i}_{_safe(ticker)}",
@@ -563,6 +563,24 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
         price_str  = _extract_price(row)
         row_cols   = st.columns(col_widths)
 
+        # Enriched source tag
+        row_source = source
+        if "Scanners" in df.columns:
+            sc = str(row.get("Scanners", "")).strip()
+            if sc:
+                row_source = f"GS-{sc[:50]}"
+        elif "Catalysts" in df.columns:
+            cat = str(row.get("Catalysts", "")).strip()
+            if cat:
+                row_source = f"H&C-{cat[:50]}"
+
+        # Extra metadata for tracking
+        extra_meta = {}
+        for meta_key, col_name in [("Score_At_Track", "Score"), ("HOLD", "HOLD"),
+                                    ("Est_Upside", "Est. Upside %"), ("Direction", "Direction")]:
+            if col_name in df.columns:
+                extra_meta[meta_key] = str(row.get(col_name, ""))
+
         for i, col_name in enumerate(data_cols):
             val = row[col_name]
             with row_cols[i]:
@@ -595,7 +613,7 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                 use_container_width=True,
                 help=f"Track {ticker} ({strategy}) — 100 shares or 1 contract",
                 on_click=_cb_track,
-                args=(ticker, strategy, source, price_str),
+                args=(ticker, strategy, row_source, price_str, extra_meta),
             )
         with row_cols[-1]:
             st.button(

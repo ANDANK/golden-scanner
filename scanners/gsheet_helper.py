@@ -8,7 +8,7 @@ import streamlit as st
 from datetime import datetime
 
 # ── Constants ──────────────────────────────────────────────────
-TRACKING_HEADERS  = ["Ticker","Strategy","Action","Qty","Entry_Price","Added_Date","Source","Notes"]
+TRACKING_HEADERS  = ["Ticker","Strategy","Action","Qty","Entry_Price","Added_Date","Source","Score","HOLD","Est_Upside","Notes"]
 WATCHLIST_HEADERS = ["Ticker","Added_Date","Source","Price_At_Add","Notes"]
 
 _SELL_STRATEGIES   = {"CSP","CC","Dividend+CC","ETF Options"}
@@ -130,7 +130,7 @@ def get_watchlist() -> list:
 
 
 def add_to_tracking(ticker: str, strategy: str, source: str = "",
-                    entry_price: str = "") -> tuple:
+                    entry_price: str = "", extra_meta=None) -> tuple:
     """Returns (success: bool, message: str)."""
     ticker = ticker.upper().strip()
     today_str = datetime.now().strftime("%Y-%m-%d")
@@ -155,6 +155,9 @@ def add_to_tracking(ticker: str, strategy: str, source: str = "",
         "Entry_Price":price,
         "Added_Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "Source":     source,
+        "Score":      (extra_meta or {}).get("Score_At_Track", ""),
+        "HOLD":       (extra_meta or {}).get("HOLD", ""),
+        "Est_Upside": (extra_meta or {}).get("Est_Upside", ""),
         "Notes":      "",
     }
 
