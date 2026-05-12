@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import *
 from utils import *
 from data_loader import (
-    get_price_history, get_options_chain,
+    get_price_history, get_options_chain, get_options_error,
     find_best_expiry, pick_strike,
 )
 
@@ -39,7 +39,7 @@ def scan_csp(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
 
                 _, puts, expiries = get_options_chain(ticker)
                 if puts.empty or not expiries:
-                    diag.skipped(ticker, "no options chain"); continue
+                    diag.skipped(ticker, get_options_error(ticker) or "no options chain"); continue
 
                 exp_pick = find_best_expiry(expiries, dte_min, dte_max)
                 if exp_pick is None:

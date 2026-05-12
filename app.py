@@ -396,6 +396,17 @@ with st.sidebar:
     )
 
     st.markdown("---")
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:10px;font-weight:600;'
+        f'text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">⚙️ Global</div>',
+        unsafe_allow_html=True,
+    )
+    st.session_state["_show_prepost"] = st.checkbox(
+        "Show Pre/Post Market Price",
+        value=st.session_state.get("_show_prepost", False),
+        help="Appends current extended-hours price to every scanner result table. Adds ~1s per ticker.",
+    )
+    st.markdown("---")
     st.markdown(f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center">Data via YFinance · Refreshes every 5 min<br>⚠️ Not financial advice</div>', unsafe_allow_html=True)
 
 

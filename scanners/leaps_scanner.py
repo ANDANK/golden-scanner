@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import *
 from utils import *
 from data_loader import (
-    get_price_history, get_options_chain,
+    get_price_history, get_options_chain, get_options_error,
     find_best_expiry, pick_strike,
 )
 
@@ -51,7 +51,7 @@ def scan_leaps(tickers, dte_min, delta_min, delta_max, iv_rank_max, price_min, p
 
                 calls, _, expiries = get_options_chain(ticker)
                 if calls.empty or not expiries:
-                    diag.skipped(ticker, "no options chain"); continue
+                    diag.skipped(ticker, get_options_error(ticker) or "no options chain"); continue
 
                 # LEAPS: any expiry beyond dte_min, no upper bound
                 exp_pick = find_best_expiry(expiries, dte_min, 3650, fallback=False)

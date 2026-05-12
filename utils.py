@@ -382,6 +382,31 @@ def _extract_price(row: pd.Series) -> str:
     return ""
 
 
+# ── Pre/Post market price helper ──────────────────────────────
+
+def add_prepost_column(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Append a 'Pre/Post' column to a scanner results DataFrame.
+    Fetches extended-hours prices in one batch yfinance call.
+    Returns the original df if Ticker column is missing or all fetches fail.
+    """
+    if "Ticker" not in df.columns or df.empty:
+        return df
+    from data_loader import get_prepost_price
+    tickers = df["Ticker"].dropna().tolist()
+    prepost_map: dict = {}
+    for tk in tickers:
+        info = get_prepost_price(str(tk))
+        if info:
+            sign = "+" if info["change_pct"] >= 0 else ""
+            prepost_map[str(tk)] = f"${info['price']} ({sign}{info['change_pct']:.1f}%)"
+        else:
+            prepost_map[str(tk)] = "—"
+    df = df.copy()
+    df.insert(2, "Pre/Post", df["Ticker"].map(prepost_map).fillna("—"))
+    return df
+
+
 # ── Tracker callbacks (on_click — fire before rerun) ──────────
 def _cb_track(ticker, strategy, source, price_str):
     from scanners.gsheet_helper import add_to_tracking
@@ -452,86 +477,135 @@ def render_tracker_widget(tickers: list, strategy: str = "Stock", source: str = 
 
 def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                          strategy: str = "Stock", source: str = ""):
-    """Render results as a styled HTML table — always visible on any theme."""
+    """Render results as columns-based rows with inline Track/Watch buttons."""
     if df.empty:
         empty_state()
         return
+
+    import re, hashlib
+
+    def _safe(s):
+        return re.sub(r"[^a-zA-Z0-9]", "_", str(s))
 
     df = df.copy()
     if score_col in df.columns:
         df[score_col] = pd.to_numeric(df[score_col], errors="coerce").fillna(0).astype(int)
 
-    # Export button row
-    col1, col2 = st.columns([3, 1])
-    with col1:
+    # Optional pre/post market column (controlled by global sidebar toggle)
+    if st.session_state.get("_show_prepost", False):
+        with st.spinner("Fetching pre/post market prices…"):
+            df = add_prepost_column(df)
+
+    # Export row
+    c1, c2 = st.columns([3, 1])
+    with c1:
         st.markdown(
             f'<div style="color:{TEXT_MUTED};font-size:13px;padding:6px 0">'
             f'Found <b style="color:{GOLD}">{len(df)}</b> results</div>',
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
-    with col2:
+    with c2:
         st.download_button(
             "⬇ Export CSV", df.to_csv(index=False),
             "golden_scanner_results.csv", "text/csv",
-            use_container_width=True
+            use_container_width=True,
         )
 
-    # Build HTML table
-    cols = df.columns.tolist()
-
-    # Header row
-    header_cells = "".join(
-        f'<th style="background:{BG_PANEL};color:{GOLD};font-size:11px;font-weight:600;'
-        f'text-transform:uppercase;letter-spacing:0.8px;padding:10px 14px;'
-        f'border-bottom:2px solid {GOLD}44;white-space:nowrap;text-align:left">{c}</th>'
-        for c in cols
+    # Tighten vertical spacing between rows
+    st.markdown(
+        "<style>"
+        "div[data-testid='stHorizontalBlock']{gap:0 !important;margin-bottom:0 !important}"
+        "div[data-testid='stHorizontalBlock'] > div[data-testid='stColumn']"
+        "{padding-top:2px !important;padding-bottom:2px !important}"
+        "</style>",
+        unsafe_allow_html=True,
     )
 
-    # Data rows
-    row_htmls = []
-    for i, (_, row) in enumerate(df.iterrows()):
-        bg = BG_CARD if i % 2 == 0 else BG_PANEL
-        cells = []
-        for col in cols:
-            val = row[col]
-            # Score column → progress bar
-            if col == score_col:
-                cell_content = _score_bar_html(val)
-                cell_style = f'padding:8px 14px;vertical-align:middle;min-width:100px'
-            else:
-                color = _cell_color(col, val)
-                # Ticker gets special treatment
-                if col == "Ticker":
-                    cell_content = (
+    data_cols = df.columns.tolist()
+    first_ticker = str(df["Ticker"].iloc[0]) if "Ticker" in df.columns else "x"
+    key_base = hashlib.md5(f"{strategy}{source}{first_ticker}".encode()).hexdigest()[:6]
+
+    # Column width hints — wider for text-heavy columns, narrower for numbers
+    _wide = {"Ticker", "Sector", "Catalysts", "Momentum", "Trap Risk", "Mkt Cap", "Signal"}
+    _med  = {"Score", "Strategy", "Direction", "MACD Bull", "FCF", ">200 SMA"}
+    col_widths = []
+    for c in data_cols:
+        if c in _wide:    col_widths.append(1.4)
+        elif c in _med:   col_widths.append(1.1)
+        else:             col_widths.append(0.9)
+    # Two button columns at the end
+    col_widths += [0.85, 0.85]
+
+    # ── Header row ──────────────────────────────────────────────
+    hdr = st.columns(col_widths)
+    for i, col_name in enumerate(data_cols):
+        with hdr[i]:
+            st.markdown(
+                f'<div style="color:{GOLD};font-size:10px;font-weight:700;'
+                f'text-transform:uppercase;letter-spacing:0.7px;'
+                f'padding:6px 4px 4px;border-bottom:2px solid {GOLD}55;'
+                f'white-space:nowrap">{col_name}</div>',
+                unsafe_allow_html=True,
+            )
+    for label in ("📌", "👁"):
+        with hdr[data_cols.__len__() + (0 if label == "📌" else 1)]:
+            st.markdown(
+                f'<div style="color:{GOLD};font-size:10px;font-weight:700;'
+                f'padding:6px 4px 4px;border-bottom:2px solid {GOLD}55;'
+                f'text-align:center">{label}</div>',
+                unsafe_allow_html=True,
+            )
+
+    # ── Data rows ────────────────────────────────────────────────
+    for row_i, (_, row) in enumerate(df.iterrows()):
+        bg = BG_CARD if row_i % 2 == 0 else BG_PANEL
+        ticker     = str(row.get("Ticker", "")) if "Ticker" in df.columns else ""
+        price_str  = _extract_price(row)
+        row_cols   = st.columns(col_widths)
+
+        for i, col_name in enumerate(data_cols):
+            val = row[col_name]
+            with row_cols[i]:
+                if col_name == score_col:
+                    st.markdown(
+                        f'<div style="background:{bg};padding:6px 4px">'
+                        f'{_score_bar_html(val)}</div>',
+                        unsafe_allow_html=True,
+                    )
+                elif col_name == "Ticker":
+                    st.markdown(
+                        f'<div style="background:{bg};padding:6px 4px">'
                         f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
-                        f'font-weight:600;font-size:13px">{val}</span>'
+                        f'font-weight:700;font-size:13px">{val}</span></div>',
+                        unsafe_allow_html=True,
                     )
                 else:
-                    cell_content = f'<span style="color:{color};font-size:13px">{val}</span>'
-                cell_style = f'padding:8px 14px;vertical-align:middle;white-space:nowrap'
+                    color = _cell_color(col_name, val)
+                    st.markdown(
+                        f'<div style="background:{bg};padding:6px 4px">'
+                        f'<span style="color:{color};font-size:12px;white-space:nowrap">'
+                        f'{val}</span></div>',
+                        unsafe_allow_html=True,
+                    )
 
-            cells.append(
-                f'<td style="{cell_style};border-bottom:1px solid {BORDER_COLOR}22;'
-                f'background:{bg}">{cell_content}</td>'
+        with row_cols[-2]:
+            st.button(
+                "📌 Track",
+                key=f"trk_{key_base}_{row_i}_{_safe(ticker)}",
+                use_container_width=True,
+                help=f"Track {ticker} ({strategy}) — 100 shares or 1 contract",
+                on_click=_cb_track,
+                args=(ticker, strategy, source, price_str),
             )
-        row_htmls.append(f'<tr>{"".join(cells)}</tr>')
-
-    table_html = f"""
-    <div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:8px;margin-top:8px">
-      <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif">
-        <thead><tr>{header_cells}</tr></thead>
-        <tbody>{"".join(row_htmls)}</tbody>
-      </table>
-    </div>
-    """
-    st.markdown(table_html, unsafe_allow_html=True)
-
-    # Per-row Track / Watch strip
-    if "Ticker" in df.columns:
-        tickers = df["Ticker"].dropna().tolist()
-        prices  = {str(row["Ticker"]): _extract_price(row)
-                   for _, row in df.iterrows() if pd.notna(row.get("Ticker"))}
-        render_tracker_widget(tickers, strategy=strategy, source=source, prices=prices)
+        with row_cols[-1]:
+            st.button(
+                "👁 Watch",
+                key=f"wch_{key_base}_{row_i}_{_safe(ticker)}",
+                use_container_width=True,
+                help=f"Add {ticker} to WatchList",
+                on_click=_cb_watch,
+                args=(ticker, source, price_str),
+            )
 
 
 def mini_chart(df: pd.DataFrame, ticker: str) -> go.Figure:

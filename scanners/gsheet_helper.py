@@ -133,9 +133,15 @@ def add_to_tracking(ticker: str, strategy: str, source: str = "",
                     entry_price: str = "") -> tuple:
     """Returns (success: bool, message: str)."""
     ticker = ticker.upper().strip()
+    today_str = datetime.now().strftime("%Y-%m-%d")
     existing = get_tracking()
-    if any(str(r.get("Ticker","")).upper() == ticker for r in existing):
-        return False, f"{ticker} is already being tracked."
+    # Dedup: same ticker + same calendar date (allow re-tracking on future days)
+    if any(
+        str(r.get("Ticker", "")).upper() == ticker
+        and str(r.get("Added_Date", "")).startswith(today_str)
+        for r in existing
+    ):
+        return False, f"{ticker} already tracked today."
 
     action = "Sell" if strategy in _SELL_STRATEGIES else "Buy"
     qty    = "1 contract" if strategy in _OPTION_STRATEGIES else "100 shares"
@@ -197,22 +203,47 @@ def add_to_watchlist(ticker: str, source: str = "", entry_price: str = "") -> tu
         return True, f"{ticker} added to WatchList"
 
 
-def remove_from_tracking(ticker: str) -> bool:
+def remove_from_tracking(ticker: str, added_date: str = "") -> bool:
+    """
+    Remove exactly one tracking row matching ticker + added_date (first 10 chars = YYYY-MM-DD).
+    If added_date is omitted, removes the first row with that ticker.
+    """
     ticker = ticker.upper().strip()
+    date_key = added_date[:10] if added_date else ""
     ws = _gs_sheet("Tracking")
     if ws:
         try:
-            cell = ws.find(ticker, in_column=1)
-            if cell:
-                ws.delete_rows(cell.row)
-            return True
+            all_vals = ws.get_all_values()
+            if not all_vals:
+                return False
+            headers = all_vals[0]
+            tk_col   = headers.index("Ticker")   if "Ticker"     in headers else 0
+            date_col = headers.index("Added_Date") if "Added_Date" in headers else -1
+            for row_i, row_vals in enumerate(all_vals[1:], start=2):
+                if len(row_vals) <= tk_col:
+                    continue
+                if row_vals[tk_col].upper().strip() != ticker:
+                    continue
+                if date_key and date_col >= 0 and len(row_vals) > date_col:
+                    if not row_vals[date_col].startswith(date_key):
+                        continue
+                ws.delete_rows(row_i)
+                return True
+            return False
         except Exception:
             return False
     else:
         rows = _csv_read(TRACKING_CSV, TRACKING_HEADERS)
-        rows = [r for r in rows if str(r.get("Ticker","")).upper() != ticker]
-        _csv_write(TRACKING_CSV, rows, TRACKING_HEADERS)
-        return True
+        new_rows, removed = [], False
+        for r in rows:
+            if (not removed
+                and str(r.get("Ticker", "")).upper().strip() == ticker
+                and (not date_key or str(r.get("Added_Date", "")).startswith(date_key))):
+                removed = True
+                continue
+            new_rows.append(r)
+        _csv_write(TRACKING_CSV, new_rows, TRACKING_HEADERS)
+        return removed
 
 
 def remove_from_watchlist(ticker: str) -> bool:

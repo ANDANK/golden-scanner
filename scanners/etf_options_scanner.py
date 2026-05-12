@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import *
 from utils import *
-from data_loader import get_price_history, get_options_chain
+from data_loader import get_price_history, get_options_chain, get_options_error
 
 
 def scan_etf_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
@@ -37,7 +37,7 @@ def scan_etf_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min
 
                 calls, puts, expiries = get_options_chain(ticker)
                 if (calls.empty and puts.empty) or not expiries:
-                    continue
+                    continue  # error logged in get_options_error(ticker)
 
                 best_exp = None
                 for exp in expiries:

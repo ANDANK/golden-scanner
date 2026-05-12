@@ -164,14 +164,72 @@ def get_info(ticker: str) -> dict:
     return result if isinstance(result, dict) else {}
 
 
+# ── Options error store (non-cached, lives in session_state) ──
+_OPT_ERR_KEY = "_gs_opt_errors"
+
+def _log_opt_err(ticker: str, msg: str) -> None:
+    st.session_state.setdefault(_OPT_ERR_KEY, {})[ticker] = msg
+
+def get_options_error(ticker: str) -> str:
+    """Return the last recorded options-fetch error for a ticker (empty string = none)."""
+    return st.session_state.get(_OPT_ERR_KEY, {}).get(ticker, "")
+
+
 def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
-    t = yf.Ticker(ticker, session=YF_SESSION)
-    dates = t.options
-    if not dates:
-        return pd.DataFrame(), pd.DataFrame(), []
-    target = expiry if expiry in dates else dates[0]
-    chain = t.option_chain(target)
-    return chain.calls, chain.puts, list(dates)
+    """
+    Fetch options chain with two-attempt strategy:
+      1st: use YF_SESSION (cached, browser headers)
+      2nd: fresh requests.Session (avoids stale crumbs)
+    Records the failure reason in session_state so scanners can report it.
+    """
+    errors: List[str] = []
+
+    for attempt in range(2):
+        try:
+            if attempt == 0:
+                t = yf.Ticker(ticker, session=YF_SESSION)
+            else:
+                import requests as _req
+                fresh = _req.Session()
+                fresh.headers.update(YF_SESSION.headers)
+                t = yf.Ticker(ticker, session=fresh)
+                time.sleep(0.25)
+
+            # Step 1 — expiry list
+            try:
+                dates = list(t.options or [])
+            except Exception as e:
+                errors.append(f"dates:{type(e).__name__}")
+                continue
+
+            if not dates:
+                errors.append("no_expiry_dates")
+                continue
+
+            # Step 2 — chain for target expiry
+            target = expiry if (expiry and expiry in dates) else dates[0]
+            try:
+                chain = t.option_chain(target)
+            except Exception as e:
+                errors.append(f"chain:{type(e).__name__}:{str(e)[:40]}")
+                continue
+
+            calls = getattr(chain, "calls", pd.DataFrame())
+            puts  = getattr(chain, "puts",  pd.DataFrame())
+
+            if calls.empty and puts.empty:
+                errors.append(f"empty_chain@{target}")
+                continue
+
+            # Clear any stale error on success
+            st.session_state.get(_OPT_ERR_KEY, {}).pop(ticker, None)
+            return calls, puts, dates
+
+        except Exception as e:
+            errors.append(f"outer:{type(e).__name__}:{str(e)[:40]}")
+
+    _log_opt_err(ticker, " | ".join(errors) if errors else "unknown")
+    return pd.DataFrame(), pd.DataFrame(), []
 
 
 @st.cache_data(ttl=600, show_spinner=False)
@@ -182,6 +240,49 @@ def get_options_chain(ticker: str, expiry: Optional[str] = None) -> Tuple[pd.Dat
     if isinstance(result, tuple) and len(result) == 3:
         return result
     return pd.DataFrame(), pd.DataFrame(), []
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def get_prepost_price(ticker: str) -> dict:
+    """
+    Fetch the most recent available price, including extended hours.
+    Returns {"price": float, "reg_close": float, "change_pct": float, "session": str}
+    or {} on failure.
+    """
+    try:
+        df = yf.download(ticker, period="1d", interval="1m",
+                         progress=False, prepost=True, auto_adjust=True)
+        if df is None or df.empty:
+            return {}
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        close = df["Close"].dropna()
+        if close.empty:
+            return {}
+
+        last_price = float(close.iloc[-1])
+        # Regular-hours close: last bar at or before 16:00 local
+        reg_bars = close[close.index.time <= pd.Timestamp("16:00").time()]
+        reg_close = float(reg_bars.iloc[-1]) if not reg_bars.empty else last_price
+        change_pct = (last_price - reg_close) / reg_close * 100 if reg_close else 0.0
+
+        import datetime as _dt
+        hour = _dt.datetime.now().hour + _dt.datetime.now().minute / 60
+        if hour < 9.5:
+            session = "Pre-Market"
+        elif hour >= 16.0:
+            session = "After-Hours"
+        else:
+            session = "Regular"
+
+        return {
+            "price":      round(last_price, 2),
+            "reg_close":  round(reg_close, 2),
+            "change_pct": round(change_pct, 2),
+            "session":    session,
+        }
+    except Exception:
+        return {}
 
 
 @st.cache_data(ttl=300, show_spinner=False)

@@ -146,16 +146,28 @@ def fetch_dividend_info(ticker: str) -> dict:
                 except Exception:
                     pass
 
-        # Source 3: project from dividend history using frequency
-        if ex_div_date is None and div_rate and div_rate > 0:
+        # Source 3: project from dividend history — always run if history available
+        # (div_rate can be 0 on cloud when t.info is restricted, but dividends still accessible)
+        if ex_div_date is None:
             try:
                 divs = t.dividends
                 if divs is not None and not divs.empty:
-                    last_ts = divs.index[-1]
-                    last_d  = last_ts.date() if hasattr(last_ts, "date") else date.fromisoformat(str(last_ts)[:10])
-                    freq_days = {"Annual":365,"Semi-Annual":182,"Quarterly":91,"Monthly":30}.get(freq_label, 91)
-                    projected = last_d + timedelta(days=freq_days)
-                    if projected >= today:
+                    divs_pos = divs[divs > 0]
+                    if not divs_pos.empty:
+                        last_ts = divs_pos.index[-1]
+                        last_d  = last_ts.date() if hasattr(last_ts, "date") else date.fromisoformat(str(last_ts)[:10])
+                        # Infer frequency from gap between last payments
+                        if len(divs_pos) >= 2:
+                            gaps = [(divs_pos.index[i] - divs_pos.index[i-1]).days
+                                    for i in range(1, min(len(divs_pos), 6))]
+                            avg_gap = int(sum(gaps) / len(gaps))
+                        else:
+                            avg_gap = {"Annual":365,"Semi-Annual":182,"Quarterly":91,"Monthly":30}.get(freq_label, 91)
+                        freq_days = max(25, min(avg_gap, 370))
+                        projected = last_d + timedelta(days=freq_days)
+                        # Advance until we find a future date
+                        while projected < today:
+                            projected += timedelta(days=freq_days)
                         ex_div_date = projected
             except Exception:
                 pass

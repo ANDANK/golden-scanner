@@ -185,24 +185,34 @@ def render():
         f'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Remove Position</div>',
         unsafe_allow_html=True,
     )
+    # Build display labels: "TICKER — YYYY-MM-DD" so user sees exactly which row
+    remove_options = [""] + [
+        f"{str(r.get('Ticker','')).upper()} — {str(r.get('Added_Date',''))[:10]}"
+        for _, r in df.iterrows()
+    ]
     r1, r2 = st.columns([4, 1])
     with r1:
-        to_remove = st.selectbox(
-            "Select ticker to remove",
-            options=[""] + df["Ticker"].tolist(),
+        to_remove_label = st.selectbox(
+            "Select position to remove",
+            options=remove_options,
             label_visibility="collapsed",
             key="tracking_remove_sel",
-            placeholder="Choose ticker to remove…",
+            placeholder="Choose position to remove…",
         )
     with r2:
         if st.button("🗑 Remove", key="tracking_remove_btn", use_container_width=True):
-            if to_remove:
-                if remove_from_tracking(to_remove):
-                    st.success(f"{to_remove} removed from Tracking.")
+            if to_remove_label:
+                parts = to_remove_label.split(" — ", 1)
+                tk  = parts[0].strip()
+                dt  = parts[1].strip() if len(parts) > 1 else ""
+                if remove_from_tracking(tk, dt):
+                    st.success(f"{tk} ({dt}) removed from Tracking.")
                     st.cache_data.clear()
                     st.rerun()
+                else:
+                    st.error("Could not remove — row not found.")
             else:
-                st.warning("Select a ticker first.")
+                st.warning("Select a position first.")
 
     # ── Export ────────────────────────────────────────────────
     export_df = df[["Ticker","Strategy","Action","Qty","Entry_Price",
