@@ -176,19 +176,19 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     color: {TEXT_PRIMARY} !important;
     border: none !important;
     border-left: 2px solid transparent !important;
-    border-radius: 4px !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
-    padding: 4px 12px !important;
+    padding: 4px 6px 4px 14px !important;
     font-size: 12.5px !important;
     font-weight: 400 !important;
     letter-spacing: 0 !important;
     text-align: left !important;
     justify-content: flex-start !important;
     align-items: center !important;
-    min-height: 28px !important;
-    height: 28px !important;
+    min-height: 26px !important;
+    height: auto !important;
     line-height: 1.4 !important;
-    transition: background 0.15s ease, color 0.15s ease !important;
+    transition: background 0.12s ease, color 0.12s ease !important;
 }}
 /* Force left-alignment through Streamlit's nested div + p */
 [data-testid="stSidebar"] .stButton > button > div,
@@ -204,15 +204,17 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     width: 100%;
 }}
 [data-testid="stSidebar"] .stButton > button:hover {{
-    background: rgba(245,200,66,0.06) !important;
-    color: {TEXT_PRIMARY} !important;
+    background: transparent !important;
+    color: {GOLD} !important;
+    border-left-color: rgba(245,200,66,0.4) !important;
     transform: none !important;
     box-shadow: none !important;
 }}
 /* Active nav item — marked by an extra invisible <span class="gs-active-marker"/>
-   we render right before the button via st.markdown */
+   we render right before the button via st.markdown. Subtle gold left rail +
+   gold text — no fill, so it still looks like a list row, not a button. */
 .gs-active-marker + div .stButton > button {{
-    background: {BG_DARK} !important;
+    background: transparent !important;
     color: {GOLD} !important;
     border-left: 2px solid {GOLD} !important;
     font-weight: 600 !important;
@@ -222,9 +224,9 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 .gs-sub-marker + div .stButton > button {{
     color: #C9CCD3 !important;
     font-size: 11.5px !important;
-    min-height: 26px !important;
-    height: 26px !important;
-    padding: 4px 10px !important;
+    min-height: 24px !important;
+    height: auto !important;
+    padding: 3px 10px !important;
 }}
 /* Thin gold rail in the spacer column next to a sub-item */
 .gs-sub-rail-line {{
@@ -242,6 +244,7 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 .gs-group-marker + div .stButton > button {{
     background: linear-gradient(90deg, rgba(245,200,66,0.16), rgba(245,200,66,0.04)) !important;
     border: 1px solid rgba(245,200,66,0.22) !important;
+    border-left: 1px solid rgba(245,200,66,0.22) !important;
     border-radius: 6px !important;
     color: {GOLD} !important;
     font-family: 'Inter', sans-serif !important;
@@ -252,14 +255,15 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     padding: 7px 12px !important;
     min-height: 34px !important;
     height: 34px !important;
-    margin-top: 6px !important;
+    margin-top: 10px !important;
     box-shadow: none !important;
     transition: background 0.18s ease, border-color 0.18s ease !important;
 }}
 .gs-group-marker + div .stButton > button:hover {{
     background: linear-gradient(90deg, rgba(245,200,66,0.28), rgba(245,200,66,0.10)) !important;
     border-color: rgba(245,200,66,0.45) !important;
-    transform: none !important;
+    color: {GOLD} !important;
+    border-left-color: rgba(245,200,66,0.45) !important;
 }}
 /* Admin group — dimmed */
 .gs-admin-marker + div .stButton > button {{
