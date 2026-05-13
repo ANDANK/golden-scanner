@@ -227,17 +227,6 @@ section[data-testid="stSidebar"] [data-testid="stButton"] {{
     transform: none !important;
     box-shadow: none !important;
 }}
-/* Active nav item — marked by an extra invisible <span class="gs-active-marker"/>
-   we render right before the button via st.markdown. Subtle gold left rail +
-   gold text — no fill, so it still looks like a list row, not a button. */
-section[data-testid="stSidebar"] .element-container:has(.gs-active-marker) + .element-container .stButton > button,
-section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-active-marker) + [data-testid="element-container"] .stButton > button {{
-    background: transparent !important;
-    color: {GOLD} !important;
-    border-left: 2px solid {GOLD} !important;
-    font-weight: 600 !important;
-}}
-
 /* Sub-item — quieter color, smaller font, indented via padding + gold rail
    directly on the button (no st.columns layout, which was adding gap). */
 section[data-testid="stSidebar"] .element-container:has(.gs-sub-marker) + .element-container .stButton > button,
@@ -250,6 +239,18 @@ section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-sub-m
     margin-left: 14px !important;
     width: calc(100% - 14px) !important;
     border-left: 1px solid rgba(245,200,66,0.25) !important;
+}}
+
+/* Active nav item — marked by <span class="gs-active-marker"/>. Comes AFTER
+   sub-item rule so that when BOTH apply (an active sub-item like Summary),
+   active wins on color and border without touching the indent properties. */
+section[data-testid="stSidebar"] .element-container:has(.gs-active-marker) + .element-container .stButton > button,
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-active-marker) + [data-testid="element-container"] .stButton > button {{
+    background: transparent !important;
+    color: {GOLD} !important;
+    border-left-color: {GOLD} !important;
+    border-left-width: 2px !important;
+    font-weight: 600 !important;
 }}
 
 /* Force ALL marker-only element-containers to collapse to zero height.
@@ -461,7 +462,7 @@ NAV_GROUPS = [
             {
                 "key": "📌  Tracking",
                 "children": [
-                    {"key": "📈  Summary"},
+                    {"key": "Summary"},
                 ],
             },
             {"key": "👁  WatchList"},
@@ -568,12 +569,17 @@ with st.sidebar:
 
     def _render_nav_item(it, indent=False):
         is_active = it["key"] == current_page
+        # Combine sub + active markers into ONE span so they share an
+        # element-container. If kept separate, sub-marker's adjacent-sibling
+        # selector ` + .element-container` points to the active-marker's
+        # container instead of the button — losing the indent on active sub-items.
+        classes = []
         if indent:
-            # Sub-marker tells CSS this is a sub-item — indent + rail handled
-            # entirely in CSS (no st.columns, which was adding layout gap).
-            st.markdown('<span class="gs-sub-marker"></span>', unsafe_allow_html=True)
+            classes.append("gs-sub-marker")
         if is_active:
-            st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
+            classes.append("gs-active-marker")
+        if classes:
+            st.markdown(f'<span class="{" ".join(classes)}"></span>', unsafe_allow_html=True)
         if st.button(it["key"], key=f"_nav_{it['key']}", use_container_width=True):
             _go(it["key"])
 
@@ -658,7 +664,7 @@ elif page == "📱  Social Trends":
 elif page == "📌  Tracking":
     from scanners.tracking_page import render
     render()
-elif page == "📈  Summary":
+elif page == "Summary":
     # NEW route — Summary sub-page under Tracking.
     # Falls back to tracking_page render if the dedicated module isn't present yet.
     try:
