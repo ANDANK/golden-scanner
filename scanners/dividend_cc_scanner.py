@@ -60,189 +60,191 @@ def scan_div_cc(tickers, ex_div_days_max, div_amt_min, price_min, price_max,
     diag = ScanDiagnostics()
     today = date.today()
 
-    with st.spinner(f"Scanning {len(tickers)} tickers for dividend capture + CC setups…"):
-        results = []
-        progress = st.progress(0)
+    _scan_label = st.empty()
+    _scan_prog  = st.progress(0)
+    results = []
 
-        for i, ticker in enumerate(tickers):
-            progress.progress((i + 1) / len(tickers))
-            diag.seen(ticker)
-            time.sleep(0.15)  # throttle — avoid Yahoo Finance rate-limit on cloud
+    for i, ticker in enumerate(tickers):
+        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker}</div>', unsafe_allow_html=True)
+        _scan_prog.progress((i + 1) / len(tickers))
+        diag.seen(ticker)
+        time.sleep(0.10)  # throttle — avoid Yahoo Finance rate-limit on cloud
+        try:
+            info = get_info(ticker)
+            if not info:
+                diag.skipped(ticker, "no fundamental data"); continue
+
+            # ── Ex-dividend date ──────────────────────────────
+            ex_div_raw = info.get("exDividendDate")
+            if not ex_div_raw:
+                diag.skipped(ticker, "no ex-div date"); continue
+
             try:
-                info = get_info(ticker)
-                if not info:
-                    diag.skipped(ticker, "no fundamental data"); continue
-
-                # ── Ex-dividend date ──────────────────────────────
-                ex_div_raw = info.get("exDividendDate")
-                if not ex_div_raw:
-                    diag.skipped(ticker, "no ex-div date"); continue
-
-                try:
-                    if isinstance(ex_div_raw, (int, float)):
-                        ex_div = datetime.utcfromtimestamp(int(ex_div_raw)).date()
-                    else:
-                        ex_div = datetime.strptime(str(ex_div_raw)[:10], "%Y-%m-%d").date()
-                except Exception:
-                    diag.skipped(ticker, "bad ex-div date format"); continue
-
-                days_to_ex = (ex_div - today).days
-                # Must own BEFORE ex-div date (days_to_ex >= 1)
-                if not (1 <= days_to_ex <= ex_div_days_max):
-                    diag.skipped(ticker, f"ex-div {days_to_ex}d away"); continue
-
-                # ── Dividend amount per share ──────────────────────
-                div_amt = float(info.get("lastDividendValue", 0) or 0)
-                if div_amt <= 0:
-                    ann_rate = float(info.get("dividendRate", 0) or 0)
-                    div_amt = round(ann_rate / 4, 4)   # assume quarterly
-                if div_amt < div_amt_min:
-                    diag.skipped(ticker, "dividend too small"); continue
-
-                # ── Current price ──────────────────────────────────
-                price = float(info.get("currentPrice") or
-                              info.get("regularMarketPrice") or 0)
-                if not price or not (price_min <= price <= price_max):
-                    diag.skipped(ticker, "price out of range"); continue
-
-                # ── Options chain — first expiry AFTER ex-div date ─
-                _, _, expiries = get_options_chain(ticker)
-                if not expiries:
-                    diag.skipped(ticker, "no options"); continue
-
-                exp_str, exp_dte = None, None
-                # Need expiry >= ex_div+1 so we hold through ex-div
-                for exp in expiries:
-                    try:
-                        exp_dt = datetime.strptime(exp, "%Y-%m-%d").date()
-                        dte = (exp_dt - today).days
-                        # Must expire at least 1 day after ex-div
-                        if dte >= days_to_ex and dte <= days_to_ex + 28:
-                            exp_str, exp_dte = exp, dte
-                            break
-                    except Exception:
-                        continue
-
-                if exp_str is None:
-                    diag.skipped(ticker, "no expiry after ex-div"); continue
-
-                calls_ch, _, _ = get_options_chain(ticker, exp_str)
-                if calls_ch.empty:
-                    diag.skipped(ticker, "empty calls chain"); continue
-
-                # ── Find ATM or slightly OTM call (strike >= price) ─
-                max_strike = price * (1 + cc_otm_max_pct / 100)
-                atm = calls_ch[
-                    (calls_ch["strike"] >= price) &
-                    (calls_ch["strike"] <= max_strike)
-                ].copy()
-
-                if atm.empty:
-                    diag.skipped(ticker, "no ATM call in range"); continue
-
-                # Closest to current price (prefer ATM)
-                atm["_dist"] = (atm["strike"] - price).abs()
-                row = atm.sort_values("_dist").iloc[0]
-
-                cc_strike  = float(row["strike"])
-                bid        = float(row.get("bid", 0) or 0)
-                ask        = float(row.get("ask", 0) or 0)
-                last_price = float(row.get("lastPrice", 0) or 0)
-
-                if bid > 0 and ask > 0:
-                    cc_premium = (bid + ask) / 2
-                    spread_pct = (ask - bid) / cc_premium * 100
+                if isinstance(ex_div_raw, (int, float)):
+                    ex_div = datetime.utcfromtimestamp(int(ex_div_raw)).date()
                 else:
-                    cc_premium = last_price
-                    spread_pct = 0.0
+                    ex_div = datetime.strptime(str(ex_div_raw)[:10], "%Y-%m-%d").date()
+            except Exception:
+                diag.skipped(ticker, "bad ex-div date format"); continue
 
-                if cc_premium <= 0:
-                    diag.skipped(ticker, "zero CC premium"); continue
+            days_to_ex = (ex_div - today).days
+            # Must own BEFORE ex-div date (days_to_ex >= 1)
+            if not (1 <= days_to_ex <= ex_div_days_max):
+                diag.skipped(ticker, f"ex-div {days_to_ex}d away"); continue
 
-                iv    = float(row.get("impliedVolatility", 0) or 0)
-                delta = abs(float(row.get("delta", 0.5) or 0.5))
+            # ── Dividend amount per share ──────────────────────
+            div_amt = float(info.get("lastDividendValue", 0) or 0)
+            if div_amt <= 0:
+                ann_rate = float(info.get("dividendRate", 0) or 0)
+                div_amt = round(ann_rate / 4, 4)   # assume quarterly
+            if div_amt < div_amt_min:
+                diag.skipped(ticker, "dividend too small"); continue
 
-                # ── Key metrics ───────────────────────────────────
-                net_cost         = price - cc_premium          # effective buy cost
-                total_income     = cc_premium + div_amt        # premium + dividend
-                income_pct       = total_income / price * 100  # % of stock price
+            # ── Current price ──────────────────────────────────
+            price = float(info.get("currentPrice") or
+                          info.get("regularMarketPrice") or 0)
+            if not price or not (price_min <= price <= price_max):
+                diag.skipped(ticker, "price out of range"); continue
 
-                # P&L if stock is called away at expiry (stock >= strike)
-                called_pnl       = (cc_strike - price) + cc_premium + div_amt
-                called_pnl_pct   = called_pnl / price * 100
+            # ── Options chain — first expiry AFTER ex-div date ─
+            _, _, expiries = get_options_chain(ticker)
+            if not expiries:
+                diag.skipped(ticker, "no options"); continue
 
-                # The core rule: NEVER lose if called away
-                if called_pnl < 0:
-                    diag.skipped(ticker, "loss if called away"); continue
+            exp_str, exp_dte = None, None
+            # Need expiry >= ex_div+1 so we hold through ex-div
+            for exp in expiries:
+                try:
+                    exp_dt = datetime.strptime(exp, "%Y-%m-%d").date()
+                    dte = (exp_dt - today).days
+                    # Must expire at least 1 day after ex-div
+                    if dte >= days_to_ex and dte <= days_to_ex + 28:
+                        exp_str, exp_dte = exp, dte
+                        break
+                except Exception:
+                    continue
 
-                if income_pct < min_income_pct:
-                    diag.skipped(ticker, "income % too low"); continue
+            if exp_str is None:
+                diag.skipped(ticker, "no expiry after ex-div"); continue
 
-                # Downside protection: premium shields from stock drop
-                downside_prot_pct = cc_premium / price * 100
+            calls_ch, _, _ = get_options_chain(ticker, exp_str)
+            if calls_ch.empty:
+                diag.skipped(ticker, "empty calls chain"); continue
 
-                # Dividend yield for this period (not annualized)
-                div_yield_pct = div_amt / price * 100
+            # ── Find ATM or slightly OTM call (strike >= price) ─
+            max_strike = price * (1 + cc_otm_max_pct / 100)
+            atm = calls_ch[
+                (calls_ch["strike"] >= price) &
+                (calls_ch["strike"] <= max_strike)
+            ].copy()
 
-                # ── Score ─────────────────────────────────────────
-                score = 0
-                if income_pct >= 2.5:  score += 35
-                elif income_pct >= 1.5: score += 25
-                elif income_pct >= 0.8: score += 15
+            if atm.empty:
+                diag.skipped(ticker, "no ATM call in range"); continue
 
-                if days_to_ex == 1:    score += 30   # ex-div tomorrow = ideal
-                elif days_to_ex <= 3:  score += 22
-                elif days_to_ex <= 5:  score += 14
-                else:                  score += 6
+            # Closest to current price (prefer ATM)
+            atm["_dist"] = (atm["strike"] - price).abs()
+            row = atm.sort_values("_dist").iloc[0]
 
-                if called_pnl_pct >= 1.5: score += 20
-                elif called_pnl_pct >= 0.5: score += 12
-                else:                        score += 5
+            cc_strike  = float(row["strike"])
+            bid        = float(row.get("bid", 0) or 0)
+            ask        = float(row.get("ask", 0) or 0)
+            last_price = float(row.get("lastPrice", 0) or 0)
 
-                if downside_prot_pct >= 1.5: score += 10
-                elif downside_prot_pct >= 0.5: score += 5
+            if bid > 0 and ask > 0:
+                cc_premium = (bid + ask) / 2
+                spread_pct = (ask - bid) / cc_premium * 100
+            else:
+                cc_premium = last_price
+                spread_pct = 0.0
 
-                if spread_pct <= 5: score += 5
-                score = min(score, 100)
+            if cc_premium <= 0:
+                diag.skipped(ticker, "zero CC premium"); continue
 
-                div_annual_yield = float(info.get("dividendYield", 0) or 0) * 100
-                sector           = info.get("sector", "N/A")
+            iv    = float(row.get("impliedVolatility", 0) or 0)
+            delta = abs(float(row.get("delta", 0.5) or 0.5))
 
-                prev_df = get_price_history(ticker, period="5d")
-                chg_pct = 0.0
-                if prev_df is not None and len(prev_df) >= 2:
-                    c = prev_df["Close"].squeeze()
-                    chg_pct = (float(c.iloc[-1]) - float(c.iloc[-2])) / float(c.iloc[-2]) * 100
+            # ── Key metrics ───────────────────────────────────
+            net_cost         = price - cc_premium          # effective buy cost
+            total_income     = cc_premium + div_amt        # premium + dividend
+            income_pct       = total_income / price * 100  # % of stock price
 
-                results.append({
-                    "Ticker":          ticker,
-                    "Sector":          sector,
-                    "Price":           round(price, 2),
-                    "Chg %":           round(chg_pct, 2),
-                    "Ex-Div Date":     str(ex_div),
-                    "Days to Ex-Div":  days_to_ex,
-                    "Div/Share":       round(div_amt, 3),
-                    "Ann. Yield %":    round(div_annual_yield, 2),
-                    "CC Strike":       round(cc_strike, 2),
-                    "CC Premium":      round(cc_premium, 3),
-                    "CC Expiry":       exp_str,
-                    "DTE":             exp_dte,
-                    "IV":              f"{iv*100:.1f}%",
-                    "Net Cost":        round(net_cost, 2),
-                    "Total Income":    round(total_income, 3),
-                    "Income %":        round(income_pct, 2),
-                    "If Called P&L":   round(called_pnl, 3),
-                    "If Called %":     round(called_pnl_pct, 2),
-                    "Downside Prot%":  round(downside_prot_pct, 2),
-                    "Score":           score,
-                })
-                diag.passed(ticker)
+            # P&L if stock is called away at expiry (stock >= strike)
+            called_pnl       = (cc_strike - price) + cc_premium + div_amt
+            called_pnl_pct   = called_pnl / price * 100
 
-            except Exception as e:
-                diag.failed(ticker, type(e).__name__)
-                continue
+            # The core rule: NEVER lose if called away
+            if called_pnl < 0:
+                diag.skipped(ticker, "loss if called away"); continue
 
-        progress.empty()
+            if income_pct < min_income_pct:
+                diag.skipped(ticker, "income % too low"); continue
+
+            # Downside protection: premium shields from stock drop
+            downside_prot_pct = cc_premium / price * 100
+
+            # Dividend yield for this period (not annualized)
+            div_yield_pct = div_amt / price * 100
+
+            # ── Score ─────────────────────────────────────────
+            score = 0
+            if income_pct >= 2.5:  score += 35
+            elif income_pct >= 1.5: score += 25
+            elif income_pct >= 0.8: score += 15
+
+            if days_to_ex == 1:    score += 30   # ex-div tomorrow = ideal
+            elif days_to_ex <= 3:  score += 22
+            elif days_to_ex <= 5:  score += 14
+            else:                  score += 6
+
+            if called_pnl_pct >= 1.5: score += 20
+            elif called_pnl_pct >= 0.5: score += 12
+            else:                        score += 5
+
+            if downside_prot_pct >= 1.5: score += 10
+            elif downside_prot_pct >= 0.5: score += 5
+
+            if spread_pct <= 5: score += 5
+            score = min(score, 100)
+
+            div_annual_yield = float(info.get("dividendYield", 0) or 0) * 100
+            sector           = info.get("sector", "N/A")
+
+            prev_df = get_price_history(ticker, period="5d")
+            chg_pct = 0.0
+            if prev_df is not None and len(prev_df) >= 2:
+                c = prev_df["Close"].squeeze()
+                chg_pct = (float(c.iloc[-1]) - float(c.iloc[-2])) / float(c.iloc[-2]) * 100
+
+            results.append({
+                "Ticker":          ticker,
+                "Sector":          sector,
+                "Price":           round(price, 2),
+                "Chg %":           round(chg_pct, 2),
+                "Ex-Div Date":     str(ex_div),
+                "Days to Ex-Div":  days_to_ex,
+                "Div/Share":       round(div_amt, 3),
+                "Ann. Yield %":    round(div_annual_yield, 2),
+                "CC Strike":       round(cc_strike, 2),
+                "CC Premium":      round(cc_premium, 3),
+                "CC Expiry":       exp_str,
+                "DTE":             exp_dte,
+                "IV":              f"{iv*100:.1f}%",
+                "Net Cost":        round(net_cost, 2),
+                "Total Income":    round(total_income, 3),
+                "Income %":        round(income_pct, 2),
+                "If Called P&L":   round(called_pnl, 3),
+                "If Called %":     round(called_pnl_pct, 2),
+                "Downside Prot%":  round(downside_prot_pct, 2),
+                "Score":           score,
+            })
+            diag.passed(ticker)
+
+        except Exception as e:
+            diag.failed(ticker, type(e).__name__)
+            continue
+
+    _scan_label.empty()
+    _scan_prog.empty()
 
     df_out = pd.DataFrame(results)
     if not df_out.empty:

@@ -214,31 +214,41 @@ def get_options_error(ticker: str) -> str:
     return st.session_state.get(_OPT_ERR_KEY, {}).get(ticker, "")
 
 
+def _make_ticker_no_session(ticker: str) -> "yf.Ticker":
+    """
+    Return a yf.Ticker that does NOT have a requests/requests_cache session
+    injected.  yfinance ≥0.2.50 requires curl_cffi for the options endpoint;
+    passing a plain requests.Session raises YFDataException.  Passing no
+    session lets yfinance create its own internal curl_cffi session.
+    """
+    return yf.Ticker(ticker)
+
+
 def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     """
-    Fetch options chain with two-attempt strategy:
-      1st: use YF_SESSION (cached, browser headers)
-      2nd: fresh requests.Session (avoids stale crumbs)
+    Fetch options chain.  yfinance ≥0.2.50 requires curl_cffi for options —
+    we must NOT pass a requests/requests_cache session.  Two attempts:
+      1st: yf.Ticker with no session (yfinance uses its own curl_cffi session)
+      2nd: same, with a short back-off delay
     Records the failure reason in session_state so scanners can report it.
     """
     errors: List[str] = []
 
     for attempt in range(2):
         try:
-            if attempt == 0:
-                t = yf.Ticker(ticker, session=YF_SESSION)
-            else:
-                import requests as _req
-                fresh = _req.Session()
-                fresh.headers.update(YF_SESSION.headers)
-                t = yf.Ticker(ticker, session=fresh)
-                time.sleep(0.25)
+            if attempt > 0:
+                time.sleep(0.5)
+
+            # ── Do NOT pass session= here ──────────────────────────────
+            # yfinance ≥0.2.50 raises YFDataException if you pass a
+            # requests.Session for the options endpoint; it needs curl_cffi.
+            t = _make_ticker_no_session(ticker)
 
             # Step 1 — expiry list
             try:
                 dates = list(t.options or [])
             except Exception as e:
-                errors.append(f"dates:{type(e).__name__}")
+                errors.append(f"dates:{type(e).__name__}:{str(e)[:60]}")
                 continue
 
             if not dates:
@@ -250,7 +260,7 @@ def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFra
             try:
                 chain = t.option_chain(target)
             except Exception as e:
-                errors.append(f"chain:{type(e).__name__}:{str(e)[:40]}")
+                errors.append(f"chain:{type(e).__name__}:{str(e)[:60]}")
                 continue
 
             calls = getattr(chain, "calls", pd.DataFrame())
@@ -265,7 +275,7 @@ def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFra
             return calls, puts, dates
 
         except Exception as e:
-            errors.append(f"outer:{type(e).__name__}:{str(e)[:40]}")
+            errors.append(f"outer:{type(e).__name__}:{str(e)[:60]}")
 
     _log_opt_err(ticker, " | ".join(errors) if errors else "unknown")
     return pd.DataFrame(), pd.DataFrame(), []
