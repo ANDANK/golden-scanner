@@ -63,7 +63,7 @@ jobs:
           GOOGLE_CREDS_JSON: ${{ secrets.GOOGLE_CREDS_JSON }}
           # ── Tune these to change scan behaviour without editing code ──
           GOLDEN_SCAN_TICKERS: "250"   # top N S&P 500 for Golden Scan (technical only, no rate-limit risk)
-          OPTIONS_SCAN_STOCKS: "100"  # top N S&P stocks for options scans (CSP / CC / LEAPS) — does NOT affect Golden Scan
+          OPTIONS_SCAN_STOCKS: "75"  # top N S&P stocks for options scans (CSP / CC / LEAPS) — does NOT affect Golden Scan
           SCAN_BATCH_SIZE:     "20"   # tickers per batch (increase → fewer pauses, more rate-limit risk)
           SCAN_BATCH_PAUSE:    "30"   # seconds between batches (decrease → faster, increase → safer)
           SCORE_MIN:           "60"   # min score to auto-track to Google Sheets
