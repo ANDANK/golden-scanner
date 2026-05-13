@@ -230,7 +230,8 @@ section[data-testid="stSidebar"] [data-testid="stButton"] {{
 /* Active nav item — marked by an extra invisible <span class="gs-active-marker"/>
    we render right before the button via st.markdown. Subtle gold left rail +
    gold text — no fill, so it still looks like a list row, not a button. */
-.gs-active-marker + div .stButton > button {{
+section[data-testid="stSidebar"] .element-container:has(.gs-active-marker) + .element-container .stButton > button,
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-active-marker) + [data-testid="element-container"] .stButton > button {{
     background: transparent !important;
     color: {GOLD} !important;
     border-left: 2px solid {GOLD} !important;
@@ -238,10 +239,11 @@ section[data-testid="stSidebar"] [data-testid="stButton"] {{
 }}
 
 /* Sub-item — quieter color, smaller font (indented via st.columns in Python). */
-.gs-sub-marker + div .stButton > button {{
+section[data-testid="stSidebar"] .element-container:has(.gs-sub-marker) + .element-container .stButton > button,
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-sub-marker) + [data-testid="element-container"] .stButton > button {{
     color: #C9CCD3 !important;
     font-size: 11.5px !important;
-    min-height: 24px !important;
+    min-height: 22px !important;
     height: auto !important;
     padding: 3px 10px !important;
 }}
@@ -258,7 +260,8 @@ section[data-testid="stSidebar"] [data-testid="stButton"] {{
    can enforce one-open-at-a-time. The `.gs-group-marker` is rendered
    just before the button via st.markdown.
    ============================================================ */
-.gs-group-marker + div .stButton > button {{
+section[data-testid="stSidebar"] .element-container:has(.gs-group-marker) + .element-container .stButton > button,
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-group-marker) + [data-testid="element-container"] .stButton > button {{
     background: linear-gradient(90deg, rgba(245,200,66,0.16), rgba(245,200,66,0.04)) !important;
     border: 1px solid rgba(245,200,66,0.22) !important;
     border-left: 1px solid rgba(245,200,66,0.22) !important;
@@ -276,19 +279,31 @@ section[data-testid="stSidebar"] [data-testid="stButton"] {{
     box-shadow: none !important;
     transition: background 0.18s ease, border-color 0.18s ease !important;
 }}
-.gs-group-marker + div .stButton > button:hover {{
+section[data-testid="stSidebar"] .element-container:has(.gs-group-marker) + .element-container .stButton > button:hover,
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-group-marker) + [data-testid="element-container"] .stButton > button:hover {{
     background: linear-gradient(90deg, rgba(245,200,66,0.28), rgba(245,200,66,0.10)) !important;
     border-color: rgba(245,200,66,0.45) !important;
     color: {GOLD} !important;
     border-left-color: rgba(245,200,66,0.45) !important;
 }}
 /* Admin group — dimmed */
-.gs-admin-marker + div .stButton > button {{
+section[data-testid="stSidebar"] .element-container:has(.gs-admin-marker) + .element-container .stButton > button,
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-admin-marker) + [data-testid="element-container"] .stButton > button {{
     background: linear-gradient(90deg, rgba(245,200,66,0.08), rgba(245,200,66,0.02)) !important;
-    border-color: rgba(245,200,66,0.14) !important;
+    border: 1px solid rgba(245,200,66,0.14) !important;
+    border-radius: 6px !important;
+    color: {GOLD} !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.4px !important;
+    text-transform: uppercase !important;
+    padding: 7px 12px !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    margin-top: 10px !important;
     opacity: 0.55 !important;
 }}
-.gs-admin-marker + div .stButton > button:hover {{ opacity: 1 !important; }}
+section[data-testid="stSidebar"] .element-container:has(.gs-admin-marker) + .element-container .stButton > button:hover {{ opacity: 1 !important; }}
 
 /* ⚙️ Global block — same filled-header treatment as group headers */
 .gs-global-row {{
