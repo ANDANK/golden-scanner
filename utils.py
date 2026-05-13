@@ -508,6 +508,61 @@ def render_tracker_widget(tickers: list, strategy: str = "Stock", source: str = 
                       args=(ticker, source, price_str))
 
 
+# ── Strategy-aware column sets ─────────────────────────────────
+# These define the preferred column order per strategy type.
+# Columns not present in the DataFrame are skipped automatically.
+_STOCK_COLS = [
+    "Ticker", "Price", "Pre/Post", "Change %", "RSI", "Vol Ratio",
+    "RS vs SPY", "Score", "Scanners", "Scanner Count", "Style", "Hold",
+    "Est. Upside %", "Rev Growth %", "EPS Growth %", "P/E",
+    "Sector", "Signal", "Direction", "Catalysts",
+]
+_OPTIONS_COLS = [
+    "Ticker", "Stock Price", "Pre/Post", "Change %", "Score",
+    "Strike", "Call Strike", "Premium", "Premium %", "Delta", "IV", "IV Rank",
+    "DTE", "Expiry", "Ann. Return", "Breakeven", "Read %",
+    "Assign Risk", "Trend", "Side", "Bar", "Resistance", "Average",
+]
+# Golden Scan is stock-oriented
+_GOLDEN_COLS = _STOCK_COLS
+
+_OPTIONS_STRATS = {"CSP", "CC", "LEAPS", "ETF Options", "3x ETF Options",
+                   "CSP-Stocks", "CC-Stocks", "LEAPS-Stocks",
+                   "CSP-ETFs", "CC-ETFs", "LEAPS-ETFs"}
+
+
+def _strategy_cols(df: pd.DataFrame, strategy: str) -> list[str]:
+    """
+    Return ordered column list for the given strategy, filtered to:
+      1. Only columns actually present in df
+      2. Only columns that have at least one non-null / non-'nan' value
+
+    Columns outside the preferred set are appended at the end so nothing
+    is accidentally dropped (e.g. custom scanner output).
+    """
+    strat_up = strategy.upper()
+    if any(s in strat_up for s in ("CSP", "CC", "LEAPS", "ETF OPT", "3X ETF")):
+        preferred = _OPTIONS_COLS
+    elif "GOLDEN" in strat_up:
+        preferred = _GOLDEN_COLS
+    else:
+        preferred = _STOCK_COLS
+
+    # Only keep cols that exist AND have at least one real value
+    def _has_data(col: str) -> bool:
+        if col not in df.columns:
+            return False
+        s = df[col].astype(str).str.strip()
+        return ((s != "") & (s.str.lower() != "nan") & (s != "None") & (s != "0")).any()
+
+    ordered = [c for c in preferred if _has_data(c)]
+
+    # Append any remaining columns with data that aren't in the preferred list
+    seen = set(ordered)
+    extras = [c for c in df.columns if c not in seen and _has_data(c)]
+    return ordered + extras
+
+
 def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                          strategy: str = "Stock", source: str = ""):
     """Render results as columns-based rows with inline Track/Watch buttons."""
@@ -529,6 +584,12 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
         with st.spinner("Fetching pre/post market prices…"):
             df = add_prepost_column(df)
 
+    # ── Unique key for download button (prevents DuplicateElementId) ──
+    first_ticker = str(df["Ticker"].iloc[0]) if "Ticker" in df.columns else "x"
+    key_base = hashlib.md5(
+        f"{strategy}{source}{first_ticker}{len(df)}".encode()
+    ).hexdigest()[:8]
+
     # Export row
     c1, c2 = st.columns([3, 1])
     with c1:
@@ -540,8 +601,10 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
     with c2:
         st.download_button(
             "⬇ Export CSV", df.to_csv(index=False),
-            _export_filename("golden_scanner_results"), "text/csv",
+            _export_filename(f"gs_{strategy.lower().replace(' ','_')}"),
+            "text/csv",
             use_container_width=True,
+            key=f"dl_{key_base}",
         )
 
     # Tighten vertical spacing between rows
@@ -554,9 +617,8 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
         unsafe_allow_html=True,
     )
 
-    data_cols = df.columns.tolist()
-    first_ticker = str(df["Ticker"].iloc[0]) if "Ticker" in df.columns else "x"
-    key_base = hashlib.md5(f"{strategy}{source}{first_ticker}".encode()).hexdigest()[:6]
+    # Only show columns relevant for this strategy (drops all-nan columns)
+    data_cols = _strategy_cols(df, strategy)
 
     # Column width hints — wider for text-heavy columns, narrower for numbers
     _wide = {"Ticker", "Sector", "Catalysts", "Momentum", "Trap Risk", "Mkt Cap", "Signal"}
