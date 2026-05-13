@@ -170,8 +170,22 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     letter-spacing: 0 !important;
     text-align: left !important;
     justify-content: flex-start !important;
+    align-items: center !important;
     min-height: 32px !important;
     transition: background 0.15s ease, color 0.15s ease !important;
+}}
+/* Force left-alignment through Streamlit's nested div + p */
+[data-testid="stSidebar"] .stButton > button > div,
+[data-testid="stSidebar"] .stButton > button > div > div {{
+    text-align: left !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+}}
+[data-testid="stSidebar"] .stButton > button p {{
+    text-align: left !important;
+    margin: 0 !important;
+    width: 100%;
 }}
 [data-testid="stSidebar"] .stButton > button:hover {{
     background: rgba(245,200,66,0.06) !important;
@@ -188,17 +202,18 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     font-weight: 600 !important;
 }}
 
-/* Sub-item rail — indented + gold left border */
-.gs-sub-rail {{
-    padding-left: 12px;
-    margin-left: 14px;
-    border-left: 1px solid rgba(245,200,66,0.18);
-}}
-.gs-sub-rail .stButton > button {{
-    font-size: 11.5px !important;
+/* Sub-item — quieter color, smaller font (indented via st.columns in Python). */
+.gs-sub-marker + div .stButton > button {{
     color: #C9CCD3 !important;
-    padding: 5px 10px !important;
+    font-size: 11.5px !important;
     min-height: 28px !important;
+    padding: 5px 10px !important;
+}}
+/* Thin gold rail in the spacer column next to a sub-item */
+.gs-sub-rail-line {{
+    border-left: 1px solid rgba(245,200,66,0.25);
+    height: 32px;
+    margin-left: 8px;
 }}
 
 /* ============================================================
@@ -357,7 +372,7 @@ NAV_GROUPS = [
             {
                 "key": "📌  Tracking",
                 "children": [
-                    {"key": "📈  Performance Summary"},
+                    {"key": "📈  Summary"},
                 ],
             },
             {"key": "👁  WatchList"},
@@ -451,19 +466,24 @@ with st.sidebar:
 
     def _render_nav_item(it, indent=False):
         is_active = it["key"] == current_page
-        host = st.container()
-        with host:
-            if indent:
-                st.markdown('<div class="gs-sub-rail">', unsafe_allow_html=True)
-            # Active-state marker (CSS targets the immediately-following div)
+        if indent:
+            # Column-based indent — Streamlit's only reliable nesting primitive.
+            # Left column holds a thin gold rail; right column holds the button.
+            spacer, content = st.columns([0.18, 1])
+            with spacer:
+                st.markdown('<div class="gs-sub-rail-line"></div>', unsafe_allow_html=True)
+            with content:
+                # Sub-marker tells CSS this is a sub-item (smaller, dimmer text)
+                st.markdown('<span class="gs-sub-marker"></span>', unsafe_allow_html=True)
+                if is_active:
+                    st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
+                if st.button(it["key"], key=f"_nav_{it['key']}", use_container_width=True):
+                    _go(it["key"])
+        else:
             if is_active:
                 st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
-            label = it["key"]
-            btn_key = f"_nav_{label}"
-            if st.button(label, key=btn_key, use_container_width=True):
+            if st.button(it["key"], key=f"_nav_{it['key']}", use_container_width=True):
                 _go(it["key"])
-            if indent:
-                st.markdown('</div>', unsafe_allow_html=True)
 
     def _render_item_with_children(it):
         # Parent button + a separate "▾/▸" toggle for the sub-menu
@@ -545,8 +565,8 @@ elif page == "📱  Social Trends":
 elif page == "📌  Tracking":
     from scanners.tracking_page import render
     render()
-elif page == "📈  Performance Summary":
-    # NEW route — Performance Summary sub-page under Tracking.
+elif page == "📈  Summary":
+    # NEW route — Summary sub-page under Tracking.
     # Falls back to tracking_page render if the dedicated module isn't present yet.
     try:
         from scanners.performance_summary import render
