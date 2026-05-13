@@ -52,8 +52,8 @@ def scan_leaps(tickers, dte_min, delta_min, delta_max, iv_rank_max, price_min, p
             rsi = calc_rsi(close)
             _, _, hist = calc_macd(close)
 
-            calls, _, expiries = get_options_chain(ticker)
-            if calls.empty or not expiries:
+            _, _, expiries = get_options_chain(ticker)   # dates-only call (calls empty by design)
+            if not expiries:
                 diag.skipped(ticker, get_options_error(ticker) or "no options chain"); continue
 
             # LEAPS: any expiry beyond dte_min, no upper bound

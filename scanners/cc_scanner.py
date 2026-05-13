@@ -41,8 +41,8 @@ def scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max):
             high_20 = float(close.iloc[-20:].max())
             near_resistance = (price / high_20) >= 0.95
 
-            calls, _, expiries = get_options_chain(ticker)
-            if calls.empty or not expiries:
+            _, _, expiries = get_options_chain(ticker)   # dates-only call (calls empty by design)
+            if not expiries:
                 diag.skipped(ticker, get_options_error(ticker) or "no options chain"); continue
 
             exp_pick = find_best_expiry(expiries, dte_min, dte_max)
