@@ -14,104 +14,106 @@ def scan_growth(tickers, rev_growth_min, eps_growth_min, rs_min, price_min, pric
 
     diag = ScanDiagnostics()
 
-    with st.spinner(f"Scanning {len(tickers)} tickers for growth acceleration…"):
-        spy_df = get_price_history("SPY", period="6mo")
-        spy_close = spy_df["Close"].squeeze() if not spy_df.empty else pd.Series()
+    _scan_label = st.empty()
+    _scan_prog  = st.progress(0)
+    spy_df = get_price_history("SPY", period="6mo")
+    spy_close = spy_df["Close"].squeeze() if not spy_df.empty else pd.Series()
 
-        results = []
-        progress = st.progress(0)
+    results = []
 
-        for i, ticker in enumerate(tickers):
-            progress.progress((i + 1) / len(tickers))
-            diag.seen(ticker)
-            try:
-                info = get_info(ticker)
-                if not info:
-                    diag.skipped(ticker, "no fundamental data"); continue
+    for i, ticker in enumerate(tickers):
+        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker}</div>', unsafe_allow_html=True)
+        _scan_prog.progress((i + 1) / len(tickers))
+        diag.seen(ticker)
+        try:
+            info = get_info(ticker)
+            if not info:
+                diag.skipped(ticker, "no fundamental data"); continue
 
-                # Revenue growth (YoY)
-                rev_growth = (info.get("revenueGrowth") or 0) * 100
-                eps_growth = (info.get("earningsGrowth") or 0) * 100
+            # Revenue growth (YoY)
+            rev_growth = (info.get("revenueGrowth") or 0) * 100
+            eps_growth = (info.get("earningsGrowth") or 0) * 100
 
-                if rev_growth < rev_growth_min:
-                    diag.skipped(ticker, "rev growth too low"); continue
-                if eps_growth < eps_growth_min:
-                    diag.skipped(ticker, "EPS growth too low"); continue
+            if rev_growth < rev_growth_min:
+                diag.skipped(ticker, "rev growth too low"); continue
+            if eps_growth < eps_growth_min:
+                diag.skipped(ticker, "EPS growth too low"); continue
 
-                price = info.get("currentPrice") or info.get("regularMarketPrice") or 0
-                if not price or not (price_min <= price <= price_max):
-                    diag.skipped(ticker, "price out of range"); continue
+            price = info.get("currentPrice") or info.get("regularMarketPrice") or 0
+            if not price or not (price_min <= price <= price_max):
+                diag.skipped(ticker, "price out of range"); continue
 
-                df = get_price_history(ticker, period="6mo")
-                if df.empty or len(df) < 55:
-                    diag.skipped(ticker, "no price history"); continue
+            df = get_price_history(ticker, period="6mo")
+            if df.empty or len(df) < 55:
+                diag.skipped(ticker, "no price history"); continue
 
-                close = df["Close"].squeeze()
-                volume = df["Volume"].squeeze()
-                sma50 = float(calc_sma(close, 50).iloc[-1])
+            close = df["Close"].squeeze()
+            volume = df["Volume"].squeeze()
+            sma50 = float(calc_sma(close, 50).iloc[-1])
 
-                if price < sma50:
-                    diag.skipped(ticker, "below SMA50"); continue
+            if price < sma50:
+                diag.skipped(ticker, "below SMA50"); continue
 
-                rs = calc_relative_strength(close, spy_close) if not spy_close.empty else 1.0
-                if rs < rs_min:
-                    diag.skipped(ticker, "RS too low"); continue
+            rs = calc_relative_strength(close, spy_close) if not spy_close.empty else 1.0
+            if rs < rs_min:
+                diag.skipped(ticker, "RS too low"); continue
 
-                rsi = calc_rsi(close)
-                macd_line, signal_line, hist = calc_macd(close)
+            rsi = calc_rsi(close)
+            macd_line, signal_line, hist = calc_macd(close)
 
-                avg_vol = float(volume.iloc[:-1].rolling(20).mean().dropna().iloc[-1]) if len(volume) > 20 else float(volume.mean())
-                curr_vol = float(volume.iloc[-1])
-                vol_ratio = curr_vol / avg_vol if avg_vol > 0 else 0
+            avg_vol = float(volume.iloc[:-1].rolling(20).mean().dropna().iloc[-1]) if len(volume) > 20 else float(volume.mean())
+            curr_vol = float(volume.iloc[-1])
+            vol_ratio = curr_vol / avg_vol if avg_vol > 0 else 0
 
-                atr_pct = calc_atr(df)
+            atr_pct = calc_atr(df)
 
-                # Growth acceleration: rev growth > eps growth = healthy top-line growth
-                accel = "✅ Accelerating" if rev_growth > 20 and eps_growth > 15 else "📈 Growing"
+            # Growth acceleration: rev growth > eps growth = healthy top-line growth
+            accel = "✅ Accelerating" if rev_growth > 20 and eps_growth > 15 else "📈 Growing"
 
-                prev = float(close.iloc[-2]) if len(close) > 1 else price
-                chg_pct = (price - prev) / prev * 100
+            prev = float(close.iloc[-2]) if len(close) > 1 else price
+            chg_pct = (price - prev) / prev * 100
 
-                mcap = info.get("marketCap", 0) or 0
-                mcap_str = f"${mcap/1e9:.1f}B" if mcap >= 1e9 else f"${mcap/1e6:.0f}M"
-                sector = info.get("sector", "N/A")
+            mcap = info.get("marketCap", 0) or 0
+            mcap_str = f"${mcap/1e9:.1f}B" if mcap >= 1e9 else f"${mcap/1e6:.0f}M"
+            sector = info.get("sector", "N/A")
 
-                # Score
-                score = 0
-                if rev_growth >= 30: score += 25
-                elif rev_growth >= 20: score += 18
-                elif rev_growth >= 15: score += 10
-                if eps_growth >= 25: score += 25
-                elif eps_growth >= 15: score += 15
-                if rs >= 1.15: score += 20
-                elif rs >= 1.05: score += 12
-                if price > sma50: score += 15
-                if hist > 0: score += 10
-                if vol_ratio >= 1.5: score += 5
-                score = min(score, 100)
+            # Score
+            score = 0
+            if rev_growth >= 30: score += 25
+            elif rev_growth >= 20: score += 18
+            elif rev_growth >= 15: score += 10
+            if eps_growth >= 25: score += 25
+            elif eps_growth >= 15: score += 15
+            if rs >= 1.15: score += 20
+            elif rs >= 1.05: score += 12
+            if price > sma50: score += 15
+            if hist > 0: score += 10
+            if vol_ratio >= 1.5: score += 5
+            score = min(score, 100)
 
-                results.append({
-                    "Ticker":      ticker,
-                    "Sector":      sector,
-                    "Price":       round(price, 2),
-                    "Change %":    round(chg_pct, 2),
-                    "Rev Growth %": round(rev_growth, 1),
-                    "EPS Growth %": round(eps_growth, 1),
-                    "RS vs SPY":   round(rs, 3),
-                    "RSI":         round(rsi, 1),
-                    "MACD Bull":   "✅" if hist > 0 else "❌",
-                    "Vol Ratio":   round(vol_ratio, 2),
-                    "ATR %":       round(atr_pct, 2),
-                    "Momentum":    accel,
-                    "Mkt Cap":     mcap_str,
-                    "Score":       score,
-                })
-                diag.passed(ticker)
-            except Exception as e:
-                diag.failed(ticker, type(e).__name__)
-                continue
+            results.append({
+                "Ticker":      ticker,
+                "Sector":      sector,
+                "Price":       round(price, 2),
+                "Change %":    round(chg_pct, 2),
+                "Rev Growth %": round(rev_growth, 1),
+                "EPS Growth %": round(eps_growth, 1),
+                "RS vs SPY":   round(rs, 3),
+                "RSI":         round(rsi, 1),
+                "MACD Bull":   "✅" if hist > 0 else "❌",
+                "Vol Ratio":   round(vol_ratio, 2),
+                "ATR %":       round(atr_pct, 2),
+                "Momentum":    accel,
+                "Mkt Cap":     mcap_str,
+                "Score":       score,
+            })
+            diag.passed(ticker)
+        except Exception as e:
+            diag.failed(ticker, type(e).__name__)
+            continue
 
-        progress.empty()
+    _scan_label.empty()
+    _scan_prog.empty()
 
     df_out = pd.DataFrame(results)
     if not df_out.empty:

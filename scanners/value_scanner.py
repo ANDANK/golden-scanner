@@ -13,89 +13,91 @@ from data_loader import get_price_history, get_info, get_batch_quotes
 def scan_value(tickers, pe_max, pb_max, roe_min, de_max, div_filter,
                price_min, price_max):
 
-    with st.spinner(f"Analyzing fundamentals for {len(tickers)} tickers…"):
-        results = []
-        progress = st.progress(0)
+    _scan_label = st.empty()
+    _scan_prog  = st.progress(0)
+    results = []
 
-        for i, ticker in enumerate(tickers):
-            progress.progress((i + 1) / len(tickers))
-            try:
-                info = get_info(ticker)
-                if not info:
-                    continue
-
-                pe   = info.get("trailingPE")     or info.get("forwardPE")    or 0
-                pb   = info.get("priceToBook")    or 0
-                roe  = (info.get("returnOnEquity") or 0) * 100
-                de   = info.get("debtToEquity")   or 0
-                fcf  = info.get("freeCashflow")   or 0
-                div  = info.get("dividendYield")  or 0
-                div_pct = (div or 0) * 100
-
-                price = info.get("currentPrice") or info.get("regularMarketPrice") or 0
-                if not (price_min <= price <= price_max):
-                    continue
-
-                # Apply filters
-                if pe <= 0 or pe > pe_max:
-                    continue
-                if pb <= 0 or pb > pb_max:
-                    continue
-                if roe < roe_min:
-                    continue
-                if de > de_max:
-                    continue
-                if div_filter and div_pct < 0.5:
-                    continue
-
-                # Price above 200 SMA check
-                df = get_price_history(ticker, period="12mo")
-                above_200 = False
-                if not df.empty and len(df) >= 200:
-                    close = df["Close"].squeeze()
-                    sma200 = float(calc_sma(close, 200).iloc[-1])
-                    above_200 = price > sma200
-
-                score = compute_value_score(pe, pb, roe, de / 100, fcf, above_200)
-
-                # Value trap risk flags
-                # de from yfinance is in % units (e.g. 150 = 1.5× D/E ratio), so
-                # compare against the equivalent % thresholds (70 = 0.7×, 80 = 0.8×)
-                traps = []
-                if de > 70:    traps.append("High Debt")
-                if roe < 8:    traps.append("Low ROE")
-                if fcf <= 0:   traps.append("Negative FCF")
-
-                trap_str = ", ".join(traps) if traps else "✅ None"
-
-                mcap = info.get("marketCap", 0) or 0
-                mcap_str = f"${mcap/1e9:.1f}B" if mcap >= 1e9 else (f"${mcap/1e6:.0f}M" if mcap > 0 else "N/A")
-
-                sector = info.get("sector", "N/A")
-
-                prev = info.get("regularMarketPreviousClose") or price
-                chg_pct = (price - prev) / prev * 100 if prev else 0
-
-                results.append({
-                    "Ticker":      ticker,
-                    "Sector":      sector,
-                    "Price":       round(price, 2),
-                    "Change %":    round(chg_pct, 2),
-                    "P/E":         round(pe, 1),
-                    "P/B":         round(pb, 2),
-                    "ROE %":       round(roe, 1),
-                    "D/E":         round(de / 100, 2),
-                    "FCF":         "✅" if fcf > 0 else "❌",
-                    "Div Yield %": round(div_pct, 2),
-                    ">200 SMA":    "✅" if above_200 else "❌",
-                    "Trap Risk":   trap_str,
-                    "Mkt Cap":     mcap_str,
-                    "Score":       score,
-                })
-            except Exception:
+    for i, ticker in enumerate(tickers):
+        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Analyzing {i+1} of {len(tickers)} — {ticker}</div>', unsafe_allow_html=True)
+        _scan_prog.progress((i + 1) / len(tickers))
+        try:
+            info = get_info(ticker)
+            if not info:
                 continue
 
-        progress.empty()
+            pe   = info.get("trailingPE")     or info.get("forwardPE")    or 0
+            pb   = info.get("priceToBook")    or 0
+            roe  = (info.get("returnOnEquity") or 0) * 100
+            de   = info.get("debtToEquity")   or 0
+            fcf  = info.get("freeCashflow")   or 0
+            div  = info.get("dividendYield")  or 0
+            div_pct = (div or 0) * 100
+
+            price = info.get("currentPrice") or info.get("regularMarketPrice") or 0
+            if not (price_min <= price <= price_max):
+                continue
+
+            # Apply filters
+            if pe <= 0 or pe > pe_max:
+                continue
+            if pb <= 0 or pb > pb_max:
+                continue
+            if roe < roe_min:
+                continue
+            if de > de_max:
+                continue
+            if div_filter and div_pct < 0.5:
+                continue
+
+            # Price above 200 SMA check
+            df = get_price_history(ticker, period="12mo")
+            above_200 = False
+            if not df.empty and len(df) >= 200:
+                close = df["Close"].squeeze()
+                sma200 = float(calc_sma(close, 200).iloc[-1])
+                above_200 = price > sma200
+
+            score = compute_value_score(pe, pb, roe, de / 100, fcf, above_200)
+
+            # Value trap risk flags
+            # de from yfinance is in % units (e.g. 150 = 1.5× D/E ratio), so
+            # compare against the equivalent % thresholds (70 = 0.7×, 80 = 0.8×)
+            traps = []
+            if de > 70:    traps.append("High Debt")
+            if roe < 8:    traps.append("Low ROE")
+            if fcf <= 0:   traps.append("Negative FCF")
+
+            trap_str = ", ".join(traps) if traps else "✅ None"
+
+            mcap = info.get("marketCap", 0) or 0
+            mcap_str = f"${mcap/1e9:.1f}B" if mcap >= 1e9 else (f"${mcap/1e6:.0f}M" if mcap > 0 else "N/A")
+
+            sector = info.get("sector", "N/A")
+
+            prev = info.get("regularMarketPreviousClose") or price
+            chg_pct = (price - prev) / prev * 100 if prev else 0
+
+            results.append({
+                "Ticker":      ticker,
+                "Sector":      sector,
+                "Price":       round(price, 2),
+                "Change %":    round(chg_pct, 2),
+                "P/E":         round(pe, 1),
+                "P/B":         round(pb, 2),
+                "ROE %":       round(roe, 1),
+                "D/E":         round(de / 100, 2),
+                "FCF":         "✅" if fcf > 0 else "❌",
+                "Div Yield %": round(div_pct, 2),
+                ">200 SMA":    "✅" if above_200 else "❌",
+                "Trap Risk":   trap_str,
+                "Mkt Cap":     mcap_str,
+                "Score":       score,
+            })
+        except Exception:
+            continue
+
+    _scan_label.empty()
+    _scan_prog.empty()
 
     df_out = pd.DataFrame(results)
     if not df_out.empty:

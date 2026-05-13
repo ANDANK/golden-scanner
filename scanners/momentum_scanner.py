@@ -17,116 +17,118 @@ def scan_momentum(tickers, rsi_min, rsi_max, vol_mult, price_min, price_max,
 
     diag = ScanDiagnostics()
 
-    with st.spinner(f"Scanning {len(tickers)} tickers for momentum setups…"):
-        # Fetch benchmark for RS calculation
-        spy_df = get_price_history("SPY", period="6mo")
-        spy_close = spy_df["Close"].squeeze() if not spy_df.empty else pd.Series()
+    _scan_label = st.empty()
+    _scan_prog  = st.progress(0)
+    # Fetch benchmark for RS calculation
+    spy_df = get_price_history("SPY", period="6mo")
+    spy_close = spy_df["Close"].squeeze() if not spy_df.empty else pd.Series()
 
-        results = []
-        progress = st.progress(0)
+    results = []
 
-        for i, ticker in enumerate(tickers):
-            progress.progress((i + 1) / len(tickers))
-            diag.seen(ticker)
-            try:
-                df = get_price_history(ticker, period="6mo")
-                if df.empty or len(df) < 55:
-                    diag.skipped(ticker, "no price history"); continue
+    for i, ticker in enumerate(tickers):
+        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker}</div>', unsafe_allow_html=True)
+        _scan_prog.progress((i + 1) / len(tickers))
+        diag.seen(ticker)
+        try:
+            df = get_price_history(ticker, period="6mo")
+            if df.empty or len(df) < 55:
+                diag.skipped(ticker, "no price history"); continue
 
-                close = df["Close"].squeeze()
-                volume = df["Volume"].squeeze()
+            close = df["Close"].squeeze()
+            volume = df["Volume"].squeeze()
 
-                price = float(close.iloc[-1])
-                if not (price_min <= price <= price_max):
-                    diag.skipped(ticker, "price out of range"); continue
+            price = float(close.iloc[-1])
+            if not (price_min <= price <= price_max):
+                diag.skipped(ticker, "price out of range"); continue
 
-                # SMA
-                sma50  = float(calc_sma(close, 50).iloc[-1])
-                # Use sma50 as sma200 placeholder when history is short so
-                # price > sma50 > sma200 never fires falsely (sma50 == sma200 → not >)
-                sma200 = float(calc_sma(close, 200).iloc[-1]) if len(close) >= 200 else sma50
+            # SMA
+            sma50  = float(calc_sma(close, 50).iloc[-1])
+            # Use sma50 as sma200 placeholder when history is short so
+            # price > sma50 > sma200 never fires falsely (sma50 == sma200 → not >)
+            sma200 = float(calc_sma(close, 200).iloc[-1]) if len(close) >= 200 else sma50
 
-                # Only bullish trend
-                if price < sma50:
-                    diag.skipped(ticker, "below SMA50"); continue
+            # Only bullish trend
+            if price < sma50:
+                diag.skipped(ticker, "below SMA50"); continue
 
-                rsi = calc_rsi(close)
-                if not (rsi_min <= rsi <= rsi_max):
-                    diag.skipped(ticker, f"RSI {rsi:.0f} out of range"); continue
+            rsi = calc_rsi(close)
+            if not (rsi_min <= rsi <= rsi_max):
+                diag.skipped(ticker, f"RSI {rsi:.0f} out of range"); continue
 
-                macd_line, signal_line, hist = calc_macd(close)
-                if hist <= 0:
-                    diag.skipped(ticker, "MACD bearish"); continue
+            macd_line, signal_line, hist = calc_macd(close)
+            if hist <= 0:
+                diag.skipped(ticker, "MACD bearish"); continue
 
-                # Volume
-                avg_vol = float(volume.iloc[:-1].rolling(20).mean().dropna().iloc[-1]) if len(volume) > 20 else float(volume.mean())
-                curr_vol = float(volume.iloc[-1])
-                vol_ratio = curr_vol / avg_vol if avg_vol > 0 else 0
+            # Volume
+            avg_vol = float(volume.iloc[:-1].rolling(20).mean().dropna().iloc[-1]) if len(volume) > 20 else float(volume.mean())
+            curr_vol = float(volume.iloc[-1])
+            vol_ratio = curr_vol / avg_vol if avg_vol > 0 else 0
 
-                if vol_ratio < vol_mult:
-                    diag.skipped(ticker, "volume too low"); continue
+            if vol_ratio < vol_mult:
+                diag.skipped(ticker, "volume too low"); continue
 
-                # ATR
-                atr_pct = calc_atr(df)
-                atr_exp = atr_expanding(df)
+            # ATR
+            atr_pct = calc_atr(df)
+            atr_exp = atr_expanding(df)
 
-                # 20-day high / breakout
-                is_20dh = is_20d_high(close)
+            # 20-day high / breakout
+            is_20dh = is_20d_high(close)
 
-                # Relative Strength
-                rs = calc_relative_strength(close, spy_close) if not spy_close.empty else 1.0
+            # Relative Strength
+            rs = calc_relative_strength(close, spy_close) if not spy_close.empty else 1.0
 
-                # Fundamentals (market cap + earnings proximity filter)
-                info = get_info(ticker)
-                mcap = info.get("marketCap", 0) or 0
-                if mcap > 0 and mcap < mcap_min:
-                    diag.skipped(ticker, "market cap too small"); continue
+            # Fundamentals (market cap + earnings proximity filter)
+            info = get_info(ticker)
+            mcap = info.get("marketCap", 0) or 0
+            if mcap > 0 and mcap < mcap_min:
+                diag.skipped(ticker, "market cap too small"); continue
 
-                if exclude_earnings_days > 0:
-                    raw_earn = info.get("earningsTimestamp") or info.get("nextEarningsDate")
-                    if raw_earn:
-                        try:
-                            earn_date = (datetime.utcfromtimestamp(int(raw_earn)).date()
-                                         if isinstance(raw_earn, (int, float))
-                                         else datetime.strptime(str(raw_earn)[:10], "%Y-%m-%d").date())
-                            days_to = (earn_date - datetime.utcnow().date()).days
-                            if 0 <= days_to <= exclude_earnings_days:
-                                diag.skipped(ticker, "earnings too close"); continue
-                        except Exception:
-                            pass
+            if exclude_earnings_days > 0:
+                raw_earn = info.get("earningsTimestamp") or info.get("nextEarningsDate")
+                if raw_earn:
+                    try:
+                        earn_date = (datetime.utcfromtimestamp(int(raw_earn)).date()
+                                     if isinstance(raw_earn, (int, float))
+                                     else datetime.strptime(str(raw_earn)[:10], "%Y-%m-%d").date())
+                        days_to = (earn_date - datetime.utcnow().date()).days
+                        if 0 <= days_to <= exclude_earnings_days:
+                            diag.skipped(ticker, "earnings too close"); continue
+                    except Exception:
+                        pass
 
-                mcap_str = f"${mcap/1e9:.1f}B" if mcap >= 1e9 else (f"${mcap/1e6:.0f}M" if mcap > 0 else "N/A")
+            mcap_str = f"${mcap/1e9:.1f}B" if mcap >= 1e9 else (f"${mcap/1e6:.0f}M" if mcap > 0 else "N/A")
 
-                prev_close = float(close.iloc[-2]) if len(close) > 1 else price
-                chg_pct = (price - prev_close) / prev_close * 100
+            prev_close = float(close.iloc[-2]) if len(close) > 1 else price
+            chg_pct = (price - prev_close) / prev_close * 100
 
-                score = compute_momentum_score(
-                    price, sma50, sma200, rsi, hist, vol_ratio, is_20dh, rs
-                )
+            score = compute_momentum_score(
+                price, sma50, sma200, rsi, hist, vol_ratio, is_20dh, rs
+            )
 
-                trend = "Bullish" if price > sma50 > sma200 else ("Bullish Partial" if price > sma50 else "Bearish")
+            trend = "Bullish" if price > sma50 > sma200 else ("Bullish Partial" if price > sma50 else "Bearish")
 
-                results.append({
-                    "Ticker":      ticker,
-                    "Price":       round(price, 2),
-                    "Change %":    round(chg_pct, 2),
-                    "RSI":         round(rsi, 1),
-                    "MACD Hist":   round(hist, 3),
-                    "Vol Ratio":   round(vol_ratio, 2),
-                    "20D High":    "✅" if is_20dh else "—",
-                    "ATR %":       round(atr_pct, 2),
-                    "ATR Expand":  "✅" if atr_exp else "—",
-                    "RS vs SPY":   round(rs, 3),
-                    "Trend":       trend,
-                    "Mkt Cap":     mcap_str,
-                    "Score":       score,
-                })
-                diag.passed(ticker)
-            except Exception as e:
-                diag.failed(ticker, type(e).__name__)
-                continue
+            results.append({
+                "Ticker":      ticker,
+                "Price":       round(price, 2),
+                "Change %":    round(chg_pct, 2),
+                "RSI":         round(rsi, 1),
+                "MACD Hist":   round(hist, 3),
+                "Vol Ratio":   round(vol_ratio, 2),
+                "20D High":    "✅" if is_20dh else "—",
+                "ATR %":       round(atr_pct, 2),
+                "ATR Expand":  "✅" if atr_exp else "—",
+                "RS vs SPY":   round(rs, 3),
+                "Trend":       trend,
+                "Mkt Cap":     mcap_str,
+                "Score":       score,
+            })
+            diag.passed(ticker)
+        except Exception as e:
+            diag.failed(ticker, type(e).__name__)
+            continue
 
-        progress.empty()
+    _scan_label.empty()
+    _scan_prog.empty()
 
     df_out = pd.DataFrame(results)
     if not df_out.empty:

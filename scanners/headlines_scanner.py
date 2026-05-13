@@ -22,70 +22,72 @@ def get_news(ticker: str):
 
 
 def scan_headlines(tickers, move_min, vol_spike_min, gap_filter):
-    with st.spinner(f"Scanning {len(tickers)} tickers for news catalysts…"):
-        results = []
-        progress = st.progress(0)
+    _scan_label = st.empty()
+    _scan_prog  = st.progress(0)
+    results = []
 
-        for i, ticker in enumerate(tickers):
-            progress.progress((i + 1) / len(tickers))
-            try:
-                df = get_price_history(ticker, period="5d")
-                if df.empty or len(df) < 2:
-                    continue
-
-                close = df["Close"].squeeze()
-                volume = df["Volume"].squeeze()
-                open_p = df["Open"].squeeze()
-
-                price = float(close.iloc[-1])
-                prev_close = float(close.iloc[-2])
-                chg_pct = (price - prev_close) / prev_close * 100
-
-                if abs(chg_pct) < move_min:
-                    continue
-
-                avg_vol = float(volume.iloc[:-1].mean()) if len(volume) > 1 else float(volume.iloc[-1])
-                curr_vol = float(volume.iloc[-1])
-                vol_ratio = curr_vol / avg_vol if avg_vol > 0 else 0
-
-                if vol_ratio < vol_spike_min:
-                    continue
-
-                # Gap detection
-                gap_pct = (float(open_p.iloc[-1]) - prev_close) / prev_close * 100 if prev_close else 0
-                has_gap = abs(gap_pct) >= 1.5
-
-                if gap_filter and not has_gap:
-                    continue
-
-                rsi = calc_rsi(close)
-                atr_pct = calc_atr(df)
-
-                # Catalyst tags (heuristic)
-                tags = []
-                if abs(chg_pct) >= 10: tags.append("🔥 Mega Move")
-                elif abs(chg_pct) >= 5: tags.append("⚡ Major Move")
-                if has_gap: tags.append("📊 Gap")
-                if vol_ratio >= 5: tags.append("🌊 Volume Surge")
-                if not tags: tags.append("📰 News")
-
-                direction = "🟢 Bullish" if chg_pct >= 0 else "🔴 Bearish"
-
-                results.append({
-                    "Ticker":     ticker,
-                    "Price":      round(price, 2),
-                    "Change %":   round(chg_pct, 2),
-                    "Vol Ratio":  round(vol_ratio, 2),
-                    "Gap %":      round(gap_pct, 2),
-                    "RSI":        round(rsi, 1),
-                    "ATR %":      round(atr_pct, 2),
-                    "Direction":  direction,
-                    "Catalysts":  " · ".join(tags),
-                })
-            except Exception:
+    for i, ticker in enumerate(tickers):
+        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker}</div>', unsafe_allow_html=True)
+        _scan_prog.progress((i + 1) / len(tickers))
+        try:
+            df = get_price_history(ticker, period="5d")
+            if df.empty or len(df) < 2:
                 continue
 
-        progress.empty()
+            close = df["Close"].squeeze()
+            volume = df["Volume"].squeeze()
+            open_p = df["Open"].squeeze()
+
+            price = float(close.iloc[-1])
+            prev_close = float(close.iloc[-2])
+            chg_pct = (price - prev_close) / prev_close * 100
+
+            if abs(chg_pct) < move_min:
+                continue
+
+            avg_vol = float(volume.iloc[:-1].mean()) if len(volume) > 1 else float(volume.iloc[-1])
+            curr_vol = float(volume.iloc[-1])
+            vol_ratio = curr_vol / avg_vol if avg_vol > 0 else 0
+
+            if vol_ratio < vol_spike_min:
+                continue
+
+            # Gap detection
+            gap_pct = (float(open_p.iloc[-1]) - prev_close) / prev_close * 100 if prev_close else 0
+            has_gap = abs(gap_pct) >= 1.5
+
+            if gap_filter and not has_gap:
+                continue
+
+            rsi = calc_rsi(close)
+            atr_pct = calc_atr(df)
+
+            # Catalyst tags (heuristic)
+            tags = []
+            if abs(chg_pct) >= 10: tags.append("🔥 Mega Move")
+            elif abs(chg_pct) >= 5: tags.append("⚡ Major Move")
+            if has_gap: tags.append("📊 Gap")
+            if vol_ratio >= 5: tags.append("🌊 Volume Surge")
+            if not tags: tags.append("📰 News")
+
+            direction = "🟢 Bullish" if chg_pct >= 0 else "🔴 Bearish"
+
+            results.append({
+                "Ticker":     ticker,
+                "Price":      round(price, 2),
+                "Change %":   round(chg_pct, 2),
+                "Vol Ratio":  round(vol_ratio, 2),
+                "Gap %":      round(gap_pct, 2),
+                "RSI":        round(rsi, 1),
+                "ATR %":      round(atr_pct, 2),
+                "Direction":  direction,
+                "Catalysts":  " · ".join(tags),
+            })
+        except Exception:
+            continue
+
+        _scan_label.empty()
+    _scan_prog.empty()
 
     df_out = pd.DataFrame(results)
     if not df_out.empty:
