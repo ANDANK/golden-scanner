@@ -185,29 +185,59 @@ def _build_universe_df() -> pd.DataFrame:
 # ── Render helpers ─────────────────────────────────────────────
 
 def _render_guide():
+    # Summary strip — scanner count + quick stat
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("📡 Scanners Available", str(len(SCANNERS)))
+    with c2:
+        st.metric("🗂️ Universe Size", f"{len(SP500_SAMPLE):,} tickers")
+    with c3:
+        st.metric("⚡ Options ETFs", f"{len(OPTIONS_ETF_UNIVERSE)} liquid ETFs")
+
+    st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:16px">'
-        f'Default parameters for each scanner. Filters are adjustable via the sidebar when running a scan.</div>',
+        f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:12px">'
+        f'Click any scanner to expand its default parameters and technical criteria. '
+        f'All filters are adjustable via the sidebar at run time.</div>',
         unsafe_allow_html=True,
     )
 
-    for sc in SCANNERS:
-        color = sc["color"]
-        with st.expander(f"{sc['emoji']}  {sc['key']}", expanded=False):
-            # Description strip
-            st.markdown(
-                f'<div style="border-left:3px solid {color};padding:8px 14px;'
-                f'background:{BG_PANEL};border-radius:0 6px 6px 0;margin-bottom:12px;'
-                f'color:{TEXT_PRIMARY};font-size:13px">{sc["desc"]}</div>',
-                unsafe_allow_html=True,
-            )
+    # Group scanners visually
+    groups = {
+        "📊 Multi-Factor": ["Golden Scan"],
+        "📈 Equity Scans": ["Momentum", "Growth", "Value", "Headlines"],
+        "🎯 Options Strategies": ["CSP", "CC", "LEAPS"],
+        "💰 Income & Dividends": ["Dividend", "Div+CC"],
+        "⚡ Leveraged": ["3x ETFs"],
+    }
 
-            # Default param metrics
-            if sc["params"]:
-                cols = st.columns(len(sc["params"]))
-                for col, (label, value, help_text) in zip(cols, sc["params"]):
-                    with col:
-                        st.metric(label=label, value=value, help=help_text or None)
+    for group_name, keys in groups.items():
+        st.markdown(
+            f'<div style="color:{GOLD};font-size:11px;font-weight:700;text-transform:uppercase;'
+            f'letter-spacing:1.2px;margin:16px 0 6px;padding-bottom:4px;'
+            f'border-bottom:1px solid {GOLD}33">{group_name}</div>',
+            unsafe_allow_html=True,
+        )
+        group_scanners = [sc for sc in SCANNERS if sc["key"] in keys]
+        for sc in group_scanners:
+            color = sc["color"]
+            with st.expander(f"{sc['emoji']}  **{sc['key']}**", expanded=False):
+                # Accent header bar
+                st.markdown(
+                    f'<div style="border-left:4px solid {color};padding:10px 16px;'
+                    f'background:linear-gradient(90deg,{color}18,{BG_PANEL});'
+                    f'border-radius:0 8px 8px 0;margin-bottom:14px">'
+                    f'<span style="color:{TEXT_PRIMARY};font-size:13px;line-height:1.5">{sc["desc"]}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+                # Default param metric cards
+                if sc["params"]:
+                    cols = st.columns(min(len(sc["params"]), 4))
+                    for col, (label, value, help_text) in zip(cols, sc["params"]):
+                        with col:
+                            st.metric(label=label, value=value, help=help_text or None)
 
             # Technical criteria
             st.markdown(
@@ -220,46 +250,73 @@ def _render_guide():
 
 def _render_universe():
     df = _build_universe_df()
+    total_unique = len(df)
+    multi_list   = int((df["# Lists"] >= 2).sum())
+    etf_count    = int(df["Ticker"].isin(ETF_UNIVERSE + OPTIONS_ETF_UNIVERSE + ETF_3X_UNIVERSE).sum())
 
-    c1, c2 = st.columns([3, 1])
+    # Summary metrics
+    m1, m2, m3, m4 = st.columns(4)
+    with m1: st.metric("Unique Tickers",  f"{total_unique:,}")
+    with m2: st.metric("In Multiple Lists", f"{multi_list}")
+    with m3: st.metric("ETF / Fund Count",  f"{etf_count}")
+    with m4: st.metric("Stock-Only",  f"{total_unique - etf_count:,}")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Search
+    c1, c2 = st.columns([4, 1])
     with c1:
-        search = st.text_input("🔍 Search ticker or universe name…", placeholder="SPY, 3× ETF, Options ETF…",
+        search = st.text_input("", placeholder="🔍 Search ticker or universe name…",
                                label_visibility="collapsed")
     with c2:
-        st.markdown(
-            f'<div style="color:{TEXT_MUTED};font-size:12px;padding:8px 0">'
-            f'<b style="color:{GOLD}">{len(df)}</b> unique tickers across <b style="color:{GOLD}">'
-            f'{len(SP500_SAMPLE) + len(ETF_3X_UNIVERSE) + len(ETF_UNIVERSE) + len(OPTIONS_ETF_UNIVERSE)}'
-            f'</b> total entries</div>',
-            unsafe_allow_html=True,
-        )
+        filter_multi = st.checkbox("Multi-list only", value=False,
+                                   help="Show only tickers appearing in 2+ universe lists")
 
+    filtered = df.copy()
     if search:
-        mask = (df["Ticker"].str.contains(search.upper(), na=False) |
-                df["Used In"].str.contains(search, case=False, na=False))
-        df = df[mask]
+        mask = (filtered["Ticker"].str.contains(search.upper(), na=False) |
+                filtered["Used In"].str.contains(search, case=False, na=False))
+        filtered = filtered[mask]
+    if filter_multi:
+        filtered = filtered[filtered["# Lists"] >= 2]
 
-    # Colour-code rows by # of lists
-    def _row_style(row):
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:6px">'
+        f'Showing <b style="color:{GOLD}">{len(filtered)}</b> of {total_unique} tickers</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Colour-code rows: gold = 3+ lists, green = 2 lists, default = 1 list
+    def _style_rows(row):
         if row["# Lists"] >= 3:
-            return [f"color:{GOLD}"] * len(row)
+            bg = f"background-color: {GOLD}22; color: {GOLD};"
         elif row["# Lists"] == 2:
-            return [f"color:{ACCENT_GREEN}"] * len(row)
-        return [""] * len(row)
+            bg = f"background-color: {ACCENT_GREEN}11; color: {ACCENT_GREEN};"
+        else:
+            bg = ""
+        return [bg] * len(row)
 
+    styled = filtered.style.apply(_style_rows, axis=1)
+
+    import streamlit.components.v1 as components
     st.dataframe(
-        df.style.apply(_row_style, axis=1),
+        styled,
         use_container_width=True,
-        height=min(600, max(200, len(df) * 35 + 40)),
+        height=min(620, max(220, len(filtered) * 35 + 45)),
         hide_index=True,
+        column_config={
+            "Ticker":   st.column_config.TextColumn("Ticker", width="small"),
+            "Used In":  st.column_config.TextColumn("Universe Lists", width="large"),
+            "# Lists":  st.column_config.NumberColumn("# Lists", width="small", format="%d"),
+        },
     )
 
     # Legend
     st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:6px">'
-        f'<span style="color:{GOLD}">Gold</span> = in 3+ lists &nbsp;·&nbsp; '
-        f'<span style="color:{ACCENT_GREEN}">Green</span> = in 2 lists &nbsp;·&nbsp; '
-        f'White = single list</div>',
+        f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:8px">'
+        f'<span style="color:{GOLD};font-weight:600">■</span> Gold row = appears in 3+ lists &nbsp;·&nbsp; '
+        f'<span style="color:{ACCENT_GREEN};font-weight:600">■</span> Green = 2 lists &nbsp;·&nbsp; '
+        f'Plain = single list only</div>',
         unsafe_allow_html=True,
     )
 
