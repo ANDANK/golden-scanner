@@ -550,7 +550,9 @@ NAV_GROUPS = [
     },
     {
         "sep": "Admin", "icon": "🔐", "expanded": False, "dim": True,
-        "items": [],   # No admin tools yet — placeholder section
+        "items": [
+            {"key": "⚙️  Admin Panel", "label": "Admin Panel", "icon": "⚙️"},
+        ],
     },
 ]
 
@@ -758,4 +760,7 @@ elif page == "📅  Dividend + CC Capture":
     render()
 elif page == "ℹ️  About & Guide":
     from scanners.about import render
+    render()
+elif page == "⚙️  Admin Panel":
+    from scanners.admin_page import render
     render()
