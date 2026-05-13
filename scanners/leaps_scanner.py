@@ -162,6 +162,7 @@ def render():
     if run:
         df, diag = scan_leaps(tickers, dte_min, delta_min, delta_max, iv_rank_max, price_min, price_max)
         st.session_state["_leaps_r"] = (df, diag)
+        from data_loader import show_api_warnings; show_api_warnings()
 
     _leaps_r = st.session_state.get("_leaps_r")
     if _leaps_r is not None:

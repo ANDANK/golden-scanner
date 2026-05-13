@@ -114,6 +114,7 @@ def render():
     if run:
         df = scan_headlines(tickers, move_min, vol_spike, gap_filter)
         st.session_state["_hdl_r"] = df
+    from data_loader import show_api_warnings; show_api_warnings()
 
     _hdl_r = st.session_state.get("_hdl_r")
     if _hdl_r is not None:

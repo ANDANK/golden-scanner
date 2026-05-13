@@ -105,7 +105,10 @@ def get_price_history(ticker: str, period: str = "6mo", interval: str = "1d") ->
     """Fetch OHLCV history with retry + stale-cache fallback."""
     result, _ = _resilient(_fetch_price_history, ticker, period, interval,
                            key=("price_history", ticker, period, interval))
-    return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+    if not isinstance(result, pd.DataFrame) or result.empty:
+        _log_api_warn("YFinance price history", ticker, f"period={period}")
+        return pd.DataFrame()
+    return result
 
 
 def _fetch_info_from_download(ticker: str) -> dict:
@@ -161,7 +164,43 @@ def _fetch_info(ticker: str) -> dict:
 def get_info(ticker: str) -> dict:
     """Fetch fundamental info with retry + stale-cache fallback."""
     result, _ = _resilient(_fetch_info, ticker, key=("info", ticker))
-    return result if isinstance(result, dict) else {}
+    if not isinstance(result, dict) or not result:
+        _log_api_warn("YFinance fundamentals", ticker)
+        return {}
+    return result
+
+
+# ── Global API warning store ───────────────────────────────────
+_API_WARN_KEY = "_gs_api_warnings"
+
+def _log_api_warn(source: str, ticker: str, detail: str = "") -> None:
+    """Record an API fetch issue to session_state for deferred display."""
+    import streamlit as _st
+    _st.session_state.setdefault(_API_WARN_KEY, []).append(
+        {"source": source, "ticker": ticker, "detail": detail}
+    )
+
+def show_api_warnings() -> None:
+    """
+    Display all collected API warnings as a single st.warning() block.
+    Call once per scanner render() after the scan completes.
+    Clears the store after display so warnings don't accumulate across reruns.
+    """
+    import streamlit as _st
+    warns = _st.session_state.pop(_API_WARN_KEY, [])
+    if not warns:
+        return
+    sources  = sorted(set(w["source"]  for w in warns))
+    tickers  = sorted(set(w["ticker"]  for w in warns if w["ticker"]))
+    count    = len(warns)
+    tk_list  = ", ".join(tickers[:8]) + ("…" if len(tickers) > 8 else "")
+    src_list = ", ".join(sources)
+    _st.warning(
+        f"**{count} API fetch issue(s)** from {src_list}. "
+        f"Affected tickers: {tk_list or 'unknown'}. "
+        f"Yahoo Finance may be throttling — try reducing Universe Size or retrying in 30 s.",
+        icon="⚠️",
+    )
 
 
 # ── Options error store (non-cached, lives in session_state) ──

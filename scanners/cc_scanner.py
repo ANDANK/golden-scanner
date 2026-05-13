@@ -147,6 +147,7 @@ def render():
     if run:
         df, diag = scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max)
         st.session_state["_cc_r"] = (df, diag)
+        from data_loader import show_api_warnings; show_api_warnings()
 
     _cc_r = st.session_state.get("_cc_r")
     if _cc_r is not None:

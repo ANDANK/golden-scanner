@@ -160,6 +160,7 @@ def render():
         df, diag = scan_csp(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
                             spread_pct_max, dte_min, dte_max)
         st.session_state["_csp_r"] = (df, diag)
+        from data_loader import show_api_warnings; show_api_warnings()
 
     _csp_r = st.session_state.get("_csp_r")
     if _csp_r is not None:

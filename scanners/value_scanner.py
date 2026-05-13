@@ -128,6 +128,7 @@ def render():
         df = scan_value(tickers, pe_max, pb_max, roe_min, de_max,
                         div_filter, price_min, price_max)
         st.session_state["_val_r"] = df
+    from data_loader import show_api_warnings; show_api_warnings()
 
     _val_r = st.session_state.get("_val_r")
     if _val_r is not None:

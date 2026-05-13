@@ -141,6 +141,7 @@ def render():
     if run:
         df, diag = scan_growth(tickers, rev_growth_min, eps_growth_min, rs_min, price_min, price_max)
         st.session_state["_growth_r"] = (df, diag)
+    from data_loader import show_api_warnings; show_api_warnings()
 
     _growth_r = st.session_state.get("_growth_r")
     if _growth_r is not None:

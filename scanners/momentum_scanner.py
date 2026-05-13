@@ -164,6 +164,7 @@ def render():
         df, diag = scan_momentum(tickers, rsi_min, rsi_max, vol_mult, price_min, price_max,
                                  mcap_min, exclude_days)
         st.session_state["_mom_r"] = (df, diag)
+        from data_loader import show_api_warnings; show_api_warnings()
 
     _mom_r = st.session_state.get("_mom_r")
     if _mom_r is not None:
