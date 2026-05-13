@@ -252,16 +252,29 @@ section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-sub-m
     border-left: 1px solid rgba(245,200,66,0.25) !important;
 }}
 
-/* Parent-with-children row — chevrons on both sides do the talking; no rail
-   so the row stays flat and list-like (per user feedback). */
-section[data-testid="stSidebar"] .element-container:has(.gs-parent-marker) + .element-container .stButton > button,
-section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-parent-marker) + [data-testid="element-container"] .stButton > button {{
-    font-weight: 500 !important;
+/* Force ALL marker-only element-containers to collapse to zero height.
+   The empty marker spans (gs-active, gs-sub, gs-group, gs-admin) live inside
+   their own stMarkdownContainer; without this rule each one would add ~6-10px
+   of vertical space between adjacent nav items even with line-height:0. */
+section[data-testid="stSidebar"] .element-container:has(.gs-active-marker),
+section[data-testid="stSidebar"] .element-container:has(.gs-sub-marker),
+section[data-testid="stSidebar"] .element-container:has(.gs-group-marker),
+section[data-testid="stSidebar"] .element-container:has(.gs-admin-marker),
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-active-marker),
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-sub-marker),
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-group-marker),
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-admin-marker) {{
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }}
-section[data-testid="stSidebar"] .element-container:has(.gs-parent-marker) + .element-container .stButton > button:hover,
-section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-parent-marker) + [data-testid="element-container"] .stButton > button:hover {{
-    color: {GOLD} !important;
-}}
+
+/* Parent-with-children row — REMOVED. Chevrons on both sides of the label
+   (rendered in Python) do all the "expands" signalling now. Hover still
+   tints the row gold via the base sidebar button hover rule. */
 
 /* Logo overlay button — REMOVED by user request. The legacy rules below
    are kept commented out for easy restore.
@@ -566,16 +579,11 @@ with st.sidebar:
 
     def _render_item_with_children(it):
         # Single-button design: clicking Tracking ALWAYS navigates to it.
-        # Sub-menu visibility is derived from active state — no separate toggle
-        # button (which previously caused ambiguous clicks in Streamlit's
-        # narrow column layout).
+        # Sub-menu visibility is derived from active state.
         is_active = it["key"] == current_page
         child_active = any(c["key"] == current_page for c in it.get("children", []))
         show_subs = is_active or child_active
 
-        # Render a "parent-with-children" marker so CSS can give this row a
-        # subtle gold left rail — the strongest "this expands" signal.
-        st.markdown('<span class="gs-parent-marker"></span>', unsafe_allow_html=True)
         if is_active:
             st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
         # Chevrons on BOTH sides telegraph "this expands" without needing a rail.
