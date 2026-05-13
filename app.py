@@ -236,8 +236,8 @@ section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-sub-m
     min-height: 22px !important;
     height: auto !important;
     padding: 3px 8px 3px 22px !important;
-    margin-left: 14px !important;
-    width: calc(100% - 14px) !important;
+    margin-left: 30px !important;
+    width: calc(100% - 30px) !important;
     border-left: 1px solid rgba(245,200,66,0.25) !important;
 }}
 
