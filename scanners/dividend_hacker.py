@@ -658,8 +658,9 @@ def render():
                 unsafe_allow_html=True
             )
         with col_b:
+            from utils import _export_filename
             st.download_button("⬇ Export CSV", export_df.to_csv(index=False),
-                               f"dividend_hacker_{today}.csv", "text/csv", use_container_width=True)
+                               _export_filename("dividend_hacker"), "text/csv", use_container_width=True)
 
         # Dividend table + inline Track/Watch buttons
         from utils import render_results_table

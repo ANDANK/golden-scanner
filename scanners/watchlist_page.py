@@ -5,7 +5,7 @@ import pandas as pd
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import *
-from utils import section_header, metric_card
+from utils import section_header, metric_card, _export_filename
 from scanners.gsheet_helper import (get_watchlist, remove_from_watchlist,
                                      add_to_tracking, using_google_sheets)
 
@@ -206,5 +206,5 @@ def render():
     st.download_button(
         "⬇ Export WatchList CSV",
         export_df.to_csv(index=False),
-        "watchlist.csv", "text/csv",
+        _export_filename("watchlist"), "text/csv",
     )

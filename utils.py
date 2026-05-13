@@ -7,6 +7,24 @@ import plotly.graph_objects as go
 from config import *
 
 
+# ── Export filename helper ─────────────────────────────────────
+
+def _cst_timestamp() -> str:
+    """Current time in CST/CDT as YYYY-MM-DD-HH-MM-SS string."""
+    try:
+        from zoneinfo import ZoneInfo
+        from datetime import datetime as _dt
+        return _dt.now(ZoneInfo("America/Chicago")).strftime("%Y-%m-%d-%H-%M-%S")
+    except Exception:
+        from datetime import datetime as _dt
+        return _dt.now().strftime("%Y-%m-%d-%H-%M-%S")
+
+
+def _export_filename(base: str) -> str:
+    """Return base_YYYY-MM-DD-HH-MM-SS.csv (CST timestamped)."""
+    return f"{base}_{_cst_timestamp()}.csv"
+
+
 # ── Technical Indicators ───────────────────────────────────────
 
 def calc_sma(series: pd.Series, window: int) -> pd.Series:
@@ -507,7 +525,7 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
     with c2:
         st.download_button(
             "⬇ Export CSV", df.to_csv(index=False),
-            "golden_scanner_results.csv", "text/csv",
+            _export_filename("golden_scanner_results"), "text/csv",
             use_container_width=True,
         )
 
