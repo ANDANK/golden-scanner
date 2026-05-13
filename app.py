@@ -453,6 +453,20 @@ hr {{ border-color: {BORDER_COLOR}; }}
 ::-webkit-scrollbar-thumb {{ background: {BORDER_COLOR}; border-radius: 3px; }}
 ::-webkit-scrollbar-thumb:hover {{ background: {GOLD_DARK}; }}
 
+/* VIS-3: Sticky table headers — works for all HTML tables rendered via st.markdown */
+div[data-testid="stMarkdownContainer"] table thead th {{
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: {BG_PANEL} !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4) !important;
+}}
+/* Scrollable wrapper so sticky actually activates */
+div[data-testid="stMarkdownContainer"] div[style*="overflow-x:auto"] {{
+    max-height: 520px;
+    overflow-y: auto !important;
+}}
+
 /* Section dividers */
 .section-divider {{
     height: 1px;

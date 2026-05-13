@@ -349,7 +349,7 @@ def render():
         row_htmls.append(f'<tr>{"".join(cells)}</tr>')
 
     st.markdown(f"""
-    <div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:8px;margin-top:4px">
+    <div style="overflow-x:auto;overflow-y:auto;max-height:520px;border:1px solid {BORDER_COLOR};border-radius:8px;margin-top:4px">
       <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif">
         <thead><tr>{header_html}</tr></thead>
         <tbody>{"".join(row_htmls)}</tbody>
