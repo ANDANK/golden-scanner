@@ -276,3 +276,37 @@ def move_to_tracking(ticker: str, strategy: str = "Stock", source: str = "") -> 
 def using_google_sheets() -> bool:
     """Return True if Google Sheets is configured and reachable."""
     return _gs_sheet("Tracking") is not None
+
+
+def gsheets_configured() -> bool:
+    """Return True if the [gsheets] secret block exists at all (even if auth fails)."""
+    try:
+        _ = st.secrets["gsheets"]["sheet_id"]
+        return True
+    except Exception:
+        return False
+
+
+def show_storage_banner() -> None:
+    """
+    Display a one-time warning if Google Sheets is not set up.
+    Call this at the top of tracking_page.render() and watchlist_page.render().
+    Data stored in local CSV is ephemeral on Streamlit Cloud — lost on restart.
+    """
+    if using_google_sheets():
+        return  # All good — Sheets is live
+    if gsheets_configured():
+        st.warning(
+            "⚠️ **Google Sheets credentials found but connection failed.** "
+            "Check that your service account has Editor access to the sheet "
+            "and that the `sheet_id` in Secrets is correct. "
+            "Tracking data is temporarily using local CSV (lost on app restart).",
+            icon="⚠️",
+        )
+    else:
+        st.warning(
+            "⚠️ **Google Sheets not configured — tracking data will be lost on app restart.** "
+            "To persist data: follow the setup guide and add `[gsheets]` credentials "
+            "in **Streamlit Cloud → Settings → Secrets**.",
+            icon="⚠️",
+        )

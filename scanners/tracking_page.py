@@ -8,7 +8,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import *
 from utils import section_header, metric_card, _export_filename
-from scanners.gsheet_helper import get_tracking, remove_from_tracking, using_google_sheets
+from scanners.gsheet_helper import get_tracking, remove_from_tracking, using_google_sheets, show_storage_banner
 
 
 # ── Helpers ────────────────────────────────────────────────────
@@ -227,8 +227,10 @@ def _render_trade_analysis(df: pd.DataFrame):
 def render():
     section_header("📌", "Tracking", "Positions you are actively monitoring · Live P&L · Analytics")
 
+    show_storage_banner()
+
     # Storage indicator + controls row
-    storage = "Google Sheets" if using_google_sheets() else "Local CSV (data/tracking.csv)"
+    storage = "Google Sheets ✅" if using_google_sheets() else "⚠️ Local CSV (ephemeral — lost on restart)"
     s1, s2, s3 = st.columns([5, 1, 1])
     with s1:
         st.markdown(

@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import *
 from utils import section_header, metric_card, _export_filename
 from scanners.gsheet_helper import (get_watchlist, remove_from_watchlist,
-                                     add_to_tracking, using_google_sheets)
+                                     add_to_tracking, using_google_sheets, show_storage_banner)
 
 
 @st.cache_data(ttl=180, show_spinner=False)
@@ -39,7 +39,9 @@ def _fetch_prices(tickers: tuple) -> dict:
 def render():
     section_header("👁", "WatchList", "Tickers on your radar — not yet in a position")
 
-    storage = "Google Sheets" if using_google_sheets() else "Local CSV (data/watchlist.csv)"
+    show_storage_banner()
+
+    storage = "Google Sheets ✅" if using_google_sheets() else "⚠️ Local CSV (ephemeral — lost on restart)"
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11px;margin-bottom:12px">'
         f'Storage: <b style="color:{GOLD}">{storage}</b></div>',
