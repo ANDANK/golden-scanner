@@ -530,23 +530,42 @@ _OPTIONS_STRATS = {"CSP", "CC", "LEAPS", "ETF Options", "3x ETF Options",
                    "CSP-Stocks", "CC-Stocks", "LEAPS-Stocks",
                    "CSP-ETFs", "CC-ETFs", "LEAPS-ETFs"}
 
+# Columns that belong ONLY to stock strategies — never shown for options
+_STOCK_ONLY_COLS = {
+    "RSI", "Vol Ratio", "RS vs SPY", "Scanners", "Scanner Count",
+    "Style", "Hold", "Est. Upside %", "Rev Growth %", "EPS Growth %",
+    "P/E", "Sector", "Signal", "Direction", "Catalysts",
+}
+
+# Columns that belong ONLY to options strategies — never shown for stocks
+_OPTIONS_ONLY_COLS = {
+    "Strike", "Call Strike", "Premium", "Premium %", "Delta", "IV", "IV Rank",
+    "DTE", "Expiry", "Ann. Return", "Breakeven", "Read %",
+    "Assign Risk", "Trend", "Side", "Bar", "Resistance", "Average",
+}
+
 
 def _strategy_cols(df: pd.DataFrame, strategy: str) -> list[str]:
     """
     Return ordered column list for the given strategy, filtered to:
-      1. Only columns actually present in df
-      2. Only columns that have at least one non-null / non-'nan' value
+      1. Only columns in the strategy's preferred set (with real data)
+      2. Extra columns that have data AND are not cross-strategy noise
 
-    Columns outside the preferred set are appended at the end so nothing
-    is accidentally dropped (e.g. custom scanner output).
+    This prevents stock-only columns (RSI, Vol Ratio …) appearing on
+    options results and vice-versa, even when the scanner populates them.
     """
     strat_up = strategy.upper()
-    if any(s in strat_up for s in ("CSP", "CC", "LEAPS", "ETF OPT", "3X ETF")):
+    is_options = any(s in strat_up for s in ("CSP", "CC", "LEAPS", "ETF OPT", "3X ETF"))
+
+    if is_options:
         preferred = _OPTIONS_COLS
+        excluded  = _STOCK_ONLY_COLS      # never show stock-only cols on options tables
     elif "GOLDEN" in strat_up:
         preferred = _GOLDEN_COLS
+        excluded  = _OPTIONS_ONLY_COLS
     else:
         preferred = _STOCK_COLS
+        excluded  = _OPTIONS_ONLY_COLS    # never show options-only cols on stock tables
 
     # Only keep cols that exist AND have at least one real value
     def _has_data(col: str) -> bool:
@@ -557,9 +576,12 @@ def _strategy_cols(df: pd.DataFrame, strategy: str) -> list[str]:
 
     ordered = [c for c in preferred if _has_data(c)]
 
-    # Append any remaining columns with data that aren't in the preferred list
-    seen = set(ordered)
-    extras = [c for c in df.columns if c not in seen and _has_data(c)]
+    # Append extra columns that have data and are NOT in the excluded set for this strategy
+    seen   = set(ordered)
+    extras = [
+        c for c in df.columns
+        if c not in seen and c not in excluded and _has_data(c)
+    ]
     return ordered + extras
 
 

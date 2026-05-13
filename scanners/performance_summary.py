@@ -270,7 +270,59 @@ def _auto_close_row(r: dict, row_i: int) -> dict:
 
 @st.cache_data(ttl=180, show_spinner=False)
 def _load_and_process() -> pd.DataFrame:
-    raw = get_performance()
+    raw = list(get_performance() or [])
+
+    # ── Also pull Tracking entries as open positions ─────────────
+    # This ensures every position tracked via 📌 appears in the dashboard.
+    try:
+        from scanners.gsheet_helper import get_tracking as _get_tracking
+        tracking_raw = _get_tracking() or []
+        # Build a set of (Ticker, Strategy, date) already in Performance so we don't double-count
+        perf_keys = {
+            (str(r.get("Ticker","")).upper(),
+             str(r.get("Strategy","")).upper(),
+             str(r.get("Entry_Date",""))[:10])
+            for r in raw
+        }
+        for t in tracking_raw:
+            tk  = str(t.get("Ticker","")).upper().strip()
+            st_ = str(t.get("Strategy","")).strip()
+            dt  = str(t.get("Added_Date",""))[:10]
+            if not tk:
+                continue
+            if (tk, st_.upper(), dt) in perf_keys:
+                continue   # already in Performance — skip
+            # Convert tracking row → performance-compatible dict
+            qty_raw = str(t.get("Qty","1"))
+            try:
+                qty_int = int("".join(filter(str.isdigit, qty_raw)) or "1")
+            except Exception:
+                qty_int = 1
+            raw.append({
+                "Ticker":            tk,
+                "Strategy":          st_,
+                "Universe":          t.get("Source","Tracking"),
+                "Option_Type":       "",
+                "Entry_Date":        t.get("Added_Date",""),
+                "Expiry_Date":       "",
+                "DTE":               "",
+                "Strike":            "",
+                "Premium":           "",
+                "Qty":               str(qty_int),
+                "Entry_Stock_Price": t.get("Entry_Price",""),
+                "Status":            "Open",
+                "Close_Date":        "",
+                "Close_Stock_Price": "",
+                "PL_Dollar":         "",
+                "PL_Pct":            "",
+                "Ann_Return":        "",
+                "Source":            t.get("Source","Tracking"),
+                "Score":             t.get("Score",""),
+                "Notes":             t.get("Notes",""),
+            })
+    except Exception:
+        pass   # Tracking unavailable — continue with Performance only
+
     if not raw:
         return pd.DataFrame()
 
@@ -462,8 +514,8 @@ def _render_close_button(row: dict, row_index: int, context: str = ""):
     import hashlib
     _ctx = hashlib.md5(f"{context}{ticker}{row_index}".encode()).hexdigest()[:6]
     key  = f"close_{_ctx}"
-    if st.button(f"✖ Close", key=key, use_container_width=True,
-                 help=f"Mark {ticker} as closed at today's price"):
+    if st.button("✖", key=key, use_container_width=True,
+                 help=f"Close {ticker} at today's price"):
         cp = _current_prices((ticker,)).get(ticker)
         if cp is None:
             st.warning("Could not fetch current price. Try again.")
@@ -541,7 +593,7 @@ def _pl_html(val) -> str:
 
 def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool = False,
                           context: str = ""):
-    """Rich HTML positions table with optional fuzzy close signal column."""
+    """Positions table rendered as per-row st.columns so Action holds a real close button."""
     if df.empty:
         st.markdown(
             f'<div style="color:{TEXT_MUTED};font-size:12px;font-style:italic;'
@@ -551,93 +603,135 @@ def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool 
         )
         return
 
-    display_cols = cols + (["Close Signal"] if show_close_signal else []) + ["Action"]
-    th_style = (f'color:{TEXT_MUTED};font-size:10px;font-weight:700;letter-spacing:0.8px;'
-                f'text-transform:uppercase;padding:8px 10px;border-bottom:1px solid {BORDER_COLOR};'
-                f'background:{BG_PANEL};white-space:nowrap')
-    header_html = "".join(f'<th style="{th_style}">{c}</th>' for c in display_cols)
+    # Data columns (no "Action" — that's a separate Streamlit column at the end)
+    display_cols = cols + (["Close Signal"] if show_close_signal else [])
 
-    rows_html = []
+    # Per-column width hints
+    _narrow = {"DTE", "Qty", "Score"}
+    _med    = {"Status", "PL_Pct", "Universe", "Strategy", "Source"}
+    _wide   = {"Ticker", "Expiry_Date", "Entry_Stock_Price", "Current_Price",
+               "PL_Dollar", "Close Signal"}
+    col_widths = []
+    for c in display_cols:
+        if c in _narrow:  col_widths.append(0.5)
+        elif c in _wide:  col_widths.append(1.2)
+        elif c in _med:   col_widths.append(0.85)
+        else:             col_widths.append(1.0)
+    col_widths.append(0.55)   # inline Action column
+
+    # Tighten Streamlit column gaps
+    st.markdown(
+        "<style>"
+        "div[data-testid='stHorizontalBlock']{gap:0 !important;margin-bottom:0 !important}"
+        "div[data-testid='stHorizontalBlock']>div[data-testid='stColumn']"
+        "{padding-top:1px !important;padding-bottom:1px !important}"
+        "</style>",
+        unsafe_allow_html=True,
+    )
+
+    th = (f'color:{TEXT_MUTED};font-size:10px;font-weight:700;letter-spacing:0.7px;'
+          f'text-transform:uppercase;padding:7px 5px;border-bottom:1px solid {BORDER_COLOR};'
+          f'background:{BG_PANEL};white-space:nowrap;overflow:hidden;text-overflow:ellipsis')
+
+    # ── Header row ──────────────────────────────────────────────
+    hdr = st.columns(col_widths)
+    for i, col_name in enumerate(display_cols):
+        with hdr[i]:
+            st.markdown(f'<div style="{th}">{col_name.replace("_"," ")}</div>',
+                        unsafe_allow_html=True)
+    with hdr[-1]:
+        st.markdown(f'<div style="{th};text-align:center">ACTION</div>',
+                    unsafe_allow_html=True)
+
+    # ── Data rows ────────────────────────────────────────────────
     for i, (ridx, r) in enumerate(df.iterrows()):
-        bg     = BG_CARD if i % 2 == 0 else BG_PANEL
-        cells  = []
-        cp     = r.get("Current_Price")
-        is_open = str(r.get("Status","")).lower() == "open"
+        bg      = BG_CARD if i % 2 == 0 else BG_PANEL
+        is_open = str(r.get("Status", "")).lower() == "open"
+        cp      = r.get("Current_Price")
+        row_c   = st.columns(col_widths)
 
-        for c in cols:
+        for j, c in enumerate(display_cols):
             val   = r.get(c, "")
-            style = f'padding:7px 10px;font-size:11px;background:{bg}'
             val_s = str(val) if val is not None and str(val) != "nan" else "—"
+            td    = (f'padding:6px 5px;font-size:11px;background:{bg};'
+                     f'overflow:hidden;text-overflow:ellipsis')
 
-            if c == "Ticker":
-                cells.append(f'<td style="{style};color:{GOLD};font-family:\'DM Mono\',monospace;font-weight:700;font-size:12px">{val_s}</td>')
-            elif c in ("PL_Dollar","P/L $","Income"):
-                cells.append(f'<td style="{style}">{_pl_html(val)}</td>')
-            elif c in ("PL_Pct","P/L %"):
-                try:
-                    v = float(val)
-                    col = ACCENT_GREEN if v >= 0 else ACCENT_RED
-                    cells.append(f'<td style="{style};color:{col};font-family:\'DM Mono\',monospace;font-weight:600">{v:+.1f}%</td>')
-                except Exception:
-                    cells.append(f'<td style="{style};color:{TEXT_MUTED}">—</td>')
-            elif c == "Status":
-                cells.append(f'<td style="{style}">{_status_badge(val_s)}</td>')
-            elif c == "Strategy":
-                sc = {"CSP":"#86EFAC","CC":GOLD,"LEAPS":"#60A5FA","Golden Scan":"#A78BFA"}.get(val_s, TEXT_MUTED)
-                cells.append(f'<td style="{style};color:{sc};font-weight:600">{val_s}</td>')
-            elif c == "Premium":
-                try:
-                    cells.append(f'<td style="{style};color:{ACCENT_GREEN};font-family:\'DM Mono\',monospace">${float(val):.2f}</td>')
-                except Exception:
-                    cells.append(f'<td style="{style};color:{TEXT_MUTED}">—</td>')
-            elif c == "Current_Price":
-                try:
-                    cells.append(f'<td style="{style};color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace">${float(val):.2f}</td>')
-                except Exception:
-                    cells.append(f'<td style="{style};color:{TEXT_MUTED}">—</td>')
-            elif c == "Expiry_Date":
-                exp = val_s[:10] if val_s != "—" else "—"
-                cells.append(f'<td style="{style};color:{TEXT_MUTED}">{exp}</td>')
-            else:
-                cells.append(f'<td style="{style};color:{TEXT_PRIMARY}">{val_s}</td>')
+            with row_c[j]:
+                if c == "Ticker":
+                    st.markdown(
+                        f'<div style="{td};color:{GOLD};font-family:\'DM Mono\',monospace;'
+                        f'font-weight:700;font-size:12px">{val_s}</div>',
+                        unsafe_allow_html=True)
+                elif c in ("PL_Dollar", "P/L $", "Income"):
+                    st.markdown(f'<div style="{td}">{_pl_html(val)}</div>',
+                                unsafe_allow_html=True)
+                elif c in ("PL_Pct", "P/L %"):
+                    try:
+                        v  = float(val)
+                        cc = ACCENT_GREEN if v >= 0 else ACCENT_RED
+                        st.markdown(
+                            f'<div style="{td};color:{cc};font-family:\'DM Mono\','
+                            f'monospace;font-weight:600">{v:+.1f}%</div>',
+                            unsafe_allow_html=True)
+                    except Exception:
+                        st.markdown(f'<div style="{td};color:{TEXT_MUTED}">—</div>',
+                                    unsafe_allow_html=True)
+                elif c == "Status":
+                    st.markdown(f'<div style="{td}">{_status_badge(val_s)}</div>',
+                                unsafe_allow_html=True)
+                elif c == "Strategy":
+                    sc = {"CSP": "#86EFAC", "CC": GOLD,
+                          "LEAPS": "#60A5FA", "Golden Scan": "#A78BFA"}.get(val_s, TEXT_MUTED)
+                    st.markdown(f'<div style="{td};color:{sc};font-weight:600">{val_s}</div>',
+                                unsafe_allow_html=True)
+                elif c == "Premium":
+                    try:
+                        st.markdown(
+                            f'<div style="{td};color:{ACCENT_GREEN};'
+                            f'font-family:\'DM Mono\',monospace">${float(val):.2f}</div>',
+                            unsafe_allow_html=True)
+                    except Exception:
+                        st.markdown(f'<div style="{td};color:{TEXT_MUTED}">—</div>',
+                                    unsafe_allow_html=True)
+                elif c == "Current_Price":
+                    try:
+                        st.markdown(
+                            f'<div style="{td};color:{TEXT_PRIMARY};'
+                            f'font-family:\'DM Mono\',monospace">${float(val):.2f}</div>',
+                            unsafe_allow_html=True)
+                    except Exception:
+                        st.markdown(f'<div style="{td};color:{TEXT_MUTED}">—</div>',
+                                    unsafe_allow_html=True)
+                elif c == "Expiry_Date":
+                    exp = val_s[:10] if val_s != "—" else "—"
+                    st.markdown(f'<div style="{td};color:{TEXT_MUTED}">{exp}</div>',
+                                unsafe_allow_html=True)
+                elif c == "Close Signal":
+                    strat_r = str(r.get("Strategy", "")).upper()
+                    if strat_r in _STOCK_STRATS and is_open:
+                        sig_score, sig_label, sig_color = _fuzzy_close_signal(r.to_dict(), cp)
+                        st.markdown(
+                            f'<div style="{td}"><span style="color:{sig_color};font-size:10px;'
+                            f'font-weight:700;background:{sig_color}22;padding:2px 6px;'
+                            f'border-radius:10px;border:1px solid {sig_color}55">'
+                            f'{sig_label} ({sig_score})</span></div>',
+                            unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'<div style="{td};color:{TEXT_MUTED}">—</div>',
+                                    unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div style="{td};color:{TEXT_PRIMARY}">{val_s}</div>',
+                                unsafe_allow_html=True)
 
-        # ── Fuzzy close signal (stocks only) ─────────────────────
-        if show_close_signal:
-            strat = str(r.get("Strategy","")).upper()
-            if strat in _STOCK_STRATS and is_open:
-                sig_score, sig_label, sig_color = _fuzzy_close_signal(r.to_dict(), cp)
-                cells.append(
-                    f'<td style="padding:7px 10px;background:{bg}">'
-                    f'<span style="color:{sig_color};font-size:10px;font-weight:700;'
-                    f'background:{sig_color}22;padding:2px 8px;border-radius:10px;'
-                    f'border:1px solid {sig_color}55">{sig_label} ({sig_score})</span></td>'
-                )
-            else:
-                cells.append(f'<td style="padding:7px 10px;background:{bg};color:{TEXT_MUTED};font-size:10px">—</td>')
-
-        # ── Action placeholder (Close button rendered separately) ─
-        cells.append(f'<td style="padding:7px 10px;background:{bg};color:{TEXT_MUTED};font-size:10px">'
-                     f'{"✖" if is_open else "✓"}</td>')
-
-        rows_html.append(f'<tr>{"".join(cells)}</tr>')
-
-    st.markdown(f"""
-    <div style="border:1px solid {BORDER_COLOR};border-radius:8px;overflow:hidden;overflow-x:auto;margin-bottom:8px">
-      <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif">
-        <thead><tr>{header_html}</tr></thead>
-        <tbody>{"".join(rows_html)}</tbody>
-      </table>
-    </div>""", unsafe_allow_html=True)
-
-    # ── Close buttons (Streamlit widgets — rendered below table) ─
-    open_rows = [(i, ridx, r) for i, (ridx, r) in enumerate(df.iterrows())
-                 if str(r.get("Status","")).lower() == "open"]
-    if open_rows:
-        st.markdown(f'<div style="color:{TEXT_MUTED};font-size:10px;margin-bottom:4px">Close open positions at today\'s price:</div>', unsafe_allow_html=True)
-        btn_cols = st.columns(min(len(open_rows), 6))
-        for j, (i, ridx, r) in enumerate(open_rows):
-            with btn_cols[j % 6]:
+        # ── Inline Action column (real Streamlit widget) ─────────
+        with row_c[-1]:
+            if is_open:
                 _render_close_button(r.to_dict(), ridx + 2, context=context)
+            else:
+                st.markdown(
+                    f'<div style="padding:5px 4px;font-size:14px;color:{ACCENT_GREEN};'
+                    f'text-align:center;background:{bg}">✓</div>',
+                    unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════
