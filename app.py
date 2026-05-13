@@ -381,10 +381,59 @@ section[data-testid="stSidebar"] [data-testid="stCheckbox"] label span {{
 [data-testid="stMetricValue"] {{ color: {GOLD} !important; font-family: 'Cormorant Garamond', serif !important; font-size: 28px !important; }}
 [data-testid="stMetricDelta"] {{ font-size: 12px !important; }}
 
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] {{ background: {BG_PANEL}; border-radius: 8px; gap: 2px; }}
-.stTabs [data-baseweb="tab"] {{ color: {TEXT_MUTED} !important; font-size: 13px; }}
-.stTabs [aria-selected="true"] {{ color: {GOLD} !important; background: {BG_CARD} !important; }}
+/* Tabs — bigger, bolder, 3D bevelled gold-pill design.
+   Applies globally so Market Overview, Social Trends, About, Stock Analysis,
+   Summary, and every other st.tabs() call share the same treatment. */
+.stTabs [data-baseweb="tab-list"] {{
+    background: linear-gradient(180deg, {BG_PANEL}, {BG_DARK}) !important;
+    border: 1px solid {BORDER_COLOR} !important;
+    border-radius: 10px !important;
+    padding: 6px !important;
+    gap: 4px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    margin-bottom: 18px !important;
+}}
+.stTabs [data-baseweb="tab"] {{
+    height: 46px !important;
+    padding: 0 22px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.6px !important;
+    color: {TEXT_MUTED} !important;
+    background: linear-gradient(180deg, {BG_CARD}, #0c0c12) !important;
+    border: 1px solid {BORDER_COLOR} !important;
+    border-radius: 8px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03),
+                0 2px 4px rgba(0,0,0,0.4) !important;
+    transition: all 0.18s ease !important;
+    position: relative !important;
+    top: 0 !important;
+}}
+.stTabs [data-baseweb="tab"]:hover {{
+    color: {GOLD} !important;
+    border-color: rgba(245,200,66,0.35) !important;
+    top: -1px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
+                0 4px 10px rgba(0,0,0,0.55),
+                0 0 12px rgba(245,200,66,0.18) !important;
+}}
+.stTabs [aria-selected="true"] {{
+    color: {BG_DARK} !important;
+    background: linear-gradient(180deg, #FFE07A, {GOLD} 45%, {GOLD_DARK}) !important;
+    border-color: {GOLD_DARK} !important;
+    font-weight: 800 !important;
+    top: -2px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35),
+                inset 0 -2px 0 rgba(0,0,0,0.18),
+                0 6px 18px rgba(245,200,66,0.45),
+                0 2px 6px rgba(0,0,0,0.55) !important;
+}}
+/* Kill Streamlit's default underline highlight bar — it fights the bevel. */
+.stTabs [data-baseweb="tab-highlight"],
+.stTabs [data-baseweb="tab-border"] {{
+    display: none !important;
+}}
 
 /* Number input */
 .stNumberInput input, .stTextInput input {{
