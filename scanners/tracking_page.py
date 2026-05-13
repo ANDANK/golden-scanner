@@ -61,6 +61,13 @@ def _row_pnl(row):
 
 # ── Analytics charts ───────────────────────────────────────────
 
+def _rgba(hex6: str, alpha: float) -> str:
+    """Convert a 6-char hex color + alpha float to rgba() for Plotly compatibility."""
+    h = hex6.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
+
+
 def _chart_pnl_over_time(df: pd.DataFrame):
     """Cumulative P&L line chart grouped by Added_Date."""
     tmp = df.copy()
@@ -82,12 +89,12 @@ def _chart_pnl_over_time(df: pd.DataFrame):
         fillcolor=f"rgba(212,175,55,0.08)",
         name="Cumulative P&L",
     ))
-    fig.add_hline(y=0, line_dash="dash", line_color=BORDER_COLOR, line_width=1)
+    fig.add_hline(y=0, line=dict(dash="dash", color=BORDER_COLOR, width=1))
     fig.update_layout(
         paper_bgcolor=BG_CARD, plot_bgcolor=BG_CARD,
         font=dict(color=TEXT_PRIMARY, family="Inter"),
-        xaxis=dict(gridcolor=BORDER_COLOR + "33", title=""),
-        yaxis=dict(gridcolor=BORDER_COLOR + "33", title="Cumulative P&L ($)", tickprefix="$"),
+        xaxis=dict(gridcolor=_rgba(BORDER_COLOR, 0.2), title=""),
+        yaxis=dict(gridcolor=_rgba(BORDER_COLOR, 0.2), title="Cumulative P&L ($)", tickprefix="$"),
         margin=dict(l=0, r=0, t=10, b=0),
         height=260,
         showlegend=False,
@@ -143,11 +150,11 @@ def _chart_best_worst(df: pd.DataFrame):
         textposition="outside",
         textfont=dict(color=TEXT_PRIMARY, size=11),
     ))
-    fig.add_vline(x=0, line_color=BORDER_COLOR, line_width=1)
+    fig.add_vline(x=0, line=dict(color=BORDER_COLOR, width=1))
     fig.update_layout(
         paper_bgcolor=BG_CARD, plot_bgcolor=BG_CARD,
         font=dict(color=TEXT_PRIMARY, family="Inter"),
-        xaxis=dict(gridcolor=BORDER_COLOR + "33", tickprefix="$"),
+        xaxis=dict(gridcolor=_rgba(BORDER_COLOR, 0.2), tickprefix="$"),
         yaxis=dict(gridcolor="rgba(0,0,0,0)"),
         margin=dict(l=0, r=40, t=10, b=0),
         height=max(220, len(combined) * 36),
