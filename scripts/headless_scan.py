@@ -202,7 +202,14 @@ def compute_diff(df_am: pd.DataFrame, df_pm: pd.DataFrame) -> pd.DataFrame:
 
 # ── Google Sheets auto-track ───────────────────────────────────
 
-def auto_track_to_sheets(df_new: pd.DataFrame):
+def auto_track_to_sheets(df_new: pd.DataFrame, source: str = "Sched-PM"):
+    """Write high-scoring setups to the Google Sheets Tracking tab.
+
+    Args:
+        df_new:  DataFrame of scan results to consider.
+        source:  Tag written to the Source column — use "Sched-AM" or "Sched-PM"
+                 so you can tell which run added each row.
+    """
     sheet_id  = os.environ.get("GOOGLE_SHEET_ID", "")
     creds_raw = os.environ.get("GOOGLE_CREDS_JSON", "")
     if not sheet_id or not creds_raw:
@@ -242,13 +249,13 @@ def auto_track_to_sheets(df_new: pd.DataFrame):
                 continue
             strat   = str(row.get("Strategy", ""))
             price   = str(row.get("Stock Price", row.get("Price", "")))
-            new_row = [tk, strat, "Sched-PM", price, today, score, "Auto-Sched"]
+            new_row = [tk, strat, source, price, today, score, "Auto-Sched"]
             ws.append_row(new_row)
             existing_keys.add((tk, today))
             added += 1
-            log(f"  ✅ Auto-tracked {tk} ({strat}, score {score})")
+            log(f"  ✅ Auto-tracked {tk} ({strat}, score {score}) [{source}]")
 
-        log(f"Google Sheets: {added} ticker(s) added to Tracking.")
+        log(f"Google Sheets: {added} ticker(s) added to Tracking [{source}].")
     except Exception as e:
         log(f"Google Sheets error: {e}")
 
@@ -287,19 +294,33 @@ if __name__ == "__main__":
     df_current = run_all_scans()
     save_results(SLOT, df_current)
 
-    if SLOT == "pm":
-        # Compare with AM and auto-track new tickers
+    if SLOT == "am":
+        # Auto-track all AM setups with score ≥ SCORE_MIN
+        if not df_current.empty:
+            high_score_am = df_current[
+                pd.to_numeric(df_current.get("Score", 0), errors="coerce").fillna(0) >= SCORE_MIN
+            ]
+            log(f"AM: {len(high_score_am)} setup(s) with score ≥ {SCORE_MIN} → auto-tracking")
+            auto_track_to_sheets(high_score_am, source="Sched-AM")
+        else:
+            log("AM scan returned no results — nothing to track.")
+
+    elif SLOT == "pm":
+        # Auto-track all PM setups with score ≥ SCORE_MIN
+        # (existing_keys check in auto_track_to_sheets prevents duplicates from AM)
+        if not df_current.empty:
+            high_score_pm = df_current[
+                pd.to_numeric(df_current.get("Score", 0), errors="coerce").fillna(0) >= SCORE_MIN
+            ]
+            log(f"PM: {len(high_score_pm)} setup(s) with score ≥ {SCORE_MIN} → auto-tracking new ones")
+            auto_track_to_sheets(high_score_pm, source="Sched-PM")
+
+        # Also compute diff and log what's new vs AM
         df_am = load_results("am")
         if not df_am.empty and not df_current.empty:
             log("Comparing PM vs AM results …")
             df_diff = compute_diff(df_am, df_current)
-            log(f"  {len(df_diff)} new ticker(s) appeared in PM vs AM")
-            if not df_diff.empty:
-                high_score = df_diff[
-                    pd.to_numeric(df_diff.get("Score", 0), errors="coerce").fillna(0) >= SCORE_MIN
-                ]
-                log(f"  {len(high_score)} with score ≥ {SCORE_MIN} → auto-tracking")
-                auto_track_to_sheets(high_score)
+            log(f"  {len(df_diff)} ticker(s) changed between AM and PM")
         else:
             log("No AM results to compare against — skipping diff.")
 
