@@ -14,9 +14,11 @@ on:
         default: "am"
         type: choice
         options: [am, pm]
+
 permissions:
-  contents: write
-  
+  contents: write          # allow the bot to commit + push scan results
+
+
 jobs:
   scan:
     name: Run options scan
@@ -71,6 +73,20 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/sched_*.json || true
-          git diff --cached --quiet || git commit -m "Auto scan results $(date -u +'%Y-%m-%d %H:%M UTC') [${{ steps.slot.outputs.slot }}]"
-          git push || true   # non-fatal if nothing changed
+          git add data/sched_*.json
+          if git diff --cached --quiet; then
+            echo "Nothing to commit — scan produced no new data file."
+          else
+            git commit -m "Auto scan results $(date -u +'%Y-%m-%d %H:%M UTC') [${{ steps.slot.outputs.slot }}]"
+            # Pull remote changes first (another run may have committed in parallel)
+            git pull --rebase origin main || true
+            git push origin main
+          fi
+
+      - name: Upload scan results as artifact
+        if: always()          # keep artifact even if commit step fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-results-${{ steps.slot.outputs.slot }}-${{ github.run_id }}
+          path: data/sched_*.json
+          retention-days: 7   # keep for a week
