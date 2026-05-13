@@ -589,9 +589,68 @@ def render():
         unsafe_allow_html=True,
     )
 
+    # ── Bigger, bolder, 3D-looking tabs (scoped to this page only) ──
+    st.markdown(f"""
+    <style>
+    /* Tab strip — raise it off the page with a subtle gradient + shadow */
+    .stTabs [data-baseweb="tab-list"] {{
+        background: linear-gradient(180deg, {BG_PANEL}, {BG_DARK}) !important;
+        border: 1px solid {BORDER_COLOR} !important;
+        border-radius: 10px !important;
+        padding: 6px !important;
+        gap: 4px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5),
+                    inset 0 1px 0 rgba(255,255,255,0.04) !important;
+        margin-bottom: 18px !important;
+    }}
+    /* Each tab — pill, bigger, bolder, faux-bevelled */
+    .stTabs [data-baseweb="tab"] {{
+        height: 46px !important;
+        padding: 0 22px !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.6px !important;
+        color: {TEXT_MUTED} !important;
+        background: linear-gradient(180deg, {BG_CARD}, #0c0c12) !important;
+        border: 1px solid {BORDER_COLOR} !important;
+        border-radius: 8px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.03),
+                    0 2px 4px rgba(0,0,0,0.4) !important;
+        transition: all 0.18s ease !important;
+        position: relative !important;
+        top: 0 !important;
+    }}
+    .stTabs [data-baseweb="tab"]:hover {{
+        color: {GOLD} !important;
+        border-color: rgba(245,200,66,0.35) !important;
+        top: -1px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
+                    0 4px 10px rgba(0,0,0,0.55),
+                    0 0 12px rgba(245,200,66,0.18) !important;
+    }}
+    /* Active tab — gold gradient, lifted, glow */
+    .stTabs [aria-selected="true"] {{
+        color: {BG_DARK} !important;
+        background: linear-gradient(180deg, #FFE07A, {GOLD} 45%, {GOLD_DARK}) !important;
+        border-color: {GOLD_DARK} !important;
+        font-weight: 800 !important;
+        top: -2px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.35),
+                    inset 0 -2px 0 rgba(0,0,0,0.18),
+                    0 6px 18px rgba(245,200,66,0.45),
+                    0 2px 6px rgba(0,0,0,0.55) !important;
+    }}
+    /* Kill the default red underline highlight bar — it fights the bevel. */
+    .stTabs [data-baseweb="tab-highlight"],
+    .stTabs [data-baseweb="tab-border"] {{
+        display: none !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
     df = _load_positions()
 
-    tab_d, tab_w, tab_a = st.tabs(["📅  Daily", "🗓  Weekly", "📊  Analytics"])
+    tab_d, tab_w, tab_a = st.tabs(["📅  DAILY", "🗓  WEEKLY", "📊  ANALYTICS"])
     with tab_d:
         _render_daily_tab(df)
     with tab_w:
