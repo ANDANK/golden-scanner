@@ -34,7 +34,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install yfinance>=0.2.54 curl_cffi>=0.7.0 pandas numpy pytz gspread google-auth
+          # Install everything from requirements.txt except streamlit (mocked in headless mode)
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
 
       - name: Determine scan slot
         id: slot
