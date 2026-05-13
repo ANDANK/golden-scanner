@@ -77,10 +77,11 @@ SLOT          = os.environ.get("SCAN_SLOT", "am").lower()
 DATA_DIR      = os.path.join(ROOT, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
-SCHED_STOCKS  = int(os.environ.get("SCHED_STOCKS",  20))   # top N stocks per scan
-SCORE_MIN     = int(os.environ.get("SCORE_MIN",     60))   # auto-track threshold
-BATCH_SIZE    = int(os.environ.get("SCAN_BATCH_SIZE", 20)) # tickers per batch
-BATCH_PAUSE_S = int(os.environ.get("SCAN_BATCH_PAUSE", 30)) # seconds between batches
+SCHED_STOCKS        = int(os.environ.get("SCHED_STOCKS",         20))  # top N stocks per options scan
+GOLDEN_SCAN_TICKERS = int(os.environ.get("GOLDEN_SCAN_TICKERS",  50))  # top N stocks for Golden Scan
+SCORE_MIN           = int(os.environ.get("SCORE_MIN",            60))  # auto-track threshold
+BATCH_SIZE          = int(os.environ.get("SCAN_BATCH_SIZE",      20))  # tickers per batch
+BATCH_PAUSE_S       = int(os.environ.get("SCAN_BATCH_PAUSE",     30))  # seconds between batches
 
 
 def log(msg: str):
@@ -131,9 +132,9 @@ def _scan_golden(tickers):
 
 
 def run_all_scans() -> pd.DataFrame:
-    stocks        = SP500_SAMPLE[:SCHED_STOCKS]
-    etfs          = OPTIONS_ETF_UNIVERSE
-    golden_tickers = SP500_SAMPLE[:50]   # top 50 for Golden Scan (technical only, no options API)
+    stocks         = SP500_SAMPLE[:SCHED_STOCKS]
+    golden_tickers = SP500_SAMPLE[:GOLDEN_SCAN_TICKERS]
+    etfs           = OPTIONS_ETF_UNIVERSE
 
     plan = [
         ("Golden Scan", "Stock",  _scan_golden, golden_tickers),
