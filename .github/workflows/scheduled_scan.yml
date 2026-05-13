@@ -1,0 +1,67 @@
+name: Scheduled Options Scan
+
+on:
+  schedule:
+    # 9:00 AM CST  = 15:00 UTC  (CDT/summer: 14:00 UTC)
+    - cron: "0 15 * * 1-5"
+    # 1:00 PM CST  = 19:00 UTC  (CDT/summer: 18:00 UTC)
+    - cron: "0 19 * * 1-5"
+  workflow_dispatch:          # Manual trigger from GitHub Actions UI
+    inputs:
+      slot:
+        description: "Scan slot (am / pm)"
+        required: true
+        default: "am"
+        type: choice
+        options: [am, pm]
+
+jobs:
+  scan:
+    name: Run options scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install yfinance>=0.2.54 curl_cffi>=0.7.0 pandas numpy pytz gspread google-auth
+
+      - name: Determine scan slot
+        id: slot
+        run: |
+          # workflow_dispatch overrides; schedule auto-detects from UTC hour
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "slot=${{ github.event.inputs.slot }}" >> $GITHUB_OUTPUT
+          else
+            HOUR=$(date -u +%H)
+            if [ "$HOUR" = "15" ] || [ "$HOUR" = "14" ]; then
+              echo "slot=am" >> $GITHUB_OUTPUT
+            else
+              echo "slot=pm" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Run headless scan
+        env:
+          SCAN_SLOT:         ${{ steps.slot.outputs.slot }}
+          GOOGLE_SHEET_ID:   ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_CREDS_JSON: ${{ secrets.GOOGLE_CREDS_JSON }}
+        run: python scripts/headless_scan.py
+
+      - name: Commit scan results JSON
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/sched_*.json || true
+          git diff --cached --quiet || git commit -m "Auto scan results $(date -u +'%Y-%m-%d %H:%M UTC') [${{ steps.slot.outputs.slot }}]"
+          git push || true   # non-fatal if nothing changed

@@ -522,6 +522,7 @@ NAV_GROUPS = [
         "items": [
             {"key": "🏠  Market Overview"},
             {"key": "📱  Social Trends"},
+            {"key": "📅  Scheduled Scans"},
             {
                 "key": "📌  Tracking",
                 "children": [
@@ -728,6 +729,9 @@ if page == "🏠  Market Overview":
     render()
 elif page == "📱  Social Trends":
     from scanners.social_trends import render
+    render()
+elif page == "📅  Scheduled Scans":
+    from scanners.scheduled_scans import render
     render()
 elif page == "📌  Tracking":
     from scanners.tracking_page import render
