@@ -15,29 +15,48 @@ from data_loader import (
 )
 
 
+BATCH_SIZE    = 20
+BATCH_PAUSE_S = 30
+
+
+def _batch_pause_ui(ph, batch_num: int, total_batches: int, seconds: int = BATCH_PAUSE_S):
+    for remaining in range(seconds, 0, -1):
+        ph.markdown(
+            f'<div style="color:{GOLD};font-size:12px;padding:4px 8px;'
+            f'background:#1a1a2a;border-radius:4px;border-left:3px solid {GOLD}">'
+            f'⏸ Batch {batch_num} of {total_batches} complete — '
+            f'cooling down {remaining}s before next batch…</div>',
+            unsafe_allow_html=True,
+        )
+        time.sleep(1)
+    ph.empty()
+
+
 def scan_leaps(tickers, dte_min, delta_min, delta_max, iv_rank_max, price_min, price_max):
 
     diag = ScanDiagnostics()
-    # LEAPS uses an open-ended DTE: dte_min upward
     cfg = OPTIONS_STRIKE_RANGES["LEAPS"]
+    st.session_state.pop("_rl_hit", None)
 
-    _scan_label = st.empty()
-    _scan_prog  = st.progress(0)
+    total_batches = max(1, (len(tickers) - 1) // BATCH_SIZE + 1)
+
+    _scan_label  = st.empty()
+    _batch_label = st.empty()
+    _scan_prog   = st.progress(0)
     spy_df = get_price_history("SPY", period="12mo")
     spy_close = spy_df["Close"].squeeze() if not spy_df.empty else pd.Series()
 
     results = []
 
     for i, ticker in enumerate(tickers):
-        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker}</div>', unsafe_allow_html=True)
+        if i > 0 and i % BATCH_SIZE == 0:
+            _scan_label.empty()
+            _batch_pause_ui(_batch_label, i // BATCH_SIZE, total_batches)
+
+        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker} (batch {i // BATCH_SIZE + 1}/{total_batches})</div>', unsafe_allow_html=True)
         _scan_prog.progress((i + 1) / len(tickers))
         diag.seen(ticker)
-        _rl = st.session_state.get("_rl_hit", 0)
-        _since_rl = time.time() - _rl
-        if _since_rl < 30:
-            time.sleep(30 - _since_rl)
-        else:
-            time.sleep(1.5 + random.uniform(0, 0.75))
+        time.sleep(1.5 + random.uniform(0, 0.75))
         try:
             df = get_price_history(ticker, period="12mo")
             if df.empty or len(df) < 50:
@@ -164,7 +183,7 @@ def render(universe_mode: str = "stocks"):
         if not is_etf:
             price_min = st.number_input("Min Stock Price ($)", 5.0, 100.0, 20.0, key=f"{mk}_pmin")
             price_max = st.number_input("Max Stock Price ($)", 50.0, 5000.0, 3000.0, key=f"{mk}_pmax")
-            universe_size = st.slider("Universe Size (top stocks)", 10, len(SP500_SAMPLE), 20, 5, key=f"{mk}_sz")
+            universe_size = st.slider("Universe Size (top stocks)", 10, len(SP500_SAMPLE), 20, 10, key=f"{mk}_sz")
 
     # ETFs: no price filter (ETFs span a wide range), fixed universe
     if is_etf:
@@ -174,7 +193,11 @@ def render(universe_mode: str = "stocks"):
     else:
         tickers = SP500_SAMPLE[:universe_size]
 
-    st.info(f"⏱ Scanning {len(tickers)} {'ETFs' if is_etf else 'stocks'} — LEAPS expiries may take 90–180 seconds.")
+    n = len(tickers)
+    n_batches = max(1, (n - 1) // BATCH_SIZE + 1)
+    est_secs  = n * 2 + (n_batches - 1) * BATCH_PAUSE_S
+    est_str   = f"{est_secs // 60}m {est_secs % 60}s" if est_secs >= 60 else f"{est_secs}s"
+    st.info(f"⏱ Scanning {n} {'ETFs' if is_etf else 'stocks'} in {n_batches} batch(es) of {BATCH_SIZE} · Est. time: ~{est_str}")
 
     col1, _ = st.columns([1, 5])
     with col1:

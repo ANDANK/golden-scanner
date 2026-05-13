@@ -15,27 +15,48 @@ from data_loader import (
 )
 
 
+BATCH_SIZE    = 20   # tickers per batch before a cooldown pause
+BATCH_PAUSE_S = 30   # seconds to wait between batches
+
+
+def _batch_pause_ui(ph, batch_num: int, total_batches: int, seconds: int = BATCH_PAUSE_S):
+    """Show a live countdown between batches so the user knows what's happening."""
+    for remaining in range(seconds, 0, -1):
+        ph.markdown(
+            f'<div style="color:{GOLD};font-size:12px;padding:4px 8px;'
+            f'background:#1a1a2a;border-radius:4px;border-left:3px solid {GOLD}">'
+            f'⏸ Batch {batch_num} of {total_batches} complete — '
+            f'cooling down {remaining}s before next batch…</div>',
+            unsafe_allow_html=True,
+        )
+        time.sleep(1)
+    ph.empty()
+
+
 def scan_csp(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
              spread_pct_max, dte_min, dte_max):
 
     diag = ScanDiagnostics()
     cfg = OPTIONS_STRIKE_RANGES["CSP"]
+    st.session_state.pop("_rl_hit", None)   # clear stale rate-limit flag
 
-    _scan_label = st.empty()
-    _scan_prog  = st.progress(0)
+    total_batches = max(1, (len(tickers) - 1) // BATCH_SIZE + 1)
+
+    _scan_label  = st.empty()
+    _batch_label = st.empty()
+    _scan_prog   = st.progress(0)
     results = []
 
     for i, ticker in enumerate(tickers):
-        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker}</div>', unsafe_allow_html=True)
+        # ── Proactive batch pause every BATCH_SIZE tickers ──────────
+        if i > 0 and i % BATCH_SIZE == 0:
+            _scan_label.empty()
+            _batch_pause_ui(_batch_label, i // BATCH_SIZE, total_batches)
+
+        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker} (batch {i // BATCH_SIZE + 1}/{total_batches})</div>', unsafe_allow_html=True)
         _scan_prog.progress((i + 1) / len(tickers))
         diag.seen(ticker)
-        # Back off longer if a rate-limit was recently hit
-        _rl = st.session_state.get("_rl_hit", 0)
-        _since_rl = time.time() - _rl
-        if _since_rl < 30:
-            time.sleep(30 - _since_rl)  # wait out the cooldown
-        else:
-            time.sleep(1.5 + random.uniform(0, 0.75))  # ~2s with jitter
+        time.sleep(1.5 + random.uniform(0, 0.75))   # ~2s with jitter within batch
         try:
             df = get_price_history(ticker, period="6mo")
             if df.empty or len(df) < 50:
@@ -162,11 +183,15 @@ def render(universe_mode: str = "stocks"):
         spread_pct_max  = st.slider("Max Bid/Ask Spread %",      1.0,  50.0,  20.0,        0.5,  key=f"{mk}_sprd")
         dte_min, dte_max = st.slider("DTE Range (days)",         1,    90,   (1, 45),             key=f"{mk}_dte")
         if not is_etf:
-            universe_size = st.slider("Universe Size (top stocks)", 10, len(SP500_SAMPLE), 20, 5, key=f"{mk}_sz")
+            universe_size = st.slider("Universe Size (top stocks)", 10, len(SP500_SAMPLE), 20, 10, key=f"{mk}_sz")
 
     tickers = OPTIONS_ETF_UNIVERSE if is_etf else SP500_SAMPLE[:universe_size]
 
-    st.info(f"⏱ Scanning {len(tickers)} {'ETFs' if is_etf else 'stocks'} — options data may take 30–90 sec.")
+    n = len(tickers)
+    n_batches = max(1, (n - 1) // BATCH_SIZE + 1)
+    est_secs  = n * 2 + (n_batches - 1) * BATCH_PAUSE_S
+    est_str   = f"{est_secs // 60}m {est_secs % 60}s" if est_secs >= 60 else f"{est_secs}s"
+    st.info(f"⏱ Scanning {n} {'ETFs' if is_etf else 'stocks'} in {n_batches} batch(es) of {BATCH_SIZE} · Est. time: ~{est_str}")
 
     col1, _ = st.columns([1, 5])
     with col1:
