@@ -523,10 +523,10 @@ _STOCK_COLS = [
     "Sector", "Signal", "Direction", "Catalysts",
 ]
 _OPTIONS_COLS = [
+    # Removed: Breakeven, Assign Risk, Trend, Ann. Return, Read %
     "Ticker", "Stock Price", "Pre/Post", "Change %", "Score",
     "Strike", "Call Strike", "Premium", "Premium %", "Delta", "IV", "IV Rank",
-    "DTE", "Expiry", "Ann. Return", "Breakeven", "Read %",
-    "Assign Risk", "Trend", "Side", "Bar", "Resistance", "Average",
+    "DTE", "Expiry", "Side", "Bar", "Resistance", "Average",
 ]
 # Golden Scan is stock-oriented
 _GOLDEN_COLS = _STOCK_COLS
@@ -545,8 +545,15 @@ _STOCK_ONLY_COLS = {
 # Columns that belong ONLY to options strategies — never shown for stocks
 _OPTIONS_ONLY_COLS = {
     "Strike", "Call Strike", "Premium", "Premium %", "Delta", "IV", "IV Rank",
-    "DTE", "Expiry", "Ann. Return", "Breakeven", "Read %",
-    "Assign Risk", "Trend", "Side", "Bar", "Resistance", "Average",
+    "DTE", "Expiry", "Side", "Bar", "Resistance", "Average",
+    "Stock Price",    # options scans label it "Stock Price"; stock scans use "Price"
+}
+
+# Columns NEVER shown regardless of strategy (noisy / redundant)
+_NEVER_SHOW_COLS = {
+    "Breakeven", "Assign Risk", "Trend", "Ann. Return", "Ann. Return %",
+    "Read %", "Upside Cap %", "P(Assign) %", "Near Resist.", "Leverage",
+    "Spread %", "Yield %",
 }
 
 
@@ -554,23 +561,23 @@ def _strategy_cols(df: pd.DataFrame, strategy: str) -> list[str]:
     """
     Return ordered column list for the given strategy, filtered to:
       1. Only columns in the strategy's preferred set (with real data)
-      2. Extra columns that have data AND are not cross-strategy noise
+      2. Extra columns that have data AND are not cross-strategy or noisy
 
-    This prevents stock-only columns (RSI, Vol Ratio …) appearing on
-    options results and vice-versa, even when the scanner populates them.
+    Prevents stock-only columns (RSI, Vol Ratio …) appearing on options
+    results and vice-versa, and removes universally-noisy columns.
     """
     strat_up = strategy.upper()
     is_options = any(s in strat_up for s in ("CSP", "CC", "LEAPS", "ETF OPT", "3X ETF"))
 
     if is_options:
         preferred = _OPTIONS_COLS
-        excluded  = _STOCK_ONLY_COLS      # never show stock-only cols on options tables
+        excluded  = _STOCK_ONLY_COLS | _NEVER_SHOW_COLS
     elif "GOLDEN" in strat_up:
         preferred = _GOLDEN_COLS
-        excluded  = _OPTIONS_ONLY_COLS
+        excluded  = _OPTIONS_ONLY_COLS | _NEVER_SHOW_COLS
     else:
         preferred = _STOCK_COLS
-        excluded  = _OPTIONS_ONLY_COLS    # never show options-only cols on stock tables
+        excluded  = _OPTIONS_ONLY_COLS | _NEVER_SHOW_COLS
 
     # Only keep cols that exist AND have at least one real value
     def _has_data(col: str) -> bool:
@@ -581,7 +588,7 @@ def _strategy_cols(df: pd.DataFrame, strategy: str) -> list[str]:
 
     ordered = [c for c in preferred if _has_data(c)]
 
-    # Append extra columns that have data and are NOT in the excluded set for this strategy
+    # Append extra columns that have data and are not excluded
     seen   = set(ordered)
     extras = [
         c for c in df.columns
@@ -690,16 +697,31 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
         price_str  = _extract_price(row)
         row_cols   = st.columns(col_widths)
 
-        # Enriched source tag  (guard against "nan" from empty numeric columns)
+        # Enriched source tag — format: [AM·|PM·]GS·Scanner1 + Scanner2 (N)
+        # Slot prefix so we know if the pick came from AM or PM scheduled scan
+        _src_str  = str(source)
+        slot_pfx  = ("AM·" if "Sched-AM" in _src_str else
+                     "PM·" if "Sched-PM" in _src_str else "")
         row_source = source
+
         if "Scanners" in df.columns:
             sc = str(row.get("Scanners", "")).strip()
-            if sc and sc.lower() != "nan":
-                row_source = f"GS-{sc[:50]}"
+            parts = [p.strip() for p in sc.split(",")
+                     if p.strip() and p.strip().lower() != "nan"]
+            if parts:
+                names = " + ".join(parts[:5])
+                row_source = f"{slot_pfx}GS·{names} ({len(parts)})"
+            elif slot_pfx:
+                row_source = f"{slot_pfx}{strategy}"
         elif "Catalysts" in df.columns:
             cat = str(row.get("Catalysts", "")).strip()
             if cat and cat.lower() != "nan":
-                row_source = f"H&C-{cat[:50]}"
+                row_source = f"{slot_pfx}H&C·{cat[:50]}"
+            elif slot_pfx:
+                row_source = f"{slot_pfx}{strategy}"
+        elif slot_pfx:
+            # Options scheduled scan — prefix with slot + strategy name
+            row_source = f"{slot_pfx}{strategy}"
 
         # Extra metadata for tracking
         extra_meta = {}

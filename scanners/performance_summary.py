@@ -873,6 +873,99 @@ def _chart_cumulative_pnl(df: pd.DataFrame) -> go.Figure | None:
 # 7. SHARED SECTION RENDERERS
 # ══════════════════════════════════════════════════════════════════
 
+def _render_daily_summary_boxes(df: pd.DataFrame):
+    """Two summary boxes: Golden Scan positions (by source) + Options positions."""
+    box_style = (f'background:{BG_CARD};border:1px solid {BORDER_COLOR};'
+                 f'border-radius:8px;padding:14px;height:100%')
+
+    # ── Classify rows ──────────────────────────────────────────────
+    gs_df  = df[df["Strategy"].str.upper().isin(_STOCK_STRATS)].copy()
+    opt_df = df[df["Strategy"].str.upper().isin({"CSP","CC","LEAPS"})].copy()
+
+    c1, c2 = st.columns(2)
+
+    # ── BOX 1: Golden Scan / Stocks (grouped by Source) ───────────
+    with c1:
+        open_gs  = gs_df[gs_df["Status"].str.lower() == "open"]
+        total_pl = gs_df["PL_Dollar"].fillna(0).sum()
+        pl_color = ACCENT_GREEN if total_pl >= 0 else ACCENT_RED
+        st.markdown(f'<div style="{box_style};border-top:3px solid {ACCENT_GREEN}">'
+                    f'<div style="color:{ACCENT_GREEN};font-size:12px;font-weight:700;'
+                    f'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'
+                    f'📊 GS / Stock Positions ({len(gs_df)})</div>', unsafe_allow_html=True)
+        if gs_df.empty:
+            st.markdown(f'<div style="color:{TEXT_MUTED};font-size:12px;font-style:italic;'
+                        f'padding:8px 0">No stock positions yet.</div>', unsafe_allow_html=True)
+        else:
+            # Group by source
+            gs_df2 = gs_df.copy()
+            gs_df2["_src"] = gs_df2["Source"].fillna("—").astype(str)
+            for src, grp in gs_df2.groupby("_src"):
+                grp_pl = grp["PL_Dollar"].fillna(0).sum()
+                gc = ACCENT_GREEN if grp_pl >= 0 else ACCENT_RED
+                tickers = " · ".join(grp["Ticker"].astype(str).tolist()[:6])
+                st.markdown(
+                    f'<div style="border-bottom:1px solid {BORDER_COLOR}22;'
+                    f'padding:5px 0">'
+                    f'<div style="color:{TEXT_MUTED};font-size:10px;font-weight:600;'
+                    f'letter-spacing:.5px">{src[:60]}</div>'
+                    f'<div style="display:flex;justify-content:space-between">'
+                    f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
+                    f'font-size:11px">{tickers}</span>'
+                    f'<span style="color:{gc};font-family:\'DM Mono\',monospace;'
+                    f'font-size:11px;font-weight:700">{"+" if grp_pl>=0 else ""}${grp_pl:,.0f}</span>'
+                    f'</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="margin-top:8px;padding-top:6px;border-top:1px solid {BORDER_COLOR}">'
+            f'<span style="color:{TEXT_MUTED};font-size:10px">TOTAL STOCK P&L  </span>'
+            f'<span style="color:{pl_color};font-family:\'DM Mono\',monospace;'
+            f'font-weight:800;font-size:16px">{"+" if total_pl>=0 else ""}${total_pl:,.2f}'
+            f'</span></div></div>', unsafe_allow_html=True)
+
+    # ── BOX 2: Options (CSP / CC / LEAPS) ─────────────────────────
+    with c2:
+        open_opts    = opt_df[opt_df["Status"].str.lower() == "open"]
+        expired_opts = opt_df[opt_df["Status"].str.lower().isin(["expired","closed","assigned","called"])]
+        realized     = expired_opts["Income"].fillna(0).sum()
+        open_prem    = (_nf(open_opts["Premium"].mean()) *
+                        100 * max(1, int(open_opts["Qty"].fillna(1).mean())))
+        rc           = ACCENT_GREEN if realized >= 0 else ACCENT_RED
+        st.markdown(f'<div style="{box_style};border-top:3px solid {GOLD}">'
+                    f'<div style="color:{GOLD};font-size:12px;font-weight:700;'
+                    f'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'
+                    f'⚙️ Options Positions ({len(opt_df)})</div>', unsafe_allow_html=True)
+        if opt_df.empty:
+            st.markdown(f'<div style="color:{TEXT_MUTED};font-size:12px;font-style:italic;'
+                        f'padding:8px 0">No options positions yet.</div>', unsafe_allow_html=True)
+        else:
+            for strat, strat_color in [("CSP", "#86EFAC"), ("CC", GOLD), ("LEAPS", "#60A5FA")]:
+                grp  = opt_df[opt_df["Strategy"].str.upper() == strat]
+                if grp.empty:
+                    continue
+                exp_g   = grp[grp["Status"].str.lower().isin(["expired","closed","assigned","called"])]
+                inc_g   = exp_g["Income"].fillna(0).sum()
+                expiring = grp[grp["Status"].str.lower() == "open"]
+                tickers  = " · ".join(expiring["Ticker"].astype(str).tolist()[:4])
+                ic = ACCENT_GREEN if inc_g >= 0 else ACCENT_RED
+                st.markdown(
+                    f'<div style="border-bottom:1px solid {BORDER_COLOR}22;padding:5px 0">'
+                    f'<div style="display:flex;justify-content:space-between">'
+                    f'<span style="color:{strat_color};font-size:11px;font-weight:700">'
+                    f'{strat} ({len(grp)})</span>'
+                    f'<span style="color:{ic};font-family:\'DM Mono\',monospace;font-size:11px">'
+                    f'{"+" if inc_g>=0 else ""}${inc_g:,.0f} realized</span></div>'
+                    f'<div style="color:{TEXT_MUTED};font-size:10px">{tickers}</div>'
+                    f'</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="margin-top:8px;padding-top:6px;border-top:1px solid {BORDER_COLOR}">'
+            f'<span style="color:{TEXT_MUTED};font-size:10px">REALIZED INCOME  </span>'
+            f'<span style="color:{rc};font-family:\'DM Mono\',monospace;font-weight:800;'
+            f'font-size:16px">{"+" if realized>=0 else ""}${realized:,.2f}</span>'
+            f'</div></div>', unsafe_allow_html=True)
+
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+
 def _render_top_cards(df: pd.DataFrame, today: date):
     closed_today = df[df["Close_Date"].dt.date == today] if "Close_Date" in df.columns else pd.DataFrame()
     open_pos     = df[df["Status"].str.lower() == "open"]
@@ -979,27 +1072,34 @@ def _render_top_cards(df: pd.DataFrame, today: date):
 
 
 def _render_progress_strip(df: pd.DataFrame):
-    closed     = df[df["Status"].str.lower().isin(["expired","closed","assigned","called"])]
-    income_ytd = closed["Income"].sum()
-    total      = len(df)
-    wins       = (df["PL_Dollar"].fillna(0) > 0).sum()
-    win_rate   = wins / total * 100 if total else 0
-    avg_roi    = closed["PL_Pct"].dropna().mean() if not closed.empty else 0
-    if not df["Entry_Date"].dropna().empty:
-        days_active  = max(1, (date.today() - df["Entry_Date"].dropna().min().date()).days)
+    closed       = df[df["Status"].str.lower().isin(["expired","closed","assigned","called"])]
+    # Options income: only CSP + CC sell strategies that expired/closed
+    opt_closed   = closed[closed["Strategy"].str.upper().isin({"CSP", "CC"})]
+    income_ytd   = opt_closed["Income"].sum()
+    # Open unrealized P&L across all open positions
+    open_pnl     = df[df["Status"].str.lower() == "open"]["PL_Dollar"].fillna(0).sum()
+    # Stock P&L: closed stock/GS positions
+    stock_closed = closed[closed["Strategy"].str.upper().isin(_STOCK_STRATS)]
+    stock_pnl    = stock_closed["PL_Dollar"].fillna(0).sum()
+    total        = len(df)
+    # Avg premium/day: options sold (CSP+CC) income ÷ days since first such trade
+    opt_dates    = opt_closed["Entry_Date"].dropna()
+    if not opt_dates.empty:
+        days_active  = max(1, (date.today() - opt_dates.min().date()).days)
         avg_prem_day = income_ytd / days_active
     else:
-        avg_prem_day = 0
+        avg_prem_day = 0.0
 
     _section_label("🎯 Wheel Strategy Progress", GOLD)
     c1, c2, c3, c4, c5 = st.columns(5)
-    with c1: _kpi("Income YTD",      f"${income_ytd:,.2f}",  color=ACCENT_GREEN if income_ytd>=0 else ACCENT_RED)
-    with c2: _kpi("Total Trades",    str(total),              color=GOLD)
-    with c3: _kpi("Win Rate",        f"{win_rate:.1f}%",
-                  sub=f"{int(wins)} of {total}",
-                  color=ACCENT_GREEN if win_rate>=60 else (GOLD if win_rate>=40 else ACCENT_RED))
-    with c4: _kpi("Avg ROI/Trade",   f"{avg_roi:+.2f}%",     color=ACCENT_BLUE)
-    with c5: _kpi("Avg Premium/Day", f"${avg_prem_day:,.2f}", color=GOLD)
+    with c1: _kpi("Options Income YTD", f"${income_ytd:,.2f}",
+                  color=ACCENT_GREEN if income_ytd >= 0 else ACCENT_RED)
+    with c2: _kpi("Positions",          str(total),              color=GOLD)
+    with c3: _kpi("Open P&L",           f"${open_pnl:+,.2f}",
+                  color=ACCENT_GREEN if open_pnl >= 0 else ACCENT_RED)
+    with c4: _kpi("Stock P&L (Closed)", f"${stock_pnl:+,.2f}",
+                  color=ACCENT_GREEN if stock_pnl >= 0 else ACCENT_RED)
+    with c5: _kpi("Opt. Premium/Day",   f"${avg_prem_day:,.2f}", color=GOLD)
 
 
 def _render_ticker_snapshot(df: pd.DataFrame):
@@ -1057,7 +1157,7 @@ def _render_ticker_snapshot(df: pd.DataFrame):
             f'text-transform:uppercase;padding:8px 12px;border-bottom:2px solid {GOLD}55;'
             f'background:{BG_PANEL};white-space:nowrap')
     hdrs = ["TICKER", "TOTAL INCOME", "TRADES", "WIN RATE", "AVG ROI",
-            "PREM/DAY", "SCANNERS", "CNT", "SCORE"]
+            "PREM/DAY", "SCANNERS", "# SCANNERS", "SCORE"]
     hdr  = "".join(f'<th style="{th_s}">{h}</th>' for h in hdrs)
 
     rows = []
@@ -1139,30 +1239,43 @@ def _render_ticker_snapshot(df: pd.DataFrame):
 # 8. TAB RENDERERS
 # ══════════════════════════════════════════════════════════════════
 
-_OPT_COLS   = ["Ticker","Strategy","Universe","Strike","Premium","DTE","Expiry_Date",
-               "Entry_Stock_Price","Current_Price","Status","PL_Dollar","PL_Pct"]
-_STOCK_COLS = ["Ticker","Strategy","Entry_Stock_Price","Current_Price","Status",
-               "PL_Dollar","PL_Pct","Source","Score"]
+# Columns shown in the daily/monthly positions table
+_OPT_COLS   = ["Ticker", "Strategy", "Universe", "Strike", "Premium", "DTE",
+               "Expiry_Date", "Entry_Stock_Price", "Current_Price", "Status",
+               "PL_Dollar", "PL_Pct"]
+_STOCK_COLS = ["Ticker", "Strategy", "Universe", "Entry_Stock_Price", "Current_Price",
+               "Status", "PL_Dollar", "PL_Pct", "Source", "Score"]
+
+# Ordered strategy list — CSP → CC → LEAPS → Stocks (maintained everywhere)
+_STRATEGY_ORDER = [
+    ("CSP",         "💰 Cash-Secured Puts (CSP)",  GOLD),
+    ("CC",          "📦 Covered Calls (CC)",        "#A78BFA"),
+    ("LEAPS",       "🧨 LEAPS",                    "#60A5FA"),
+    ("Golden Scan", "📊 Stocks / Golden Scan",      ACCENT_GREEN),
+    ("Momentum",    "📈 Momentum",                  ACCENT_GREEN),
+    ("Stock",       "🏦 Stocks",                   ACCENT_GREEN),
+]
 
 
 def _render_daily_tab(df: pd.DataFrame):
     today = date.today()
-    st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin:8px 0 14px">Trading Day · {today.strftime("%A %b %d, %Y")}</div>', unsafe_allow_html=True)
-    _render_top_cards(df, today)
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:11px;letter-spacing:1.5px;'
+        f'text-transform:uppercase;margin:8px 0 14px">'
+        f'Trading Day · {today.strftime("%A %b %d, %Y")}</div>',
+        unsafe_allow_html=True)
 
-    for strat, label_text, color in [
-        ("CSP",         "💰 Cash-Secured Puts (CSP)",  GOLD),
-        ("CC",          "📦 Covered Calls (CC)",        "#A78BFA"),
-        ("LEAPS",       "🧨 LEAPS",                    "#60A5FA"),
-        ("Golden Scan", "📊 Stocks / Golden Scan",      ACCENT_GREEN),
-    ]:
+    # Summary boxes (GS + Options) — replaces the old Closed/Open/New cards
+    _render_daily_summary_boxes(df)
+
+    for strat, label_text, color in _STRATEGY_ORDER:
         sub = df[df["Strategy"] == strat].copy()
         if sub.empty:
             continue
-        _section_label(f"{label_text} — {len(sub)} position(s)", color)
         is_stock = strat.upper() in _STOCK_STRATS
         show_cols = _STOCK_COLS if is_stock else [c for c in _OPT_COLS if c in sub.columns]
         show_cols = [c for c in show_cols if c in sub.columns]
+        _section_label(f"{label_text} — {len(sub)} position(s)", color)
         sub_sorted = sub.sort_values("PL_Dollar", ascending=False, na_position="last")
         _positions_table_html(sub_sorted, show_cols, show_close_signal=is_stock,
                               context=f"daily_{strat}")
@@ -1177,66 +1290,151 @@ def _render_monthly_tab(df: pd.DataFrame):
     selected = st.selectbox("Select Month", months, index=0, key="perf_month_sel")
     month_df = df[df["Month"] == selected].copy()
 
-    closed_m  = month_df[month_df["Status"].str.lower().isin(["expired","closed","assigned","called"])]
-    income_m  = closed_m["Income"].sum()
-    trades_m  = len(month_df)
-    wins_m    = (month_df["PL_Dollar"].fillna(0) > 0).sum()
-    wr_m      = wins_m / trades_m * 100 if trades_m else 0
-    open_m    = month_df[month_df["Status"].str.lower() == "open"]
+    # ── Split options vs stocks ────────────────────────────────────
+    opt_mask   = month_df["Strategy"].str.upper().isin({"CSP","CC","LEAPS"})
+    opt_m      = month_df[opt_mask]
+    stock_m    = month_df[~opt_mask]
 
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: _kpi("Income",         f"${income_m:,.2f}", color=ACCENT_GREEN if income_m>=0 else ACCENT_RED)
-    with c2: _kpi("Trades",         str(trades_m),       color=GOLD)
-    with c3: _kpi("Win Rate",       f"{wr_m:.0f}%",      sub=f"{int(wins_m)}/{trades_m}",
-                  color=ACCENT_GREEN if wr_m>=60 else (GOLD if wr_m>=40 else ACCENT_RED))
-    with c4: _kpi("Open Positions", str(len(open_m)),    color=ACCENT_BLUE)
+    # Options: income only from expired/closed
+    opt_closed = opt_m[opt_m["Status"].str.lower().isin(["expired","closed","assigned","called"])]
+    income_m   = opt_closed["Income"].fillna(0).sum()
+    opt_wins   = (opt_closed["PL_Dollar"].fillna(0) > 0).sum()
+    opt_total  = len(opt_closed)
+    opt_wr     = opt_wins / opt_total * 100 if opt_total else 0
+
+    # Stocks: closed positions P&L
+    stk_closed = stock_m[stock_m["Status"].str.lower().isin(["closed","expired"])]
+    stock_pnl  = stk_closed["PL_Dollar"].fillna(0).sum()
+    stk_wins   = (stk_closed["PL_Dollar"].fillna(0) > 0).sum()
+    stk_total  = len(stk_closed)
+    stk_wr     = stk_wins / stk_total * 100 if stk_total else 0
+    open_m     = month_df[month_df["Status"].str.lower() == "open"]
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1: _kpi("Options Income",   f"${income_m:,.2f}",
+                  color=ACCENT_GREEN if income_m >= 0 else ACCENT_RED)
+    with c2: _kpi("Opt. Win Rate",    f"{opt_wr:.0f}%",
+                  sub=f"{int(opt_wins)}/{opt_total} closed",
+                  color=ACCENT_GREEN if opt_wr >= 60 else (GOLD if opt_wr >= 40 else ACCENT_RED))
+    with c3: _kpi("Stock P&L",        f"${stock_pnl:+,.2f}",
+                  color=ACCENT_GREEN if stock_pnl >= 0 else ACCENT_RED)
+    with c4: _kpi("Stock Win Rate",   f"{stk_wr:.0f}%",
+                  sub=f"{int(stk_wins)}/{stk_total} closed",
+                  color=ACCENT_GREEN if stk_wr >= 60 else (GOLD if stk_wr >= 40 else ACCENT_RED))
+    with c5: _kpi("Open Positions",   str(len(open_m)), color=ACCENT_BLUE)
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
-    fa, fb = st.columns([3, 2])
+    # ── Charts row: monthly income bar + 2 P&L pies ───────────────
+    fa, fb, fc = st.columns([3, 2, 2])
     with fa:
         fig = _chart_monthly_income(df)
         if fig:
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False},
                             key="perf_monthly_income")
     with fb:
-        fig = _chart_trade_outcomes(month_df)
-        if fig:
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False},
-                            key="perf_monthly_outcomes")
+        # Options P&L pie (expired only)
+        _section_label("Options P&L", GOLD)
+        if not opt_closed.empty:
+            outcomes_opt = opt_closed["Status"].value_counts().reset_index()
+            outcomes_opt.columns = ["Status","Count"]
+            colors_opt = [_STATUS_COLORS.get(s, TEXT_MUTED) for s in outcomes_opt["Status"]]
+            fig_op = go.Figure(go.Pie(
+                labels=outcomes_opt["Status"], values=outcomes_opt["Count"], hole=0.55,
+                marker=dict(colors=colors_opt, line=dict(color=BG_DARK, width=2)),
+                textfont=dict(color=TEXT_PRIMARY, size=11),
+            ))
+            fig_op.update_layout(paper_bgcolor=BG_CARD, plot_bgcolor=BG_CARD, height=220,
+                                  margin=dict(l=4, r=4, t=10, b=4),
+                                  legend=dict(font=dict(color=TEXT_MUTED, size=10),
+                                              bgcolor=BG_CARD, orientation="h", y=-0.15),
+                                  showlegend=True)
+            st.plotly_chart(fig_op, use_container_width=True,
+                            config={"displayModeBar": False}, key="perf_monthly_opt_pie")
+        else:
+            st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;font-style:italic;'
+                        f'padding:20px 0;text-align:center">No expired options this month</div>',
+                        unsafe_allow_html=True)
+    with fc:
+        # Stocks P&L pie (closed)
+        _section_label("Stocks P&L", ACCENT_GREEN)
+        if not stk_closed.empty:
+            grp_stk = stk_closed.copy()
+            grp_stk["_pl_side"] = grp_stk["PL_Dollar"].fillna(0).apply(
+                lambda v: "Gain" if v > 0 else ("Loss" if v < 0 else "Flat"))
+            outcomes_stk = grp_stk["_pl_side"].value_counts().reset_index()
+            outcomes_stk.columns = ["Side", "Count"]
+            colors_stk = {"Gain": ACCENT_GREEN, "Loss": ACCENT_RED, "Flat": TEXT_MUTED}
+            fig_sp = go.Figure(go.Pie(
+                labels=outcomes_stk["Side"], values=outcomes_stk["Count"], hole=0.55,
+                marker=dict(colors=[colors_stk.get(s, TEXT_MUTED) for s in outcomes_stk["Side"]],
+                            line=dict(color=BG_DARK, width=2)),
+                textfont=dict(color=TEXT_PRIMARY, size=11),
+            ))
+            fig_sp.update_layout(paper_bgcolor=BG_CARD, plot_bgcolor=BG_CARD, height=220,
+                                  margin=dict(l=4, r=4, t=10, b=4),
+                                  legend=dict(font=dict(color=TEXT_MUTED, size=10),
+                                              bgcolor=BG_CARD, orientation="h", y=-0.15),
+                                  showlegend=True)
+            st.plotly_chart(fig_sp, use_container_width=True,
+                            config={"displayModeBar": False}, key="perf_monthly_stk_pie")
+        else:
+            st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;font-style:italic;'
+                        f'padding:20px 0;text-align:center">No closed stocks this month</div>',
+                        unsafe_allow_html=True)
 
-    _section_label(f"All Positions — {selected}", GOLD)
-    show_cols = [c for c in ["Ticker","Strategy","Universe","Strike","Premium","DTE",
-                              "Expiry_Date","Entry_Stock_Price","Current_Price","Status",
-                              "PL_Dollar","PL_Pct","Source"] if c in month_df.columns]
+    # ── Positions tables: Options then Stocks ──────────────────────
+    opt_show = [c for c in _OPT_COLS if c in opt_m.columns]
+    stk_show = [c for c in _STOCK_COLS if c in stock_m.columns]
     month_df2 = month_df.copy()
     if "Expiry_Date" in month_df2.columns:
-        month_df2["Expiry_Date"] = pd.to_datetime(month_df2["Expiry_Date"], errors="coerce").dt.strftime("%Y-%m-%d")
-    _positions_table_html(month_df2.sort_values("Entry_Date", ascending=False), show_cols,
-                          context=f"monthly_{selected}")
+        month_df2["Expiry_Date"] = (pd.to_datetime(month_df2["Expiry_Date"], errors="coerce")
+                                    .dt.strftime("%Y-%m-%d"))
+
+    if not opt_m.empty:
+        _section_label(f"⚙️ Options Positions — {selected}", GOLD)
+        _positions_table_html(
+            month_df2[opt_mask].sort_values("Entry_Date", ascending=False),
+            opt_show, context=f"monthly_opt_{selected}")
+
+    if not stock_m.empty:
+        _section_label(f"📊 Stock / GS Positions — {selected}", ACCENT_GREEN)
+        _positions_table_html(
+            month_df2[~opt_mask].sort_values("Entry_Date", ascending=False),
+            stk_show, show_close_signal=True, context=f"monthly_stk_{selected}")
+
+    # ── Top Gainers / Losers ───────────────────────────────────────
+    by_tkr_m = (month_df.groupby("Ticker")["Income"].sum().reset_index()
+                .sort_values("Income", ascending=False))
+
+    def _bar(data, color, title):
+        fig = go.Figure(go.Bar(
+            x=data["Income"], y=data["Ticker"], orientation="h", marker_color=color,
+            text=[f"${v:+,.0f}" for v in data["Income"]], textposition="outside",
+            textfont=dict(color=TEXT_PRIMARY, size=11)))
+        fig.update_layout(paper_bgcolor=BG_CARD, plot_bgcolor=BG_CARD,
+                          height=max(150, 32*len(data)+40),
+                          margin=dict(l=8, r=70, t=30, b=8),
+                          title=dict(text=title, font=dict(color=color, size=12), x=0.01),
+                          xaxis=dict(showgrid=True, gridcolor=BORDER_COLOR,
+                                     color=TEXT_MUTED, tickprefix="$"),
+                          yaxis=dict(showgrid=False, color=GOLD, autorange="reversed"),
+                          showlegend=False)
+        return fig
 
     cg, cl = st.columns(2)
-    by_tkr_m = df[df["Month"]==selected].groupby("Ticker")["Income"].sum().reset_index().sort_values("Income", ascending=False)
-    def _bar(data, color, title):
-        fig = go.Figure(go.Bar(x=data["Income"], y=data["Ticker"], orientation="h",
-                               marker_color=color, text=[f"${v:+,.0f}" for v in data["Income"]],
-                               textposition="outside", textfont=dict(color=TEXT_PRIMARY, size=11)))
-        fig.update_layout(paper_bgcolor=BG_CARD, plot_bgcolor=BG_CARD,
-                          height=max(150, 32*len(data)+40), margin=dict(l=8, r=70, t=30, b=8),
-                          title=dict(text=title, font=dict(color=color, size=12), x=0.01),
-                          xaxis=dict(showgrid=True, gridcolor=BORDER_COLOR, color=TEXT_MUTED, tickprefix="$"),
-                          yaxis=dict(showgrid=False, color=GOLD, autorange="reversed"), showlegend=False)
-        return fig
     with cg:
         _section_label("🏆 Top Gainers", ACCENT_GREEN)
         if not by_tkr_m.empty:
-            st.plotly_chart(_bar(by_tkr_m.head(5), ACCENT_GREEN, ""), use_container_width=True,
-                            config={"displayModeBar": False}, key="perf_monthly_gainers")
+            st.plotly_chart(_bar(by_tkr_m.head(5), ACCENT_GREEN, ""),
+                            use_container_width=True, config={"displayModeBar": False},
+                            key="perf_monthly_gainers")
     with cl:
         _section_label("📉 Top Losers", ACCENT_RED)
         losers = by_tkr_m[by_tkr_m["Income"] < 0].sort_values("Income").head(5)
         if not losers.empty:
-            st.plotly_chart(_bar(losers, ACCENT_RED, ""), use_container_width=True,
-                            config={"displayModeBar": False}, key="perf_monthly_losers")
+            st.plotly_chart(_bar(losers, ACCENT_RED, ""),
+                            use_container_width=True, config={"displayModeBar": False},
+                            key="perf_monthly_losers")
 
 
 def _render_analytics_tab(df: pd.DataFrame):
@@ -1447,9 +1645,15 @@ def render():
         return
 
     # ── Strategy filter ──────────────────────────────────────────
-    all_strats = ["All"] + sorted(df["Strategy"].dropna().unique().tolist())
+    raw_strats = df["Strategy"].dropna().unique().tolist()
+    # "Stocks" groups all stock-type strategies together
+    has_stocks = any(s.upper() in _STOCK_STRATS for s in raw_strats)
+    opt_strats = sorted(s for s in raw_strats if s.upper() not in _STOCK_STRATS)
+    all_strats = ["All"] + opt_strats + (["Stocks"] if has_stocks else [])
     sel        = st.selectbox("Filter by Strategy", all_strats, index=0, key="perf_strat_filter")
-    if sel != "All":
+    if sel == "Stocks":
+        df = df[df["Strategy"].str.upper().isin(_STOCK_STRATS)]
+    elif sel != "All":
         df = df[df["Strategy"] == sel]
     if df.empty:
         st.info(f"No positions for strategy: {sel}")

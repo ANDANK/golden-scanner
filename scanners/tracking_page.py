@@ -326,12 +326,6 @@ def render():
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ── Positions table with inline delete ────────────────────
-    st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:11px;text-transform:uppercase;'
-        f'letter-spacing:1px;margin-bottom:4px">📋 Positions</div>',
-        unsafe_allow_html=True,
-    )
-
     # Suppress default gap between columns for tighter rows
     st.markdown(
         "<style>"
@@ -342,71 +336,136 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # Column proportions: Ticker | Strategy | Action | Entry | Current | P&L | Score | Added | Source | 🗑
-    _TBL_WIDTHS = [1.1, 1.0, 0.6, 0.75, 0.75, 1.1, 0.55, 0.85, 1.4, 0.38]
-    _TBL_HEADERS = ["Ticker", "Strategy", "Action", "Entry $", "Current $", "P&L (est.)", "Score", "Added", "Source", ""]
-
-    # Header row
-    hdr = st.columns(_TBL_WIDTHS)
-    for col_i, label in enumerate(_TBL_HEADERS):
-        with hdr[col_i]:
-            st.markdown(
-                f'<div style="color:{GOLD};font-size:10px;font-weight:700;'
-                f'text-transform:uppercase;letter-spacing:0.7px;'
-                f'padding:6px 6px 4px;border-bottom:2px solid {GOLD}55;'
-                f'white-space:nowrap">{label}</div>',
-                unsafe_allow_html=True,
-            )
-
     import re as _re, hashlib as _hl
-    _del_key_base = _hl.md5(b"tracking_delete").hexdigest()[:6]
 
-    for row_i, (_, row) in enumerate(df.iterrows()):
-        bg    = BG_CARD if row_i % 2 == 0 else BG_PANEL
-        ep    = row["Entry_Price"]
-        cp    = row["Current_Price"]
-        pnl   = row["PnL_$"]
-        ppct  = row["PnL_%"]
-        tk    = str(row.get("Ticker", "")).upper().strip()
-        added = str(row.get("Added_Date", ""))[:10]
+    # Strategy classification
+    _OPT_STRATS = {"CSP", "CC", "LEAPS", "ETF OPTIONS", "3X ETF OPTIONS", "DIVIDEND+CC"}
+    _STRATEGY_ORDER_OPT  = ["CSP", "CC", "LEAPS", "ETF Options", "3x ETF Options", "Dividend+CC"]
+    _STRATEGY_ORDER_STK  = ["Golden Scan", "Momentum", "Stock", "Value", "Growth"]
 
-        ep_str  = f"${ep:.2f}"  if pd.notna(ep)  else "—"
-        cp_str  = f"${cp:.2f}"  if pd.notna(cp)  else "—"
-        score   = str(row.get("Score", "")).strip() or "—"
-        strat   = str(row.get("Strategy", ""))
-        action  = str(row.get("Action", ""))
-        src     = str(row.get("Source", ""))[:28]
-        a_color = ACCENT_GREEN if action == "Buy" else ACCENT_RED
-        td_bg   = f"background:{bg};padding:7px 6px;border-bottom:1px solid {BORDER_COLOR}33"
+    df["_strat_up"] = df["Strategy"].astype(str).str.upper().str.strip()
+    opt_df = df[df["_strat_up"].isin(_OPT_STRATS)].copy()
+    stk_df = df[~df["_strat_up"].isin(_OPT_STRATS)].copy()
 
-        row_cols = st.columns(_TBL_WIDTHS)
-        cells_data = [
-            f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;font-weight:700;font-size:13px">{tk}</span>',
-            f'<span style="color:{TEXT_MUTED};font-size:12px">{strat}</span>',
-            f'<span style="color:{a_color};font-size:12px;font-weight:600">{action}</span>',
-            f'<span style="color:{TEXT_MUTED};font-family:\'DM Mono\',monospace;font-size:12px">{ep_str}</span>',
-            f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:12px">{cp_str}</span>',
-            _pnl_html(pnl, ppct) if pd.notna(pnl) else '<span style="color:#555">—</span>',
-            f'<span style="color:{GOLD};font-size:12px">{score}</span>',
-            f'<span style="color:{TEXT_MUTED};font-size:11px">{added}</span>',
-            f'<span style="color:{TEXT_MUTED};font-size:11px" title="{src}">{src}</span>',
-        ]
+    # Sort each section by strategy order then Added_Date desc
+    def _sort_by_strat(sub: pd.DataFrame, order: list) -> pd.DataFrame:
+        order_map = {s.upper(): i for i, s in enumerate(order)}
+        sub = sub.copy()
+        sub["_sort_key"] = sub["Strategy"].astype(str).str.upper().map(order_map).fillna(99)
+        return sub.sort_values(["_sort_key", "Added_Date"], ascending=[True, False]).drop(columns=["_sort_key"])
 
-        for col_i, html in enumerate(cells_data):
-            with row_cols[col_i]:
-                st.markdown(f'<div style="{td_bg}">{html}</div>', unsafe_allow_html=True)
+    opt_df = _sort_by_strat(opt_df, _STRATEGY_ORDER_OPT)
+    stk_df = _sort_by_strat(stk_df, _STRATEGY_ORDER_STK)
 
-        # Inline delete button (last column)
-        _safe_tk = _re.sub(r"[^a-zA-Z0-9]", "_", tk)
-        with row_cols[-1]:
-            st.button(
-                "🗑",
-                key=f"del_{_del_key_base}_{row_i}_{_safe_tk}",
-                help=f"Remove {tk} ({added}) from tracking",
-                use_container_width=True,
-                on_click=_cb_delete_tracking,
-                args=(tk, added),
-            )
+    def _render_section(section_df: pd.DataFrame, section_label: str,
+                        label_color: str, section_key: str,
+                        is_options: bool):
+        """Render one section (Options or Stocks) with header rows and delete buttons."""
+        if section_df.empty:
+            return
+
+        st.markdown(
+            f'<div style="color:{label_color};font-size:13px;font-weight:700;'
+            f'text-transform:uppercase;letter-spacing:1px;'
+            f'border-left:3px solid {label_color};padding:6px 10px;'
+            f'background:{BG_PANEL};margin:16px 0 6px;border-radius:0 4px 4px 0">'
+            f'{section_label}</div>',
+            unsafe_allow_html=True,
+        )
+
+        if is_options:
+            # Options: Ticker | Strategy | Action | Strike | Entry | Current | P&L | Score | Added | Source | 🗑
+            _W = [1.0, 0.9, 0.5, 0.65, 0.65, 0.7, 1.05, 0.5, 0.75, 1.3, 0.35]
+            _H = ["Ticker", "Strategy", "Action", "Strike", "Premium", "Current $", "P&L (est.)", "Score", "Added", "Source", ""]
+        else:
+            # Stocks: Ticker | Strategy | Entry | Current | P&L | Score | Added | Source | 🗑
+            _W = [1.1, 1.1, 0.75, 0.75, 1.1, 0.55, 0.85, 1.6, 0.38]
+            _H = ["Ticker", "Strategy", "Entry $", "Current $", "P&L (est.)", "Score", "Added", "Source", ""]
+
+        # Header row
+        hdr = st.columns(_W)
+        for col_i, label in enumerate(_H):
+            with hdr[col_i]:
+                st.markdown(
+                    f'<div style="color:{GOLD};font-size:10px;font-weight:700;'
+                    f'text-transform:uppercase;letter-spacing:0.7px;'
+                    f'padding:6px 6px 4px;border-bottom:2px solid {GOLD}55;'
+                    f'white-space:nowrap">{label}</div>',
+                    unsafe_allow_html=True,
+                )
+
+        _del_key_base = _hl.md5(f"tracking_{section_key}".encode()).hexdigest()[:6]
+
+        for row_i, (_, row) in enumerate(section_df.iterrows()):
+            bg    = BG_CARD if row_i % 2 == 0 else BG_PANEL
+            ep    = row["Entry_Price"]
+            cp    = row["Current_Price"]
+            pnl   = row["PnL_$"]
+            ppct  = row["PnL_%"]
+            tk    = str(row.get("Ticker", "")).upper().strip()
+            added = str(row.get("Added_Date", ""))[:10]
+            score = str(row.get("Score", "")).strip() or "—"
+            strat = str(row.get("Strategy", ""))
+            action = str(row.get("Action", ""))
+            src   = str(row.get("Source", ""))[:30]
+            a_color = ACCENT_GREEN if action == "Buy" else ACCENT_RED
+            td_bg = f"background:{bg};padding:7px 6px;border-bottom:1px solid {BORDER_COLOR}33"
+
+            ep_str = f"${ep:.2f}" if pd.notna(ep) else "—"
+            cp_str = f"${cp:.2f}" if pd.notna(cp) else "—"
+            pnl_html = _pnl_html(pnl, ppct) if pd.notna(pnl) else '<span style="color:#555">—</span>'
+
+            row_cols = st.columns(_W)
+
+            if is_options:
+                # pull Strike / Premium from Qty field or Notes if present
+                strike  = str(row.get("Strike", "")).strip() or "—"
+                premium = ep_str  # Entry_Price holds the premium for options
+                cells_data = [
+                    f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;font-weight:700;font-size:13px">{tk}</span>',
+                    f'<span style="color:{TEXT_MUTED};font-size:12px">{strat}</span>',
+                    f'<span style="color:{a_color};font-size:12px;font-weight:600">{action}</span>',
+                    f'<span style="color:{TEXT_MUTED};font-family:\'DM Mono\',monospace;font-size:12px">{strike}</span>',
+                    f'<span style="color:{ACCENT_BLUE};font-family:\'DM Mono\',monospace;font-size:12px">{premium}</span>',
+                    f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:12px">{cp_str}</span>',
+                    pnl_html,
+                    f'<span style="color:{GOLD};font-size:12px">{score}</span>',
+                    f'<span style="color:{TEXT_MUTED};font-size:11px">{added}</span>',
+                    f'<span style="color:{TEXT_MUTED};font-size:11px" title="{src}">{src}</span>',
+                ]
+            else:
+                cells_data = [
+                    f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;font-weight:700;font-size:13px">{tk}</span>',
+                    f'<span style="color:{TEXT_MUTED};font-size:12px">{strat}</span>',
+                    f'<span style="color:{TEXT_MUTED};font-family:\'DM Mono\',monospace;font-size:12px">{ep_str}</span>',
+                    f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:12px">{cp_str}</span>',
+                    pnl_html,
+                    f'<span style="color:{GOLD};font-size:12px">{score}</span>',
+                    f'<span style="color:{TEXT_MUTED};font-size:11px">{added}</span>',
+                    f'<span style="color:{TEXT_MUTED};font-size:11px" title="{src}">{src}</span>',
+                ]
+
+            for col_i, html in enumerate(cells_data):
+                with row_cols[col_i]:
+                    st.markdown(f'<div style="{td_bg}">{html}</div>', unsafe_allow_html=True)
+
+            # Inline delete button (last column)
+            _safe_tk = _re.sub(r"[^a-zA-Z0-9]", "_", tk)
+            with row_cols[-1]:
+                st.button(
+                    "🗑",
+                    key=f"del_{_del_key_base}_{row_i}_{_safe_tk}",
+                    help=f"Remove {tk} ({added}) from tracking",
+                    use_container_width=True,
+                    on_click=_cb_delete_tracking,
+                    args=(tk, added),
+                )
+
+    # ── Render Options section then Stocks section ─────────────
+    _render_section(opt_df, "⚙️ Options Positions — CSP · CC · LEAPS",
+                    "#A78BFA", "options", is_options=True)
+    _render_section(stk_df, "📈 Stock Positions — Golden Scan · Momentum · Stock",
+                    ACCENT_GREEN, "stocks", is_options=False)
 
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:6px">'

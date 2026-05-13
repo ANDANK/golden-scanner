@@ -361,6 +361,59 @@ def _show_results(df: pd.DataFrame, slot_label: str):
         render_results_table(sub, strategy=strat, source=f"Sched-{slot_label}")
 
 
+def _diff_html_rows(df: pd.DataFrame, accent_color: str):
+    """Render a diff sub-table as styled HTML (avoids st.dataframe dark-theme blank issue)."""
+    if df.empty:
+        return
+
+    th_s = (f'color:{TEXT_MUTED};font-size:10px;font-weight:700;letter-spacing:.7px;'
+            f'text-transform:uppercase;padding:7px 10px;border-bottom:2px solid {GOLD}55;'
+            f'background:{BG_PANEL};white-space:nowrap')
+    td_base = f'padding:7px 10px;font-size:12px;border-bottom:1px solid {BORDER_COLOR}22'
+
+    hdr_html = "".join(f'<th style="{th_s}">{c}</th>' for c in df.columns)
+
+    row_htmls = []
+    for i, (_, row) in enumerate(df.iterrows()):
+        bg = BG_CARD if i % 2 == 0 else BG_PANEL
+        cells = []
+        for col in df.columns:
+            raw = str(row[col]) if pd.notna(row[col]) else "—"
+            # Colour-code special columns
+            if col == "Ticker":
+                cell = (f'<td style="{td_base};background:{bg};color:{GOLD};'
+                        f'font-family:\'DM Mono\',monospace;font-weight:800">{raw}</td>')
+            elif col == "Change":
+                c = (ACCENT_GREEN if "New" in raw else
+                     ACCENT_RED   if "Drop" in raw else GOLD)
+                cell = (f'<td style="{td_base};background:{bg};color:{c};font-weight:700">{raw}</td>')
+            elif col == "Auto-Tracked":
+                c = ACCENT_GREEN if raw == "✅ Yes" else TEXT_MUTED
+                cell = (f'<td style="{td_base};background:{bg};color:{c};font-weight:600">{raw}</td>')
+            elif col == "Score":
+                try:
+                    sv = float(raw)
+                    sc = (ACCENT_GREEN if sv >= 70 else GOLD if sv >= 50 else ACCENT_RED)
+                except Exception:
+                    sc = TEXT_MUTED
+                cell = (f'<td style="{td_base};background:{bg};color:{sc};'
+                        f'font-family:\'DM Mono\',monospace;font-weight:700">{raw}</td>')
+            else:
+                cell = f'<td style="{td_base};background:{bg};color:{TEXT_PRIMARY}">{raw}</td>'
+            cells.append(cell)
+        row_htmls.append(f'<tr>{"".join(cells)}</tr>')
+
+    html = (
+        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}44;'
+        f'margin-bottom:12px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>{hdr_html}</tr></thead>'
+        f'<tbody>{"".join(row_htmls)}</tbody>'
+        f'</table></div>'
+    )
+    st.markdown(html, unsafe_allow_html=True)
+
+
 def _show_diff(df_am: pd.DataFrame, df_pm: pd.DataFrame):
     """Show the AM→PM diff with auto-track status."""
     df_diff = _compute_diff(df_am, df_pm)
@@ -397,8 +450,5 @@ def _show_diff(df_am: pd.DataFrame, df_pm: pd.DataFrame):
             c for c in ["Stock Price", "Premium", "Delta", "DTE", "Expiry"]
             if c in sub.columns
         ]
-        st.dataframe(
-            sub[[c for c in display_cols if c in sub.columns]].reset_index(drop=True),
-            use_container_width=True,
-            hide_index=True,
-        )
+        _diff_sub = sub[[c for c in display_cols if c in sub.columns]].reset_index(drop=True)
+        _diff_html_rows(_diff_sub, color)
