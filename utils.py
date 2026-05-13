@@ -685,15 +685,15 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
         price_str  = _extract_price(row)
         row_cols   = st.columns(col_widths)
 
-        # Enriched source tag
+        # Enriched source tag  (guard against "nan" from empty numeric columns)
         row_source = source
         if "Scanners" in df.columns:
             sc = str(row.get("Scanners", "")).strip()
-            if sc:
+            if sc and sc.lower() != "nan":
                 row_source = f"GS-{sc[:50]}"
         elif "Catalysts" in df.columns:
             cat = str(row.get("Catalysts", "")).strip()
-            if cat:
+            if cat and cat.lower() != "nan":
                 row_source = f"H&C-{cat[:50]}"
 
         # Extra metadata for tracking

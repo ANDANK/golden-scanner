@@ -187,6 +187,20 @@ def _calc_pl(strategy: str, premium: float, strike: float,
     return round(pl, 2), round(pl_pct, 2)
 
 
+def _nf(v, default: float = 0.0) -> float:
+    """NaN-safe float: returns default when v is None, empty, or NaN.
+
+    NOTE: Python's ``nan or 0`` evaluates to ``nan`` because NaN is truthy,
+    so the common ``float(v or 0)`` pattern silently passes NaN through.
+    This helper catches that.
+    """
+    try:
+        f = float(v)
+        return default if f != f else f   # f != f  ↔  math.isnan(f)
+    except Exception:
+        return default
+
+
 def _mark_to_market(strategy: str, premium: float, strike: float,
                     entry_stock: float, current: float, qty: int) -> tuple[float, float]:
     """Unrealized P&L for open positions (intrinsic-value approximation)."""
@@ -234,10 +248,10 @@ def _auto_close_row(r: dict, row_i: int) -> dict:
 
     ticker      = str(r.get("Ticker", "")).upper()
     try:
-        premium     = float(r.get("Premium", 0) or 0)
-        strike      = float(r.get("Strike",  0) or 0)
-        entry_stock = float(r.get("Entry_Stock_Price", 0) or 0)
-        qty         = int(r.get("Qty", 1) or 1)
+        premium     = _nf(r.get("Premium"))
+        strike      = _nf(r.get("Strike"))
+        entry_stock = _nf(r.get("Entry_Stock_Price"))
+        qty         = max(1, int(_nf(r.get("Qty"), 1.0)))
     except Exception:
         return r
 
@@ -375,15 +389,20 @@ def _load_and_process() -> pd.DataFrame:
         row["Current_Price"] = cp
         if cp is not None:
             try:
-                pl, pl_pct = _mark_to_market(
-                    str(row.get("Strategy","")),
-                    float(row.get("Premium",0) or 0),
-                    float(row.get("Strike",0)  or 0),
-                    float(row.get("Entry_Stock_Price",0) or 0),
-                    cp, int(row.get("Qty",1) or 1),
-                )
-                row["PL_Dollar"] = pl
-                row["PL_Pct"]    = pl_pct
+                strat = str(row.get("Strategy","")).upper()
+                prem  = _nf(row.get("Premium"))
+                strk  = _nf(row.get("Strike"))
+                entry = _nf(row.get("Entry_Stock_Price"))
+                qty   = max(1, int(_nf(row.get("Qty"), 1.0)))
+
+                # Options with no trade data (tracking-only rows) — skip P&L
+                # rather than produce a nonsense number
+                if strat in ("CSP", "CC", "LEAPS") and prem <= 0 and strk <= 0:
+                    pass   # leave PL_Dollar / PL_Pct as-is → displays "—"
+                else:
+                    pl, pl_pct = _mark_to_market(strat, prem, strk, entry, cp, qty)
+                    row["PL_Dollar"] = pl
+                    row["PL_Pct"]    = pl_pct
             except Exception:
                 pass
         return row
@@ -398,10 +417,8 @@ def _load_and_process() -> pd.DataFrame:
         st_   = str(row.get("Status","")).lower()
         strat = str(row.get("Strategy","")).upper()
         if strat in _SELL_STRATS and st_ in ("expired","closed","assigned","called"):
-            p = float(row.get("Premium",0) or 0)
-            q = int(row.get("Qty",1) or 1)
-            return round(p * 100 * q, 2)
-        return float(row.get("PL_Dollar",0) or 0)
+            return round(_nf(row.get("Premium")) * 100 * max(1, int(_nf(row.get("Qty"), 1.0))), 2)
+        return _nf(row.get("PL_Dollar"))
 
     df["Income"] = df.apply(_income, axis=1)
 
@@ -524,10 +541,10 @@ def _render_close_button(row: dict, row_index: int, context: str = ""):
         try:
             pl, pl_pct = _calc_pl(
                 strat,
-                float(row.get("Premium",0) or 0),
-                float(row.get("Strike",0) or 0),
-                float(row.get("Entry_Stock_Price",0) or 0),
-                cp, int(row.get("Qty",1) or 1),
+                _nf(row.get("Premium")),
+                _nf(row.get("Strike")),
+                _nf(row.get("Entry_Stock_Price")),
+                cp, max(1, int(_nf(row.get("Qty"), 1.0))),
             )
         except Exception:
             pl, pl_pct = 0.0, 0.0
@@ -585,8 +602,11 @@ def _status_badge(status: str) -> str:
 def _pl_html(val) -> str:
     try:
         v = float(val)
+        if v != v:   # NaN: float(nan) succeeds without raising — must check explicitly
+            return f'<span style="color:{TEXT_MUTED}">—</span>'
         color = ACCENT_GREEN if v >= 0 else ACCENT_RED
-        return f'<span style="color:{color};font-family:\'DM Mono\',monospace;font-weight:700">{"+" if v>=0 else ""}${v:,.2f}</span>'
+        return (f'<span style="color:{color};font-family:\'DM Mono\',monospace;font-weight:700">'
+                f'{"+" if v>=0 else ""}${v:,.2f}</span>')
     except Exception:
         return f'<span style="color:{TEXT_MUTED}">—</span>'
 
@@ -667,7 +687,9 @@ def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool 
                                 unsafe_allow_html=True)
                 elif c in ("PL_Pct", "P/L %"):
                     try:
-                        v  = float(val)
+                        v = float(val)
+                        if v != v:   # NaN guard — float(nan) never raises
+                            raise ValueError
                         cc = ACCENT_GREEN if v >= 0 else ACCENT_RED
                         st.markdown(
                             f'<div style="{td};color:{cc};font-family:\'DM Mono\','
