@@ -156,7 +156,21 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 /* ============================================================
    SIDEBAR NAV BUTTONS — override the primary CTA styling
    These are the per-item links inside each collapsible group.
+   Compact, list-style (not button-style) spacing.
    ============================================================ */
+/* Tighten the vertical rhythm between widgets inside the sidebar.
+   Streamlit's stVerticalBlock defaults to 1rem (16px) gap — that's
+   what makes the nav items look like spaced-out buttons. Drop it to 2px. */
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
+    gap: 2px !important;
+}}
+[data-testid="stSidebar"] .element-container {{
+    margin: 0 !important;
+}}
+[data-testid="stSidebar"] .stButton {{
+    margin: 0 !important;
+}}
+
 [data-testid="stSidebar"] .stButton > button {{
     background: transparent !important;
     color: {TEXT_PRIMARY} !important;
@@ -164,14 +178,16 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     border-left: 2px solid transparent !important;
     border-radius: 4px !important;
     box-shadow: none !important;
-    padding: 6px 12px !important;
+    padding: 4px 12px !important;
     font-size: 12.5px !important;
     font-weight: 400 !important;
     letter-spacing: 0 !important;
     text-align: left !important;
     justify-content: flex-start !important;
     align-items: center !important;
-    min-height: 32px !important;
+    min-height: 28px !important;
+    height: 28px !important;
+    line-height: 1.4 !important;
     transition: background 0.15s ease, color 0.15s ease !important;
 }}
 /* Force left-alignment through Streamlit's nested div + p */
@@ -206,30 +222,24 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 .gs-sub-marker + div .stButton > button {{
     color: #C9CCD3 !important;
     font-size: 11.5px !important;
-    min-height: 28px !important;
-    padding: 5px 10px !important;
+    min-height: 26px !important;
+    height: 26px !important;
+    padding: 4px 10px !important;
 }}
 /* Thin gold rail in the spacer column next to a sub-item */
 .gs-sub-rail-line {{
     border-left: 1px solid rgba(245,200,66,0.25);
-    height: 32px;
+    height: 26px;
     margin-left: 8px;
 }}
 
 /* ============================================================
-   GOLD GRADIENT GROUP HEADERS (st.expander)
-   Style each expander summary to look like a uniform section.
+   GOLD GRADIENT GROUP HEADERS — accordion-style.
+   Headers are now styled st.button widgets (not st.expander) so we
+   can enforce one-open-at-a-time. The `.gs-group-marker` is rendered
+   just before the button via st.markdown.
    ============================================================ */
-[data-testid="stSidebar"] [data-testid="stExpander"] {{
-    background: transparent !important;
-    border: none !important;
-    margin: 4px 0 !important;
-}}
-[data-testid="stSidebar"] [data-testid="stExpander"] details {{
-    background: transparent !important;
-    border: none !important;
-}}
-[data-testid="stSidebar"] [data-testid="stExpander"] summary {{
+.gs-group-marker + div .stButton > button {{
     background: linear-gradient(90deg, rgba(245,200,66,0.16), rgba(245,200,66,0.04)) !important;
     border: 1px solid rgba(245,200,66,0.22) !important;
     border-radius: 6px !important;
@@ -240,22 +250,24 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     letter-spacing: 1.4px !important;
     text-transform: uppercase !important;
     padding: 7px 12px !important;
-    cursor: pointer !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    margin-top: 6px !important;
+    box-shadow: none !important;
     transition: background 0.18s ease, border-color 0.18s ease !important;
-    list-style: none !important;
 }}
-[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {{
+.gs-group-marker + div .stButton > button:hover {{
     background: linear-gradient(90deg, rgba(245,200,66,0.28), rgba(245,200,66,0.10)) !important;
     border-color: rgba(245,200,66,0.45) !important;
+    transform: none !important;
 }}
-[data-testid="stSidebar"] [data-testid="stExpander"] summary svg {{ fill: {GOLD} !important; }}
-/* Admin section — dimmed via a class we add */
-[data-testid="stSidebar"] .gs-admin-group + [data-testid="stExpander"] summary {{
+/* Admin group — dimmed */
+.gs-admin-marker + div .stButton > button {{
     background: linear-gradient(90deg, rgba(245,200,66,0.08), rgba(245,200,66,0.02)) !important;
     border-color: rgba(245,200,66,0.14) !important;
-    opacity: 0.6 !important;
+    opacity: 0.55 !important;
 }}
-[data-testid="stSidebar"] .gs-admin-group + [data-testid="stExpander"] summary:hover {{ opacity: 1 !important; }}
+.gs-admin-marker + div .stButton > button:hover {{ opacity: 1 !important; }}
 
 /* ⚙️ Global block — same filled-header treatment as group headers */
 .gs-global-row {{
@@ -384,7 +396,7 @@ NAV_GROUPS = [
             {"key": "🔀  Golden Scan"},
             {"key": "🔬  Stock Analysis"},
             {"key": "📰  Headlines & Catalysts"},
-            {"key": "⚡📊  3× Leveraged ETFs"},
+            {"key": "⚡  3× Leveraged ETFs"},
         ],
     },
     {
@@ -393,7 +405,7 @@ NAV_GROUPS = [
             {"key": "💰  Cash-Secured Puts"},
             {"key": "📦  Covered Calls"},
             {"key": "🧨  LEAPS"},
-            {"key": "⚡📈  3× ETF Options"},
+            {"key": "⚡  3× ETF Options"},
         ],
     },
     {
@@ -420,23 +432,36 @@ if "nav_page" not in st.session_state:
 
 def _go(page_key: str):
     st.session_state["nav_page"] = page_key
+    # Open the owning group; close all others (accordion).
+    for g in NAV_GROUPS:
+        if any(it["key"] == page_key for it in g["items"]):
+            st.session_state["_nav_open_group"] = g["sep"]; break
+        if any(
+            c["key"] == page_key
+            for it in g["items"] for c in (it.get("children") or [])
+        ):
+            st.session_state["_nav_open_group"] = g["sep"]; break
     st.rerun()
 
 def _go_home():
     _go("🏠  Market Overview")
 
-# Auto-expand the group containing the currently active page
-def _initial_expanded(group):
-    if group.get("expanded"):
-        return True
-    cur = st.session_state.get("nav_page")
-    for it in group["items"]:
-        if it["key"] == cur:
-            return True
-        for ch in it.get("children", []) or []:
-            if ch["key"] == cur:
-                return True
-    return False
+# Initialize accordion state: open the group that owns the active page
+def _owning_group_for(page_key: str) -> str:
+    for g in NAV_GROUPS:
+        if any(it["key"] == page_key for it in g["items"]):
+            return g["sep"]
+        if any(
+            c["key"] == page_key
+            for it in g["items"] for c in (it.get("children") or [])
+        ):
+            return g["sep"]
+    return "Dashboard"
+
+if "_nav_open_group" not in st.session_state:
+    st.session_state["_nav_open_group"] = _owning_group_for(
+        st.session_state.get("nav_page", "🏠  Market Overview")
+    )
 
 # ── Sidebar ────────────────────────────────────────────────────
 with st.sidebar:
@@ -506,13 +531,19 @@ with st.sidebar:
                 _render_nav_item(child, indent=True)
 
     for grp in NAV_GROUPS:
-        if grp.get("dim"):
-            st.markdown('<div class="gs-admin-group"></div>', unsafe_allow_html=True)
-        count = sum(1 for _ in grp["items"]) + sum(
-            len(it.get("children", []) or []) for it in grp["items"]
-        )
-        header = f"{grp['icon']}  {grp['sep'].upper()}  ·  {count}"
-        with st.expander(header, expanded=_initial_expanded(grp)):
+        is_open = st.session_state.get("_nav_open_group") == grp["sep"]
+        marker = "gs-admin-marker" if grp.get("dim") else "gs-group-marker"
+        # Group header — accordion toggle
+        st.markdown(f'<span class="{marker}"></span>', unsafe_allow_html=True)
+        header_label = f"{grp['icon']}  {grp['sep'].upper()}    {'▾' if is_open else '▸'}"
+        if st.button(header_label, key=f"_grp_{grp['sep']}", use_container_width=True):
+            # Strict accordion: open this group, close all others.
+            # If clicking the already-open group, close it.
+            st.session_state["_nav_open_group"] = None if is_open else grp["sep"]
+            st.rerun()
+
+        # Body — only render when this is the open group
+        if is_open:
             if not grp["items"]:
                 st.markdown(
                     f'<div style="padding:6px 12px;color:{TEXT_MUTED};font-size:11px;font-style:italic">No admin tools yet</div>',
@@ -582,10 +613,10 @@ elif page == "🔬  Stock Analysis":
 elif page == "📰  Headlines & Catalysts":
     from scanners.headlines_scanner import render
     render()
-elif page == "⚡📊  3× Leveraged ETFs":
+elif page == "⚡  3× Leveraged ETFs":
     from scanners.etf_3x_scanner import render
     render()
-elif page == "⚡📈  3× ETF Options":
+elif page == "⚡  3× ETF Options":
     from scanners.etf_3x_options_scanner import render
     render()
 elif page == "💰  Cash-Secured Puts":
