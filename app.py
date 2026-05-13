@@ -1,4 +1,16 @@
 # app.py — Golden Scanner Main Entry
+# ─────────────────────────────────────────────────────────────────
+# PATCHED 2026-05 to apply the Golden Scanner Design System v1:
+#   • Sidebar nav rewritten as 6 uniform collapsible groups
+#     (Dashboard / Stocks / Options / Dividend / Info / Admin)
+#   • Filled gold-gradient section headers (st.expander styled)
+#   • Tracking now has a sub-menu: "📈 Performance Summary"
+#   • Primary CTA button glow is the DEFAULT state (was hover-only)
+#   • ⚙️ Global block uses the same filled-header treatment
+#   • Collapsed-section state persists in st.session_state
+# Drop this file in to replace your existing app.py.
+# Requires (NEW): scanners/performance_summary.py — see CHANGES.md.
+# ─────────────────────────────────────────────────────────────────
 
 import streamlit as st
 import sys, os
@@ -41,18 +53,13 @@ html, body, [data-testid="stApp"] {{
 
 /* Hide Streamlit branding & auto multipage nav */
 #MainMenu, footer {{ visibility: hidden; }}
-/* Hide header only on desktop — on mobile the header IS the hamburger/nav bar */
 @media (min-width: 769px) {{ header {{ visibility: hidden; }} }}
 
-/* NAV-1: Eliminate blank header space */
 .block-container {{
     padding-top: 0.5rem !important;
     padding-bottom: 1rem !important;
 }}
-[data-testid="stSidebar"] > div:first-child {{
-    padding-top: 0 !important;
-}}
-/* Hide fork / share / deploy toolbar buttons on all screen sizes */
+[data-testid="stSidebar"] > div:first-child {{ padding-top: 0 !important; }}
 [data-testid="stToolbarActions"],
 [data-testid="stDecoration"],
 button[title="Fork this app"],
@@ -65,26 +72,16 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 .st-emotion-cache-1rtdyuf,
 .st-emotion-cache-eczf2c {{ display: none !important; }}
 
-/* Radio items: disable pointer on separator rows */
-[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(> div > p:empty),
-[data-testid="stSidebar"] div[data-testid="stRadio"] [data-baseweb="radio"]:has(+ div > p:empty) {{
-    pointer-events: none;
-    opacity: 0.45;
-}}
-
 /* ── Desktop: force sidebar always visible ── */
 @media (min-width: 769px) {{
     section[data-testid="stSidebar"] {{
         transform: translateX(0) !important;
-        min-width: 310px !important;
-        width: 310px !important;
-        visibility: visible !important;
-        display: block !important;
+        min-width: 320px !important; width: 320px !important;
+        visibility: visible !important; display: block !important;
     }}
     section[data-testid="stSidebar"] > div:first-child {{
         transform: translateX(0) !important;
-        width: 310px !important;
-        min-width: 310px !important;
+        width: 320px !important; min-width: 320px !important;
     }}
     [data-testid="stSidebarCollapseButton"],
     [data-testid="stSidebarCollapsedControl"],
@@ -96,80 +93,28 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 
 /* ── Mobile ── */
 @media (max-width: 768px) {{
-    /* Style the visible Streamlit header bar on mobile */
-    header {{
-        background: {BG_CARD} !important;
-        border-bottom: 1px solid {BORDER_COLOR} !important;
-    }}
-    /* Style the hamburger / sidebar toggle buttons inside the header */
-    header button, header [data-testid="stBaseButton-headerNoPadding"] {{
-        color: {GOLD} !important;
-        font-size: 22px !important;
-    }}
-    /* Content breathing room below the header */
-    .block-container {{
-        padding-left: 0.6rem !important;
-        padding-right: 0.6rem !important;
-        padding-top: 1rem !important;
-        max-width: 100vw !important;
-        overflow-x: hidden !important;
-    }}
-    /* Sidebar: full-height scrollable overlay on mobile */
-    section[data-testid="stSidebar"] > div:first-child {{
-        overflow-y: auto !important;
-        height: 100vh !important;
-        padding-bottom: 40px !important;
-    }}
-    /* Bigger tap targets for all buttons */
-    .stButton > button {{
-        min-height: 48px !important;
-        font-size: 15px !important;
-    }}
-    /* Sidebar radio rows: bigger for finger tap */
-    [data-testid="stSidebar"] div[data-testid="stRadio"] label {{
-        padding: 8px 4px !important;
-        min-height: 40px !important;
-    }}
-    /* Tabs: scroll horizontally instead of wrapping */
-    .stTabs [data-baseweb="tab-list"] {{
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-    }}
-    .stTabs [data-baseweb="tab"] {{
-        white-space: nowrap !important;
-        font-size: 12px !important;
-        padding: 6px 10px !important;
-        flex-shrink: 0 !important;
-    }}
-    /* Metrics: tighter on small screens */
-    [data-testid="stMetricValue"] {{
-        font-size: 20px !important;
-    }}
-    /* Password screen: make form full-width */
+    header {{ background: {BG_CARD} !important; border-bottom: 1px solid {BORDER_COLOR} !important; }}
+    header button, header [data-testid="stBaseButton-headerNoPadding"] {{ color: {GOLD} !important; font-size: 22px !important; }}
+    .block-container {{ padding-left: 0.6rem !important; padding-right: 0.6rem !important; padding-top: 1rem !important; max-width: 100vw !important; overflow-x: hidden !important; }}
+    section[data-testid="stSidebar"] > div:first-child {{ overflow-y: auto !important; height: 100vh !important; padding-bottom: 40px !important; }}
+    .stButton > button {{ min-height: 44px !important; font-size: 14px !important; }}
+    .stTabs [data-baseweb="tab-list"] {{ flex-wrap: nowrap !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }}
+    .stTabs [data-baseweb="tab"] {{ white-space: nowrap !important; font-size: 12px !important; padding: 6px 10px !important; flex-shrink: 0 !important; }}
+    [data-testid="stMetricValue"] {{ font-size: 20px !important; }}
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:last-child {{
-        display: none !important;
-    }}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2) {{
-        flex: 1 1 100% !important;
-        width: 100% !important;
-        min-width: 100% !important;
-    }}
-    /* DataFrames: scroll instead of overflow */
-    [data-testid="stDataFrame"] {{
-        max-width: 100% !important;
-        overflow-x: auto !important;
-    }}
-    /* Logo: compact on phone */
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:last-child {{ display: none !important; }}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2) {{ flex: 1 1 100% !important; width: 100% !important; min-width: 100% !important; }}
+    [data-testid="stDataFrame"] {{ max-width: 100% !important; overflow-x: auto !important; }}
     .gs-logo {{ font-size: 20px !important; }}
 }}
 
-/* Sidebar */
+/* Sidebar shell */
 [data-testid="stSidebar"] {{
     background: {BG_CARD} !important;
     border-right: 1px solid {BORDER_COLOR};
 }}
+
+/* Inputs in sidebar — kept consistent */
 [data-testid="stSidebar"] .stSelectbox label,
 [data-testid="stSidebar"] .stRadio label {{
     color: {TEXT_MUTED} !important;
@@ -177,13 +122,12 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     text-transform: uppercase;
     letter-spacing: 1px;
 }}
+.stSlider > div, .stSelectbox > div > div {{ background: {BG_PANEL} !important; }}
 
-/* Inputs */
-.stSlider > div, .stSelectbox > div > div {{
-    background: {BG_PANEL} !important;
-}}
-
-/* Buttons */
+/* ============================================================
+   PRIMARY CTA BUTTONS (main content area)
+   Glow is the DEFAULT state. Hover lifts and brightens.
+   ============================================================ */
 .stButton > button {{
     background: linear-gradient(135deg, {GOLD_DARK}, {GOLD}) !important;
     color: {BG_DARK} !important;
@@ -191,64 +135,151 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     font-weight: 600 !important;
     font-family: 'Inter', sans-serif !important;
     letter-spacing: 0.5px;
-    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(245,200,66,0.27);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }}
 .stButton > button:hover {{
     transform: translateY(-1px);
-    box-shadow: 0 4px 20px {GOLD}44;
+    box-shadow: 0 6px 26px rgba(245,200,66,0.45);
 }}
 
-/* Download button */
+/* Download button — kept ghost */
 .stDownloadButton > button {{
     background: transparent !important;
     color: {GOLD} !important;
     border: 1px solid {GOLD}55 !important;
     font-size: 12px !important;
+    box-shadow: none !important;
 }}
+.stDownloadButton > button:hover {{ transform: none !important; box-shadow: none !important; background: rgba(245,200,66,0.06) !important; }}
+
+/* ============================================================
+   SIDEBAR NAV BUTTONS — override the primary CTA styling
+   These are the per-item links inside each collapsible group.
+   ============================================================ */
+[data-testid="stSidebar"] .stButton > button {{
+    background: transparent !important;
+    color: {TEXT_PRIMARY} !important;
+    border: none !important;
+    border-left: 2px solid transparent !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    padding: 6px 12px !important;
+    font-size: 12.5px !important;
+    font-weight: 400 !important;
+    letter-spacing: 0 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    min-height: 32px !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
+}}
+[data-testid="stSidebar"] .stButton > button:hover {{
+    background: rgba(245,200,66,0.06) !important;
+    color: {TEXT_PRIMARY} !important;
+    transform: none !important;
+    box-shadow: none !important;
+}}
+/* Active nav item — marked by an extra invisible <span class="gs-active-marker"/>
+   we render right before the button via st.markdown */
+.gs-active-marker + div .stButton > button {{
+    background: {BG_DARK} !important;
+    color: {GOLD} !important;
+    border-left: 2px solid {GOLD} !important;
+    font-weight: 600 !important;
+}}
+
+/* Sub-item rail — indented + gold left border */
+.gs-sub-rail {{
+    padding-left: 12px;
+    margin-left: 14px;
+    border-left: 1px solid rgba(245,200,66,0.18);
+}}
+.gs-sub-rail .stButton > button {{
+    font-size: 11.5px !important;
+    color: #C9CCD3 !important;
+    padding: 5px 10px !important;
+    min-height: 28px !important;
+}}
+
+/* ============================================================
+   GOLD GRADIENT GROUP HEADERS (st.expander)
+   Style each expander summary to look like a uniform section.
+   ============================================================ */
+[data-testid="stSidebar"] [data-testid="stExpander"] {{
+    background: transparent !important;
+    border: none !important;
+    margin: 4px 0 !important;
+}}
+[data-testid="stSidebar"] [data-testid="stExpander"] details {{
+    background: transparent !important;
+    border: none !important;
+}}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary {{
+    background: linear-gradient(90deg, rgba(245,200,66,0.16), rgba(245,200,66,0.04)) !important;
+    border: 1px solid rgba(245,200,66,0.22) !important;
+    border-radius: 6px !important;
+    color: {GOLD} !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.4px !important;
+    text-transform: uppercase !important;
+    padding: 7px 12px !important;
+    cursor: pointer !important;
+    transition: background 0.18s ease, border-color 0.18s ease !important;
+    list-style: none !important;
+}}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {{
+    background: linear-gradient(90deg, rgba(245,200,66,0.28), rgba(245,200,66,0.10)) !important;
+    border-color: rgba(245,200,66,0.45) !important;
+}}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary svg {{ fill: {GOLD} !important; }}
+/* Admin section — dimmed via a class we add */
+[data-testid="stSidebar"] .gs-admin-group + [data-testid="stExpander"] summary {{
+    background: linear-gradient(90deg, rgba(245,200,66,0.08), rgba(245,200,66,0.02)) !important;
+    border-color: rgba(245,200,66,0.14) !important;
+    opacity: 0.6 !important;
+}}
+[data-testid="stSidebar"] .gs-admin-group + [data-testid="stExpander"] summary:hover {{ opacity: 1 !important; }}
+
+/* ⚙️ Global block — same filled-header treatment as group headers */
+.gs-global-row {{
+    margin: 6px 0 4px;
+    background: linear-gradient(90deg, rgba(245,200,66,0.16), rgba(245,200,66,0.04));
+    border: 1px solid rgba(245,200,66,0.22);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: {GOLD};
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+}}
+/* Checkbox inside global row — make it inline + gold */
+[data-testid="stSidebar"] .gs-global-host [data-testid="stCheckbox"] label {{
+    color: {TEXT_PRIMARY} !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}}
+[data-testid="stSidebar"] .gs-global-host [data-testid="stCheckbox"] {{ margin-top: -32px; margin-left: 96px; }}
 
 /* DataFrames */
-[data-testid="stDataFrame"] {{
-    border: 1px solid {BORDER_COLOR};
-    border-radius: 8px;
-    overflow: hidden;
-}}
-.dvn-scroller {{
-    background: {BG_CARD};
-}}
+[data-testid="stDataFrame"] {{ border: 1px solid {BORDER_COLOR}; border-radius: 8px; overflow: hidden; }}
+.dvn-scroller {{ background: {BG_CARD}; }}
 
 /* Metric */
-[data-testid="stMetric"] {{
-    background: {BG_CARD};
-    border: 1px solid {BORDER_COLOR};
-    border-radius: 8px;
-    padding: 12px 16px;
-}}
+[data-testid="stMetric"] {{ background: {BG_CARD}; border: 1px solid {BORDER_COLOR}; border-radius: 8px; padding: 12px 16px; }}
 [data-testid="stMetricLabel"] {{ color: {TEXT_MUTED} !important; font-size: 11px !important; text-transform: uppercase; letter-spacing: 0.8px; }}
 [data-testid="stMetricValue"] {{ color: {GOLD} !important; font-family: 'Cormorant Garamond', serif !important; font-size: 28px !important; }}
 [data-testid="stMetricDelta"] {{ font-size: 12px !important; }}
 
 /* Tabs */
-.stTabs [data-baseweb="tab-list"] {{
-    background: {BG_PANEL};
-    border-radius: 8px;
-    gap: 2px;
-}}
-.stTabs [data-baseweb="tab"] {{
-    color: {TEXT_MUTED} !important;
-    font-size: 13px;
-}}
-.stTabs [aria-selected="true"] {{
-    color: {GOLD} !important;
-    background: {BG_CARD} !important;
-}}
-
-/* Expander */
-.streamlit-expanderHeader {{
-    background: {BG_PANEL} !important;
-    color: {TEXT_PRIMARY} !important;
-    border: 1px solid {BORDER_COLOR} !important;
-    border-radius: 6px !important;
-}}
+.stTabs [data-baseweb="tab-list"] {{ background: {BG_PANEL}; border-radius: 8px; gap: 2px; }}
+.stTabs [data-baseweb="tab"] {{ color: {TEXT_MUTED} !important; font-size: 13px; }}
+.stTabs [aria-selected="true"] {{ color: {GOLD} !important; background: {BG_CARD} !important; }}
 
 /* Number input */
 .stNumberInput input, .stTextInput input {{
@@ -257,16 +288,9 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     border: 1px solid {BORDER_COLOR} !important;
 }}
 
-/* Spinners */
+/* Spinners + alerts */
 .stSpinner {{ color: {GOLD} !important; }}
-
-/* Alerts */
-.stAlert {{
-    background: {BG_PANEL} !important;
-    border: 1px solid {BORDER_COLOR} !important;
-}}
-
-/* Horizontal rule */
+.stAlert {{ background: {BG_PANEL} !important; border: 1px solid {BORDER_COLOR} !important; }}
 hr {{ border-color: {BORDER_COLOR}; }}
 
 /* Scrollbar */
@@ -280,28 +304,6 @@ hr {{ border-color: {BORDER_COLOR}; }}
     height: 1px;
     background: linear-gradient(90deg, transparent, {GOLD}44, transparent);
     margin: 20px 0;
-}}
-
-/* NAV-2: logo-click home button — invisible, overlaid on the logo header area */
-[data-testid="stSidebar"] > div:first-child > div:first-child > div:first-child > div:first-child .stButton button,
-[data-testid="stSidebar"] .stButton:first-of-type button {{
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 80px !important;
-    opacity: 0 !important;
-    cursor: pointer !important;
-    z-index: 999 !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}}
-
-/* Admin section — dim, smaller text */
-[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(span:contains("ADMIN")) {{
-    font-size: 9px !important;
-    opacity: 0.4 !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -323,11 +325,9 @@ if not st.session_state["authenticated"]:
         """, unsafe_allow_html=True)
         pwd = st.text_input("Password", type="password", placeholder="Enter password…", label_visibility="collapsed")
         if st.button("🔓  Enter Golden Scanner", use_container_width=True):
-            # Read from Streamlit secrets (cloud) or fall back to env / hardcoded
             try:
                 correct = st.secrets["APP_PASSWORD"]
             except Exception:
-                import os
                 correct = os.environ.get("APP_PASSWORD", "password!")
             if pwd == correct:
                 st.session_state["authenticated"] = True
@@ -338,25 +338,94 @@ if not st.session_state["authenticated"]:
     st.stop()
 
 
-# ── Tracker notifications (on_click callbacks store here; shown every rerun) ──
+# ── Tracker notifications ─────────────────────────────────────
 _pending = st.session_state.get("_tracker_notes", [])
 if _pending:
     for _icon, _msg in _pending:
         st.toast(_msg, icon=_icon)
     st.session_state["_tracker_notes"] = []
 
-# ── Pre-render nav fixes (MUST be before any widget with key="nav_page") ──
-# on_click callback used by all Home buttons — fires before widget renders
+
+# ── Nav state helpers ──────────────────────────────────────────
+# Page keys mirror what the existing router dispatches on.
+NAV_GROUPS = [
+    {
+        "sep": "Dashboard", "icon": "🏠", "expanded": True,
+        "items": [
+            {"key": "🏠  Market Overview"},
+            {"key": "📱  Social Trends"},
+            {
+                "key": "📌  Tracking",
+                "children": [
+                    {"key": "📈  Performance Summary"},
+                ],
+            },
+            {"key": "👁  WatchList"},
+        ],
+    },
+    {
+        "sep": "Stocks", "icon": "📊", "expanded": False,
+        "items": [
+            {"key": "🔀  Golden Scan"},
+            {"key": "🔬  Stock Analysis"},
+            {"key": "📰  Headlines & Catalysts"},
+            {"key": "⚡📊  3× Leveraged ETFs"},
+        ],
+    },
+    {
+        "sep": "Options", "icon": "🎯", "expanded": False,
+        "items": [
+            {"key": "💰  Cash-Secured Puts"},
+            {"key": "📦  Covered Calls"},
+            {"key": "🧨  LEAPS"},
+            {"key": "⚡📈  3× ETF Options"},
+        ],
+    },
+    {
+        "sep": "Dividend", "icon": "💵", "expanded": False,
+        "items": [
+            {"key": "💵  Upcoming Dividends"},
+            {"key": "📅  Dividend + CC Capture"},
+        ],
+    },
+    {
+        "sep": "Info", "icon": "ℹ️", "expanded": False,
+        "items": [
+            {"key": "ℹ️  About & Guide"},
+        ],
+    },
+    {
+        "sep": "Admin", "icon": "🔐", "expanded": False, "dim": True,
+        "items": [],   # No admin tools yet — placeholder section
+    },
+]
+
+if "nav_page" not in st.session_state:
+    st.session_state["nav_page"] = "🏠  Market Overview"
+
+def _go(page_key: str):
+    st.session_state["nav_page"] = page_key
+    st.rerun()
+
 def _go_home():
-    st.session_state["nav_page"] = "🏠  Market Overview"
+    _go("🏠  Market Overview")
 
-# If a separator row somehow got selected, reset it now before radio renders
-_cur_nav = st.session_state.get("nav_page", "🏠  Market Overview")
-if _cur_nav and "──" in _cur_nav:
-    st.session_state["nav_page"] = "🏠  Market Overview"
+# Auto-expand the group containing the currently active page
+def _initial_expanded(group):
+    if group.get("expanded"):
+        return True
+    cur = st.session_state.get("nav_page")
+    for it in group["items"]:
+        if it["key"] == cur:
+            return True
+        for ch in it.get("children", []) or []:
+            if ch["key"] == cur:
+                return True
+    return False
 
-# ── Sidebar Navigation ─────────────────────────────────────────
+# ── Sidebar ────────────────────────────────────────────────────
 with st.sidebar:
+    # Logo block (unchanged from source)
     st.markdown(f"""
     <div style="display:flex;align-items:center;gap:10px;padding:16px 8px 6px 8px;border-bottom:1px solid {BORDER_COLOR};margin-bottom:6px">
         <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
@@ -377,62 +446,90 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # NAV-2: logo acts as home button (invisible button overlaid via CSS)
-    st.button("", key="_logo_home", on_click=_go_home, help="Go to Market Overview")
+    # ── Grouped, collapsible nav ──────────────────────────────
+    current_page = st.session_state.get("nav_page", "🏠  Market Overview")
 
-    page = st.radio(
-        "Navigation",
-        key="nav_page",
-        options=[
-            # ── Top ──────────────────────────────────────
-            "🏠  Market Overview",
-            "📱  Social Trends",
-            # ── Stocks ───────────────────────────────────
-            "── STOCKS ──",
-            "🔀  Golden Scan",
-            "🔬  Stock Analysis",
-            "📰  Headlines & Catalysts",
-            "⚡📊  3× Leveraged ETFs",
-            # ── Options ──────────────────────────────────
-            "── OPTIONS ──",
-            "💰  Cash-Secured Puts",
-            "📦  Covered Calls",
-            "🧨  LEAPS",
-            "⚡📈  3× ETF Options",
-            # ── Dividend ─────────────────────────────────
-            "── DIVIDEND ──",
-            "💵  Upcoming Dividends",
-            "📅  Dividend + CC Capture",
-            # ── Portfolio ────────────────────────────────
-            "── PORTFOLIO ──",
-            "📌  Tracking",
-            "👁  WatchList",
-            # ── Info ─────────────────────────────────────
-            "── INFO ──",
-            "ℹ️  About & Guide",
-            # ── Admin ────────────────────────────────────
-            "── ADMIN ──",
-        ],
-        label_visibility="collapsed",
-    )
+    def _render_nav_item(it, indent=False):
+        is_active = it["key"] == current_page
+        host = st.container()
+        with host:
+            if indent:
+                st.markdown('<div class="gs-sub-rail">', unsafe_allow_html=True)
+            # Active-state marker (CSS targets the immediately-following div)
+            if is_active:
+                st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
+            label = it["key"]
+            btn_key = f"_nav_{label}"
+            if st.button(label, key=btn_key, use_container_width=True):
+                _go(it["key"])
+            if indent:
+                st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown(
-        f'<div style="color:{GOLD};font-size:10px;font-weight:600;'
-        f'text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">⚙️ Global</div>',
-        unsafe_allow_html=True,
-    )
+    def _render_item_with_children(it):
+        # Parent button + a separate "▾/▸" toggle for the sub-menu
+        sub_open_key = f"_sub_open_{it['key']}"
+        if sub_open_key not in st.session_state:
+            # auto-open if the active page is one of the children
+            st.session_state[sub_open_key] = any(
+                c["key"] == current_page for c in it.get("children", [])
+            )
+
+        c1, c2 = st.columns([5, 1])
+        with c1:
+            if it["key"] == current_page:
+                st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
+            if st.button(it["key"], key=f"_nav_{it['key']}", use_container_width=True):
+                _go(it["key"])
+        with c2:
+            chev = "▾" if st.session_state[sub_open_key] else "▸"
+            if st.button(chev, key=f"_chev_{it['key']}", use_container_width=True):
+                st.session_state[sub_open_key] = not st.session_state[sub_open_key]
+                st.rerun()
+
+        if st.session_state[sub_open_key]:
+            for child in it.get("children", []):
+                _render_nav_item(child, indent=True)
+
+    for grp in NAV_GROUPS:
+        if grp.get("dim"):
+            st.markdown('<div class="gs-admin-group"></div>', unsafe_allow_html=True)
+        count = sum(1 for _ in grp["items"]) + sum(
+            len(it.get("children", []) or []) for it in grp["items"]
+        )
+        header = f"{grp['icon']}  {grp['sep'].upper()}  ·  {count}"
+        with st.expander(header, expanded=_initial_expanded(grp)):
+            if not grp["items"]:
+                st.markdown(
+                    f'<div style="padding:6px 12px;color:{TEXT_MUTED};font-size:11px;font-style:italic">No admin tools yet</div>',
+                    unsafe_allow_html=True,
+                )
+            for it in grp["items"]:
+                if it.get("children"):
+                    _render_item_with_children(it)
+                else:
+                    _render_nav_item(it)
+
+    # ── ⚙️ Global block — same gold-header treatment ─────────
+    st.markdown('<div class="gs-global-host">', unsafe_allow_html=True)
+    st.markdown('<div class="gs-global-row">⚙️ Global</div>', unsafe_allow_html=True)
     st.session_state["_show_prepost"] = st.checkbox(
-        "Show Pre/Post Market Price",
+        "Pre/Post Market Price",
         value=st.session_state.get("_show_prepost", False),
         help="Appends current extended-hours price to every scanner result table. Adds ~1s per ticker.",
     )
-    st.markdown("---")
-    st.markdown(f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center">Data via YFinance · Refreshes every 5 min<br>⚠️ Not financial advice</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center;margin-top:14px;line-height:1.6">'
+        f'Data via YFinance · Refreshes every 5 min<br>⚠️ Not financial advice</div>',
+        unsafe_allow_html=True,
+    )
+
+# Expose `page` for the router below (legacy variable name preserved)
+page = st.session_state.get("nav_page", "🏠  Market Overview")
 
 # ── Main breadcrumb bar (shown on non-home pages) ─────────────
-if page and page != "🏠  Market Overview" and "──" not in page:
+if page and page != "🏠  Market Overview":
     _c1, _c2 = st.columns([1, 11])
     with _c1:
         st.button("🏠 Home", key="_main_home", use_container_width=True, on_click=_go_home)
@@ -447,6 +544,16 @@ elif page == "📱  Social Trends":
     render()
 elif page == "📌  Tracking":
     from scanners.tracking_page import render
+    render()
+elif page == "📈  Performance Summary":
+    # NEW route — Performance Summary sub-page under Tracking.
+    # Falls back to tracking_page render if the dedicated module isn't present yet.
+    try:
+        from scanners.performance_summary import render
+    except ImportError:
+        from scanners.tracking_page import render
+        st.info("ℹ️  Add `scanners/performance_summary.py` to customize this view. "
+                "Showing the Tracking page as a placeholder.")
     render()
 elif page == "👁  WatchList":
     from scanners.watchlist_page import render
