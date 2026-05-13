@@ -14,7 +14,9 @@ on:
         default: "am"
         type: choice
         options: [am, pm]
-
+permissions:
+  contents: write
+  
 jobs:
   scan:
     name: Run options scan
