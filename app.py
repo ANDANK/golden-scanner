@@ -158,17 +158,33 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
    These are the per-item links inside each collapsible group.
    Compact, list-style (not button-style) spacing.
    ============================================================ */
-/* Tighten the vertical rhythm between widgets inside the sidebar.
-   Streamlit's stVerticalBlock defaults to 1rem (16px) gap — that's
-   what makes the nav items look like spaced-out buttons. Drop it to 2px. */
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
-    gap: 2px !important;
+/* Streamlit wraps every widget (incl. each <span class="gs-active-marker"/>
+   markdown call) in its own element-container with 1rem margin. That's
+   what creates the big gaps between sibling nav items. Zero it out for
+   EVERY widget type in the sidebar so markers become truly invisible. */
+section[data-testid="stSidebar"] [data-testid="stVerticalBlock"],
+section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
+    gap: 0 !important;
 }}
-[data-testid="stSidebar"] .element-container {{
+section[data-testid="stSidebar"] .element-container,
+section[data-testid="stSidebar"] [data-testid="element-container"],
+section[data-testid="stSidebar"] [data-testid="stMarkdown"],
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+section[data-testid="stSidebar"] .stMarkdown,
+section[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {{
     margin: 0 !important;
+    padding: 0 !important;
+    line-height: 0 !important;
 }}
-[data-testid="stSidebar"] .stButton {{
+/* Re-allow line-height inside actual markdown text (descendants of the
+   gs-global-row, list explanation, etc.) so headings/text aren't collapsed. */
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] > * {{
+    line-height: 1.4 !important;
+}}
+section[data-testid="stSidebar"] .stButton,
+section[data-testid="stSidebar"] [data-testid="stButton"] {{
     margin: 0 !important;
+    padding: 0 !important;
 }}
 
 [data-testid="stSidebar"] .stButton > button {{
@@ -178,14 +194,15 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
     border-left: 2px solid transparent !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    padding: 4px 6px 4px 14px !important;
+    padding: 3px 6px 3px 14px !important;
+    margin: 0 !important;
     font-size: 12.5px !important;
     font-weight: 400 !important;
     letter-spacing: 0 !important;
     text-align: left !important;
     justify-content: flex-start !important;
     align-items: center !important;
-    min-height: 26px !important;
+    min-height: 24px !important;
     height: auto !important;
     line-height: 1.4 !important;
     transition: background 0.12s ease, color 0.12s ease !important;
