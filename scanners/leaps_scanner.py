@@ -3,7 +3,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import time
+import time, random
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -32,7 +32,12 @@ def scan_leaps(tickers, dte_min, delta_min, delta_max, iv_rank_max, price_min, p
         _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker}</div>', unsafe_allow_html=True)
         _scan_prog.progress((i + 1) / len(tickers))
         diag.seen(ticker)
-        time.sleep(0.25)   # throttle: ~4 tickers/sec — avoids Yahoo rate limit
+        _rl = st.session_state.get("_rl_hit", 0)
+        _since_rl = time.time() - _rl
+        if _since_rl < 30:
+            time.sleep(30 - _since_rl)
+        else:
+            time.sleep(1.5 + random.uniform(0, 0.75))
         try:
             df = get_price_history(ticker, period="12mo")
             if df.empty or len(df) < 50:
@@ -159,7 +164,7 @@ def render(universe_mode: str = "stocks"):
         if not is_etf:
             price_min = st.number_input("Min Stock Price ($)", 5.0, 100.0, 20.0, key=f"{mk}_pmin")
             price_max = st.number_input("Max Stock Price ($)", 50.0, 5000.0, 3000.0, key=f"{mk}_pmax")
-            universe_size = st.slider("Universe Size (top stocks)", 10, len(SP500_SAMPLE), 30, 5, key=f"{mk}_sz")
+            universe_size = st.slider("Universe Size (top stocks)", 10, len(SP500_SAMPLE), 20, 5, key=f"{mk}_sz")
 
     # ETFs: no price filter (ETFs span a wide range), fixed universe
     if is_etf:

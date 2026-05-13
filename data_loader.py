@@ -230,6 +230,18 @@ def _make_options_ticker(ticker: str) -> "yf.Ticker":
         return yf.Ticker(ticker)   # fallback: let yfinance manage curl_cffi
 
 
+def _is_rate_limit(exc: Exception) -> bool:
+    """Return True if the exception looks like a Yahoo rate-limit error."""
+    name = type(exc).__name__
+    msg  = str(exc).lower()
+    return (
+        "ratelimit" in name.lower() or
+        "too many" in msg or
+        "rate limit" in msg or
+        "429" in msg
+    )
+
+
 def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     """
     Fetch options chain using curl_cffi with Chrome impersonation to avoid
@@ -239,14 +251,20 @@ def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFra
     the expiry list — no chain download — halving the number of API calls.
     The chain is fetched only when a specific expiry string is supplied.
 
-    Two attempts with back-off; records failure in session_state.
+    Three attempts with rate-limit-aware back-off:
+      attempt 0 → immediate
+      attempt 1 → 20 s pause (YFRateLimitError needs a real break)
+      attempt 2 → 40 s pause
     """
+    import random
     errors: List[str] = []
 
-    for attempt in range(2):
+    for attempt in range(3):
         try:
             if attempt > 0:
-                time.sleep(1.5)   # longer back-off on retry
+                # Rate-limit errors need a genuine pause, not just 1-2 s
+                delay = 20.0 * attempt + random.uniform(0, 5)
+                time.sleep(delay)
 
             t = _make_options_ticker(ticker)
 
@@ -255,6 +273,9 @@ def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFra
                 dates = list(t.options or [])
             except Exception as e:
                 errors.append(f"dates:{type(e).__name__}:{str(e)[:80]}")
+                if _is_rate_limit(e):
+                    # Signal to the scan loop that a global pause may help
+                    st.session_state["_rl_hit"] = time.time()
                 continue
 
             if not dates:
@@ -272,6 +293,8 @@ def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFra
                 chain = t.option_chain(target)
             except Exception as e:
                 errors.append(f"chain:{type(e).__name__}:{str(e)[:80]}")
+                if _is_rate_limit(e):
+                    st.session_state["_rl_hit"] = time.time()
                 continue
 
             calls = getattr(chain, "calls", pd.DataFrame())
@@ -286,6 +309,8 @@ def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFra
 
         except Exception as e:
             errors.append(f"outer:{type(e).__name__}:{str(e)[:80]}")
+            if _is_rate_limit(e):
+                st.session_state["_rl_hit"] = time.time()
 
     _log_opt_err(ticker, " | ".join(errors) if errors else "unknown")
     return pd.DataFrame(), pd.DataFrame(), []
