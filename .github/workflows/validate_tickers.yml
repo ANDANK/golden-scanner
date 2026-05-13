@@ -1,0 +1,50 @@
+name: Validate Tickers
+
+on:
+  workflow_dispatch:   # Run manually from GitHub Actions UI
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Check for delisted symbols
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+
+      - name: Run ticker validation
+        run: python scripts/validate_tickers.py
+
+      - name: Commit validation report
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ticker_validation.json
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "Ticker validation report $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git pull --rebase origin main || true
+            git push origin main
+          fi
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ticker-validation-${{ github.run_id }}
+          path: data/ticker_validation.json
+          retention-days: 7

@@ -88,6 +88,16 @@ def _resilient(fn: Callable[..., Any], *args, key: tuple, attempts: int = 3,
     return None, "miss"
 
 
+# ── Process-level cache (survives st.cache_data no-op in headless mode) ───
+# Keyed by (ticker, period, interval) → DataFrame.
+# In the Streamlit app @st.cache_data is the primary cache; this dict acts as
+# a secondary guard so that if cache_data is bypassed (headless / mocked) each
+# ticker is still only downloaded once per Python process — even when multiple
+# scanners ask for the same data in the same run.
+_PROC_PRICE_CACHE: dict = {}
+_PROC_INFO_CACHE:  dict = {}
+
+
 # ── Cached Data Fetchers ───────────────────────────────────────
 
 def _fetch_price_history(ticker: str, period: str, interval: str) -> pd.DataFrame:
@@ -102,12 +112,24 @@ def _fetch_price_history(ticker: str, period: str, interval: str) -> pd.DataFram
 
 @st.cache_data(ttl=7200, show_spinner=False)   # 2 h — stock OHLCV rarely changes intraday
 def get_price_history(ticker: str, period: str = "6mo", interval: str = "1d") -> pd.DataFrame:
-    """Fetch OHLCV history with retry + stale-cache fallback."""
+    """Fetch OHLCV history with retry + stale-cache fallback.
+
+    Two-level cache:
+      1. @st.cache_data  — Streamlit app (primary, TTL 2 h)
+      2. _PROC_PRICE_CACHE — process dict (headless mode guard; no TTL,
+         scoped to one scanner run so staleness is not a concern)
+    """
+    _key = (ticker, period, interval)
+    if _key in _PROC_PRICE_CACHE:
+        return _PROC_PRICE_CACHE[_key].copy()
+
     result, _ = _resilient(_fetch_price_history, ticker, period, interval,
                            key=("price_history", ticker, period, interval))
     if not isinstance(result, pd.DataFrame) or result.empty:
         _log_api_warn("YFinance price history", ticker, f"period={period}")
         return pd.DataFrame()
+
+    _PROC_PRICE_CACHE[_key] = result
     return result
 
 
@@ -162,11 +184,20 @@ def _fetch_info(ticker: str) -> dict:
 
 @st.cache_data(ttl=7200, show_spinner=False)   # 2 h — fundamentals are daily data
 def get_info(ticker: str) -> dict:
-    """Fetch fundamental info with retry + stale-cache fallback."""
+    """Fetch fundamental info with retry + stale-cache fallback.
+
+    Same two-level cache as get_price_history: @st.cache_data for the app,
+    _PROC_INFO_CACHE for headless runs where cache_data is a no-op.
+    """
+    if ticker in _PROC_INFO_CACHE:
+        return dict(_PROC_INFO_CACHE[ticker])   # shallow copy
+
     result, _ = _resilient(_fetch_info, ticker, key=("info", ticker))
     if not isinstance(result, dict) or not result:
         _log_api_warn("YFinance fundamentals", ticker)
         return {}
+
+    _PROC_INFO_CACHE[ticker] = result
     return result
 
 
