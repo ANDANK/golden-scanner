@@ -252,45 +252,21 @@ section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-sub-m
     border-left: 1px solid rgba(245,200,66,0.25) !important;
 }}
 
-/* Parent-with-children row — subtle gold left rail + slightly bolder text
-   to telegraph "this expands". The chevron is rendered in the label
-   (Python side) at the LEFT, tree-view style. */
+/* Parent-with-children row — chevrons on both sides do the talking; no rail
+   so the row stays flat and list-like (per user feedback). */
 section[data-testid="stSidebar"] .element-container:has(.gs-parent-marker) + .element-container .stButton > button,
 section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-parent-marker) + [data-testid="element-container"] .stButton > button {{
-    border-left: 2px solid rgba(245,200,66,0.45) !important;
     font-weight: 500 !important;
-    padding-left: 12px !important;
 }}
 section[data-testid="stSidebar"] .element-container:has(.gs-parent-marker) + .element-container .stButton > button:hover,
 section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-parent-marker) + [data-testid="element-container"] .stButton > button:hover {{
     color: {GOLD} !important;
-    border-left-color: {GOLD} !important;
 }}
 
-/* Logo overlay button — invisible, fills the logo block, makes the whole
-   row a clickable home link. */
-section[data-testid="stSidebar"] .element-container:has(.gs-logo-marker) + .element-container .stButton,
-section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-logo-marker) + [data-testid="element-container"] .stButton {{
-    position: absolute !important;
-    top: 8px !important;
-    left: 0 !important;
-    right: 0 !important;
-    height: 80px !important;
-    z-index: 50 !important;
-    margin: 0 !important;
-}}
-section[data-testid="stSidebar"] .element-container:has(.gs-logo-marker) + .element-container .stButton > button,
-section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-logo-marker) + [data-testid="element-container"] .stButton > button {{
-    width: 100% !important;
-    height: 80px !important;
-    background: transparent !important;
-    border: none !important;
-    opacity: 0 !important;
-    cursor: pointer !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    min-height: 80px !important;
-}}
+/* Logo overlay button — REMOVED by user request. The legacy rules below
+   are kept commented out for easy restore.
+section[data-testid="stSidebar"] .element-container:has(.gs-logo-marker) + .element-container .stButton {{ ... }}
+*/
 /* Legacy class — harmless now that columns layout is gone. */
 .gs-sub-rail-line {{
     border-left: 1px solid rgba(245,200,66,0.25);
@@ -553,11 +529,9 @@ if "_nav_open_group" not in st.session_state:
 
 # ── Sidebar ────────────────────────────────────────────────────
 with st.sidebar:
-    # Logo block — clickable, takes you home. We render an invisible
-    # st.button right after the logo HTML; CSS positions it as an overlay.
+    # Logo block — display only, NOT clickable. (Removed by user request.)
     st.markdown(f"""
-    <div style="display:flex;align-items:center;gap:10px;padding:16px 8px 6px 8px;border-bottom:1px solid {BORDER_COLOR};margin-bottom:6px;position:relative">
-        <span class="gs-logo-marker" style="display:none"></span>
+    <div style="display:flex;align-items:center;gap:10px;padding:16px 8px 6px 8px;border-bottom:1px solid {BORDER_COLOR};margin-bottom:6px">
         <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
             <circle cx="18" cy="18" r="16" stroke="{GOLD}" stroke-width="1.5" fill="none" opacity="0.35"/>
             <circle cx="18" cy="18" r="10" stroke="{GOLD}" stroke-width="1.5" fill="none" opacity="0.6"/>
@@ -575,8 +549,6 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
-    # Invisible overlay button — clicks anywhere on the logo row return home.
-    st.button("", key="_logo_home", on_click=_go_home, help="Go to Market Overview")
 
     # ── Grouped, collapsible nav ──────────────────────────────
     current_page = st.session_state.get("nav_page", "🏠  Market Overview")
@@ -606,11 +578,13 @@ with st.sidebar:
         st.markdown('<span class="gs-parent-marker"></span>', unsafe_allow_html=True)
         if is_active:
             st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
-        # Chevron BEFORE the label, tree-view style (›  📌  Tracking).
-        # ⌄ when expanded, › when collapsed — lighter than ▾/▸ and more
-        # universally recognized as "click to expand".
-        chev = "⌄  " if show_subs else "›  "
-        if st.button(chev + it["key"], key=f"_nav_{it['key']}", use_container_width=True):
+        # Chevrons on BOTH sides telegraph "this expands" without needing a rail.
+        # Collapsed: ›  📌  Tracking  ‹    Expanded: ⌄  📌  Tracking  ⌄
+        if show_subs:
+            label = "⌄  " + it["key"] + "  ⌄"
+        else:
+            label = "›  " + it["key"] + "  ‹"
+        if st.button(label, key=f"_nav_{it['key']}", use_container_width=True):
             _go(it["key"])
 
         if show_subs:
