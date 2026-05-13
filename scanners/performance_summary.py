@@ -455,10 +455,13 @@ def _render_add_position_form():
                 st.rerun()
 
 
-def _render_close_button(row: dict, row_index: int):
+def _render_close_button(row: dict, row_index: int, context: str = ""):
     """Inline 'Close Position' button with current-price P&L confirmation."""
     ticker = str(row.get("Ticker","")).upper()
-    key    = f"close_{ticker}_{row_index}"
+    # context disambiguates keys when the same ticker/row appears in multiple tabs
+    import hashlib
+    _ctx = hashlib.md5(f"{context}{ticker}{row_index}".encode()).hexdigest()[:6]
+    key  = f"close_{_ctx}"
     if st.button(f"✖ Close", key=key, use_container_width=True,
                  help=f"Mark {ticker} as closed at today's price"):
         cp = _current_prices((ticker,)).get(ticker)
@@ -536,7 +539,8 @@ def _pl_html(val) -> str:
         return f'<span style="color:{TEXT_MUTED}">—</span>'
 
 
-def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool = False):
+def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool = False,
+                          context: str = ""):
     """Rich HTML positions table with optional fuzzy close signal column."""
     if df.empty:
         st.markdown(
@@ -633,7 +637,7 @@ def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool 
         btn_cols = st.columns(min(len(open_rows), 6))
         for j, (i, ridx, r) in enumerate(open_rows):
             with btn_cols[j % 6]:
-                _render_close_button(r.to_dict(), ridx + 2)
+                _render_close_button(r.to_dict(), ridx + 2, context=context)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -962,7 +966,8 @@ def _render_daily_tab(df: pd.DataFrame):
         show_cols = _STOCK_COLS if is_stock else [c for c in _OPT_COLS if c in sub.columns]
         show_cols = [c for c in show_cols if c in sub.columns]
         sub_sorted = sub.sort_values("PL_Dollar", ascending=False, na_position="last")
-        _positions_table_html(sub_sorted, show_cols, show_close_signal=is_stock)
+        _positions_table_html(sub_sorted, show_cols, show_close_signal=is_stock,
+                              context=f"daily_{strat}")
 
 
 def _render_monthly_tab(df: pd.DataFrame):
@@ -1006,7 +1011,8 @@ def _render_monthly_tab(df: pd.DataFrame):
     month_df2 = month_df.copy()
     if "Expiry_Date" in month_df2.columns:
         month_df2["Expiry_Date"] = pd.to_datetime(month_df2["Expiry_Date"], errors="coerce").dt.strftime("%Y-%m-%d")
-    _positions_table_html(month_df2.sort_values("Entry_Date", ascending=False), show_cols)
+    _positions_table_html(month_df2.sort_values("Entry_Date", ascending=False), show_cols,
+                          context=f"monthly_{selected}")
 
     cg, cl = st.columns(2)
     by_tkr_m = df[df["Month"]==selected].groupby("Ticker")["Income"].sum().reset_index().sort_values("Income", ascending=False)
