@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import time
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -31,6 +32,7 @@ def scan_leaps(tickers, dte_min, delta_min, delta_max, iv_rank_max, price_min, p
         _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker}</div>', unsafe_allow_html=True)
         _scan_prog.progress((i + 1) / len(tickers))
         diag.seen(ticker)
+        time.sleep(0.25)   # throttle: ~4 tickers/sec — avoids Yahoo rate limit
         try:
             df = get_price_history(ticker, period="12mo")
             if df.empty or len(df) < 50:

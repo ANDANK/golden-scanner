@@ -214,53 +214,64 @@ def get_options_error(ticker: str) -> str:
     return st.session_state.get(_OPT_ERR_KEY, {}).get(ticker, "")
 
 
-def _make_ticker_no_session(ticker: str) -> "yf.Ticker":
+def _make_options_ticker(ticker: str) -> "yf.Ticker":
     """
-    Return a yf.Ticker that does NOT have a requests/requests_cache session
-    injected.  yfinance ≥0.2.50 requires curl_cffi for the options endpoint;
-    passing a plain requests.Session raises YFDataException.  Passing no
-    session lets yfinance create its own internal curl_cffi session.
+    Create a yf.Ticker using a curl_cffi session with Chrome impersonation.
+    - impersonate="chrome" mimics real browser TLS fingerprint → bypasses
+      Yahoo Finance bot detection and rate limiting
+    - verify=False avoids SSL bundle issues on Windows/some cloud envs
+    Falls back to no-session (yfinance internal curl_cffi) if import fails.
     """
-    return yf.Ticker(ticker)
+    try:
+        from curl_cffi import requests as curl_req
+        session = curl_req.Session(verify=False, impersonate="chrome")
+        return yf.Ticker(ticker, session=session)
+    except Exception:
+        return yf.Ticker(ticker)   # fallback: let yfinance manage curl_cffi
 
 
 def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     """
-    Fetch options chain.  yfinance ≥0.2.50 requires curl_cffi for options —
-    we must NOT pass a requests/requests_cache session.  Two attempts:
-      1st: yf.Ticker with no session (yfinance uses its own curl_cffi session)
-      2nd: same, with a short back-off delay
-    Records the failure reason in session_state so scanners can report it.
+    Fetch options chain using curl_cffi with Chrome impersonation to avoid
+    Yahoo Finance rate limiting and bot detection.
+
+    Key optimisation: when expiry=None (dates-only call), we ONLY fetch
+    the expiry list — no chain download — halving the number of API calls.
+    The chain is fetched only when a specific expiry string is supplied.
+
+    Two attempts with back-off; records failure in session_state.
     """
     errors: List[str] = []
 
     for attempt in range(2):
         try:
             if attempt > 0:
-                time.sleep(0.5)
+                time.sleep(1.5)   # longer back-off on retry
 
-            # ── Do NOT pass session= here ──────────────────────────────
-            # yfinance ≥0.2.50 raises YFDataException if you pass a
-            # requests.Session for the options endpoint; it needs curl_cffi.
-            t = _make_ticker_no_session(ticker)
+            t = _make_options_ticker(ticker)
 
-            # Step 1 — expiry list
+            # ── Step 1: fetch expiry dates ────────────────────────────
             try:
                 dates = list(t.options or [])
             except Exception as e:
-                errors.append(f"dates:{type(e).__name__}:{str(e)[:60]}")
+                errors.append(f"dates:{type(e).__name__}:{str(e)[:80]}")
                 continue
 
             if not dates:
                 errors.append("no_expiry_dates")
                 continue
 
-            # Step 2 — chain for target expiry
-            target = expiry if (expiry and expiry in dates) else dates[0]
+            # ── Dates-only mode (expiry=None): return early, no chain ─
+            if expiry is None:
+                st.session_state.get(_OPT_ERR_KEY, {}).pop(ticker, None)
+                return pd.DataFrame(), pd.DataFrame(), dates
+
+            # ── Step 2: fetch chain for the requested expiry ──────────
+            target = expiry if expiry in dates else dates[0]
             try:
                 chain = t.option_chain(target)
             except Exception as e:
-                errors.append(f"chain:{type(e).__name__}:{str(e)[:60]}")
+                errors.append(f"chain:{type(e).__name__}:{str(e)[:80]}")
                 continue
 
             calls = getattr(chain, "calls", pd.DataFrame())
@@ -270,18 +281,17 @@ def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFra
                 errors.append(f"empty_chain@{target}")
                 continue
 
-            # Clear any stale error on success
             st.session_state.get(_OPT_ERR_KEY, {}).pop(ticker, None)
             return calls, puts, dates
 
         except Exception as e:
-            errors.append(f"outer:{type(e).__name__}:{str(e)[:60]}")
+            errors.append(f"outer:{type(e).__name__}:{str(e)[:80]}")
 
     _log_opt_err(ticker, " | ".join(errors) if errors else "unknown")
     return pd.DataFrame(), pd.DataFrame(), []
 
 
-@st.cache_data(ttl=600, show_spinner=False)
+@st.cache_data(ttl=1800, show_spinner=False)
 def get_options_chain(ticker: str, expiry: Optional[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     """Fetch options chain with retry + stale-cache fallback. Returns (calls, puts, expiry_dates)."""
     result, _ = _resilient(_fetch_options_chain, ticker, expiry,
