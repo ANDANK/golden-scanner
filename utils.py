@@ -333,14 +333,23 @@ class ScanDiagnostics:
 
 
 def _score_bar_html(score: float) -> str:
-    """Inline score bar for HTML table cells."""
+    """Score badge + progress bar — green ≥70, amber 50–69, red <50."""
     score = int(score)
-    color = ACCENT_GREEN if score >= 70 else (GOLD if score >= 50 else ACCENT_RED)
+    if score >= 70:
+        color, badge_bg, label = ACCENT_GREEN, "#14532d", "Strong"
+    elif score >= 50:
+        color, badge_bg, label = "#FBBF24", "#451a03", "Moderate"
+    else:
+        color, badge_bg, label = ACCENT_RED, "#450a0a", "Weak"
     return (
         f'<div style="display:flex;align-items:center;gap:6px">'
-        f'<div style="flex:1;background:#1a1a2a;border-radius:3px;height:5px;min-width:60px">'
-        f'<div style="background:{color};height:5px;border-radius:3px;width:{score}%"></div></div>'
-        f'<span style="color:{color};font-weight:700;font-size:12px;white-space:nowrap">{score}</span>'
+        # Pill badge
+        f'<span style="background:{badge_bg};color:{color};font-weight:700;font-size:11px;'
+        f'padding:2px 7px;border-radius:12px;border:1px solid {color}44;white-space:nowrap">'
+        f'{score}</span>'
+        # Mini bar
+        f'<div style="flex:1;background:#1a1a2a;border-radius:3px;height:4px;min-width:40px">'
+        f'<div style="background:{color};height:4px;border-radius:3px;width:{score}%"></div></div>'
         f'</div>'
     )
 
@@ -617,10 +626,20 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                     )
                 else:
                     color = _cell_color(col_name, val)
+                    # VIS-2: directional arrow prefix for upside/return columns
+                    display_val = str(val)
+                    if "upside" in col_name.lower() or "return" in col_name.lower():
+                        try:
+                            fv = float(str(val).replace("%", "").replace("+", "").strip())
+                            arrow = "▲" if fv >= 0 else "▼"
+                            color = ACCENT_GREEN if fv >= 0 else ACCENT_RED
+                            display_val = f"{arrow} {val}"
+                        except Exception:
+                            pass
                     st.markdown(
                         f'<div style="background:{bg};padding:6px 4px">'
                         f'<span style="color:{color};font-size:12px;white-space:nowrap">'
-                        f'{val}</span></div>',
+                        f'{display_val}</span></div>',
                         unsafe_allow_html=True,
                     )
 
