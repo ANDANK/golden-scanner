@@ -2,10 +2,16 @@ name: Scheduled Options Scan
 
 on:
   schedule:
-    # 9:00 AM CST  = 15:00 UTC  (CDT/summer: 14:00 UTC)
-    - cron: "0 15 * * 1-5"
-    # 1:00 PM CST  = 19:00 UTC  (CDT/summer: 18:00 UTC)
-    - cron: "0 19 * * 1-5"
+    # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
+    # 9:00 AM CDT  = 14:00 UTC
+    - cron: "0 14 * * 1-5"
+    # 1:00 PM CDT  = 18:00 UTC
+    - cron: "0 18 * * 1-5"
+    # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
+    # 9:00 AM CST  = 15:00 UTC   ← uncomment these and remove CDT lines in Nov
+    # - cron: "0 15 * * 1-5"
+    # 1:00 PM CST  = 19:00 UTC
+    # - cron: "0 19 * * 1-5"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI
     inputs:
       slot:
