@@ -11,6 +11,14 @@ from utils import section_header, metric_card, _export_filename
 from scanners.gsheet_helper import get_tracking, remove_from_tracking, using_google_sheets, show_storage_banner
 
 
+# ── Delete callback (fires before rerender — Streamlit reruns naturally) ──
+
+def _cb_delete_tracking(ticker: str, added_date: str):
+    """Remove one tracking row then let Streamlit's natural rerun refresh the table."""
+    remove_from_tracking(ticker, added_date)
+    st.cache_data.clear()
+
+
 # ── Helpers ────────────────────────────────────────────────────
 
 @st.cache_data(ttl=180, show_spinner=False)
@@ -317,94 +325,94 @@ def render():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Positions table ────────────────────────────────────────
+    # ── Positions table with inline delete ────────────────────
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11px;text-transform:uppercase;'
-        f'letter-spacing:1px;margin-bottom:6px">📋 Positions</div>',
+        f'letter-spacing:1px;margin-bottom:4px">📋 Positions</div>',
         unsafe_allow_html=True,
     )
-    header_cols = ["Ticker", "Strategy", "Action", "Qty", "Entry", "Current", "P&L (est.)", "Score", "Added", "Source"]
-    header_html = "".join(
-        f'<th style="background:{BG_PANEL};color:{GOLD};font-size:11px;font-weight:600;'
-        f'text-transform:uppercase;letter-spacing:0.8px;padding:10px 14px;'
-        f'border-bottom:2px solid {GOLD}44;white-space:nowrap">{c}</th>'
-        for c in header_cols
+
+    # Suppress default gap between columns for tighter rows
+    st.markdown(
+        "<style>"
+        "div[data-testid='stHorizontalBlock']{gap:0 !important;margin-bottom:0 !important}"
+        "div[data-testid='stHorizontalBlock'] > div[data-testid='stColumn']"
+        "{padding-top:1px !important;padding-bottom:1px !important}"
+        "</style>",
+        unsafe_allow_html=True,
     )
 
-    row_htmls = []
-    for i, (_, row) in enumerate(df.iterrows()):
-        bg   = BG_CARD if i % 2 == 0 else BG_PANEL
-        ep   = row["Entry_Price"]
-        cp   = row["Current_Price"]
-        pnl  = row["PnL_$"]
-        ppct = row["PnL_%"]
-        ep_str  = f"${ep:.2f}"   if pd.notna(ep)  else "—"
-        cp_str  = f"${cp:.2f}"   if pd.notna(cp)  else "—"
-        pnl_str = _pnl_html(pnl, ppct) if pd.notna(pnl) else "—"
-        score   = str(row.get("Score", "")).strip() or "—"
-        td = f'border-bottom:1px solid {BORDER_COLOR}22;background:{bg}'
-        cells = [
-            f'<td style="padding:8px 14px;{td}"><span style="color:{GOLD};font-family:\'DM Mono\',monospace;font-weight:700">{row["Ticker"]}</span></td>',
-            f'<td style="padding:8px 14px;{td}"><span style="color:{TEXT_MUTED};font-size:12px">{row.get("Strategy","")}</span></td>',
-            f'<td style="padding:8px 14px;{td}"><span style="color:{ACCENT_GREEN if str(row.get("Action",""))=="Buy" else ACCENT_RED};font-size:12px;font-weight:600">{row.get("Action","")}</span></td>',
-            f'<td style="padding:8px 14px;{td}"><span style="color:{TEXT_PRIMARY};font-size:12px">{row.get("Qty","")}</span></td>',
-            f'<td style="padding:8px 14px;{td}"><span style="color:{TEXT_MUTED};font-family:\'DM Mono\',monospace;font-size:12px">{ep_str}</span></td>',
-            f'<td style="padding:8px 14px;{td}"><span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:12px">{cp_str}</span></td>',
-            f'<td style="padding:8px 14px;{td}">{pnl_str}</td>',
-            f'<td style="padding:8px 14px;{td}"><span style="color:{GOLD};font-size:12px">{score}</span></td>',
-            f'<td style="padding:8px 14px;{td}"><span style="color:{TEXT_MUTED};font-size:11px">{str(row.get("Added_Date",""))[:10]}</span></td>',
-            f'<td style="padding:8px 14px;{td}"><span style="color:{TEXT_MUTED};font-size:11px">{row.get("Source","")}</span></td>',
-        ]
-        row_htmls.append(f'<tr>{"".join(cells)}</tr>')
+    # Column proportions: Ticker | Strategy | Action | Entry | Current | P&L | Score | Added | Source | 🗑
+    _TBL_WIDTHS = [1.1, 1.0, 0.6, 0.75, 0.75, 1.1, 0.55, 0.85, 1.4, 0.38]
+    _TBL_HEADERS = ["Ticker", "Strategy", "Action", "Entry $", "Current $", "P&L (est.)", "Score", "Added", "Source", ""]
 
-    st.markdown(f"""
-    <div style="overflow-x:auto;overflow-y:auto;max-height:520px;border:1px solid {BORDER_COLOR};border-radius:8px;margin-top:4px">
-      <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif">
-        <thead><tr>{header_html}</tr></thead>
-        <tbody>{"".join(row_htmls)}</tbody>
-      </table>
-    </div>""", unsafe_allow_html=True)
+    # Header row
+    hdr = st.columns(_TBL_WIDTHS)
+    for col_i, label in enumerate(_TBL_HEADERS):
+        with hdr[col_i]:
+            st.markdown(
+                f'<div style="color:{GOLD};font-size:10px;font-weight:700;'
+                f'text-transform:uppercase;letter-spacing:0.7px;'
+                f'padding:6px 6px 4px;border-bottom:2px solid {GOLD}55;'
+                f'white-space:nowrap">{label}</div>',
+                unsafe_allow_html=True,
+            )
+
+    import re as _re, hashlib as _hl
+    _del_key_base = _hl.md5(b"tracking_delete").hexdigest()[:6]
+
+    for row_i, (_, row) in enumerate(df.iterrows()):
+        bg    = BG_CARD if row_i % 2 == 0 else BG_PANEL
+        ep    = row["Entry_Price"]
+        cp    = row["Current_Price"]
+        pnl   = row["PnL_$"]
+        ppct  = row["PnL_%"]
+        tk    = str(row.get("Ticker", "")).upper().strip()
+        added = str(row.get("Added_Date", ""))[:10]
+
+        ep_str  = f"${ep:.2f}"  if pd.notna(ep)  else "—"
+        cp_str  = f"${cp:.2f}"  if pd.notna(cp)  else "—"
+        score   = str(row.get("Score", "")).strip() or "—"
+        strat   = str(row.get("Strategy", ""))
+        action  = str(row.get("Action", ""))
+        src     = str(row.get("Source", ""))[:28]
+        a_color = ACCENT_GREEN if action == "Buy" else ACCENT_RED
+        td_bg   = f"background:{bg};padding:7px 6px;border-bottom:1px solid {BORDER_COLOR}33"
+
+        row_cols = st.columns(_TBL_WIDTHS)
+        cells_data = [
+            f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;font-weight:700;font-size:13px">{tk}</span>',
+            f'<span style="color:{TEXT_MUTED};font-size:12px">{strat}</span>',
+            f'<span style="color:{a_color};font-size:12px;font-weight:600">{action}</span>',
+            f'<span style="color:{TEXT_MUTED};font-family:\'DM Mono\',monospace;font-size:12px">{ep_str}</span>',
+            f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:12px">{cp_str}</span>',
+            _pnl_html(pnl, ppct) if pd.notna(pnl) else '<span style="color:#555">—</span>',
+            f'<span style="color:{GOLD};font-size:12px">{score}</span>',
+            f'<span style="color:{TEXT_MUTED};font-size:11px">{added}</span>',
+            f'<span style="color:{TEXT_MUTED};font-size:11px" title="{src}">{src}</span>',
+        ]
+
+        for col_i, html in enumerate(cells_data):
+            with row_cols[col_i]:
+                st.markdown(f'<div style="{td_bg}">{html}</div>', unsafe_allow_html=True)
+
+        # Inline delete button (last column)
+        _safe_tk = _re.sub(r"[^a-zA-Z0-9]", "_", tk)
+        with row_cols[-1]:
+            st.button(
+                "🗑",
+                key=f"del_{_del_key_base}_{row_i}_{_safe_tk}",
+                help=f"Remove {tk} ({added}) from tracking",
+                use_container_width=True,
+                on_click=_cb_delete_tracking,
+                args=(tk, added),
+            )
 
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:6px">'
-        f'P&L estimated: stocks = 100 shares · options = 1-contract underlying delta. Not actual P&L.</div>',
+        f'P&L estimated: stocks = 100 shares · options = 1 contract. Not actual P&L.</div>',
         unsafe_allow_html=True,
     )
-
-    # ── Remove position ────────────────────────────────────────
-    st.markdown("---")
-    st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:12px;font-weight:600;'
-        f'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Remove Position</div>',
-        unsafe_allow_html=True,
-    )
-    remove_options = [""] + [
-        f"{str(r.get('Ticker','')).upper()} — {str(r.get('Added_Date',''))[:10]}"
-        for _, r in df.iterrows()
-    ]
-    r1, r2 = st.columns([4, 1])
-    with r1:
-        to_remove_label = st.selectbox(
-            "Select position to remove",
-            options=remove_options,
-            label_visibility="collapsed",
-            key="tracking_remove_sel",
-            placeholder="Choose position to remove…",
-        )
-    with r2:
-        if st.button("🗑 Remove", key="tracking_remove_btn", use_container_width=True):
-            if to_remove_label:
-                parts = to_remove_label.split(" — ", 1)
-                tk = parts[0].strip()
-                dt = parts[1].strip() if len(parts) > 1 else ""
-                if remove_from_tracking(tk, dt):
-                    st.success(f"{tk} ({dt}) removed.")
-                    st.cache_data.clear()
-                    st.rerun()
-                else:
-                    st.error("Could not remove — row not found.")
-            else:
-                st.warning("Select a position first.")
 
     # ── Export ─────────────────────────────────────────────────
     export_cols = ["Ticker","Strategy","Action","Qty","Entry_Price","Current_Price","PnL_$","PnL_%","Score","Added_Date","Source"]

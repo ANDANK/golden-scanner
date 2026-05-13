@@ -583,6 +583,11 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                 unsafe_allow_html=True,
             )
 
+    # ── Auto-track bookkeeping (session-scoped, resets each day) ──
+    from datetime import date as _date
+    _today_str  = str(_date.today())
+    _auto_set   = st.session_state.setdefault("_auto_tracked", set())
+
     # ── Data rows ────────────────────────────────────────────────
     for row_i, (_, row) in enumerate(df.iterrows()):
         bg = BG_CARD if row_i % 2 == 0 else BG_PANEL
@@ -607,6 +612,23 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                                     ("Est_Upside", "Est. Upside %"), ("Direction", "Direction")]:
             if col_name in df.columns:
                 extra_meta[meta_key] = str(row.get(col_name, ""))
+
+        # ── Auto-track: score ≥ 60 added silently once per ticker/day ──
+        score_val = 0
+        if score_col in df.columns:
+            try:
+                score_val = int(float(str(row.get(score_col, 0))))
+            except Exception:
+                pass
+        _auto_key = f"{ticker}_{_today_str}"
+        if score_val >= 60 and ticker and _auto_key not in _auto_set:
+            try:
+                from scanners.gsheet_helper import add_to_tracking as _ato
+                ok, _ = _ato(ticker, strategy, row_source, price_str, extra_meta)
+                if ok:
+                    _auto_set.add(_auto_key)
+            except Exception:
+                pass
 
         for i, col_name in enumerate(data_cols):
             val = row[col_name]
