@@ -486,27 +486,22 @@ with st.sidebar:
                 _go(it["key"])
 
     def _render_item_with_children(it):
-        # Parent button + a separate "▾/▸" toggle for the sub-menu
-        sub_open_key = f"_sub_open_{it['key']}"
-        if sub_open_key not in st.session_state:
-            # auto-open if the active page is one of the children
-            st.session_state[sub_open_key] = any(
-                c["key"] == current_page for c in it.get("children", [])
-            )
+        # Single-button design: clicking Tracking ALWAYS navigates to it.
+        # Sub-menu visibility is derived from active state — no separate toggle
+        # button (which previously caused ambiguous clicks in Streamlit's
+        # narrow column layout).
+        is_active = it["key"] == current_page
+        child_active = any(c["key"] == current_page for c in it.get("children", []))
+        show_subs = is_active or child_active
 
-        c1, c2 = st.columns([5, 1])
-        with c1:
-            if it["key"] == current_page:
-                st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
-            if st.button(it["key"], key=f"_nav_{it['key']}", use_container_width=True):
-                _go(it["key"])
-        with c2:
-            chev = "▾" if st.session_state[sub_open_key] else "▸"
-            if st.button(chev, key=f"_chev_{it['key']}", use_container_width=True):
-                st.session_state[sub_open_key] = not st.session_state[sub_open_key]
-                st.rerun()
+        if is_active:
+            st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
+        # Append a chevron to the label so the user knows there are children
+        chev = "  ▾" if show_subs else "  ▸"
+        if st.button(it["key"] + chev, key=f"_nav_{it['key']}", use_container_width=True):
+            _go(it["key"])
 
-        if st.session_state[sub_open_key]:
+        if show_subs:
             for child in it.get("children", []):
                 _render_nav_item(child, indent=True)
 
