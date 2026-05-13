@@ -15,19 +15,29 @@ TEXT_MUTED   = "#6B7280"
 BORDER_COLOR = "#2A2A3A"
 
 # ── Universe — Stocks + ETFs combined ─────────────────────────
-# First 200 entries = default scan (mega-caps + key ETFs + large-caps)
 # Positions 1–20:   Top mega-cap stocks
-# Positions 21–40:  Key ETFs (always in default 200 scan)
-# Positions 41–200: Large-cap S&P 500 stocks
-# Positions 201+:   Extended S&P 500 + remaining ETFs
+# Positions 21–55:  ALL liquid ETFs (OPTIONS_ETF_UNIVERSE + VTI/VOO)
+#                   — always included even with small universe sizes
+# Positions 56–215: Large-cap S&P 500 stocks
+# Positions 216+:   Extended S&P 500 + remaining ETFs
 SP500_SAMPLE = [
     # ── Mega-cap stocks (1–20) ────────────────────────────────
     "AAPL","MSFT","NVDA","AMZN","GOOGL","META","BRK-B","LLY","AVGO","TSLA",
     "UNH","JPM","XOM","V","MA","PG","JNJ","HD","COST","MRK",
-    # ── Key ETFs (21–40) — included in default 200 scan ──────
-    "SPY","QQQ","IWM","DIA","VTI","VOO","GLD","SLV","TLT","HYG",
-    "XLK","XLF","XLE","XLV","XLI","XLU","XLP","XLY","SOXX","ARKK",
-    # ── Large-cap S&P 500 (41–200) ───────────────────────────
+    # ── Liquid ETFs with active options (21–55) ───────────────
+    # Broad market & vol
+    "SPY","QQQ","IWM","DIA","VTI","VOO","UVXY","VXX",
+    # Commodities & bonds
+    "GLD","SLV","TLT","HYG","LQD","USO","UNG",
+    # Sector SPDRs
+    "XLK","XLF","XLE","XLV","XLI","XLU","XLP","XLY",
+    # Tech & semi
+    "SOXX","SMH","ARKK",
+    # International & emerging
+    "EEM","EFA","FXI","EWZ","KWEB",
+    # Real assets & thematic
+    "GDX","GDXJ","VNQ","IBB",
+    # ── Large-cap S&P 500 (56–215) ───────────────────────────
     "ABBV","CVX","CRM","BAC","PEP","ADBE","NFLX","TMO","ACN","WMT",
     "MCD","AMD","CSCO","ORCL","ABT","CAT","GS","TXN","INTU","QCOM",
     "MS","ISRG","AMAT","AMGN","BLK","MDT","SPGI","AXP","GILD","BKNG",
