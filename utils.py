@@ -334,7 +334,12 @@ class ScanDiagnostics:
 
 def _score_bar_html(score: float) -> str:
     """Score badge + progress bar — green ≥70, amber 50–69, red <50."""
-    score = int(score)
+    try:
+        score = int(float(score))
+        if score != score:   # NaN guard
+            raise ValueError
+    except Exception:
+        return f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>'
     if score >= 70:
         color, badge_bg, label = ACCENT_GREEN, "#14532d", "Strong"
     elif score >= 50:
@@ -738,14 +743,19 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                     )
                 else:
                     color = _cell_color(col_name, val)
-                    # VIS-2: directional arrow prefix for upside/return columns
-                    display_val = str(val)
-                    if "upside" in col_name.lower() or "return" in col_name.lower():
+                    # Normalise: treat nan / None / empty string as "—"
+                    _raw = str(val).strip()
+                    display_val = "—" if _raw.lower() in ("nan", "none", "") else _raw
+                    color = TEXT_MUTED if display_val == "—" else color
+                    # Directional arrow prefix for upside/return columns
+                    if display_val != "—" and (
+                        "upside" in col_name.lower() or "return" in col_name.lower()
+                    ):
                         try:
-                            fv = float(str(val).replace("%", "").replace("+", "").strip())
+                            fv = float(display_val.replace("%", "").replace("+", "").strip())
                             arrow = "▲" if fv >= 0 else "▼"
                             color = ACCENT_GREEN if fv >= 0 else ACCENT_RED
-                            display_val = f"{arrow} {val}"
+                            display_val = f"{arrow} {display_val}"
                         except Exception:
                             pass
                     st.markdown(
