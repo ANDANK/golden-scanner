@@ -983,52 +983,134 @@ def _render_progress_strip(df: pd.DataFrame):
 def _render_ticker_snapshot(df: pd.DataFrame):
     _section_label("📋 Ticker Performance Snapshot", GOLD)
     by_tkr = (df.groupby("Ticker").agg(
-        Total_Income=("Income","sum"),
-        Trades=("Ticker","count"),
-        Avg_ROI=("PL_Pct","mean"),
-        Wins=("PL_Dollar", lambda x: (pd.to_numeric(x, errors="coerce").fillna(0) > 0).sum()),
+        Total_Income=("Income",  "sum"),
+        Trades=      ("Ticker",  "count"),
+        Avg_ROI=     ("PL_Pct",  "mean"),
+        Wins=        ("PL_Dollar", lambda x: (pd.to_numeric(x, errors="coerce").fillna(0) > 0).sum()),
     ).reset_index().sort_values("Total_Income", ascending=False))
     if by_tkr.empty:
         return
 
+    # ── Scanner / source info per ticker (from merged Tracking rows) ──
+    def _scanner_info(tkr):
+        grp      = df[df["Ticker"] == tkr]
+        scanners: list[str] = []
+        max_score = None
+        for _, row in grp.iterrows():
+            src = str(row.get("Source", "")).strip()
+            if src and src.lower() not in ("", "nan", "manual", "tracking"):
+                if src.upper().startswith("GS-"):
+                    # "GS-Momentum,Squeeze" → individual names
+                    for part in src[3:].split(","):
+                        p = part.strip()
+                        if p and p not in scanners:
+                            scanners.append(p)
+                else:
+                    if src not in scanners:
+                        scanners.append(src)
+            try:
+                sv = float(str(row.get("Score", "")).replace("%", ""))
+                if sv > 0 and (max_score is None or sv > max_score):
+                    max_score = sv
+            except Exception:
+                pass
+        return (
+            " · ".join(scanners[:5]) if scanners else "—",
+            len(scanners),
+            int(max_score) if max_score is not None else "—",
+        )
+
+    scanner_data = {tkr: _scanner_info(tkr) for tkr in by_tkr["Ticker"]}
+
     def _ppd(tkr):
         sub  = df[df["Ticker"] == tkr]
-        days = max(1, (date.today() - sub["Entry_Date"].dropna().min().date()).days) if not sub["Entry_Date"].dropna().empty else 1
+        days = max(1, (date.today() - sub["Entry_Date"].dropna().min().date()).days) \
+               if not sub["Entry_Date"].dropna().empty else 1
         return sub["Income"].sum() / days
 
     by_tkr["Prem_Per_Day"] = by_tkr["Ticker"].apply(_ppd)
     by_tkr["Win_Rate"]     = (by_tkr["Wins"] / by_tkr["Trades"] * 100).round(1)
 
     th_s = (f'color:{TEXT_MUTED};font-size:10px;font-weight:700;letter-spacing:.8px;'
-            f'text-transform:uppercase;padding:8px 12px;border-bottom:2px solid {GOLD}55;background:{BG_PANEL}')
-    hdrs = ["TICKER","TOTAL INCOME","TRADES","WIN RATE","AVG ROI","PREM/DAY"]
+            f'text-transform:uppercase;padding:8px 12px;border-bottom:2px solid {GOLD}55;'
+            f'background:{BG_PANEL};white-space:nowrap')
+    hdrs = ["TICKER", "TOTAL INCOME", "TRADES", "WIN RATE", "AVG ROI",
+            "PREM/DAY", "SCANNERS", "CNT", "SCORE"]
     hdr  = "".join(f'<th style="{th_s}">{h}</th>' for h in hdrs)
+
     rows = []
     for i, (_, r) in enumerate(by_tkr.iterrows()):
-        bg = BG_CARD if i % 2 == 0 else BG_PANEL
-        inc = r["Total_Income"]; roi = r["Avg_ROI"] or 0; wr = r["Win_Rate"]; ppd = r["Prem_Per_Day"]
-        ic  = ACCENT_GREEN if inc>=0 else ACCENT_RED
-        rc  = ACCENT_GREEN if roi>=0 else ACCENT_RED
-        wc  = ACCENT_GREEN if wr>=60 else (GOLD if wr>=40 else ACCENT_RED)
-        rows.append(f'<tr>'
-                    f'<td style="padding:8px 12px;background:{bg};color:{GOLD};font-family:\'DM Mono\',monospace;font-weight:800;font-size:13px">{r["Ticker"]}</td>'
-                    f'<td style="padding:8px 12px;background:{bg};color:{ic};font-family:\'DM Mono\',monospace;font-weight:700">{"+" if inc>=0 else ""}${inc:,.2f}</td>'
-                    f'<td style="padding:8px 12px;background:{bg};color:{TEXT_PRIMARY};text-align:center">{int(r["Trades"])}</td>'
-                    f'<td style="padding:8px 12px;background:{bg};color:{wc};font-weight:700">{wr:.0f}%</td>'
-                    f'<td style="padding:8px 12px;background:{bg};color:{rc};font-family:\'DM Mono\',monospace">{roi:+.2f}%</td>'
-                    f'<td style="padding:8px 12px;background:{bg};color:{ACCENT_BLUE};font-family:\'DM Mono\',monospace">${ppd:,.2f}</td>'
-                    f'</tr>')
-    total_inc = by_tkr["Total_Income"].sum(); tc = ACCENT_GREEN if total_inc>=0 else ACCENT_RED
-    footer = (f'<tr style="border-top:2px solid {GOLD}55">'
-              f'<td style="padding:8px 12px;background:{BG_PANEL};color:{GOLD};font-weight:800;font-family:\'DM Mono\',monospace">TOTAL</td>'
-              f'<td style="padding:8px 12px;background:{BG_PANEL};color:{tc};font-weight:800;font-family:\'DM Mono\',monospace">${total_inc:,.2f}</td>'
-              f'<td style="padding:8px 12px;background:{BG_PANEL};color:{TEXT_PRIMARY};text-align:center;font-weight:700">{int(by_tkr["Trades"].sum())}</td>'
-              f'<td colspan="3" style="padding:8px 12px;background:{BG_PANEL}"></td>'
-              f'</tr>')
-    st.markdown(f'<div style="border:1px solid {BORDER_COLOR};border-radius:8px;overflow:hidden;overflow-x:auto;margin:8px 0 20px">'
-                f'<table style="width:100%;border-collapse:collapse;font-family:\'Inter\',sans-serif">'
-                f'<thead><tr>{hdr}</tr></thead><tbody>{"".join(rows)}{footer}</tbody></table></div>',
-                unsafe_allow_html=True)
+        bg  = BG_CARD if i % 2 == 0 else BG_PANEL
+        inc = r["Total_Income"]
+        wr  = r["Win_Rate"]
+        ppd = r["Prem_Per_Day"]
+        ic  = ACCENT_GREEN if inc >= 0 else ACCENT_RED
+        wc  = ACCENT_GREEN if wr >= 60 else (GOLD if wr >= 40 else ACCENT_RED)
+
+        # Avg ROI — guard against NaN (tracking rows have no P&L yet)
+        try:
+            roi     = float(r["Avg_ROI"])
+            rc      = ACCENT_GREEN if roi >= 0 else ACCENT_RED
+            roi_str = f"{roi:+.2f}%"
+        except (TypeError, ValueError):
+            rc, roi_str = TEXT_MUTED, "—"
+
+        sc_names, sc_count, sc_score = scanner_data.get(r["Ticker"], ("—", 0, "—"))
+        sc_color = (ACCENT_GREEN if sc_count > 2 else
+                    (GOLD        if sc_count >= 1 else TEXT_MUTED))
+        score_color = (ACCENT_GREEN if isinstance(sc_score, int) and sc_score >= 70 else
+                       (GOLD        if isinstance(sc_score, int) and sc_score >= 50 else
+                        TEXT_MUTED))
+
+        rows.append(
+            f'<tr>'
+            f'<td style="padding:8px 12px;background:{bg};color:{GOLD};'
+            f'font-family:\'DM Mono\',monospace;font-weight:800;font-size:13px">'
+            f'{r["Ticker"]}</td>'
+            f'<td style="padding:8px 12px;background:{bg};color:{ic};'
+            f'font-family:\'DM Mono\',monospace;font-weight:700">'
+            f'{"+" if inc>=0 else ""}${inc:,.2f}</td>'
+            f'<td style="padding:8px 12px;background:{bg};color:{TEXT_PRIMARY};'
+            f'text-align:center">{int(r["Trades"])}</td>'
+            f'<td style="padding:8px 12px;background:{bg};color:{wc};font-weight:700">'
+            f'{wr:.0f}%</td>'
+            f'<td style="padding:8px 12px;background:{bg};color:{rc};'
+            f'font-family:\'DM Mono\',monospace">{roi_str}</td>'
+            f'<td style="padding:8px 12px;background:{bg};color:{ACCENT_BLUE};'
+            f'font-family:\'DM Mono\',monospace">${ppd:,.2f}</td>'
+            # ── scanner columns ──────────────────────────────────────
+            f'<td style="padding:8px 12px;background:{bg};color:{sc_color};font-size:11px;'
+            f'max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" '
+            f'title="{sc_names}">{sc_names}</td>'
+            f'<td style="padding:8px 12px;background:{bg};color:{sc_color};'
+            f'text-align:center;font-weight:700">'
+            f'{sc_count if sc_count else "—"}</td>'
+            f'<td style="padding:8px 12px;background:{bg};color:{score_color};'
+            f'font-family:\'DM Mono\',monospace;font-weight:700;text-align:center">'
+            f'{sc_score}</td>'
+            f'</tr>'
+        )
+
+    total_inc = by_tkr["Total_Income"].sum()
+    tc     = ACCENT_GREEN if total_inc >= 0 else ACCENT_RED
+    footer = (
+        f'<tr style="border-top:2px solid {GOLD}55">'
+        f'<td style="padding:8px 12px;background:{BG_PANEL};color:{GOLD};'
+        f'font-weight:800;font-family:\'DM Mono\',monospace">TOTAL</td>'
+        f'<td style="padding:8px 12px;background:{BG_PANEL};color:{tc};'
+        f'font-weight:800;font-family:\'DM Mono\',monospace">${total_inc:,.2f}</td>'
+        f'<td style="padding:8px 12px;background:{BG_PANEL};color:{TEXT_PRIMARY};'
+        f'text-align:center;font-weight:700">{int(by_tkr["Trades"].sum())}</td>'
+        f'<td colspan="6" style="padding:8px 12px;background:{BG_PANEL}"></td>'
+        f'</tr>'
+    )
+    st.markdown(
+        f'<div style="border:1px solid {BORDER_COLOR};border-radius:8px;'
+        f'overflow:hidden;overflow-x:auto;margin:8px 0 20px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'Inter\',sans-serif">'
+        f'<thead><tr>{hdr}</tr></thead>'
+        f'<tbody>{"".join(rows)}{footer}</tbody></table></div>',
+        unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════
