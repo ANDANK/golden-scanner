@@ -131,6 +131,20 @@ def _scan_golden(tickers):
     return df
 
 
+def _merge_frames(frames: list) -> pd.DataFrame:
+    """Combine, dedup and sort a list of DataFrames."""
+    if not frames:
+        return pd.DataFrame()
+    combined = pd.concat(frames, ignore_index=True)
+    if "Score" in combined.columns:
+        combined["Score"] = pd.to_numeric(combined["Score"], errors="coerce").fillna(0)
+        combined = (combined
+                    .sort_values("Score", ascending=False)
+                    .drop_duplicates(subset=["Ticker", "Strategy"])
+                    .reset_index(drop=True))
+    return combined
+
+
 def run_all_scans() -> pd.DataFrame:
     stocks         = SP500_SAMPLE[:OPTIONS_SCAN_STOCKS]
     golden_tickers = SP500_SAMPLE[:GOLDEN_SCAN_TICKERS]
@@ -161,18 +175,16 @@ def run_all_scans() -> pd.DataFrame:
                 log("  → 0 setups")
         except Exception as e:
             log(f"  ✗ ERROR: {e}")
+            continue
 
-    if not frames:
-        return pd.DataFrame()
+        # ── Save partial results after every strategy ──────────
+        # This way a timeout or crash preserves whatever completed.
+        partial = _merge_frames(frames)
+        if not partial.empty:
+            save_results(SLOT, partial)
+            log(f"  💾 Partial save: {len(partial)} total row(s) so far")
 
-    combined = pd.concat(frames, ignore_index=True)
-    if "Score" in combined.columns:
-        combined["Score"] = pd.to_numeric(combined["Score"], errors="coerce").fillna(0)
-        combined = (combined
-                    .sort_values("Score", ascending=False)
-                    .drop_duplicates(subset=["Ticker", "Strategy"])
-                    .reset_index(drop=True))
-    return combined
+    return _merge_frames(frames)
 
 
 # ── Compare AM vs PM and build diff ───────────────────────────
