@@ -125,60 +125,66 @@ def scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max):
     return df_out, diag
 
 
-def render():
-    section_header("📦", "Covered Calls",
+def render(universe_mode: str = "stocks"):
+    """
+    universe_mode: "stocks"  → top 30 S&P 500 stocks
+                   "etfs"    → 33 liquid options ETFs
+    """
+    is_etf   = universe_mode == "etfs"
+    mode_lbl = "ETFs" if is_etf else "Stocks"
+    mk       = f"cc_{universe_mode}"
+    sess_key = f"_cc_{universe_mode}_r"
+
+    section_header("📦", f"Covered Calls — {mode_lbl}",
                    "Income generation · OTM strikes near resistance · Delta 0.15–0.25")
 
     with st.sidebar:
-        st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ Covered Call Filters</div>', unsafe_allow_html=True)
-        delta_min, delta_max = st.slider("Call Delta Range", 0.05, 0.50, (0.15, 0.25), 0.01)
-        premium_pct_min = st.slider("Min Yield % (premium/price)", 0.3, 3.0, 0.70, 0.05)
-        dte_min, dte_max = st.slider("DTE Range", 1, 60, (1, 20))
-        universe_size = st.slider("Universe Size", 10, len(SP500_SAMPLE), 200, 10)
+        st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ CC — {mode_lbl} Filters</div>', unsafe_allow_html=True)
+        delta_min, delta_max = st.slider("Call Delta Range",              0.05, 0.50, (0.15, 0.25), 0.01, key=f"{mk}_delta")
+        premium_pct_min      = st.slider("Min Yield % (premium/price)",   0.3,  3.0,   0.70,        0.05, key=f"{mk}_prem")
+        dte_min, dte_max     = st.slider("DTE Range",                     1,    60,   (1, 20),             key=f"{mk}_dte")
+        if not is_etf:
+            universe_size    = st.slider("Universe Size (top stocks)",     10, len(SP500_SAMPLE), 30, 5,   key=f"{mk}_sz")
 
-    include_etfs = st.checkbox("Include Liquid ETFs (SPY, QQQ, GLD…)", True,
-                              help="Adds 34 highly-liquid ETFs with active options chains")
+    tickers = OPTIONS_ETF_UNIVERSE if is_etf else SP500_SAMPLE[:universe_size]
 
-    tickers = SP500_SAMPLE[:universe_size]
-    if include_etfs:
-        tickers = OPTIONS_ETF_UNIVERSE + [t for t in tickers if t not in OPTIONS_ETF_UNIVERSE]
-    st.info("⏱ Options scanning takes 60–120 seconds depending on universe size.")
+    st.info(f"⏱ Scanning {len(tickers)} {'ETFs' if is_etf else 'stocks'} — options data may take 30–90 sec.")
 
     col1, _ = st.columns([1, 5])
     with col1:
-        run = st.button("▶ Run Scan", use_container_width=True)
+        run = st.button("▶ Run Scan", use_container_width=True, key=f"{mk}_run")
 
     if run:
         df, diag = scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max)
-        st.session_state["_cc_r"] = (df, diag)
+        st.session_state[sess_key] = (df, diag)
         from data_loader import show_api_warnings; show_api_warnings()
 
-    _cc_r = st.session_state.get("_cc_r")
-    if _cc_r is not None:
-        df, diag = _cc_r
+    result = st.session_state.get(sess_key)
+    if result is not None:
+        df, diag = result
         if df.empty:
             empty_state("No covered call setups. Lower premium threshold or adjust DTE.")
             diag.render(hide_when_clean=False)
         else:
             c1, c2, c3, c4 = st.columns(4)
-            with c1: metric_card("Setups Found", str(len(df)), color=GOLD)
-            with c2: metric_card("Avg Yield %", f"{df['Yield %'].mean():.2f}%", color=ACCENT_GREEN)
-            with c3: metric_card("Avg Ann. Return", f"{df['Ann. Return %'].mean():.1f}%", color=ACCENT_BLUE)
-            with c4: metric_card("Avg DTE", f"{df['DTE'].mean():.0f}d", color=GOLD)
+            with c1: metric_card("Setups Found",    str(len(df)),                        color=GOLD)
+            with c2: metric_card("Avg Yield %",     f"{df['Yield %'].mean():.2f}%",      color=ACCENT_GREEN)
+            with c3: metric_card("Avg Ann. Return", f"{df['Ann. Return %'].mean():.1f}%",color=ACCENT_BLUE)
+            with c4: metric_card("Avg DTE",         f"{df['DTE'].mean():.0f}d",          color=GOLD)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df, strategy="CC", source="Covered Calls")
+            render_results_table(df, strategy="CC", source=f"CC-{mode_lbl}")
             diag.render()
 
             st.markdown(f"""
             <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:6px;padding:12px 16px;margin-top:16px;color:{TEXT_MUTED};font-size:12px">
-                💡 <b>Note:</b> Covered calls cap your upside at the Call Strike. Best used when you expect sideways/slight upside movement.
+                💡 <b>Note:</b> Covered calls cap your upside at the Call Strike. Best for sideways/slight upside.
                 P(Assign) % ≈ delta × 100 — higher delta = more likely to be called away.
             </div>""", unsafe_allow_html=True)
     else:
         st.markdown(f"""
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">
             <div style="font-size:36px;margin-bottom:12px">📦</div>
-            <div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:8px">Covered Call Income Generator</div>
-            <div style="font-size:13px">Find optimal OTM calls to sell against long positions.<br>Criteria: Delta {delta_min}–{delta_max} · Yield ≥ {premium_pct_min}% · DTE {dte_min}–{dte_max} days</div>
+            <div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:8px">Covered Calls — {mode_lbl}</div>
+            <div style="font-size:13px">Scanning {len(tickers)} {mode_lbl.lower()} for OTM call income.<br>Criteria: Delta {delta_min}–{delta_max} · Yield ≥ {premium_pct_min}% · DTE {dte_min}–{dte_max}</div>
         </div>""", unsafe_allow_html=True)

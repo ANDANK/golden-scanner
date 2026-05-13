@@ -543,9 +543,12 @@ NAV_GROUPS = [
     {
         "sep": "Options", "icon": "🎯", "expanded": False,
         "items": [
-            {"key": "💰  Cash-Secured Puts"},
-            {"key": "📦  Covered Calls"},
-            {"key": "🧨  LEAPS"},
+            {"key": "💰  CSP — Stocks"},
+            {"key": "💰  CSP — ETFs"},
+            {"key": "📦  CC — Stocks"},
+            {"key": "📦  CC — ETFs"},
+            {"key": "🧨  LEAPS — Stocks"},
+            {"key": "🧨  LEAPS — ETFs"},
             {"key": "⚡  3× ETF Options"},
         ],
     },
@@ -757,15 +760,24 @@ elif page == "⚡  3× Leveraged ETFs":
 elif page == "⚡  3× ETF Options":
     from scanners.etf_3x_options_scanner import render
     render()
-elif page == "💰  Cash-Secured Puts":
+elif page == "💰  CSP — Stocks":
     from scanners.csp_scanner import render
-    render()
-elif page == "📦  Covered Calls":
+    render(universe_mode="stocks")
+elif page == "💰  CSP — ETFs":
+    from scanners.csp_scanner import render
+    render(universe_mode="etfs")
+elif page == "📦  CC — Stocks":
     from scanners.cc_scanner import render
-    render()
-elif page == "🧨  LEAPS":
+    render(universe_mode="stocks")
+elif page == "📦  CC — ETFs":
+    from scanners.cc_scanner import render
+    render(universe_mode="etfs")
+elif page == "🧨  LEAPS — Stocks":
     from scanners.leaps_scanner import render
-    render()
+    render(universe_mode="stocks")
+elif page == "🧨  LEAPS — ETFs":
+    from scanners.leaps_scanner import render
+    render(universe_mode="etfs")
 elif page == "💵  Upcoming Dividends":
     from scanners.dividend_hacker import render
     render()

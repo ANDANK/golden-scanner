@@ -100,7 +100,7 @@ def _fetch_price_history(ticker: str, period: str, interval: str) -> pd.DataFram
     return df
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=7200, show_spinner=False)   # 2 h — stock OHLCV rarely changes intraday
 def get_price_history(ticker: str, period: str = "6mo", interval: str = "1d") -> pd.DataFrame:
     """Fetch OHLCV history with retry + stale-cache fallback."""
     result, _ = _resilient(_fetch_price_history, ticker, period, interval,
@@ -160,7 +160,7 @@ def _fetch_info(ticker: str) -> dict:
     return _fetch_info_from_download(ticker)
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=7200, show_spinner=False)   # 2 h — fundamentals are daily data
 def get_info(ticker: str) -> dict:
     """Fetch fundamental info with retry + stale-cache fallback."""
     result, _ = _resilient(_fetch_info, ticker, key=("info", ticker))
@@ -291,7 +291,7 @@ def _fetch_options_chain(ticker: str, expiry: Optional[str]) -> Tuple[pd.DataFra
     return pd.DataFrame(), pd.DataFrame(), []
 
 
-@st.cache_data(ttl=1800, show_spinner=False)
+@st.cache_data(ttl=14400, show_spinner=False)  # 4 h — options chains are slow/expensive to fetch
 def get_options_chain(ticker: str, expiry: Optional[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     """Fetch options chain with retry + stale-cache fallback. Returns (calls, puts, expiry_dates)."""
     result, _ = _resilient(_fetch_options_chain, ticker, expiry,
@@ -344,7 +344,7 @@ def get_prepost_price(ticker: str) -> dict:
         return {}
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False)   # 1 h — batch quotes for dashboard/watchlist
 def get_batch_quotes(tickers: List[str]) -> pd.DataFrame:
     """Fetch current quotes for a list of tickers efficiently."""
     try:

@@ -138,51 +138,63 @@ def scan_leaps(tickers, dte_min, delta_min, delta_max, iv_rank_max, price_min, p
     return df_out, diag
 
 
-def render():
-    section_header("🧨", "LEAPS",
+def render(universe_mode: str = "stocks"):
+    """
+    universe_mode: "stocks"  → top 30 S&P 500 stocks
+                   "etfs"    → 33 liquid options ETFs
+    """
+    is_etf   = universe_mode == "etfs"
+    mode_lbl = "ETFs" if is_etf else "Stocks"
+    mk       = f"leaps_{universe_mode}"
+    sess_key = f"_leaps_{universe_mode}_r"
+
+    section_header("🧨", f"LEAPS — {mode_lbl}",
                    "Long-dated calls ≥ 300 DTE · Deep ITM delta 0.60–0.75 · Low IV environment")
 
     with st.sidebar:
-        st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ LEAPS Filters</div>', unsafe_allow_html=True)
-        dte_min = st.slider("Min DTE (days)", 180, 730, 300)
-        delta_min, delta_max = st.slider("Delta Range", 0.40, 0.90, (0.60, 0.75), 0.01)
-        iv_rank_max = st.slider("Max IV Rank", 10, 80, 40)
-        price_min = st.number_input("Min Stock Price ($)", 5.0, 100.0, 20.0)
-        price_max = st.number_input("Max Stock Price ($)", 50.0, 5000.0, 3000.0)
-        universe_size = st.slider("Universe Size", 10, len(SP500_SAMPLE), 200, 5)
+        st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ LEAPS — {mode_lbl} Filters</div>', unsafe_allow_html=True)
+        dte_min = st.slider("Min DTE (days)", 180, 730, 300, key=f"{mk}_dte")
+        delta_min, delta_max = st.slider("Delta Range", 0.40, 0.90, (0.60, 0.75), 0.01, key=f"{mk}_delta")
+        iv_rank_max = st.slider("Max IV Rank", 10, 80, 40, key=f"{mk}_iv")
+        if not is_etf:
+            price_min = st.number_input("Min Stock Price ($)", 5.0, 100.0, 20.0, key=f"{mk}_pmin")
+            price_max = st.number_input("Max Stock Price ($)", 50.0, 5000.0, 3000.0, key=f"{mk}_pmax")
+            universe_size = st.slider("Universe Size (top stocks)", 10, len(SP500_SAMPLE), 30, 5, key=f"{mk}_sz")
 
-    include_etfs = st.checkbox("Include Liquid ETFs (SPY, QQQ, GLD…)", True,
-                              help="Adds 34 highly-liquid ETFs with active options chains")
+    # ETFs: no price filter (ETFs span a wide range), fixed universe
+    if is_etf:
+        price_min = 5.0
+        price_max = 5000.0
+        tickers = OPTIONS_ETF_UNIVERSE
+    else:
+        tickers = SP500_SAMPLE[:universe_size]
 
-    tickers = SP500_SAMPLE[:universe_size]
-    if include_etfs:
-        tickers = OPTIONS_ETF_UNIVERSE + [t for t in tickers if t not in OPTIONS_ETF_UNIVERSE]
-    st.info("⏱ LEAPS scan accesses long-dated expiries — may take 90–180 seconds.")
+    st.info(f"⏱ Scanning {len(tickers)} {'ETFs' if is_etf else 'stocks'} — LEAPS expiries may take 90–180 seconds.")
 
     col1, _ = st.columns([1, 5])
     with col1:
-        run = st.button("▶ Run Scan", use_container_width=True)
+        run = st.button("▶ Run Scan", use_container_width=True, key=f"{mk}_run")
 
     if run:
         df, diag = scan_leaps(tickers, dte_min, delta_min, delta_max, iv_rank_max, price_min, price_max)
-        st.session_state["_leaps_r"] = (df, diag)
+        st.session_state[sess_key] = (df, diag)
         from data_loader import show_api_warnings; show_api_warnings()
 
-    _leaps_r = st.session_state.get("_leaps_r")
-    if _leaps_r is not None:
-        df, diag = _leaps_r
+    result = st.session_state.get(sess_key)
+    if result is not None:
+        df, diag = result
         if df.empty:
             empty_state("No LEAPS found. Check if long-dated options exist for these tickers, or lower DTE minimum.")
             diag.render(hide_when_clean=False)
         else:
             c1, c2, c3, c4 = st.columns(4)
-            with c1: metric_card("LEAPS Found", str(len(df)), color=GOLD)
-            with c2: metric_card("Avg DTE", f"{df['DTE'].mean():.0f}d", color=ACCENT_BLUE)
-            with c3: metric_card("Avg Delta", f"{df['Delta'].mean():.2f}", color=ACCENT_GREEN)
-            with c4: metric_card("Avg IV Rank", f"{df['IV Rank'].mean():.0f}", color=GOLD)
+            with c1: metric_card("LEAPS Found",  str(len(df)),                      color=GOLD)
+            with c2: metric_card("Avg DTE",      f"{df['DTE'].mean():.0f}d",        color=ACCENT_BLUE)
+            with c3: metric_card("Avg Delta",    f"{df['Delta'].mean():.2f}",       color=ACCENT_GREEN)
+            with c4: metric_card("Avg IV Rank",  f"{df['IV Rank'].mean():.0f}",     color=GOLD)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df, strategy="LEAPS", source="LEAPS Scanner")
+            render_results_table(df, strategy="LEAPS", source=f"LEAPS-{mode_lbl}")
             diag.render()
 
             st.markdown(f"""
@@ -195,6 +207,6 @@ def render():
         st.markdown(f"""
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">
             <div style="font-size:36px;margin-bottom:12px">🧨</div>
-            <div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:8px">LEAPS Opportunity Finder</div>
-            <div style="font-size:13px">Deep ITM long-dated calls for leveraged directional exposure.<br>Criteria: DTE ≥ {dte_min} · Delta {delta_min}–{delta_max} · IV Rank &lt; {iv_rank_max}</div>
+            <div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:8px">LEAPS — {mode_lbl}</div>
+            <div style="font-size:13px">Deep ITM long-dated calls for leveraged directional exposure.<br>Scanning {len(tickers)} {mode_lbl.lower()}.<br>Criteria: DTE ≥ {dte_min} · Delta {delta_min}–{delta_max} · IV Rank &lt; {iv_rank_max}</div>
         </div>""", unsafe_allow_html=True)

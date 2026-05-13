@@ -135,66 +135,72 @@ def scan_csp(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
     return df_out, diag
 
 
-def render():
-    section_header("💰", "Cash-Secured Puts",
+def render(universe_mode: str = "stocks"):
+    """
+    universe_mode: "stocks"  → top 30 S&P 500 stocks
+                   "etfs"    → 33 liquid options ETFs (OPTIONS_ETF_UNIVERSE)
+    """
+    is_etf  = universe_mode == "etfs"
+    mode_lbl = "ETFs" if is_etf else "Stocks"
+    mk       = f"csp_{universe_mode}"          # unique widget-key prefix
+    sess_key = f"_csp_{universe_mode}_r"       # separate results per mode
+
+    section_header("💰", f"Cash-Secured Puts — {mode_lbl}",
                    "High IV · OTM delta 0.15–0.30 · Premium ≥ 1% · Bullish underlying trend")
 
     with st.sidebar:
-        st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ CSP Filters</div>', unsafe_allow_html=True)
-        iv_rank_min    = st.slider("Min IV Rank", 0, 100, 25)
-        delta_min, delta_max = st.slider("Delta Range (abs)", 0.05, 0.50, (0.15, 0.30), 0.01)
-        premium_pct_min= st.slider("Min Premium % of Strike", 0.3, 5.0, 0.70, 0.05)
-        spread_pct_max = st.slider("Max Bid/Ask Spread %", 1.0, 50.0, 20.0, 0.5)
-        dte_min, dte_max = st.slider("DTE Range (days)", 1, 90, (7, 45))
-        universe_size  = st.slider("Universe Size", 10, len(SP500_SAMPLE), 200, 5)
+        st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ CSP — {mode_lbl} Filters</div>', unsafe_allow_html=True)
+        iv_rank_min     = st.slider("Min IV Rank",               0,    100,   25,          key=f"{mk}_iv")
+        delta_min, delta_max = st.slider("Delta Range (abs)",    0.05, 0.50, (0.15, 0.30), 0.01, key=f"{mk}_delta")
+        premium_pct_min = st.slider("Min Premium % of Strike",   0.3,  5.0,   0.70,        0.05, key=f"{mk}_prem")
+        spread_pct_max  = st.slider("Max Bid/Ask Spread %",      1.0,  50.0,  20.0,        0.5,  key=f"{mk}_sprd")
+        dte_min, dte_max = st.slider("DTE Range (days)",         1,    90,   (1, 45),             key=f"{mk}_dte")
+        if not is_etf:
+            universe_size = st.slider("Universe Size (top stocks)", 10, len(SP500_SAMPLE), 30, 5, key=f"{mk}_sz")
 
-    include_etfs = st.checkbox("Include Liquid ETFs (SPY, QQQ, GLD…)", True,
-                              help="Adds 34 highly-liquid ETFs with active options chains")
+    tickers = OPTIONS_ETF_UNIVERSE if is_etf else SP500_SAMPLE[:universe_size]
 
-    tickers = SP500_SAMPLE[:universe_size]
-    if include_etfs:
-        tickers = OPTIONS_ETF_UNIVERSE + [t for t in tickers if t not in OPTIONS_ETF_UNIVERSE]
-    st.info("⏱ Options data requires multiple API calls — scan may take 60–120 sec depending on universe size.")
+    st.info(f"⏱ Scanning {len(tickers)} {'ETFs' if is_etf else 'stocks'} — options data may take 30–90 sec.")
 
     col1, _ = st.columns([1, 5])
     with col1:
-        run = st.button("▶ Run Scan", use_container_width=True)
+        run = st.button("▶ Run Scan", use_container_width=True, key=f"{mk}_run")
 
     if run:
         df, diag = scan_csp(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
                             spread_pct_max, dte_min, dte_max)
-        st.session_state["_csp_r"] = (df, diag)
+        st.session_state[sess_key] = (df, diag)
         from data_loader import show_api_warnings; show_api_warnings()
 
-    _csp_r = st.session_state.get("_csp_r")
-    if _csp_r is not None:
-        df, diag = _csp_r
+    result = st.session_state.get(sess_key)
+    if result is not None:
+        df, diag = result
         if df.empty:
             empty_state("No CSP setups found. Try lowering IV Rank minimum or expanding DTE range.")
             diag.render(hide_when_clean=False)
         else:
             c1, c2, c3, c4 = st.columns(4)
-            with c1: metric_card("Setups Found", str(len(df)), color=GOLD)
-            with c2: metric_card("Avg Premium %", f"{df['Premium %'].mean():.2f}%", color=ACCENT_GREEN)
-            with c3: metric_card("Avg Ann. Return", f"{df['Ann. Return%'].mean():.1f}%", color=ACCENT_BLUE)
+            with c1: metric_card("Setups Found",       str(len(df)),                           color=GOLD)
+            with c2: metric_card("Avg Premium %",      f"{df['Premium %'].mean():.2f}%",       color=ACCENT_GREEN)
+            with c3: metric_card("Avg Ann. Return",    f"{df['Ann. Return%'].mean():.1f}%",    color=ACCENT_BLUE)
             with c4:
                 bull_pct = (df["Trend"] == "✅ Bullish").mean() * 100
                 metric_card("Bullish Underlying", f"{bull_pct:.0f}%", color=GOLD)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df, strategy="CSP", source="Cash-Secured Puts")
+            render_results_table(df, strategy="CSP", source=f"CSP-{mode_lbl}")
             diag.render()
 
             st.markdown(f"""
             <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:6px;padding:12px 16px;margin-top:16px;color:{TEXT_MUTED};font-size:12px">
                 💡 <b>How to read this:</b> Sell a put at the Strike price, collect the Premium.
-                If stock stays above Strike at expiry, keep full premium (Ann. Return% assumes full cycle).
-                Breakeven = Strike − Premium. Only trade CSPs on stocks you're willing to own.
+                If {'ETF' if is_etf else 'stock'} stays above Strike at expiry, keep full premium.
+                Breakeven = Strike − Premium. Only trade CSPs on assets you're willing to own.
             </div>""", unsafe_allow_html=True)
     else:
         st.markdown(f"""
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">
             <div style="font-size:36px;margin-bottom:12px">💰</div>
-            <div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:8px">Cash-Secured Put Finder</div>
-            <div style="font-size:13px">Find premium-rich OTM puts with favorable risk/reward.<br>Criteria: IV Rank &gt; {iv_rank_min} · Delta {delta_min}–{delta_max} · Premium ≥ {premium_pct_min}%</div>
+            <div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:8px">Cash-Secured Puts — {mode_lbl}</div>
+            <div style="font-size:13px">Scanning {len(tickers)} {mode_lbl.lower()} for premium-rich OTM puts.<br>Criteria: IV Rank &gt; {iv_rank_min} · Delta {delta_min}–{delta_max} · Premium ≥ {premium_pct_min}% · DTE {dte_min}–{dte_max}</div>
         </div>""", unsafe_allow_html=True)
