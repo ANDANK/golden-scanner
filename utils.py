@@ -435,9 +435,15 @@ def add_prepost_column(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ── Tracker callbacks (on_click — fire before rerun) ──────────
-def _cb_track(ticker, strategy, source, price_str, extra_meta=None):
-    from scanners.gsheet_helper import add_to_tracking
+def _cb_track(ticker, strategy, source, price_str, extra_meta=None, row_data=None):
+    from scanners.gsheet_helper import add_to_tracking, add_to_performance
     ok, msg = add_to_tracking(ticker, strategy, source, price_str, extra_meta)
+    # Also write to Performance tab if options data is present in the row
+    if row_data:
+        try:
+            add_to_performance(ticker, strategy, source, price_str, row_data)
+        except Exception:
+            pass
     notes = st.session_state.setdefault("_tracker_notes", [])
     notes.append(("✅" if ok else "⚠️", msg))
 
@@ -672,7 +678,7 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                 use_container_width=True,
                 help=f"Track {ticker} ({strategy}) — 100 shares or 1 contract",
                 on_click=_cb_track,
-                args=(ticker, strategy, row_source, price_str, extra_meta),
+                args=(ticker, strategy, row_source, price_str, extra_meta, row.to_dict()),
             )
         with row_cols[-1]:
             st.button(

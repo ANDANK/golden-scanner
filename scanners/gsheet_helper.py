@@ -287,6 +287,140 @@ def gsheets_configured() -> bool:
         return False
 
 
+# ══════════════════════════════════════════════════════════════════
+# PERFORMANCE TAB — rich options / wheel strategy tracking
+# ══════════════════════════════════════════════════════════════════
+
+PERFORMANCE_HEADERS = [
+    "Ticker", "Strategy", "Universe", "Option_Type",
+    "Entry_Date", "Expiry_Date", "DTE",
+    "Strike", "Premium", "Qty", "Entry_Stock_Price",
+    "Status",                                   # Open / Expired / Assigned / Called / Closed
+    "Close_Date", "Close_Stock_Price",
+    "PL_Dollar", "PL_Pct", "Ann_Return",
+    "Source", "Score", "Notes",
+]
+PERF_CSV = os.path.join(DATA_DIR, "performance.csv")
+
+# ETF tickers used for universe detection
+_ETF_SET = {
+    "SPY","QQQ","IWM","DIA","GLD","SLV","TLT","HYG","LQD",
+    "XLK","XLF","XLE","XLV","XLI","XLU","XLP","XLY","XLB","XLRE",
+    "GDX","GDXJ","EEM","EFA","ARKK","SOXX","SMH","VNQ","IBB",
+    "FXI","EWZ","KWEB","USO","UNG","UVXY","VXX","VTI","VOO",
+    "SHY","IEF","AGG","BND","VCIT","VCSH","MUB","LQD","JETS",
+    "XRT","KRE","IAT","ARKG","ARKW","IYR",
+}
+
+
+def get_performance() -> list:
+    """Load all rows from the Performance tab (or CSV fallback)."""
+    ws = _gs_sheet("Performance")
+    if ws:
+        try:
+            _ensure_headers(ws, PERFORMANCE_HEADERS)
+            return ws.get_all_records()
+        except Exception:
+            pass
+    return _csv_read(PERF_CSV, PERFORMANCE_HEADERS)
+
+
+def add_to_performance(ticker: str, strategy: str, source: str = "",
+                       entry_price: str = "", row_data: dict = None) -> tuple:
+    """Write a tracked position to the Performance tab with full options metadata.
+
+    row_data should be the scanner result row converted to dict — it supplies
+    Strike, Premium, Expiry, DTE, Score automatically.
+    Returns (success: bool, message: str).
+    """
+    ticker   = ticker.upper().strip()
+    row_data = row_data or {}
+    now_str  = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    # ── Extract options fields from the scanner row ────────────
+    strike  = str(row_data.get("Strike") or row_data.get("Call Strike") or "")
+    premium = str(row_data.get("Premium") or "")
+    expiry  = str(row_data.get("Expiry") or "")
+    dte     = str(row_data.get("DTE") or "")
+    score   = str(row_data.get("Score") or "")
+
+    strat_up = strategy.upper()
+    if strat_up == "CSP":
+        option_type = "Put"
+    elif strat_up in ("CC", "LEAPS"):
+        option_type = "Call"
+    else:
+        option_type = "Stock"
+
+    # Determine universe from source tag or ticker symbol
+    if "ETF" in source.upper():
+        universe = "ETFs"
+    elif ticker in _ETF_SET:
+        universe = "ETFs"
+    else:
+        universe = "Stocks"
+
+    # Annualised return at entry (informational)
+    try:
+        p, s, d = float(premium), float(strike), float(dte)
+        ann = round((p / s) * (365 / d) * 100, 2) if s > 0 and d > 0 else ""
+    except Exception:
+        ann = ""
+
+    row = {
+        "Ticker":            ticker,
+        "Strategy":          strategy,
+        "Universe":          universe,
+        "Option_Type":       option_type,
+        "Entry_Date":        now_str,
+        "Expiry_Date":       expiry,
+        "DTE":               dte,
+        "Strike":            strike,
+        "Premium":           premium,
+        "Qty":               "1",
+        "Entry_Stock_Price": entry_price,
+        "Status":            "Open",
+        "Close_Date":        "",
+        "Close_Stock_Price": "",
+        "PL_Dollar":         "",
+        "PL_Pct":            "",
+        "Ann_Return":        str(ann) if ann != "" else "",
+        "Source":            source,
+        "Score":             score,
+        "Notes":             "",
+    }
+
+    ws = _gs_sheet("Performance")
+    if ws:
+        try:
+            _ensure_headers(ws, PERFORMANCE_HEADERS)
+            ws.append_row([row[h] for h in PERFORMANCE_HEADERS])
+            return True, f"{ticker} added to Performance ({strategy})"
+        except Exception as e:
+            return False, f"Performance sheet error: {e}"
+    else:
+        rows = _csv_read(PERF_CSV, PERFORMANCE_HEADERS)
+        rows.append(row)
+        _csv_write(PERF_CSV, rows, PERFORMANCE_HEADERS)
+        return True, f"{ticker} added to Performance CSV ({strategy})"
+
+
+def update_performance_row(row_index: int, fields: dict) -> bool:
+    """Update specific cells in a Performance row.  row_index is 1-based (header=1)."""
+    ws = _gs_sheet("Performance")
+    if not ws:
+        return False
+    try:
+        headers = ws.row_values(1)
+        for field, value in fields.items():
+            if field in headers:
+                col = headers.index(field) + 1
+                ws.update_cell(row_index, col, str(value))
+        return True
+    except Exception:
+        return False
+
+
 def show_storage_banner() -> None:
     """
     Display a one-time warning if Google Sheets is not set up.
