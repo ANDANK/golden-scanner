@@ -32,13 +32,14 @@ def _batch_pause_ui(ph, batch_num: int, total_batches: int, seconds: int = BATCH
     ph.empty()
 
 
-def scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max):
+def scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max,
+            batch_size: int = BATCH_SIZE, batch_pause: int = BATCH_PAUSE_S):
 
     diag = ScanDiagnostics()
     cfg = OPTIONS_STRIKE_RANGES["CC"]
     st.session_state.pop("_rl_hit", None)
 
-    total_batches = max(1, (len(tickers) - 1) // BATCH_SIZE + 1)
+    total_batches = max(1, (len(tickers) - 1) // batch_size + 1)
 
     _scan_label  = st.empty()
     _batch_label = st.empty()
@@ -46,11 +47,11 @@ def scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max):
     results = []
 
     for i, ticker in enumerate(tickers):
-        if i > 0 and i % BATCH_SIZE == 0:
+        if i > 0 and i % batch_size == 0:
             _scan_label.empty()
-            _batch_pause_ui(_batch_label, i // BATCH_SIZE, total_batches)
+            _batch_pause_ui(_batch_label, i // batch_size, total_batches, batch_pause)
 
-        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker} (batch {i // BATCH_SIZE + 1}/{total_batches})</div>', unsafe_allow_html=True)
+        _scan_label.markdown(f'<div style="color:#C9A84C;font-size:12px">🔍 Scanning {i+1} of {len(tickers)} — {ticker} (batch {i // batch_size + 1}/{total_batches})</div>', unsafe_allow_html=True)
         _scan_prog.progress((i + 1) / len(tickers))
         diag.seen(ticker)
         time.sleep(1.5 + random.uniform(0, 0.75))
@@ -170,21 +171,25 @@ def render(universe_mode: str = "stocks"):
         dte_min, dte_max     = st.slider("DTE Range",                     1,    60,   (1, 20),             key=f"{mk}_dte")
         if not is_etf:
             universe_size    = st.slider("Universe Size (top stocks)",     10, len(SP500_SAMPLE), 20, 10,  key=f"{mk}_sz")
+        st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;margin:10px 0 4px">⚙️ Scan Speed</div>', unsafe_allow_html=True)
+        batch_size  = st.slider("Tickers per batch",         5,  50, BATCH_SIZE,    5, key=f"{mk}_bsz")
+        batch_pause = st.slider("Pause between batches (s)", 10, 60, BATCH_PAUSE_S, 5, key=f"{mk}_bps")
 
     tickers = OPTIONS_ETF_UNIVERSE if is_etf else SP500_SAMPLE[:universe_size]
 
     n = len(tickers)
-    n_batches = max(1, (n - 1) // BATCH_SIZE + 1)
-    est_secs  = n * 2 + (n_batches - 1) * BATCH_PAUSE_S
+    n_batches = max(1, (n - 1) // batch_size + 1)
+    est_secs  = n * 2 + (n_batches - 1) * batch_pause
     est_str   = f"{est_secs // 60}m {est_secs % 60}s" if est_secs >= 60 else f"{est_secs}s"
-    st.info(f"⏱ Scanning {n} {'ETFs' if is_etf else 'stocks'} in {n_batches} batch(es) of {BATCH_SIZE} · Est. time: ~{est_str}")
+    st.info(f"⏱ Scanning {n} {'ETFs' if is_etf else 'stocks'} in {n_batches} batch(es) of {batch_size} · Est. time: ~{est_str}")
 
     col1, _ = st.columns([1, 5])
     with col1:
         run = st.button("▶ Run Scan", use_container_width=True, key=f"{mk}_run")
 
     if run:
-        df, diag = scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max)
+        df, diag = scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max,
+                           batch_size, batch_pause)
         st.session_state[sess_key] = (df, diag)
         from data_loader import show_api_warnings; show_api_warnings()
 

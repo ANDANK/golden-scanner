@@ -77,8 +77,10 @@ SLOT          = os.environ.get("SCAN_SLOT", "am").lower()
 DATA_DIR      = os.path.join(ROOT, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
-SCHED_STOCKS  = 20          # top N stocks per scan
-SCORE_MIN     = 60          # auto-track threshold
+SCHED_STOCKS  = int(os.environ.get("SCHED_STOCKS",  20))   # top N stocks per scan
+SCORE_MIN     = int(os.environ.get("SCORE_MIN",     60))   # auto-track threshold
+BATCH_SIZE    = int(os.environ.get("SCAN_BATCH_SIZE", 20)) # tickers per batch
+BATCH_PAUSE_S = int(os.environ.get("SCAN_BATCH_PAUSE", 30)) # seconds between batches
 
 
 def log(msg: str):
@@ -105,31 +107,42 @@ def _batch_sleep(i: int, total: int):
 
 def _scan_csp(tickers):
     from scanners.csp_scanner import scan_csp
-    df, _ = scan_csp(tickers, 25, 0.15, 0.30, 0.70, 20.0, 1, 45)
+    df, _ = scan_csp(tickers, 25, 0.15, 0.30, 0.70, 20.0, 1, 45,
+                     batch_size=BATCH_SIZE, batch_pause=BATCH_PAUSE_S)
     return df
 
 def _scan_cc(tickers):
     from scanners.cc_scanner import scan_cc
-    df, _ = scan_cc(tickers, 0.15, 0.25, 0.70, 1, 20)
+    df, _ = scan_cc(tickers, 0.15, 0.25, 0.70, 1, 20,
+                    batch_size=BATCH_SIZE, batch_pause=BATCH_PAUSE_S)
     return df
 
 def _scan_leaps(tickers):
     from scanners.leaps_scanner import scan_leaps
-    df, _ = scan_leaps(tickers, 300, 0.60, 0.75, 40, 5.0, 5000.0)
+    df, _ = scan_leaps(tickers, 300, 0.60, 0.75, 40, 5.0, 5000.0,
+                       batch_size=BATCH_SIZE, batch_pause=BATCH_PAUSE_S)
+    return df
+
+def _scan_golden(tickers):
+    from scanners.combined_scanner import run_combined
+    df = run_combined(tickers, include_value=False, include_growth=False,
+                      status_ph=_FakePH())
     return df
 
 
 def run_all_scans() -> pd.DataFrame:
-    stocks = SP500_SAMPLE[:SCHED_STOCKS]
-    etfs   = OPTIONS_ETF_UNIVERSE
+    stocks        = SP500_SAMPLE[:SCHED_STOCKS]
+    etfs          = OPTIONS_ETF_UNIVERSE
+    golden_tickers = SP500_SAMPLE[:50]   # top 50 for Golden Scan (technical only, no options API)
 
     plan = [
-        ("CSP",   "Stocks", _scan_csp,   stocks),
-        ("CSP",   "ETFs",   _scan_csp,   etfs),
-        ("CC",    "Stocks", _scan_cc,    stocks),
-        ("CC",    "ETFs",   _scan_cc,    etfs),
-        ("LEAPS", "Stocks", _scan_leaps, stocks),
-        ("LEAPS", "ETFs",   _scan_leaps, etfs),
+        ("Golden Scan", "Stock",  _scan_golden, golden_tickers),
+        ("CSP",         "Stocks", _scan_csp,    stocks),
+        ("CSP",         "ETFs",   _scan_csp,    etfs),
+        ("CC",          "Stocks", _scan_cc,     stocks),
+        ("CC",          "ETFs",   _scan_cc,     etfs),
+        ("LEAPS",       "Stocks", _scan_leaps,  stocks),
+        ("LEAPS",       "ETFs",   _scan_leaps,  etfs),
     ]
 
     frames = []
