@@ -238,19 +238,63 @@ section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-activ
     font-weight: 600 !important;
 }}
 
-/* Sub-item — quieter color, smaller font (indented via st.columns in Python). */
+/* Sub-item — quieter color, smaller font, indented via padding + gold rail
+   directly on the button (no st.columns layout, which was adding gap). */
 section[data-testid="stSidebar"] .element-container:has(.gs-sub-marker) + .element-container .stButton > button,
 section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-sub-marker) + [data-testid="element-container"] .stButton > button {{
     color: #C9CCD3 !important;
     font-size: 11.5px !important;
     min-height: 22px !important;
     height: auto !important;
-    padding: 3px 10px !important;
+    padding: 3px 8px 3px 22px !important;
+    margin-left: 14px !important;
+    width: calc(100% - 14px) !important;
+    border-left: 1px solid rgba(245,200,66,0.25) !important;
 }}
-/* Thin gold rail in the spacer column next to a sub-item */
+
+/* Parent-with-children row — subtle gold left rail + slightly bolder text
+   to telegraph "this expands". The chevron is rendered in the label
+   (Python side) at the LEFT, tree-view style. */
+section[data-testid="stSidebar"] .element-container:has(.gs-parent-marker) + .element-container .stButton > button,
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-parent-marker) + [data-testid="element-container"] .stButton > button {{
+    border-left: 2px solid rgba(245,200,66,0.45) !important;
+    font-weight: 500 !important;
+    padding-left: 12px !important;
+}}
+section[data-testid="stSidebar"] .element-container:has(.gs-parent-marker) + .element-container .stButton > button:hover,
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-parent-marker) + [data-testid="element-container"] .stButton > button:hover {{
+    color: {GOLD} !important;
+    border-left-color: {GOLD} !important;
+}}
+
+/* Logo overlay button — invisible, fills the logo block, makes the whole
+   row a clickable home link. */
+section[data-testid="stSidebar"] .element-container:has(.gs-logo-marker) + .element-container .stButton,
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-logo-marker) + [data-testid="element-container"] .stButton {{
+    position: absolute !important;
+    top: 8px !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 80px !important;
+    z-index: 50 !important;
+    margin: 0 !important;
+}}
+section[data-testid="stSidebar"] .element-container:has(.gs-logo-marker) + .element-container .stButton > button,
+section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-logo-marker) + [data-testid="element-container"] .stButton > button {{
+    width: 100% !important;
+    height: 80px !important;
+    background: transparent !important;
+    border: none !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    min-height: 80px !important;
+}}
+/* Legacy class — harmless now that columns layout is gone. */
 .gs-sub-rail-line {{
     border-left: 1px solid rgba(245,200,66,0.25);
-    height: 26px;
+    height: 22px;
     margin-left: 8px;
 }}
 
@@ -305,9 +349,9 @@ section[data-testid="stSidebar"] [data-testid="element-container"]:has(.gs-admin
 }}
 section[data-testid="stSidebar"] .element-container:has(.gs-admin-marker) + .element-container .stButton > button:hover {{ opacity: 1 !important; }}
 
-/* ⚙️ Global block — same filled-header treatment as group headers */
+/* ⚙️ Settings block — same filled-header treatment as group headers */
 .gs-global-row {{
-    margin: 6px 0 4px;
+    margin: 10px 0 0;
     background: linear-gradient(90deg, rgba(245,200,66,0.16), rgba(245,200,66,0.04));
     border: 1px solid rgba(245,200,66,0.22);
     border-radius: 6px;
@@ -319,15 +363,23 @@ section[data-testid="stSidebar"] .element-container:has(.gs-admin-marker) + .ele
     letter-spacing: 1.4px;
     text-transform: uppercase;
 }}
-/* Checkbox inside global row — make it inline + gold */
-[data-testid="stSidebar"] .gs-global-host [data-testid="stCheckbox"] label {{
-    color: {TEXT_PRIMARY} !important;
-    font-size: 11px !important;
+/* Pre/Post checkbox — indented like a sub-item under Settings */
+section[data-testid="stSidebar"] [data-testid="stCheckbox"] {{
+    margin-left: 14px !important;
+    padding: 4px 0 4px 12px !important;
+    border-left: 1px solid rgba(245,200,66,0.18) !important;
+}}
+section[data-testid="stSidebar"] [data-testid="stCheckbox"] label {{
+    color: #C9CCD3 !important;
+    font-size: 11.5px !important;
     font-weight: 500 !important;
     text-transform: none !important;
     letter-spacing: 0 !important;
 }}
-[data-testid="stSidebar"] .gs-global-host [data-testid="stCheckbox"] {{ margin-top: -32px; margin-left: 96px; }}
+section[data-testid="stSidebar"] [data-testid="stCheckbox"] label span {{
+    color: #C9CCD3 !important;
+    font-size: 11.5px !important;
+}}
 
 /* DataFrames */
 [data-testid="stDataFrame"] {{ border: 1px solid {BORDER_COLOR}; border-radius: 8px; overflow: hidden; }}
@@ -501,9 +553,11 @@ if "_nav_open_group" not in st.session_state:
 
 # ── Sidebar ────────────────────────────────────────────────────
 with st.sidebar:
-    # Logo block (unchanged from source)
+    # Logo block — clickable, takes you home. We render an invisible
+    # st.button right after the logo HTML; CSS positions it as an overlay.
     st.markdown(f"""
-    <div style="display:flex;align-items:center;gap:10px;padding:16px 8px 6px 8px;border-bottom:1px solid {BORDER_COLOR};margin-bottom:6px">
+    <div style="display:flex;align-items:center;gap:10px;padding:16px 8px 6px 8px;border-bottom:1px solid {BORDER_COLOR};margin-bottom:6px;position:relative">
+        <span class="gs-logo-marker" style="display:none"></span>
         <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
             <circle cx="18" cy="18" r="16" stroke="{GOLD}" stroke-width="1.5" fill="none" opacity="0.35"/>
             <circle cx="18" cy="18" r="10" stroke="{GOLD}" stroke-width="1.5" fill="none" opacity="0.6"/>
@@ -521,6 +575,8 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
+    # Invisible overlay button — clicks anywhere on the logo row return home.
+    st.button("", key="_logo_home", on_click=_go_home, help="Go to Market Overview")
 
     # ── Grouped, collapsible nav ──────────────────────────────
     current_page = st.session_state.get("nav_page", "🏠  Market Overview")
@@ -528,23 +584,13 @@ with st.sidebar:
     def _render_nav_item(it, indent=False):
         is_active = it["key"] == current_page
         if indent:
-            # Column-based indent — Streamlit's only reliable nesting primitive.
-            # Left column holds a thin gold rail; right column holds the button.
-            spacer, content = st.columns([0.18, 1])
-            with spacer:
-                st.markdown('<div class="gs-sub-rail-line"></div>', unsafe_allow_html=True)
-            with content:
-                # Sub-marker tells CSS this is a sub-item (smaller, dimmer text)
-                st.markdown('<span class="gs-sub-marker"></span>', unsafe_allow_html=True)
-                if is_active:
-                    st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
-                if st.button(it["key"], key=f"_nav_{it['key']}", use_container_width=True):
-                    _go(it["key"])
-        else:
-            if is_active:
-                st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
-            if st.button(it["key"], key=f"_nav_{it['key']}", use_container_width=True):
-                _go(it["key"])
+            # Sub-marker tells CSS this is a sub-item — indent + rail handled
+            # entirely in CSS (no st.columns, which was adding layout gap).
+            st.markdown('<span class="gs-sub-marker"></span>', unsafe_allow_html=True)
+        if is_active:
+            st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
+        if st.button(it["key"], key=f"_nav_{it['key']}", use_container_width=True):
+            _go(it["key"])
 
     def _render_item_with_children(it):
         # Single-button design: clicking Tracking ALWAYS navigates to it.
@@ -555,11 +601,16 @@ with st.sidebar:
         child_active = any(c["key"] == current_page for c in it.get("children", []))
         show_subs = is_active or child_active
 
+        # Render a "parent-with-children" marker so CSS can give this row a
+        # subtle gold left rail — the strongest "this expands" signal.
+        st.markdown('<span class="gs-parent-marker"></span>', unsafe_allow_html=True)
         if is_active:
             st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
-        # Append a chevron to the label so the user knows there are children
-        chev = "  ▾" if show_subs else "  ▸"
-        if st.button(it["key"] + chev, key=f"_nav_{it['key']}", use_container_width=True):
+        # Chevron BEFORE the label, tree-view style (›  📌  Tracking).
+        # ⌄ when expanded, › when collapsed — lighter than ▾/▸ and more
+        # universally recognized as "click to expand".
+        chev = "⌄  " if show_subs else "›  "
+        if st.button(chev + it["key"], key=f"_nav_{it['key']}", use_container_width=True):
             _go(it["key"])
 
         if show_subs:
@@ -591,15 +642,13 @@ with st.sidebar:
                 else:
                     _render_nav_item(it)
 
-    # ── ⚙️ Global block — same gold-header treatment ─────────
-    st.markdown('<div class="gs-global-host">', unsafe_allow_html=True)
-    st.markdown('<div class="gs-global-row">⚙️ Global</div>', unsafe_allow_html=True)
+    # ── ⚙️ Settings block — same gold-header treatment ───────
+    st.markdown('<div class="gs-global-row">⚙️ Settings</div>', unsafe_allow_html=True)
     st.session_state["_show_prepost"] = st.checkbox(
         "Pre/Post Market Price",
         value=st.session_state.get("_show_prepost", False),
         help="Appends current extended-hours price to every scanner result table. Adds ~1s per ticker.",
     )
-    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center;margin-top:14px;line-height:1.6">'
