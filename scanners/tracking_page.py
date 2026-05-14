@@ -383,7 +383,7 @@ def render():
         _rc1, _rc2, _rc3, _rc4 = st.columns([0.7, 2.0, 0.45, 1.8])
         with _rc1:
             _today_only = st.checkbox(
-                "Today only", value=False,
+                "Today only", value=True,
                 key=f"trk_today_{section_key}",
                 help="Show only positions added today",
             )
@@ -403,7 +403,7 @@ def render():
         with _rc4:
             _sort_choice = st.selectbox(
                 "Sort tracking", _sort_opts_base,
-                index=0,
+                index=_sort_opts_base.index("Score ↓"),
                 key=f"trk_sort_sel_{section_key}",
                 label_visibility="collapsed",
             )
