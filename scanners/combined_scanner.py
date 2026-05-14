@@ -13,14 +13,13 @@ from data_loader import get_price_history
 
 # ── Scanner metadata ────────────────────────────────────────────
 SCANNER_META = {
-    "Momentum":    {"hold": "10–30d",  "style": "Medium Swing",    "icon": "⚡"},
-    "Trend Stack": {"hold": "20–60d",  "style": "Trend Following",  "icon": "🏛"},
-    "MACD Cross":  {"hold": "5–15d",   "style": "Short Swing",      "icon": "📡"},
-    "Squeeze":     {"hold": "5–20d",   "style": "Vol Breakout",     "icon": "🌀"},
-    "HV Breakout": {"hold": "3–10d",   "style": "Momentum Burst",   "icon": "🐋"},
-    "Multi-Factor":{"hold": "10–30d",  "style": "Confirmed Setup",  "icon": "🎯"},
-    "Value":       {"hold": "90–365d", "style": "Long-term Hold",   "icon": "💎"},
-    "Growth":      {"hold": "30–180d", "style": "Growth Play",      "icon": "🚀"},
+    "Momentum":     {"hold": "10–30d",  "style": "Medium Swing",       "icon": "⚡"},
+    "Trend Stack":  {"hold": "20–60d",  "style": "Trend Following",    "icon": "🏛"},
+    "Multi-Factor": {"hold": "10–30d",  "style": "Confirmed Setup",    "icon": "🎯"},
+    "Trend Align":  {"hold": "15–45d",  "style": "Breakout Entry",     "icon": "🎯"},
+    "Trend Cont.":  {"hold": "20–60d",  "style": "Weekly Momentum",    "icon": "📈"},
+    "Reset Bounce": {"hold": "10–30d",  "style": "Pullback Re-entry",  "icon": "🔄"},
+    "Growth":       {"hold": "30–180d", "style": "Growth Play",        "icon": "🚀"},
 }
 
 
@@ -70,26 +69,40 @@ def _norm(df: pd.DataFrame, scanner_name: str) -> pd.DataFrame:
 
 # ── Run all scanners ────────────────────────────────────────────
 
-def run_combined(tickers: list, include_value: bool, include_growth: bool,
-                 status_ph) -> pd.DataFrame:
+def run_combined(tickers: list, include_value: bool = False,
+                 include_growth: bool = False,
+                 status_ph=None, status=None) -> pd.DataFrame:
+    # Accept both keyword names for backward compat with headless_scan.py
+    class _FakePH:
+        def markdown(self, *a, **kw): pass
+        def empty(self): pass
+
+    if status_ph is None:
+        status_ph = status or _FakePH()
     from scanners.technical_hackers import (
-        scan_trend_stack, scan_macd_cross,
-        scan_squeeze, scan_hvb, scan_multifactor,
+        scan_trend_stack, scan_multifactor,
     )
     from scanners.momentum_scanner import scan_momentum
-    from scanners.value_scanner import scan_value
     from scanners.growth_scanner import scan_growth
+    from scanners.weekly_scanners import (
+        scan_trend_alignment, scan_trend_continuation, scan_momentum_reset,
+        clear_weekly_cache,
+    )
+
+    # Clear the process-level weekly cache at the start of each run
+    # so stale data from a prior run never bleeds through.
+    clear_weekly_cache()
 
     frames = []
 
-    def _run(label, fn, *args):
+    def _run(label, fn, *args, **kwargs):
         status_ph.markdown(
             f'<div style="color:{TEXT_MUTED};font-size:12px;margin:4px 0">'
             f'Running <b style="color:{TEXT_PRIMARY}">{label}</b> scanner…</div>',
             unsafe_allow_html=True,
         )
         try:
-            result = fn(*args)
+            result = fn(*args, **kwargs)
             if isinstance(result, tuple):
                 result = result[0]
             normed = _norm(result, label)
@@ -100,16 +113,20 @@ def run_combined(tickers: list, include_value: bool, include_growth: bool,
 
     price_min, price_max = 5.0, 5000.0
 
+    # ── Core daily-chart scanners ─────────────────────────────────
     _run("Momentum",    scan_momentum,    tickers, 50, 72, 1.1, price_min, price_max, 0, 0)
-    _run("MACD Cross",  scan_macd_cross,  tickers, 72, 1.1, price_min, price_max, False, 10)
-    _run("Squeeze",     scan_squeeze,     tickers, price_min, price_max, True, False)
-    _run("HV Breakout", scan_hvb,         tickers, 1.5, 45, price_min, price_max, False, 10)
     _run("Trend Stack", scan_trend_stack, tickers, 50, 72, 1.1, 5.0, 1.0, price_min)
     _run("Multi-Factor",scan_multifactor, tickers, 50, 72, 1.1, 1.0, False, 5.0, price_min, price_max)
 
-    if include_value:
-        _run("Value", scan_value, tickers, 30, 4.0, 8, 200, False, price_min, price_max)
+    # ── Weekly-chart setups ───────────────────────────────────────
+    _run("Trend Align",  scan_trend_alignment,  tickers,
+         price_min=price_min, price_max=price_max, status_ph=status_ph)
+    _run("Trend Cont.",  scan_trend_continuation, tickers,
+         price_min=price_min, price_max=price_max, status_ph=status_ph)
+    _run("Reset Bounce", scan_momentum_reset,    tickers,
+         price_min=price_min, price_max=price_max, status_ph=status_ph)
 
+    # ── Optional (slower) fundamental scanner ─────────────────────
     if include_growth:
         _run("Growth", scan_growth, tickers, 10, 8, 0.95, price_min, price_max)
 
@@ -361,10 +378,9 @@ def render():
             f'&#9881;&#65039; Combined Scan Settings</div>',
             unsafe_allow_html=True,
         )
-        universe_size = st.slider("Universe Size (tickers)", 30, len(SP500_SAMPLE), 200, 10,
-                                   help="First 55 = top 20 stocks + all 35 liquid ETFs. 200 = full large-cap + ETF mix.")
-        include_value  = st.checkbox("Include Value Scanner (slower)", value=False)
-        include_growth = st.checkbox("Include Growth Scanner (slower)", value=False)
+        universe_size  = st.slider("Universe Size (tickers)", 30, len(SP500_SAMPLE), 200, 10,
+                                    help="First 55 = top 20 stocks + all 35 liquid ETFs. 200 = full large-cap + ETF mix.")
+        include_growth = st.checkbox("Include Growth Scanner (slower — uses fundamentals)", value=False)
 
     tickers = SP500_SAMPLE[:universe_size]
 
@@ -374,37 +390,61 @@ def render():
     with col2:
         if st.button("🔄 Clear Cache", use_container_width=True):
             st.cache_data.clear()
+            from scanners.weekly_scanners import clear_weekly_cache
+            clear_weekly_cache()
             st.rerun()
 
     if not run and "_golden_r" not in st.session_state:
-        # Legend
-        cards = []
-        for name, meta in SCANNER_META.items():
-            cards.append(
+        # ── Scanner legend cards ──────────────────────────────────
+        _daily_scanners  = ["Momentum", "Trend Stack", "Multi-Factor"]
+        _weekly_scanners = ["Trend Align", "Trend Cont.", "Reset Bounce"]
+
+        def _card(name, meta, badge=None):
+            badge_html = (
+                f'<span style="background:{ACCENT_BLUE}22;color:{ACCENT_BLUE};'
+                f'border:1px solid {ACCENT_BLUE}44;font-size:9px;font-weight:700;'
+                f'padding:1px 5px;border-radius:3px;letter-spacing:.5px">{badge}</span> '
+                if badge else ""
+            )
+            return (
                 f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
                 f'border-radius:8px;padding:12px 14px">'
-                f'<div style="font-size:16px;margin-bottom:4px">{meta["icon"]}</div>'
-                f'<div style="color:{GOLD};font-size:11px;font-weight:700;margin-bottom:2px">{name}</div>'
+                f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+                f'<span style="font-size:15px">{meta["icon"]}</span>'
+                f'{badge_html}'
+                f'<span style="color:{GOLD};font-size:11px;font-weight:700">{name}</span>'
+                f'</div>'
                 f'<div style="color:{TEXT_MUTED};font-size:10px;line-height:1.5">'
                 f'{meta["style"]}<br>'
                 f'<span style="color:{GOLD}">&#128337; {meta["hold"]}</span>'
                 f'</div></div>'
             )
+
+        daily_cards  = "".join(_card(n, SCANNER_META[n], "DAILY")  for n in _daily_scanners)
+        weekly_cards = "".join(_card(n, SCANNER_META[n], "WEEKLY") for n in _weekly_scanners)
+
         st.markdown(
             f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:12px;'
             f'padding:32px;text-align:center;margin-top:8px">'
             f'<div style="font-size:40px;margin-bottom:12px">&#128257;</div>'
             f'<div style="font-size:22px;color:{GOLD};font-family:\'Cormorant Garamond\',serif;'
             f'margin-bottom:8px">✦ Golden Scan</div>'
-            f'<div style="color:{TEXT_MUTED};font-size:13px;max-width:560px;margin:0 auto 24px;line-height:1.8">'
-            f'Runs every scanner simultaneously, merges results, and surfaces tickers confirmed '
-            f'by multiple independent signals. Multi-signal picks are ranked first.</div>'
-            f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;'
-            f'max-width:700px;margin:0 auto;text-align:left">{"".join(cards)}</div>'
-            f'<div style="margin-top:20px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">'
+            f'<div style="color:{TEXT_MUTED};font-size:13px;max-width:580px;margin:0 auto 24px;line-height:1.8">'
+            f'Runs 6 independent scanners (3 daily-chart + 3 weekly-chart), merges all results, '
+            f'and surfaces tickers confirmed by multiple signals. Weekly setups use real weekly bars '
+            f'for institutional-grade entries. Multi-signal picks are ranked first.</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:10px;text-transform:uppercase;letter-spacing:1px;'
+            f'margin-bottom:8px">Daily-chart scanners</div>'
+            f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;'
+            f'max-width:620px;margin:0 auto 16px;text-align:left">{daily_cards}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:10px;text-transform:uppercase;letter-spacing:1px;'
+            f'margin-bottom:8px">Weekly-chart scanners</div>'
+            f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;'
+            f'max-width:620px;margin:0 auto 20px;text-align:left">{weekly_cards}</div>'
+            f'<div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap">'
             f'<span style="color:{ACCENT_GREEN};font-size:12px">&#9679; Multi-signal = highest conviction</span>'
             f'<span style="color:{GOLD};font-size:12px">&#9679; Est. Upside to 52-week high</span>'
-            f'<span style="color:{ACCENT_BLUE};font-size:12px">&#9679; Hold duration by scanner type</span>'
+            f'<span style="color:{ACCENT_BLUE};font-size:12px">&#9679; Weekly bars for weekly setups</span>'
             f'</div></div>',
             unsafe_allow_html=True,
         )
@@ -415,7 +455,7 @@ def render():
 
     if run:
         with st.spinner("Running all scanners…"):
-            df = run_combined(tickers, include_value, include_growth, status)
+            df = run_combined(tickers, include_value=False, include_growth=include_growth, status=status)
             progress_bar.progress(1.0)
         progress_bar.empty()
         st.session_state["_golden_r"] = df
