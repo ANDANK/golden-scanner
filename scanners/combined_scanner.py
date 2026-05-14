@@ -22,6 +22,17 @@ SCANNER_META = {
     "Growth":       {"hold": "30–180d", "style": "Growth Play",        "icon": "🚀"},
 }
 
+# Conviction priority — lower number = higher priority when sorting / labelling
+SCANNER_PRIORITY = {
+    "Trend Cont.":  1,   # Highest conviction — pure weekly institutional momentum
+    "Trend Stack":  2,   # Strictest daily MA alignment
+    "Trend Align":  3,   # Daily MACD cross + weekly context
+    "Multi-Factor": 4,   # 7-signal confirmation
+    "Reset Bounce": 5,   # Weekly pullback re-entry
+    "Momentum":     6,   # Daily swing momentum
+    "Growth":       7,   # Fundamental overlay
+}
+
 
 # ── Upside estimator ────────────────────────────────────────────
 
@@ -139,10 +150,16 @@ def run_combined(tickers: list, include_value: bool = False,
     combined["Score"] = pd.to_numeric(combined.get("Score", 0), errors="coerce").fillna(0).astype(int)
     combined["Price"] = pd.to_numeric(combined.get("Price", 0), errors="coerce").fillna(0)
 
-    # Aggregate: group by Ticker — list all scanners, keep best row per ticker
+    # Aggregate: group by Ticker — list all scanners in priority order, keep best row per ticker
+    def _priority_join(scanner_series):
+        """Return scanner names joined in SCANNER_PRIORITY order."""
+        names = list(scanner_series.unique())
+        names.sort(key=lambda n: SCANNER_PRIORITY.get(n, 99))
+        return " + ".join(names)
+
     scanner_lists = (
         combined.groupby("Ticker")["_scanner"]
-        .apply(lambda s: " + ".join(sorted(s.unique())))
+        .apply(_priority_join)
         .reset_index()
         .rename(columns={"_scanner": "Scanners"})
     )
@@ -154,12 +171,16 @@ def run_combined(tickers: list, include_value: bool = False,
     merged = best.merge(scanner_lists, on="Ticker", how="left")
     merged["Scanner Count"] = merged["Scanners"].str.count(r"\+") + 1
 
-    # Hold duration from primary scanner (highest-score scanner for this ticker)
+    # Hold/Style from the highest-priority scanner the ticker matched
+    def _top_scanner(scanners_str: str) -> str:
+        parts = [p.strip() for p in scanners_str.split(" + ")]
+        return parts[0] if parts else ""
+
     merged["Hold"] = merged["Scanners"].apply(
-        lambda s: SCANNER_META.get(s.split(" + ")[0], {}).get("hold", "Varies")
+        lambda s: SCANNER_META.get(_top_scanner(s), {}).get("hold", "Varies")
     )
     merged["Style"] = merged["Scanners"].apply(
-        lambda s: SCANNER_META.get(s.split(" + ")[0], {}).get("style", "Mixed")
+        lambda s: SCANNER_META.get(_top_scanner(s), {}).get("style", "Mixed")
     )
 
     # Upside estimate
@@ -172,10 +193,14 @@ def run_combined(tickers: list, include_value: bool = False,
     )
     status_ph.empty()
 
-    # Sort: multi-scanner first, then by score
+    # Sort: Scanner Count desc → top scanner priority asc → Score desc
+    merged["_best_pri"] = merged["Scanners"].apply(
+        lambda s: min(SCANNER_PRIORITY.get(n.strip(), 99) for n in s.split(" + "))
+    )
     merged = merged.sort_values(
-        ["Scanner Count", "Score"], ascending=[False, False]
-    ).reset_index(drop=True)
+        ["Scanner Count", "_best_pri", "Score"],
+        ascending=[False, True, False]
+    ).drop(columns=["_best_pri"]).reset_index(drop=True)
 
     return merged
 
@@ -471,9 +496,9 @@ def render():
     multi_count   = int((df.get("Scanner Count", pd.Series([1])) >= 2).sum())
     avg_upside    = float(df.get("Est. Upside %", pd.Series([0])).mean())
     top_scanner   = (
-        pd.Series(" + ".join(df["Scanners"].tolist()).split(" + "))
+        pd.Series([n.strip() for s in df["Scanners"].tolist() for n in s.split(" + ")])
         .value_counts().index[0]
-        if "Scanners" in df.columns else "—"
+        if "Scanners" in df.columns and len(df) > 0 else "—"
     )
 
     c1, c2, c3, c4 = st.columns(4)

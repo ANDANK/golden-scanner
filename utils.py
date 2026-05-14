@@ -654,6 +654,35 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
     # Only show columns relevant for this strategy (drops all-nan columns)
     data_cols = _strategy_cols(df, strategy)
 
+    # ── Sort control ─────────────────────────────────────────────
+    _sortable = [c for c in data_cols if c in df.columns]
+    _sort_default = next((c for c in ("Score", "Change %", "Price") if c in _sortable), _sortable[0] if _sortable else None)
+    _s1, _s2, _s3 = st.columns([0.6, 2.8, 0.7])
+    with _s1:
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:11px;padding:7px 0;white-space:nowrap">↕ Sort:</div>',
+            unsafe_allow_html=True,
+        )
+    with _s2:
+        _sort_by = st.selectbox(
+            "Sort column", _sortable,
+            index=_sortable.index(_sort_default) if _sort_default in _sortable else 0,
+            key=f"sort_col_{key_base}",
+            label_visibility="collapsed",
+        )
+    with _s3:
+        _sort_asc = st.toggle("↑ Asc", value=False, key=f"sort_asc_{key_base}")
+    # Apply sort — numeric columns sorted numerically, text alphabetically
+    if _sort_by and _sort_by in df.columns:
+        _num = pd.to_numeric(df[_sort_by], errors="coerce")
+        if _num.notna().sum() > len(df) * 0.3:   # mostly numeric → sort as number
+            _fill = -1e9 if not _sort_asc else 1e9
+            df = df.copy()
+            df["__sort"] = _num.fillna(_fill)
+            df = df.sort_values("__sort", ascending=_sort_asc).drop(columns=["__sort"])
+        else:
+            df = df.sort_values(_sort_by, ascending=_sort_asc, na_position="last")
+
     # Column width hints — wider for text-heavy columns, narrower for numbers
     _wide = {"Ticker", "Sector", "Catalysts", "Momentum", "Trap Risk", "Mkt Cap", "Signal"}
     _med  = {"Score", "Strategy", "Direction", "MACD Bull", "FCF", ">200 SMA"}
@@ -706,10 +735,10 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
 
         if "Scanners" in df.columns:
             sc = str(row.get("Scanners", "")).strip()
-            parts = [p.strip() for p in sc.split(",")
+            parts = [p.strip() for p in sc.split(" + ")
                      if p.strip() and p.strip().lower() != "nan"]
             if parts:
-                names = " + ".join(parts[:5])
+                names = " + ".join(parts[:6])   # show all (up to 6 scanner names)
                 row_source = f"{slot_pfx}GS·{names} ({len(parts)})"
             elif slot_pfx:
                 row_source = f"{slot_pfx}{strategy}"

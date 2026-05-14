@@ -373,6 +373,42 @@ def render():
             unsafe_allow_html=True,
         )
 
+        # ── Sort control ─────────────────────────────────────────
+        _sort_opts_base = ["Added (Latest)", "Score ↓", "P&L $ ↓", "P&L % ↓", "Ticker A→Z", "Strategy"]
+        _sort_key_ss    = f"trk_sort_{section_key}"
+        if _sort_key_ss not in st.session_state:
+            st.session_state[_sort_key_ss] = "Added (Latest)"
+
+        _ts1, _ts2 = st.columns([0.5, 3])
+        with _ts1:
+            st.markdown(
+                f'<div style="color:{TEXT_MUTED};font-size:11px;padding:7px 0;white-space:nowrap">↕ Sort:</div>',
+                unsafe_allow_html=True,
+            )
+        with _ts2:
+            _sort_choice = st.selectbox(
+                "Sort tracking", _sort_opts_base,
+                index=_sort_opts_base.index(st.session_state[_sort_key_ss]),
+                key=f"trk_sort_sel_{section_key}",
+                label_visibility="collapsed",
+            )
+        st.session_state[_sort_key_ss] = _sort_choice
+
+        # Apply sort to section_df
+        section_df = section_df.copy()
+        if _sort_choice == "Score ↓":
+            section_df["__sc"] = pd.to_numeric(section_df.get("Score", pd.Series(dtype=float)), errors="coerce").fillna(0)
+            section_df = section_df.sort_values("__sc", ascending=False).drop(columns=["__sc"])
+        elif _sort_choice == "P&L $ ↓":
+            section_df = section_df.sort_values("PnL_$", ascending=False, na_position="last")
+        elif _sort_choice == "P&L % ↓":
+            section_df = section_df.sort_values("PnL_%", ascending=False, na_position="last")
+        elif _sort_choice == "Ticker A→Z":
+            section_df = section_df.sort_values("Ticker")
+        elif _sort_choice == "Strategy":
+            section_df = section_df.sort_values(["Strategy", "Added_Date"], ascending=[True, False])
+        # else "Added (Latest)": already sorted by _sort_by_strat above
+
         if is_options:
             # Options: Ticker | Strategy | Action | Strike | Entry | Current | P&L | Score | Added | Source | 🗑
             _W = [1.0, 0.9, 0.5, 0.65, 0.65, 0.7, 1.05, 0.5, 0.75, 1.3, 0.35]
