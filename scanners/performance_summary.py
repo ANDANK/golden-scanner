@@ -733,11 +733,17 @@ def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool 
                         f'{style_v[:18]}</div>',
                         unsafe_allow_html=True)
                 elif c == "Source":
-                    # Abbreviate long source tags so they fit
-                    src_v = val_s[:22] if val_s != "—" else "—"
+                    # Abbreviate full scanner names then display; tooltip shows original
+                    _src_abbr = val_s
+                    for _full, _ab in [("Trend Continuation","TC"),("Trend Cont.","TC"),
+                                       ("Trend Alignment","TA"),("Trend Align","TA"),
+                                       ("Trend Stack","TS"),("Multi-Factor","MF"),
+                                       ("Momentum Reset Bounce","MRS"),("Reset Bounce","MRS"),
+                                       ("Momentum","M"),("Growth","G")]:
+                        _src_abbr = _src_abbr.replace(_full, _ab)
                     st.markdown(
                         f'<div style="{td};color:{TEXT_MUTED};font-size:10px" title="{val_s}">'
-                        f'{src_v}</div>',
+                        f'{_src_abbr}</div>',
                         unsafe_allow_html=True)
                 elif c == "Expiry_Date":
                     exp = val_s[:10] if val_s != "—" else "—"

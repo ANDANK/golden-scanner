@@ -11,6 +11,31 @@ from utils import section_header, metric_card, _export_filename
 from scanners.gsheet_helper import get_tracking, remove_from_tracking, using_google_sheets, show_storage_banner
 
 
+# ── Source abbreviation helper ────────────────────────────────
+# Applied when DISPLAYING stored source strings so old full-name values
+# (e.g. "GS·Trend Cont. + Trend Stack (2)") render as "GS·TC + TS (2)"
+_SRC_ABBREV = {
+    "Trend Continuation":    "TC",
+    "Trend Cont.":           "TC",
+    "Trend Alignment":       "TA",
+    "Trend Align":           "TA",
+    "Trend Stack":           "TS",
+    "Multi-Factor":          "MF",
+    "Momentum Reset Bounce": "MRS",
+    "Reset Bounce":          "MRS",
+    "Momentum":              "M",
+    "Growth":                "G",
+}
+
+def _abbrev_src(src: str) -> str:
+    """Replace full scanner names in a source tag with short codes."""
+    result = src
+    # Longest match first to avoid partial replacements
+    for full, abbr in sorted(_SRC_ABBREV.items(), key=lambda x: -len(x[0])):
+        result = result.replace(full, abbr)
+    return result
+
+
 # ── Delete callback (fires before rerender — Streamlit reruns naturally) ──
 
 def _cb_delete_tracking(ticker: str, added_date: str):
@@ -468,7 +493,8 @@ def render():
             score = str(row.get("Score", "")).strip() or "—"
             strat = str(row.get("Strategy", ""))
             action = str(row.get("Action", ""))
-            src   = str(row.get("Source", ""))[:30]
+            _src_raw = str(row.get("Source", ""))
+            src      = _abbrev_src(_src_raw)   # abbreviate full names → TC/TS/MRS etc.
             a_color = ACCENT_GREEN if action == "Buy" else ACCENT_RED
             td_bg = f"background:{bg};padding:7px 6px;border-bottom:1px solid {BORDER_COLOR}33"
 
@@ -492,7 +518,7 @@ def render():
                     pnl_html,
                     f'<span style="color:{GOLD};font-size:12px">{score}</span>',
                     f'<span style="color:{TEXT_MUTED};font-size:11px">{added}</span>',
-                    f'<span style="color:{TEXT_MUTED};font-size:11px" title="{src}">{src}</span>',
+                    f'<span style="color:{TEXT_MUTED};font-size:11px" title="{_src_raw}">{src}</span>',
                 ]
             else:
                 # Style from Notes field (stored there by add_to_tracking / headless)
@@ -507,7 +533,7 @@ def render():
                     pnl_html,
                     f'<span style="color:{GOLD};font-size:12px">{score}</span>',
                     f'<span style="color:{TEXT_MUTED};font-size:11px">{added}</span>',
-                    f'<span style="color:{TEXT_MUTED};font-size:11px" title="{src}">{src}</span>',
+                    f'<span style="color:{TEXT_MUTED};font-size:11px" title="{_src_raw}">{src}</span>',
                 ]
 
             for col_i, html in enumerate(cells_data):
