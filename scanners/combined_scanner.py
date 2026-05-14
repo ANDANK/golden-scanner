@@ -386,7 +386,7 @@ def _render_combined_table(df: pd.DataFrame):
             df_c = get_price_history(ticker, period="6mo")
             if not df_c.empty:
                 from utils import mini_chart
-                st.plotly_chart(mini_chart(df_c, ticker), use_container_width=True)
+                st.plotly_chart(mini_chart(df_c, ticker), width='stretch')
 
 
 # ── Main render ─────────────────────────────────────────────────

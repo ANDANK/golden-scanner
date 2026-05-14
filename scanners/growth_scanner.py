@@ -176,7 +176,7 @@ def render():
                 with st.expander(label, expanded=(idx == 0)):
                     df_c = get_price_history(ticker, period="6mo")
                     if not df_c.empty:
-                        st.plotly_chart(mini_chart(df_c, ticker), use_container_width=True)
+                        st.plotly_chart(mini_chart(df_c, ticker), width='stretch')
     else:
         st.markdown(f"""
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">

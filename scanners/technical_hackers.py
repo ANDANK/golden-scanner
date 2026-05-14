@@ -423,7 +423,7 @@ def _render_with_charts(df: pd.DataFrame, show_bb=False, show_macd=True,
                                         show_bb=show_bb,
                                         show_macd=show_macd,
                                         show_volume=show_volume),
-                    use_container_width=True,
+                    width='stretch',
                 )
             else:
                 st.warning(f"No chart data available for {ticker}.")

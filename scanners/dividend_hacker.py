@@ -513,7 +513,7 @@ def render_detail_drawer(row: pd.Series):
             if history:
                 fig = draw_history_chart(history, ticker)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                 amounts = [h[1] for h in history]
                 if len(amounts) >= 2:
                     trend = ("📈 Growing" if amounts[-1] > amounts[0]
@@ -647,7 +647,7 @@ def render():
                     yaxis=dict(gridcolor=BORDER_COLOR),
                     showlegend=False,
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
         export_df = df.drop(columns=["_info"], errors="ignore")
         col_a, col_b = st.columns([4, 1])

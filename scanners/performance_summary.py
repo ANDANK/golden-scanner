@@ -1329,7 +1329,7 @@ def _render_monthly_tab(df: pd.DataFrame):
     with fa:
         fig = _chart_monthly_income(df)
         if fig:
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False},
+            st.plotly_chart(fig, width='stretch', config={"displayModeBar": False},
                             key="perf_monthly_income")
     with fb:
         # Options P&L pie (expired only)
@@ -1348,7 +1348,7 @@ def _render_monthly_tab(df: pd.DataFrame):
                                   legend=dict(font=dict(color=TEXT_MUTED, size=10),
                                               bgcolor=BG_CARD, orientation="h", y=-0.15),
                                   showlegend=True)
-            st.plotly_chart(fig_op, use_container_width=True,
+            st.plotly_chart(fig_op, width='stretch',
                             config={"displayModeBar": False}, key="perf_monthly_opt_pie")
         else:
             st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;font-style:italic;'
@@ -1375,7 +1375,7 @@ def _render_monthly_tab(df: pd.DataFrame):
                                   legend=dict(font=dict(color=TEXT_MUTED, size=10),
                                               bgcolor=BG_CARD, orientation="h", y=-0.15),
                                   showlegend=True)
-            st.plotly_chart(fig_sp, use_container_width=True,
+            st.plotly_chart(fig_sp, width='stretch',
                             config={"displayModeBar": False}, key="perf_monthly_stk_pie")
         else:
             st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;font-style:italic;'
@@ -1426,14 +1426,14 @@ def _render_monthly_tab(df: pd.DataFrame):
         _section_label("🏆 Top Gainers", ACCENT_GREEN)
         if not by_tkr_m.empty:
             st.plotly_chart(_bar(by_tkr_m.head(5), ACCENT_GREEN, ""),
-                            use_container_width=True, config={"displayModeBar": False},
+                            width='stretch', config={"displayModeBar": False},
                             key="perf_monthly_gainers")
     with cl:
         _section_label("📉 Top Losers", ACCENT_RED)
         losers = by_tkr_m[by_tkr_m["Income"] < 0].sort_values("Income").head(5)
         if not losers.empty:
             st.plotly_chart(_bar(losers, ACCENT_RED, ""),
-                            use_container_width=True, config={"displayModeBar": False},
+                            width='stretch', config={"displayModeBar": False},
                             key="perf_monthly_losers")
 
 
@@ -1444,7 +1444,7 @@ def _render_analytics_tab(df: pd.DataFrame):
     fig = _chart_cumulative_pnl(df)
     if fig:
         st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;margin-bottom:4px">Cumulative Realized Income Over Time</div>', unsafe_allow_html=True)
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False},
+        st.plotly_chart(fig, width='stretch', config={"displayModeBar": False},
                         key="perf_analytics_cumulative")
 
     # Win rate + strategy mix
@@ -1465,13 +1465,13 @@ def _render_analytics_tab(df: pd.DataFrame):
                            xaxis=dict(showgrid=True, gridcolor=BORDER_COLOR, color=TEXT_MUTED, range=[0,115], ticksuffix="%"),
                            yaxis=dict(showgrid=False, color=GOLD, autorange="reversed", tickfont=dict(size=12, family="DM Mono", color=GOLD)),
                            showlegend=False)
-        st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False},
+        st.plotly_chart(fig2, width='stretch', config={"displayModeBar": False},
                         key="perf_analytics_winrate")
     with c2:
         _section_label("Strategy Mix", GOLD)
         fig3 = _chart_strategy_mix(df)
         if fig3:
-            st.plotly_chart(fig3, use_container_width=True, config={"displayModeBar": False},
+            st.plotly_chart(fig3, width='stretch', config={"displayModeBar": False},
                             key="perf_analytics_strat_mix")
 
     # Top tickers + trade outcomes
@@ -1480,13 +1480,13 @@ def _render_analytics_tab(df: pd.DataFrame):
         _section_label("Top Income Tickers", GOLD)
         fig4 = _chart_top_tickers(df)
         if fig4:
-            st.plotly_chart(fig4, use_container_width=True, config={"displayModeBar": False},
+            st.plotly_chart(fig4, width='stretch', config={"displayModeBar": False},
                             key="perf_analytics_top_tickers")
     with c4:
         _section_label("Trade Outcomes", ACCENT_BLUE)
         fig5 = _chart_trade_outcomes(df)
         if fig5:
-            st.plotly_chart(fig5, use_container_width=True, config={"displayModeBar": False},
+            st.plotly_chart(fig5, width='stretch', config={"displayModeBar": False},
                             key="perf_analytics_outcomes")
 
     # What worked / what didn't

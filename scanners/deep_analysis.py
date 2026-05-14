@@ -723,7 +723,7 @@ def render_ticker_panel(a: dict):
               letter-spacing:1px;margin-bottom:4px">52-Week Weekly</div>
 """, unsafe_allow_html=True)
         if a["df_w"] is not None and not a["df_w"].empty and len(a["df_w"]) >= 4:
-            st.plotly_chart(_mini_weekly_chart(a["df_w"], ticker), use_container_width=True)
+            st.plotly_chart(_mini_weekly_chart(a["df_w"], ticker), width='stretch')
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
@@ -974,7 +974,7 @@ def render_ticker_panel(a: dict):
         unsafe_allow_html=True,
     )
     with st.spinner(f"Rendering chart for {ticker}…"):
-        st.plotly_chart(_build_chart(a), use_container_width=True)
+        st.plotly_chart(_build_chart(a), width='stretch')
 
     # ── Ticker divider ──────────────────────────────────────────
     st.markdown(

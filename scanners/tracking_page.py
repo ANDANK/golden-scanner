@@ -107,7 +107,7 @@ def _chart_pnl_over_time(df: pd.DataFrame):
         height=260,
         showlegend=False,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def _chart_by_source(df: pd.DataFrame):
@@ -134,7 +134,7 @@ def _chart_by_source(df: pd.DataFrame):
         height=260,
         legend=dict(font=dict(color=TEXT_MUTED, size=11)),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def _chart_best_worst(df: pd.DataFrame):
@@ -168,7 +168,7 @@ def _chart_best_worst(df: pd.DataFrame):
         height=max(220, len(combined) * 36),
         showlegend=False,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def _render_trade_analysis(df: pd.DataFrame):
