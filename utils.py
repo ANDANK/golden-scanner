@@ -656,7 +656,17 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
 
     # ── Sort control ─────────────────────────────────────────────
     _sortable = [c for c in data_cols if c in df.columns]
-    _sort_default = next((c for c in ("Score", "Change %", "Price") if c in _sortable), _sortable[0] if _sortable else None)
+    _COUNT_SCORE = "Count + Score ↓"   # synthetic compound-sort option
+    _has_count   = "Scanner Count" in df.columns
+
+    # Build option list: "Count + Score" first (and default) when the column exists
+    if _has_count:
+        _sort_opts    = [_COUNT_SCORE] + _sortable
+        _sort_def_idx = 0
+    else:
+        _sort_opts    = _sortable
+        _sort_def_idx = next((i for i, c in enumerate(_sortable) if c == "Score"), 0)
+
     _s1, _s2, _s3 = st.columns([0.6, 2.8, 0.7])
     with _s1:
         st.markdown(
@@ -665,15 +675,22 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
         )
     with _s2:
         _sort_by = st.selectbox(
-            "Sort column", _sortable,
-            index=_sortable.index(_sort_default) if _sort_default in _sortable else 0,
+            "Sort column", _sort_opts,
+            index=_sort_def_idx,
             key=f"sort_col_{key_base}",
             label_visibility="collapsed",
         )
     with _s3:
-        _sort_asc = st.toggle("↑ Asc", value=False, key=f"sort_asc_{key_base}")
-    # Apply sort — numeric columns sorted numerically, text alphabetically
-    if _sort_by and _sort_by in df.columns:
+        # Asc toggle hidden for compound sort (always desc)
+        _sort_asc = False if _sort_by == _COUNT_SCORE else st.toggle("↑ Asc", value=False, key=f"sort_asc_{key_base}")
+
+    # Apply sort
+    if _sort_by == _COUNT_SCORE:
+        df = df.copy()
+        df["__sc_num"] = pd.to_numeric(df.get("Score", 0), errors="coerce").fillna(0)
+        df["__cnt"]    = pd.to_numeric(df.get("Scanner Count", 1), errors="coerce").fillna(1)
+        df = df.sort_values(["__cnt", "__sc_num"], ascending=[False, False]).drop(columns=["__sc_num", "__cnt"])
+    elif _sort_by and _sort_by in df.columns:
         _num = pd.to_numeric(df[_sort_by], errors="coerce")
         if _num.notna().sum() > len(df) * 0.3:   # mostly numeric → sort as number
             _fill = -1e9 if not _sort_asc else 1e9

@@ -33,6 +33,19 @@ SCANNER_PRIORITY = {
     "Growth":       7,   # Fundamental overlay
 }
 
+# Display abbreviations for the Scanners / Source columns
+SCANNER_ABBREV = {
+    "Trend Cont.":  "TC",
+    "Trend Stack":  "TS",
+    "Trend Align":  "TA",
+    "Multi-Factor": "MF",
+    "Reset Bounce": "MRS",
+    "Momentum":     "M",
+    "Growth":       "G",
+}
+# Reverse map: abbreviation → full internal key (for Hold/Style lookup)
+_ABBREV_TO_KEY = {v: k for k, v in SCANNER_ABBREV.items()}
+
 
 # ── Upside estimator ────────────────────────────────────────────
 
@@ -152,10 +165,10 @@ def run_combined(tickers: list, include_value: bool = False,
 
     # Aggregate: group by Ticker — list all scanners in priority order, keep best row per ticker
     def _priority_join(scanner_series):
-        """Return scanner names joined in SCANNER_PRIORITY order."""
+        """Return scanner abbreviations joined in SCANNER_PRIORITY order."""
         names = list(scanner_series.unique())
         names.sort(key=lambda n: SCANNER_PRIORITY.get(n, 99))
-        return " + ".join(names)
+        return " + ".join(SCANNER_ABBREV.get(n, n) for n in names)
 
     scanner_lists = (
         combined.groupby("Ticker")["_scanner"]
@@ -171,16 +184,16 @@ def run_combined(tickers: list, include_value: bool = False,
     merged = best.merge(scanner_lists, on="Ticker", how="left")
     merged["Scanner Count"] = merged["Scanners"].str.count(r"\+") + 1
 
-    # Hold/Style from the highest-priority scanner the ticker matched
-    def _top_scanner(scanners_str: str) -> str:
-        parts = [p.strip() for p in scanners_str.split(" + ")]
-        return parts[0] if parts else ""
+    # Hold/Style from the highest-priority scanner (reverse-map abbreviation → full key)
+    def _top_scanner_key(scanners_str: str) -> str:
+        abbr = scanners_str.split(" + ")[0].strip()
+        return _ABBREV_TO_KEY.get(abbr, abbr)   # TC → "Trend Cont.", etc.
 
     merged["Hold"] = merged["Scanners"].apply(
-        lambda s: SCANNER_META.get(_top_scanner(s), {}).get("hold", "Varies")
+        lambda s: SCANNER_META.get(_top_scanner_key(s), {}).get("hold", "Varies")
     )
     merged["Style"] = merged["Scanners"].apply(
-        lambda s: SCANNER_META.get(_top_scanner(s), {}).get("style", "Mixed")
+        lambda s: SCANNER_META.get(_top_scanner_key(s), {}).get("style", "Mixed")
     )
 
     # Upside estimate
@@ -195,7 +208,10 @@ def run_combined(tickers: list, include_value: bool = False,
 
     # Sort: Scanner Count desc → top scanner priority asc → Score desc
     merged["_best_pri"] = merged["Scanners"].apply(
-        lambda s: min(SCANNER_PRIORITY.get(n.strip(), 99) for n in s.split(" + "))
+        lambda s: min(
+            SCANNER_PRIORITY.get(_ABBREV_TO_KEY.get(n.strip(), n.strip()), 99)
+            for n in s.split(" + ")
+        )
     )
     merged = merged.sort_values(
         ["Scanner Count", "_best_pri", "Score"],
