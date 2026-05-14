@@ -325,17 +325,6 @@ def _render_universe():
 
 _RANKINGS = [
     {
-        "scanner":    "Trend Alignment",
-        "tier":       "Tier 1",
-        "rating":     9.4,
-        "hold":       "1–4 months",
-        "confidence": "Very High",
-        "count":      "Medium",
-        "noise":      "Low",
-        "rec":        "Must Keep",
-        "icon":       "🎯",
-    },
-    {
         "scanner":    "Trend Continuation",
         "tier":       "Tier 1",
         "rating":     9.8,
@@ -345,17 +334,6 @@ _RANKINGS = [
         "noise":      "Very Low",
         "rec":        "Must Keep",
         "icon":       "📈",
-    },
-    {
-        "scanner":    "Momentum Reset Bounce",
-        "tier":       "Tier 1",
-        "rating":     9.2,
-        "hold":       "1–3 months",
-        "confidence": "Very High",
-        "count":      "Low–Medium",
-        "noise":      "Low",
-        "rec":        "Must Keep",
-        "icon":       "🔄",
     },
     {
         "scanner":    "Trend Stack",
@@ -369,6 +347,17 @@ _RANKINGS = [
         "icon":       "🏛",
     },
     {
+        "scanner":    "Trend Alignment",
+        "tier":       "Tier 1",
+        "rating":     9.4,
+        "hold":       "1–4 months",
+        "confidence": "Very High",
+        "count":      "Medium",
+        "noise":      "Low",
+        "rec":        "Must Keep",
+        "icon":       "🎯",
+    },
+    {
         "scanner":    "Multi-Factor",
         "tier":       "Tier 1",
         "rating":     9.2,
@@ -378,6 +367,17 @@ _RANKINGS = [
         "noise":      "Low",
         "rec":        "Must Keep",
         "icon":       "🎯",
+    },
+    {
+        "scanner":    "Momentum Reset Bounce",
+        "tier":       "Tier 1",
+        "rating":     9.2,
+        "hold":       "1–3 months",
+        "confidence": "Very High",
+        "count":      "Low–Medium",
+        "noise":      "Low",
+        "rec":        "Must Keep",
+        "icon":       "🔄",
     },
     {
         "scanner":    "Momentum",
