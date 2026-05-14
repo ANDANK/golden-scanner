@@ -513,6 +513,22 @@ def render_tracker_widget(tickers: list, strategy: str = "Stock", source: str = 
                       args=(ticker, source, price_str))
 
 
+# ── Scanner abbreviation map (for source tag building) ────────
+# Converts full scanner names (old cached data) → short codes
+_SCANNER_ABBREV = {
+    "Trend Cont.":           "TC",
+    "Trend Continuation":    "TC",
+    "Trend Stack":           "TS",
+    "Trend Align":           "TA",
+    "Trend Alignment":       "TA",
+    "Multi-Factor":          "MF",
+    "Reset Bounce":          "MRS",
+    "Momentum Reset Bounce": "MRS",
+    "Momentum":              "M",
+    "Growth":                "G",
+}
+
+
 # ── Strategy-aware column sets ─────────────────────────────────
 # These define the preferred column order per strategy type.
 # Columns not present in the DataFrame are skipped automatically.
@@ -750,7 +766,9 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
             parts = [p.strip() for p in sc.split(" + ")
                      if p.strip() and p.strip().lower() != "nan"]
             if parts:
-                names = " + ".join(parts[:6])   # show all (up to 6 scanner names)
+                # Apply abbreviation map — handles both new abbreviations and old full names
+                abbr_parts = [_SCANNER_ABBREV.get(p, p) for p in parts]
+                names = " + ".join(abbr_parts[:6])   # show all (up to 6 codes)
                 row_source = f"{slot_pfx}GS·{names} ({len(parts)})"
             elif slot_pfx:
                 row_source = f"{slot_pfx}{strategy}"

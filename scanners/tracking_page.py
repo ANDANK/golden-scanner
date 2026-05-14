@@ -3,7 +3,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as _date
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import *
@@ -373,41 +373,66 @@ def render():
             unsafe_allow_html=True,
         )
 
-        # ── Sort control ─────────────────────────────────────────
-        _sort_opts_base = ["Added (Latest)", "Score ↓", "P&L $ ↓", "P&L % ↓", "Ticker A→Z", "Strategy"]
-        _sort_key_ss    = f"trk_sort_{section_key}"
-        if _sort_key_ss not in st.session_state:
-            st.session_state[_sort_key_ss] = "Added (Latest)"
+        # ── Filters + Sort (single row) ──────────────────────────
+        _fdf = section_df.copy()
 
-        _ts1, _ts2 = st.columns([0.5, 3])
-        with _ts1:
+        _strats_avail = sorted(_fdf["Strategy"].dropna().astype(str).unique().tolist())
+        _sort_opts_base = ["Added (Latest)", "Score ↓", "P&L $ ↓", "P&L % ↓", "Ticker A→Z", "Strategy"]
+
+        # One row: Today only | Strategy multiselect | ↕ Sort label | Sort dropdown
+        _rc1, _rc2, _rc3, _rc4 = st.columns([0.7, 2.0, 0.45, 1.8])
+        with _rc1:
+            _today_only = st.checkbox(
+                "Today only", value=False,
+                key=f"trk_today_{section_key}",
+                help="Show only positions added today",
+            )
+        with _rc2:
+            _strat_sel = st.multiselect(
+                "Filter by strategy",
+                _strats_avail,
+                key=f"trk_strat_{section_key}",
+                label_visibility="collapsed",
+                placeholder="All strategies",
+            )
+        with _rc3:
             st.markdown(
                 f'<div style="color:{TEXT_MUTED};font-size:11px;padding:7px 0;white-space:nowrap">↕ Sort:</div>',
                 unsafe_allow_html=True,
             )
-        with _ts2:
+        with _rc4:
             _sort_choice = st.selectbox(
                 "Sort tracking", _sort_opts_base,
-                index=_sort_opts_base.index(st.session_state[_sort_key_ss]),
+                index=0,
                 key=f"trk_sort_sel_{section_key}",
                 label_visibility="collapsed",
             )
-        st.session_state[_sort_key_ss] = _sort_choice
 
-        # Apply sort to section_df
-        section_df = section_df.copy()
-        if _sort_choice == "Score ↓":
-            section_df["__sc"] = pd.to_numeric(section_df.get("Score", pd.Series(dtype=float)), errors="coerce").fillna(0)
-            section_df = section_df.sort_values("__sc", ascending=False).drop(columns=["__sc"])
+        # Apply filters — AND condition
+        if _today_only:
+            _today_str = _date.today().isoformat()
+            _fdf = _fdf[_fdf["Added_Date"].astype(str).str[:10] == _today_str]
+        if _strat_sel:
+            _fdf = _fdf[_fdf["Strategy"].astype(str).isin(_strat_sel)]
+
+        # Apply sort to _fdf
+        _fdf = _fdf.copy()
+        if _sort_choice == "Added (Latest)":
+            _fdf = _fdf.sort_values("Added_Date", ascending=False, na_position="last")
+        elif _sort_choice == "Score ↓":
+            if "Score" in _fdf.columns:
+                _fdf["__sc"] = pd.to_numeric(_fdf["Score"], errors="coerce").fillna(0)
+            else:
+                _fdf["__sc"] = 0
+            _fdf = _fdf.sort_values("__sc", ascending=False).drop(columns=["__sc"])
         elif _sort_choice == "P&L $ ↓":
-            section_df = section_df.sort_values("PnL_$", ascending=False, na_position="last")
+            _fdf = _fdf.sort_values("PnL_$", ascending=False, na_position="last")
         elif _sort_choice == "P&L % ↓":
-            section_df = section_df.sort_values("PnL_%", ascending=False, na_position="last")
+            _fdf = _fdf.sort_values("PnL_%", ascending=False, na_position="last")
         elif _sort_choice == "Ticker A→Z":
-            section_df = section_df.sort_values("Ticker")
+            _fdf = _fdf.sort_values("Ticker")
         elif _sort_choice == "Strategy":
-            section_df = section_df.sort_values(["Strategy", "Added_Date"], ascending=[True, False])
-        # else "Added (Latest)": already sorted by _sort_by_strat above
+            _fdf = _fdf.sort_values(["Strategy", "Added_Date"], ascending=[True, False])
 
         if is_options:
             # Options: Ticker | Strategy | Action | Strike | Entry | Current | P&L | Score | Added | Source | 🗑
@@ -432,7 +457,7 @@ def render():
 
         _del_key_base = _hl.md5(f"tracking_{section_key}".encode()).hexdigest()[:6]
 
-        for row_i, (_, row) in enumerate(section_df.iterrows()):
+        for row_i, (_, row) in enumerate(_fdf.iterrows()):
             bg    = BG_CARD if row_i % 2 == 0 else BG_PANEL
             ep    = row["Entry_Price"]
             cp    = row["Current_Price"]
