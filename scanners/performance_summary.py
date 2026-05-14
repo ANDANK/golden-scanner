@@ -628,7 +628,7 @@ def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool 
 
     # Per-column width hints
     _narrow = {"DTE", "Qty", "Score"}
-    _med    = {"Status", "PL_Pct", "Universe", "Strategy", "Source"}
+    _med    = {"Status", "PL_Pct", "Universe", "Strategy", "Source", "Style"}
     _wide   = {"Ticker", "Expiry_Date", "Entry_Stock_Price", "Current_Price",
                "PL_Dollar", "Close Signal"}
     col_widths = []
@@ -724,6 +724,21 @@ def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool 
                     except Exception:
                         st.markdown(f'<div style="{td};color:{TEXT_MUTED}">—</div>',
                                     unsafe_allow_html=True)
+                elif c == "Style":
+                    # Style is stored in the Notes field for tracking rows
+                    style_v = val_s if val_s not in ("—", "nan", "") else str(r.get("Notes", ""))
+                    style_v = style_v if style_v not in ("nan", "") else "—"
+                    st.markdown(
+                        f'<div style="{td};color:#A78BFA;font-size:10px;font-weight:600">'
+                        f'{style_v[:18]}</div>',
+                        unsafe_allow_html=True)
+                elif c == "Source":
+                    # Abbreviate long source tags so they fit
+                    src_v = val_s[:22] if val_s != "—" else "—"
+                    st.markdown(
+                        f'<div style="{td};color:{TEXT_MUTED};font-size:10px" title="{val_s}">'
+                        f'{src_v}</div>',
+                        unsafe_allow_html=True)
                 elif c == "Expiry_Date":
                     exp = val_s[:10] if val_s != "—" else "—"
                     st.markdown(f'<div style="{td};color:{TEXT_MUTED}">{exp}</div>',
@@ -1242,8 +1257,8 @@ def _render_ticker_snapshot(df: pd.DataFrame):
 # Columns shown in the daily/monthly positions table
 _OPT_COLS   = ["Ticker", "Strategy", "Universe", "Strike", "Premium", "DTE",
                "Expiry_Date", "Entry_Stock_Price", "Current_Price", "Status",
-               "PL_Dollar", "PL_Pct"]
-_STOCK_COLS = ["Ticker", "Strategy", "Entry_Stock_Price", "Current_Price",
+               "PL_Dollar", "PL_Pct", "Source"]
+_STOCK_COLS = ["Ticker", "Strategy", "Style", "Entry_Stock_Price", "Current_Price",
                "Status", "PL_Dollar", "PL_Pct", "Source", "Score"]
 
 # Ordered strategy list — CSP → CC → LEAPS → Stocks (maintained everywhere)

@@ -214,19 +214,27 @@ def compute_diff(df_am: pd.DataFrame, df_pm: pd.DataFrame) -> pd.DataFrame:
 
 # ── Google Sheets auto-track ───────────────────────────────────
 
-def auto_track_to_sheets(df_new: pd.DataFrame, source: str = "Sched-PM"):
+def auto_track_to_sheets(df_new: pd.DataFrame, slot: str = "AM"):
     """Write high-scoring setups to the Google Sheets Tracking tab.
 
+    Columns written match TRACKING_HEADERS exactly:
+      Ticker | Strategy | Action | Qty | Entry_Price | Added_Date |
+      Source | Score | HOLD | Est_Upside | Notes (Style stored here)
+
     Args:
-        df_new:  DataFrame of scan results to consider.
-        source:  Tag written to the Source column — use "Sched-AM" or "Sched-PM"
-                 so you can tell which run added each row.
+        df_new: DataFrame of scan results to consider.
+        slot:   "AM" or "PM" — used to build source tag (e.g. "AM·CC").
     """
     sheet_id  = os.environ.get("GOOGLE_SHEET_ID", "")
     creds_raw = os.environ.get("GOOGLE_CREDS_JSON", "")
     if not sheet_id or not creds_raw:
         log("No Google Sheets credentials — skipping cloud tracking.")
         return
+
+    # Must match gsheet_helper.TRACKING_HEADERS exactly
+    HEADERS = ["Ticker", "Strategy", "Action", "Qty", "Entry_Price",
+               "Added_Date", "Source", "Score", "HOLD", "Est_Upside", "Notes"]
+    _SELL = {"CSP", "CC", "DIVIDEND+CC", "ETF OPTIONS", "3X ETF OPTIONS"}
 
     try:
         import gspread
@@ -243,31 +251,61 @@ def auto_track_to_sheets(df_new: pd.DataFrame, source: str = "Sched-PM"):
         except Exception:
             ws = sh.add_worksheet("Tracking", rows=1000, cols=20)
 
-        today = date.today().isoformat()
+        # Ensure header row is correct
+        first = ws.row_values(1)
+        if not first or first[0] != "Ticker":
+            ws.insert_row(HEADERS, 1)
+
+        today    = date.today().isoformat()
         existing = ws.get_all_records()
+        # Dedup by (Ticker, Strategy, date) so same ticker can have CSP + CC on same day
         existing_keys = {
-            (str(r.get("Ticker", "")).upper(), str(r.get("Added_Date", ""))[:10])
+            (str(r.get("Ticker", "")).upper(),
+             str(r.get("Strategy", "")).upper(),
+             str(r.get("Added_Date", ""))[:10])
             for r in existing
         }
 
         added = 0
         for _, row in df_new.iterrows():
-            tk = str(row.get("Ticker", "")).upper()
-            score = int(float(str(row.get("Score", 0))))
+            tk    = str(row.get("Ticker", "")).upper()
+            strat = str(row.get("Strategy", ""))
+            try:
+                score = int(float(str(row.get("Score", 0) or 0)))
+            except Exception:
+                score = 0
             if score < SCORE_MIN:
                 continue
-            if (tk, today) in existing_keys:
-                log(f"  Skipping {tk} — already tracked today")
+            if (tk, strat.upper(), today) in existing_keys:
+                log(f"  Skipping {tk}/{strat} — already tracked today")
                 continue
-            strat   = str(row.get("Strategy", ""))
-            price   = str(row.get("Stock Price", row.get("Price", "")))
-            new_row = [tk, strat, source, price, today, score, "Auto-Sched"]
-            ws.append_row(new_row)
-            existing_keys.add((tk, today))
-            added += 1
-            log(f"  ✅ Auto-tracked {tk} ({strat}, score {score}) [{source}]")
 
-        log(f"Google Sheets: {added} ticker(s) added to Tracking [{source}].")
+            action = "Sell" if strat.upper() in _SELL else "Buy"
+            qty    = "1 contract" if strat.upper() in {"CSP","CC","LEAPS","ETF OPTIONS","3X ETF OPTIONS"} else "100 shares"
+            price  = str(row.get("Stock Price", row.get("Price", "")))
+            source = f"{slot}·{strat}"          # "AM·CC", "PM·CSP", etc.
+            hold   = str(row.get("Hold", row.get("HOLD", "")))
+            style  = str(row.get("Style", ""))  # stored in Notes
+
+            new_row = [
+                tk,          # Ticker
+                strat,       # Strategy
+                action,      # Action  (Sell / Buy)
+                qty,         # Qty
+                price,       # Entry_Price
+                today,       # Added_Date
+                source,      # Source  → "AM·CC"
+                str(score),  # Score
+                hold,        # HOLD
+                "",          # Est_Upside
+                style,       # Notes   (Style stored here)
+            ]
+            ws.append_row(new_row)
+            existing_keys.add((tk, strat.upper(), today))
+            added += 1
+            log(f"  ✅ Tracked {tk} ({strat}, score {score}) [{source}]")
+
+        log(f"Google Sheets: {added} ticker(s) added to Tracking [{slot}].")
     except Exception as e:
         log(f"Google Sheets error: {e}")
 
@@ -313,7 +351,7 @@ if __name__ == "__main__":
                 pd.to_numeric(df_current.get("Score", 0), errors="coerce").fillna(0) >= SCORE_MIN
             ]
             log(f"AM: {len(high_score_am)} setup(s) with score ≥ {SCORE_MIN} → auto-tracking")
-            auto_track_to_sheets(high_score_am, source="Sched-AM")
+            auto_track_to_sheets(high_score_am, slot="AM")
         else:
             log("AM scan returned no results — nothing to track.")
 
@@ -325,7 +363,7 @@ if __name__ == "__main__":
                 pd.to_numeric(df_current.get("Score", 0), errors="coerce").fillna(0) >= SCORE_MIN
             ]
             log(f"PM: {len(high_score_pm)} setup(s) with score ≥ {SCORE_MIN} → auto-tracking new ones")
-            auto_track_to_sheets(high_score_pm, source="Sched-PM")
+            auto_track_to_sheets(high_score_pm, slot="PM")
 
         # Also compute diff and log what's new vs AM
         df_am = load_results("am")

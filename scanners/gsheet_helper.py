@@ -158,7 +158,7 @@ def add_to_tracking(ticker: str, strategy: str, source: str = "",
         "Score":      (extra_meta or {}).get("Score_At_Track", ""),
         "HOLD":       (extra_meta or {}).get("HOLD", ""),
         "Est_Upside": (extra_meta or {}).get("Est_Upside", ""),
-        "Notes":      "",
+        "Notes":      (extra_meta or {}).get("Style", ""),  # Style stored in Notes
     }
 
     ws = _gs_sheet("Tracking")

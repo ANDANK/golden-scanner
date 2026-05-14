@@ -439,9 +439,9 @@ def render():
             _W = [1.0, 0.9, 0.5, 0.65, 0.65, 0.7, 1.05, 0.5, 0.75, 1.3, 0.35]
             _H = ["Ticker", "Strategy", "Action", "Strike", "Premium", "Current $", "P&L (est.)", "Score", "Added", "Source", ""]
         else:
-            # Stocks: Ticker | Strategy | Entry | Current | P&L | Score | Added | Source | 🗑
-            _W = [1.1, 1.1, 0.75, 0.75, 1.1, 0.55, 0.85, 1.6, 0.38]
-            _H = ["Ticker", "Strategy", "Entry $", "Current $", "P&L (est.)", "Score", "Added", "Source", ""]
+            # Stocks: Ticker | Strategy | Style | Entry | Current | P&L | Score | Added | Source | 🗑
+            _W = [1.0, 1.0, 0.85, 0.65, 0.65, 1.0, 0.5, 0.75, 1.4, 0.38]
+            _H = ["Ticker", "Strategy", "Style", "Entry $", "Current $", "P&L (est.)", "Score", "Added", "Source", ""]
 
         # Header row
         hdr = st.columns(_W)
@@ -495,9 +495,13 @@ def render():
                     f'<span style="color:{TEXT_MUTED};font-size:11px" title="{src}">{src}</span>',
                 ]
             else:
+                # Style from Notes field (stored there by add_to_tracking / headless)
+                style_val = str(row.get("Notes", "")).strip()
+                style_val = style_val if style_val and style_val.lower() != "nan" else "—"
                 cells_data = [
                     f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;font-weight:700;font-size:13px">{tk}</span>',
                     f'<span style="color:{TEXT_MUTED};font-size:12px">{strat}</span>',
+                    f'<span style="color:#A78BFA;font-size:11px;font-weight:600">{style_val[:18]}</span>',
                     f'<span style="color:{TEXT_MUTED};font-family:\'DM Mono\',monospace;font-size:12px">{ep_str}</span>',
                     f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:12px">{cp_str}</span>',
                     pnl_html,

@@ -349,16 +349,40 @@ def render():
 
 
 def _show_results(df: pd.DataFrame, slot_label: str):
-    """Show scan results grouped by strategy.
+    """Show scan results with strategy filter + sort.
     Auto-tracks every row with score ≥ AUTO_TRACK_THRESHOLD to Google Sheets
     (scheduled scans are the only path that writes automatically).
     """
     from datetime import date as _date
     _today_str = str(_date.today())
     _auto_set  = st.session_state.setdefault("_sched_auto_tracked", set())
+    slot_prefix = slot_label.upper()   # "AM" or "PM"
 
-    for strat in df.get("Strategy", pd.Series()).unique():
-        sub = df[df["Strategy"] == strat].drop(columns=["Strategy", "Universe"], errors="ignore")
+    # ── Strategy filter ────────────────────────────────────────
+    _all_strats = sorted(df["Strategy"].dropna().unique().tolist()) if "Strategy" in df.columns else []
+    _sf1, _sf2  = st.columns([1.2, 4])
+    with _sf1:
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:11px;padding:7px 0">Filter:</div>',
+            unsafe_allow_html=True,
+        )
+    with _sf2:
+        _strat_sel = st.multiselect(
+            "Filter strategy", _all_strats,
+            key=f"sched_strat_{slot_label}",
+            label_visibility="collapsed",
+            placeholder="All strategies",
+        )
+    _fdf = df[df["Strategy"].isin(_strat_sel)] if _strat_sel else df
+
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:11px;margin:4px 0 10px">'
+        f'{len(_fdf)} setup(s) shown</div>',
+        unsafe_allow_html=True,
+    )
+
+    for strat in _fdf.get("Strategy", pd.Series()).unique():
+        sub = _fdf[_fdf["Strategy"] == strat].drop(columns=["Strategy", "Universe"], errors="ignore")
         st.markdown(
             f'<div style="color:{GOLD};font-size:12px;font-weight:600;'
             f'text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px">'
@@ -367,14 +391,13 @@ def _show_results(df: pd.DataFrame, slot_label: str):
         )
 
         # ── Auto-track high-scoring picks (scheduled runs only) ──
-        slot_prefix = slot_label.upper()   # "AM" or "PM"
-        source_tag  = f"{slot_prefix}·{strat}"
+        source_tag = f"{slot_prefix}·{strat}"
         for _, row in sub.iterrows():
             tk = str(row.get("Ticker", "")).strip()
             if not tk:
                 continue
             try:
-                score = int(float(str(row.get("Score", 0))))
+                score = int(float(str(row.get("Score", 0) or 0)))
             except Exception:
                 score = 0
             _auto_key = f"{tk}_{slot_prefix}_{_today_str}"
@@ -382,7 +405,14 @@ def _show_results(df: pd.DataFrame, slot_label: str):
                 try:
                     from scanners.gsheet_helper import add_to_tracking
                     price_str = str(row.get("Stock Price", row.get("Price", "")))
-                    ok, _ = add_to_tracking(tk, strat, source_tag, price_str, row.to_dict())
+                    # Build proper extra_meta so Score, Style, HOLD are stored correctly
+                    _extra = {
+                        "Score_At_Track": str(score),
+                        "HOLD":           str(row.get("Hold", row.get("HOLD", ""))),
+                        "Est_Upside":     str(row.get("Est. Upside %", "")),
+                        "Style":          str(row.get("Style", "")),
+                    }
+                    ok, _ = add_to_tracking(tk, strat, source_tag, price_str, _extra)
                     if ok:
                         _auto_set.add(_auto_key)
                 except Exception:

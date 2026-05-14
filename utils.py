@@ -788,7 +788,8 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
         # Extra metadata for tracking
         extra_meta = {}
         for meta_key, col_name in [("Score_At_Track", "Score"), ("HOLD", "HOLD"),
-                                    ("Est_Upside", "Est. Upside %"), ("Direction", "Direction")]:
+                                    ("Est_Upside", "Est. Upside %"), ("Direction", "Direction"),
+                                    ("Style", "Style")]:
             if col_name in df.columns:
                 extra_meta[meta_key] = str(row.get(col_name, ""))
 
