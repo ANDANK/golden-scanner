@@ -714,11 +714,6 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                 unsafe_allow_html=True,
             )
 
-    # ── Auto-track bookkeeping (session-scoped, resets each day) ──
-    from datetime import date as _date
-    _today_str  = str(_date.today())
-    _auto_set   = st.session_state.setdefault("_auto_tracked", set())
-
     # ── Data rows ────────────────────────────────────────────────
     for row_i, (_, row) in enumerate(df.iterrows()):
         bg = BG_CARD if row_i % 2 == 0 else BG_PANEL
@@ -726,7 +721,7 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
         price_str  = _extract_price(row)
         row_cols   = st.columns(col_widths)
 
-        # Enriched source tag — format: [AM·|PM·]GS·Scanner1 + Scanner2 (N)
+        # Enriched source tag — format: [AM·|PM·|man·]GS·Scanner1 + Scanner2 (N)
         # Slot prefix so we know if the pick came from AM or PM scheduled scan
         _src_str  = str(source)
         slot_pfx  = ("AM·" if "Sched-AM" in _src_str else
@@ -752,29 +747,15 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
             # Options scheduled scan — prefix with slot + strategy name
             row_source = f"{slot_pfx}{strategy}"
 
+        # Manual Track button gets "man·" prefix; scheduled scans keep AM·/PM· prefix
+        track_source = row_source if slot_pfx else f"man·{row_source}"
+
         # Extra metadata for tracking
         extra_meta = {}
         for meta_key, col_name in [("Score_At_Track", "Score"), ("HOLD", "HOLD"),
                                     ("Est_Upside", "Est. Upside %"), ("Direction", "Direction")]:
             if col_name in df.columns:
                 extra_meta[meta_key] = str(row.get(col_name, ""))
-
-        # ── Auto-track: score ≥ 60 added silently once per ticker/day ──
-        score_val = 0
-        if score_col in df.columns:
-            try:
-                score_val = int(float(str(row.get(score_col, 0))))
-            except Exception:
-                pass
-        _auto_key = f"{ticker}_{_today_str}"
-        if score_val >= 60 and ticker and _auto_key not in _auto_set:
-            try:
-                from scanners.gsheet_helper import add_to_tracking as _ato
-                ok, _ = _ato(ticker, strategy, row_source, price_str, extra_meta)
-                if ok:
-                    _auto_set.add(_auto_key)
-            except Exception:
-                pass
 
         for i, col_name in enumerate(data_cols):
             val = row[col_name]
@@ -823,7 +804,7 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                 use_container_width=True,
                 help=f"Track {ticker} ({strategy}) — 100 shares or 1 contract",
                 on_click=_cb_track,
-                args=(ticker, strategy, row_source, price_str, extra_meta, row.to_dict()),
+                args=(ticker, strategy, track_source, price_str, extra_meta, row.to_dict()),
             )
         with row_cols[-1]:
             st.button(

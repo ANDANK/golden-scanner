@@ -349,7 +349,14 @@ def render():
 
 
 def _show_results(df: pd.DataFrame, slot_label: str):
-    """Show scan results grouped by strategy."""
+    """Show scan results grouped by strategy.
+    Auto-tracks every row with score ≥ AUTO_TRACK_THRESHOLD to Google Sheets
+    (scheduled scans are the only path that writes automatically).
+    """
+    from datetime import date as _date
+    _today_str = str(_date.today())
+    _auto_set  = st.session_state.setdefault("_sched_auto_tracked", set())
+
     for strat in df.get("Strategy", pd.Series()).unique():
         sub = df[df["Strategy"] == strat].drop(columns=["Strategy", "Universe"], errors="ignore")
         st.markdown(
@@ -358,6 +365,29 @@ def _show_results(df: pd.DataFrame, slot_label: str):
             f'{strat} — {len(sub)} setup(s)</div>',
             unsafe_allow_html=True,
         )
+
+        # ── Auto-track high-scoring picks (scheduled runs only) ──
+        slot_prefix = slot_label.upper()   # "AM" or "PM"
+        source_tag  = f"{slot_prefix}·{strat}"
+        for _, row in sub.iterrows():
+            tk = str(row.get("Ticker", "")).strip()
+            if not tk:
+                continue
+            try:
+                score = int(float(str(row.get("Score", 0))))
+            except Exception:
+                score = 0
+            _auto_key = f"{tk}_{slot_prefix}_{_today_str}"
+            if score >= AUTO_TRACK_THRESHOLD and _auto_key not in _auto_set:
+                try:
+                    from scanners.gsheet_helper import add_to_tracking
+                    price_str = str(row.get("Stock Price", row.get("Price", "")))
+                    ok, _ = add_to_tracking(tk, strat, source_tag, price_str, row.to_dict())
+                    if ok:
+                        _auto_set.add(_auto_key)
+                except Exception:
+                    pass
+
         render_results_table(sub, strategy=strat, source=f"Sched-{slot_label}")
 
 

@@ -526,7 +526,7 @@ NAV_GROUPS = [
             {
                 "key": "📌  Tracking",
                 "children": [
-                    {"key": "Summary"},
+                    {"key": "Performance"},
                 ],
             },
             {"key": "👁  WatchList"},
@@ -736,8 +736,8 @@ elif page == "📅  Scheduled Scans":
 elif page == "📌  Tracking":
     from scanners.tracking_page import render
     render()
-elif page == "Summary":
-    # NEW route — Summary sub-page under Tracking.
+elif page == "Performance":
+    # Performance sub-page under Tracking.
     # Falls back to tracking_page render if the dedicated module isn't present yet.
     try:
         from scanners.performance_summary import render

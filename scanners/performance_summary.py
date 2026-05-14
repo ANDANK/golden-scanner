@@ -1243,7 +1243,7 @@ def _render_ticker_snapshot(df: pd.DataFrame):
 _OPT_COLS   = ["Ticker", "Strategy", "Universe", "Strike", "Premium", "DTE",
                "Expiry_Date", "Entry_Stock_Price", "Current_Price", "Status",
                "PL_Dollar", "PL_Pct"]
-_STOCK_COLS = ["Ticker", "Strategy", "Universe", "Entry_Stock_Price", "Current_Price",
+_STOCK_COLS = ["Ticker", "Strategy", "Entry_Stock_Price", "Current_Price",
                "Status", "PL_Dollar", "PL_Pct", "Source", "Score"]
 
 # Ordered strategy list — CSP → CC → LEAPS → Stocks (maintained everywhere)
