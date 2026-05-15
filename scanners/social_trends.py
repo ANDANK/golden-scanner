@@ -600,27 +600,58 @@ def _render_yt_placeholder():
 
 # ── YouTube API fetcher ───────────────────────────────────────────
 
-# Search terms sent to YouTube — each costs 100 quota units
-_YT_QUERIES = [
-    "stock market analysis today",
-    "stocks to buy now",
-    "options trading today",
-    "investing news today",
-    "stock market outlook",
+# Query configs — each costs 100 quota units.
+# 3 USA queries + 1 India query = 400 units per fresh fetch (cached 30 min).
+# regionCode biases results toward that country's content.
+# relevanceLanguage="en" is set in every call to surface English videos.
+_YT_QUERY_CONFIGS = [
+    # ── USA  (primary — 3 queries) ────────────────────────────────
+    {"q": "US stock market analysis today",         "regionCode": "US"},
+    {"q": "S&P 500 NASDAQ stocks to watch buy",     "regionCode": "US"},
+    {"q": "options trading stocks investing USA",   "regionCode": "US"},
+    # ── India (secondary — 1 query) ───────────────────────────────
+    {"q": "Indian stock market Nifty NSE analysis English", "regionCode": "IN"},
 ]
+
+# Non-Latin Unicode block ranges that indicate non-English script titles
+# (Devanagari, Tamil, Telugu, Kannada, Malayalam, Bengali, Gujarati, etc.)
+_NON_ENGLISH_RANGES = [
+    (0x0900, 0x097F),   # Devanagari (Hindi, Marathi)
+    (0x0980, 0x09FF),   # Bengali
+    (0x0A00, 0x0A7F),   # Gurmukhi
+    (0x0A80, 0x0AFF),   # Gujarati
+    (0x0B00, 0x0B7F),   # Oriya
+    (0x0B80, 0x0BFF),   # Tamil
+    (0x0C00, 0x0C7F),   # Telugu
+    (0x0C80, 0x0CFF),   # Kannada
+    (0x0D00, 0x0D7F),   # Malayalam
+    (0x0E00, 0x0E7F),   # Thai
+    (0x4E00, 0x9FFF),   # CJK (Chinese/Japanese/Korean)
+    (0xAC00, 0xD7AF),   # Korean Hangul
+    (0x0600, 0x06FF),   # Arabic
+]
+
+
+def _is_english_title(title: str) -> bool:
+    """Return False if the title contains significant non-Latin (non-English) script."""
+    non_latin = sum(
+        1 for ch in title
+        if any(lo <= ord(ch) <= hi for lo, hi in _NON_ENGLISH_RANGES)
+    )
+    return (non_latin / max(len(title), 1)) < 0.15   # allow up to 15% for symbols/etc.
 
 @st.cache_data(ttl=1800, show_spinner=False)   # 30-min cache — YouTube quota is finite
 def _fetch_youtube(api_key: str) -> list:
     """
-    Search YouTube Data API v3 for recent finance videos.
-    Each _YT_QUERIES entry costs 100 quota units; 3 queries = 300/day here.
-    Results cached 30 min so repeated tab switches don't burn quota.
-    Returns list of items in the same schema as news/reddit items,
-    OR a single sentinel dict {"_error": msg, "_debug": {...}} on failure.
+    Search YouTube Data API v3 for English-language finance videos.
+    Queries:  3 USA-focused + 1 India-focused = 400 quota units per fetch.
+    Cached 30 min; at typical usage well within 10,000 free daily quota.
+    Returns list of items (same schema as news/reddit)
+    OR a single sentinel dict {"_error": msg, "_debug": [...]} on failure.
     """
     from datetime import timedelta
 
-    # 7-day window — wide enough to survive quiet weekends
+    # 7-day window — wide enough to survive quiet weekends / market holidays
     published_after = (
         datetime.now(timezone.utc) - timedelta(days=7)
     ).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -628,10 +659,11 @@ def _fetch_youtube(api_key: str) -> list:
     items:     list = []
     seen:      set  = set()
     api_error: str  = ""
-    debug_log: list = []   # accumulate per-query diagnostics
+    debug_log: list = []
 
-    # Use only 3 queries to conserve quota (300 units/run)
-    for query in _YT_QUERIES[:3]:
+    for cfg in _YT_QUERY_CONFIGS:
+        query       = cfg["q"]
+        region_code = cfg.get("regionCode", "US")
         try:
             resp = requests.get(
                 "https://www.googleapis.com/youtube/v3/search",
@@ -643,35 +675,34 @@ def _fetch_youtube(api_key: str) -> list:
                     "publishedAfter":    published_after,
                     "maxResults":        15,
                     "part":              "snippet",
-                    "relevanceLanguage": "en",
-                    # No videoDuration filter — medium (4-20 min) excluded Shorts
-                    # AND long-form analysis videos (>20 min). Accept all lengths.
+                    "relevanceLanguage": "en",   # bias toward English content
+                    "regionCode":        region_code,
+                    # No videoDuration filter — "medium" (4–20 min) blocked both
+                    # Shorts (<4 min) and long-form analysis (>20 min).
                 },
                 timeout=12,
             )
 
             status = resp.status_code
-            debug_log.append({"query": query, "http": status})
+            debug_log.append({"query": query, "region": region_code, "http": status})
 
             if status == 403:
-                data   = resp.json()
-                reason = (data.get("error", {})
-                              .get("errors", [{}])[0]
-                              .get("reason", "unknown"))
-                msg    = data.get("error", {}).get("message", "")
+                data      = resp.json()
+                reason    = (data.get("error", {})
+                                 .get("errors", [{}])[0]
+                                 .get("reason", "unknown"))
+                msg       = data.get("error", {}).get("message", "")
                 api_error = f"HTTP 403 — {reason}: {msg}"
                 break
             if status != 200:
-                try:
-                    body = resp.json()
-                except Exception:
-                    body = resp.text[:200]
+                try:    body = resp.json()
+                except Exception: body = resp.text[:200]
                 api_error = f"HTTP {status} — {body}"
                 break
 
             raw_items = resp.json().get("items", [])
             debug_log[-1]["raw_count"] = len(raw_items)
-            kept = 0
+            kept = skipped_lang = 0
 
             for item in raw_items:
                 video_id = item.get("id", {}).get("videoId", "")
@@ -691,14 +722,17 @@ def _fetch_youtube(api_key: str) -> list:
                 if not title:
                     continue
 
-                # NOTE: do NOT apply _is_finance() here — YouTube search already
-                # targets finance topics via the query string. Snippet descriptions
-                # in search results are often truncated and fail keyword checks
-                # even for valid finance videos.
+                # English-only filter — skip titles in Hindi, Tamil, Telugu, etc.
+                if not _is_english_title(title):
+                    skipped_lang += 1
+                    continue
 
                 dt              = _parse_dt(pub)
                 tickers         = _extract_tickers(title + " " + desc)
                 sentiment, clar = _score_sentiment(title + " " + desc)
+
+                # Tag India-sourced videos so they can be visually distinguished
+                market_tag = "🇮🇳 India" if region_code == "IN" else "🇺🇸 USA"
                 kept += 1
 
                 items.append({
@@ -716,11 +750,12 @@ def _fetch_youtube(api_key: str) -> list:
                     "type":       "youtube",
                     "thumb":      thumb,
                     "video_id":   video_id,
+                    "market":     market_tag,
                     "ups":        0, "comments": 0,
                     "is_dd":      False, "flair": "",
                 })
 
-            debug_log[-1]["kept"] = kept
+            debug_log[-1].update({"kept": kept, "skipped_lang": skipped_lang})
 
         except Exception as exc:
             api_error = str(exc)
