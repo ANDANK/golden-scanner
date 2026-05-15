@@ -560,11 +560,55 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # Full results — inline Track/Watch buttons via render_results_table
-    st.markdown(
-        f'<div style="color:{GOLD};font-size:12px;font-weight:600;text-transform:uppercase;'
-        f'letter-spacing:1px;margin-bottom:8px">&#128202; All Signals — Combined Results</div>',
-        unsafe_allow_html=True,
-    )
+    # ── Green expander theme — scoped to Golden Scan page only ──────
+    # Overrides the global light-blue from app.py; reverts on page navigation.
+    st.markdown("""<style>
+    [data-testid="stExpander"] summary {
+        background: rgba(52, 211, 153, 0.09) !important;
+        border: 1px solid rgba(52, 211, 153, 0.32) !important;
+        border-radius: 6px !important;
+        padding: 8px 14px !important;
+    }
+    [data-testid="stExpander"] summary:hover {
+        background: rgba(52, 211, 153, 0.18) !important;
+        border-color: rgba(52, 211, 153, 0.55) !important;
+    }
+    </style>""", unsafe_allow_html=True)
+
     from utils import render_results_table
-    render_results_table(df, strategy="Stock", source="Golden Scan")
+
+    # ── Multi-signal expander (highest conviction — expanded by default) ──
+    multi_df  = df[df["Scanner Count"] >= 2].copy()
+    single_df = df[df["Scanner Count"] == 1].copy()
+
+    if not multi_df.empty:
+        with st.expander(
+            f"**⭐ Multi-Signal Tickers** — {len(multi_df)} ticker(s) · Confirmed by 2+ independent scanners",
+            expanded=True,
+        ):
+            render_results_table(multi_df, strategy="Stock", source="Golden Scan")
+
+    # ── Per-scanner expanders in conviction order ─────────────────
+    if not single_df.empty:
+        # Derive primary scanner (first abbreviation already sorted by priority)
+        single_df = single_df.copy()
+        single_df["_abbr"] = single_df["Scanners"].str.split(" + ").str[0].str.strip()
+        single_df["_key"]  = single_df["_abbr"].map(_ABBREV_TO_KEY)
+
+        seen_keys = single_df["_key"].dropna().unique()
+        ordered   = sorted(seen_keys, key=lambda n: SCANNER_PRIORITY.get(n, 99))
+
+        for scanner_name in ordered:
+            sub = single_df[single_df["_key"] == scanner_name].drop(columns=["_abbr", "_key"])
+            if sub.empty:
+                continue
+            meta  = SCANNER_META.get(scanner_name, {})
+            icon  = meta.get("icon", "📊")
+            style = meta.get("style", "")
+            hold  = meta.get("hold", "")
+            abbr  = SCANNER_ABBREV.get(scanner_name, scanner_name)
+            with st.expander(
+                f"**{icon} {scanner_name} ({abbr})** — {len(sub)} ticker(s) · {style} · Hold {hold}",
+                expanded=False,
+            ):
+                render_results_table(sub, strategy="Stock", source=f"GS-{abbr}")
