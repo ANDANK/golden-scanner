@@ -16,7 +16,8 @@ import streamlit as st
 DATA_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"
 )
-SETTINGS_FILE = os.path.join(DATA_DIR, "page_settings.json")
+SETTINGS_FILE  = os.path.join(DATA_DIR, "page_settings.json")
+_MAINT_FILE    = os.path.join(DATA_DIR, "maintenance.json")
 _GS_TAB = "PageSettings"
 
 # ── Canonical page registry ────────────────────────────────────
@@ -96,6 +97,7 @@ def _read_from_gsheets() -> dict | None:
     """
     Read settings from the PageSettings GSheet tab.
     Returns a {key: bool} dict, or None if unavailable.
+    Maintenance keys are excluded — they live in maintenance.json, not here.
     """
     ws = _gs_ws()
     if not ws:
@@ -107,6 +109,10 @@ def _read_from_gsheets() -> dict | None:
         out = {}
         for row in rows:
             k = str(row.get("Key", "")).strip()
+            # Skip maintenance keys — they are stored as strings in maintenance.json,
+            # not as booleans, so the boolean-only parser here would corrupt them.
+            if k in (_MAINT_KEY, _MAINT_MSG_KEY):
+                continue
             v = str(row.get("Enabled", "true")).strip().lower()
             if k:
                 out[k] = v not in ("false", "0", "no")
@@ -118,6 +124,7 @@ def _read_from_gsheets() -> dict | None:
 def _save_to_gsheets(settings: dict) -> bool:
     """
     Overwrite the PageSettings tab with the current settings dict.
+    Maintenance keys are excluded — they live in maintenance.json.
     Returns True on success.
     """
     ws = _gs_ws()
@@ -125,7 +132,10 @@ def _save_to_gsheets(settings: dict) -> bool:
         return False
     try:
         ws.clear()
-        all_rows = [["Key", "Enabled"]] + [[k, str(v)] for k, v in settings.items()]
+        # Strip maintenance keys — they must not be stored here as booleans
+        clean = {k: v for k, v in settings.items()
+                 if k not in (_MAINT_KEY, _MAINT_MSG_KEY)}
+        all_rows = [["Key", "Enabled"]] + [[k, str(v)] for k, v in clean.items()]
         ws.update(all_rows, "A1")
         return True
     except Exception:
@@ -212,36 +222,67 @@ def save_page_settings(settings: dict) -> None:
 
 
 # ── Maintenance mode ───────────────────────────────────────────
-# Stored as special keys in the same PageSettings dict so no extra
-# storage layer is needed.
+# Stored in data/maintenance.json — a separate file from PageSettings.
+#
+# WHY a separate file?
+#   PageSettings (GSheets) uses a boolean-only "Key / Enabled" schema.
+#   Storing a string message there causes _read_from_gsheets() to parse
+#   it as True (since the string isn't "false"/"0"/"no").  Keeping
+#   maintenance state in its own JSON avoids any type corruption.
 
-_MAINT_KEY     = "__maintenance__"
-_MAINT_MSG_KEY = "__maintenance_msg__"
+_MAINT_KEY     = "__maintenance__"   # kept for backward-compat filtering
+_MAINT_MSG_KEY = "__maintenance_msg__"  # kept for backward-compat filtering
 _MAINT_MSG_DEFAULT = (
     "We're performing scheduled maintenance and system updates. "
     "The site will be back up shortly — thank you for your patience."
 )
 
 
+# ── Local maintenance.json helpers ─────────────────────────────
+
+def _read_maintenance_file() -> dict:
+    """Return {enabled: bool, message: str} from data/maintenance.json."""
+    defaults = {"enabled": False, "message": _MAINT_MSG_DEFAULT}
+    if os.path.exists(_MAINT_FILE):
+        try:
+            with open(_MAINT_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            defaults.update(data)
+        except Exception:
+            pass
+    return defaults
+
+
+def _write_maintenance_file(enabled: bool, message: str) -> None:
+    """Persist maintenance state to data/maintenance.json."""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(_MAINT_FILE, "w", encoding="utf-8") as f:
+        json.dump({"enabled": enabled, "message": message}, f,
+                  indent=2, ensure_ascii=False)
+
+
+# ── Public API ─────────────────────────────────────────────────
+
 def is_maintenance_mode() -> bool:
     """True when admin has enabled maintenance mode for regular users."""
-    return bool(load_page_settings().get(_MAINT_KEY, False))
+    return bool(_read_maintenance_file().get("enabled", False))
 
 
 def get_maintenance_message() -> str:
-    """Return the current admin-set maintenance message."""
-    return str(load_page_settings().get(_MAINT_MSG_KEY, _MAINT_MSG_DEFAULT))
+    """Return the current admin-set maintenance message (always a string)."""
+    return str(_read_maintenance_file().get("message", _MAINT_MSG_DEFAULT))
 
 
 def set_maintenance_mode(enabled: bool, message: str = "") -> None:
     """
-    Enable or disable maintenance mode and persist via the normal
-    save_page_settings() path (GSheets → local JSON fallback).
+    Enable or disable maintenance mode.  Persists to data/maintenance.json.
+    Also clears the in-session page-settings cache so sidebar state refreshes.
     """
-    settings = load_page_settings().copy()
-    settings[_MAINT_KEY] = enabled
-    settings[_MAINT_MSG_KEY] = message.strip() if message.strip() else _MAINT_MSG_DEFAULT
-    save_page_settings(settings)
+    msg = message.strip() if message.strip() else _MAINT_MSG_DEFAULT
+    _write_maintenance_file(enabled, msg)
+    # Invalidate the page-settings cache so any callers that gate on it
+    # pick up the new state on the next request.
+    st.session_state.pop("_page_settings_cache", None)
 
 
 # ── Runtime check ──────────────────────────────────────────────

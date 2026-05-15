@@ -266,7 +266,18 @@ def scan_dividends(tickers, date_from, date_to, yield_min, yield_max,
                    freq_filter, min_vol, sort_by):
 
     results  = []
-    skipped  = {"no_exdiv":0,"past":0,"etf":0,"reit":0,"yield":0,"vol":0,"mcap":0,"sector":0,"freq":0}
+    skipped  = {
+        "no_exdiv": 0,   # no ex-div date found at all
+        "past": 0,        # ex-div is in the past
+        "window": 0,      # future ex-div, but beyond the selected date window
+        "etf": 0,
+        "reit": 0,
+        "yield": 0,
+        "vol": 0,
+        "mcap": 0,
+        "sector": 0,
+        "freq": 0,
+    }
     progress = st.progress(0)
     status   = st.empty()
     today    = date.today()
@@ -287,7 +298,7 @@ def scan_dividends(tickers, date_from, date_to, yield_min, yield_max,
         if ex_div < today:
             skipped["past"] += 1; continue
         if not (date_from <= ex_div <= date_to):
-            skipped["past"] += 1; continue
+            skipped["window"] += 1; continue
 
         if exclude_etf and is_etf(info):
             skipped["etf"] += 1; continue
@@ -332,24 +343,9 @@ def scan_dividends(tickers, date_from, date_to, yield_min, yield_max,
     progress.empty()
     status.empty()
 
-    # Diagnostics — helps user understand what was filtered
-    total_skip = sum(skipped.values())
-    if total_skip > 0:
-        parts = []
-        if skipped["no_exdiv"]: parts.append(f"{skipped['no_exdiv']} no ex-div data")
-        if skipped["past"]:     parts.append(f"{skipped['past']} outside date window")
-        if skipped["etf"]:      parts.append(f"{skipped['etf']} ETFs excluded")
-        if skipped["reit"]:     parts.append(f"{skipped['reit']} REITs excluded")
-        if skipped["yield"]:    parts.append(f"{skipped['yield']} yield out of range")
-        if skipped["vol"]:      parts.append(f"{skipped['vol']} below min volume")
-        if skipped["mcap"]:     parts.append(f"{skipped['mcap']} market cap mismatch")
-        if skipped["sector"]:   parts.append(f"{skipped['sector']} sector mismatch")
-        if skipped["freq"]:     parts.append(f"{skipped['freq']} frequency mismatch")
-        st.caption(f"ℹ️ Filtered: {total_skip} tickers skipped — {' · '.join(parts)}")
-
     df = pd.DataFrame(results)
     if df.empty:
-        return df
+        return df, skipped
 
     if sort_by == "Largest Market Cap":
         df["_mcap_raw"] = df["_info"].apply(lambda x: x.get("mcap", 0))
@@ -361,7 +357,7 @@ def scan_dividends(tickers, date_from, date_to, yield_min, yield_max,
     else:
         df = df.sort_values("Days to Ex", ascending=True)
 
-    return df.reset_index(drop=True)
+    return df.reset_index(drop=True), skipped
 
 
 # ── History chart ──────────────────────────────────────────────
@@ -549,7 +545,7 @@ def render():
 
     with st.sidebar:
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">📅 Date Range</div>', unsafe_allow_html=True)
-        weeks_ahead = st.slider("Ex-Div window (weeks)", 1, 12, 2)
+        weeks_ahead = st.slider("Ex-Div window (weeks)", 1, 16, 6)
         date_to = today + timedelta(weeks=weeks_ahead)
 
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:12px 0 8px">💰 Dividend Yield</div>', unsafe_allow_html=True)
@@ -598,7 +594,7 @@ def render():
             st.rerun()
 
     if run:
-        df = scan_dividends(
+        df, _skipped = scan_dividends(
             tickers, today, date_to,
             yield_min, yield_max,
             exclude_etf, exclude_reit,
@@ -607,12 +603,54 @@ def render():
         )
 
         if df.empty:
+            # Build an actionable diagnostic message from the skip counters
+            _diag_parts = []
+            if _skipped.get("no_exdiv"):
+                _diag_parts.append(f"**{_skipped['no_exdiv']}** had no ex-div data")
+            if _skipped.get("past"):
+                _diag_parts.append(f"**{_skipped['past']}** already past")
+            if _skipped.get("window"):
+                _diag_parts.append(
+                    f"**{_skipped['window']}** have a future ex-div beyond the {weeks_ahead}-week window "
+                    f"— try widening the date range"
+                )
+            if _skipped.get("yield"):
+                _diag_parts.append(f"**{_skipped['yield']}** yield out of range ({yield_min}%–{yield_max}%)")
+            if _skipped.get("etf"):
+                _diag_parts.append(f"**{_skipped['etf']}** ETFs/funds excluded")
+            if _skipped.get("reit"):
+                _diag_parts.append(f"**{_skipped['reit']}** REITs excluded")
+            if _skipped.get("vol"):
+                _diag_parts.append(f"**{_skipped['vol']}** below min volume ({min_vol_m}M)")
+            if _skipped.get("mcap") or _skipped.get("sector") or _skipped.get("freq"):
+                _diag_parts.append(
+                    f"**{_skipped.get('mcap',0)+_skipped.get('sector',0)+_skipped.get('freq',0)}** "
+                    f"cap/sector/frequency mismatch"
+                )
+
+            _diag_str = "\n\n" + "\n\n".join(f"• {p}" for p in _diag_parts) if _diag_parts else ""
             st.warning(
-                f"No upcoming dividends found in the next **{weeks_ahead} weeks**.\n\n"
-                f"**Try:** lower yield minimum · widen date window · "
-                f"uncheck ETF/REIT exclusions · reduce min volume · increase universe size"
+                f"**No upcoming dividends found in the next {weeks_ahead} weeks.**"
+                f"{_diag_str}\n\n"
+                f"**Quick fixes:** widen the date window (quarterly stocks ex-div every ~91 days) · "
+                f"lower yield minimum · uncheck ETF/REIT exclusions · reduce min volume"
             )
             return
+
+        # Diagnostics caption (always helpful even when results are found)
+        _total_skip = sum(_skipped.values())
+        if _total_skip > 0:
+            _cap_parts = []
+            if _skipped.get("no_exdiv"):  _cap_parts.append(f"{_skipped['no_exdiv']} no ex-div data")
+            if _skipped.get("past"):       _cap_parts.append(f"{_skipped['past']} already past")
+            if _skipped.get("window"):     _cap_parts.append(f"{_skipped['window']} outside {weeks_ahead}-week window")
+            if _skipped.get("yield"):      _cap_parts.append(f"{_skipped['yield']} yield out of range")
+            if _skipped.get("etf"):        _cap_parts.append(f"{_skipped['etf']} ETFs excluded")
+            if _skipped.get("reit"):       _cap_parts.append(f"{_skipped['reit']} REITs excluded")
+            if _skipped.get("vol"):        _cap_parts.append(f"{_skipped['vol']} below min volume")
+            _misc = _skipped.get("mcap",0)+_skipped.get("sector",0)+_skipped.get("freq",0)
+            if _misc:                      _cap_parts.append(f"{_misc} cap/sector/freq mismatch")
+            st.caption(f"ℹ️ {_total_skip} tickers filtered — {' · '.join(_cap_parts)}")
 
         urgent  = (df["Days to Ex"] <= 7).sum()
         soon    = ((df["Days to Ex"] > 7) & (df["Days to Ex"] <= 14)).sum()

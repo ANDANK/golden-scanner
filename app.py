@@ -684,6 +684,24 @@ if "_nav_open_group" not in st.session_state:
 # ── Page visibility helper (needed by sidebar nav labels) ──────
 from scanners.page_manager import is_page_enabled as _page_enabled
 
+
+def _group_all_disabled(grp: dict) -> bool:
+    """
+    True when every page in this nav group is disabled for the current user.
+    Admins always see everything, so this returns False for admin sessions.
+    Market Overview and Admin Panel are always-on, so their groups are
+    never fully locked.
+    """
+    if st.session_state.get("_is_admin", False):
+        return False
+    for it in grp.get("items", []):
+        if _page_enabled(it["key"]):
+            return False
+        for child in it.get("children", []):
+            if _page_enabled(child["key"]):
+                return False
+    return True
+
 # ── Sidebar ────────────────────────────────────────────────────
 with st.sidebar:
     # Logo block — display only, NOT clickable. (Removed by user request.)
@@ -757,27 +775,52 @@ with st.sidebar:
     for grp in NAV_GROUPS:
         is_open = st.session_state.get("_nav_open_group") == grp["sep"]
         marker = "gs-admin-marker" if grp.get("dim") else "gs-group-marker"
-        # Group header — accordion toggle
-        st.markdown(f'<span class="{marker}"></span>', unsafe_allow_html=True)
-        header_label = f"{grp['icon']}  {grp['sep'].upper()}    {'▾' if is_open else '▸'}"
-        if st.button(header_label, key=f"_grp_{grp['sep']}", use_container_width=True):
-            # Strict accordion: open this group, close all others.
-            # If clicking the already-open group, close it.
-            st.session_state["_nav_open_group"] = None if is_open else grp["sep"]
-            st.rerun()
+        _locked = _group_all_disabled(grp)
 
-        # Body — only render when this is the open group
-        if is_open:
-            if not grp["items"]:
-                st.markdown(
-                    f'<div style="padding:6px 12px;color:{TEXT_MUTED};font-size:11px;font-style:italic">No admin tools yet</div>',
-                    unsafe_allow_html=True,
-                )
-            for it in grp["items"]:
-                if it.get("children"):
-                    _render_item_with_children(it)
-                else:
-                    _render_nav_item(it)
+        # If the currently open group just became fully locked, close it.
+        if _locked and is_open:
+            st.session_state["_nav_open_group"] = None
+            is_open = False
+
+        st.markdown(f'<span class="{marker}"></span>', unsafe_allow_html=True)
+
+        if _locked:
+            # ── Locked group: all pages disabled — show a non-interactive header ──
+            st.markdown(
+                f'<div style="display:flex;align-items:center;gap:8px;'
+                f'padding:7px 14px;border-radius:6px;'
+                f'background:rgba(255,255,255,0.02);'
+                f'border:1px solid {BORDER_COLOR}44;'
+                f'color:{TEXT_MUTED};font-size:11px;font-weight:600;'
+                f'letter-spacing:1.5px;text-transform:uppercase;'
+                f'cursor:not-allowed;opacity:0.45;user-select:none;'
+                f'margin-bottom:2px">'
+                f'<span>🔒</span>'
+                f'<span>{grp["sep"].upper()}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            # ── Normal group: accordion toggle ──
+            header_label = f"{grp['icon']}  {grp['sep'].upper()}    {'▾' if is_open else '▸'}"
+            if st.button(header_label, key=f"_grp_{grp['sep']}", use_container_width=True):
+                # Strict accordion: open this group, close all others.
+                # If clicking the already-open group, close it.
+                st.session_state["_nav_open_group"] = None if is_open else grp["sep"]
+                st.rerun()
+
+            # Body — only render when this is the open group
+            if is_open:
+                if not grp["items"]:
+                    st.markdown(
+                        f'<div style="padding:6px 12px;color:{TEXT_MUTED};font-size:11px;font-style:italic">No admin tools yet</div>',
+                        unsafe_allow_html=True,
+                    )
+                for it in grp["items"]:
+                    if it.get("children"):
+                        _render_item_with_children(it)
+                    else:
+                        _render_nav_item(it)
 
     # ── ⚙️ Settings block — same gold-header treatment ───────
     st.markdown('<div class="gs-global-row">⚙️ Settings</div>', unsafe_allow_html=True)
@@ -819,6 +862,18 @@ if page != "⚙️  Admin Panel" and not st.session_state.get("_is_admin", False
     from scanners.page_manager import is_maintenance_mode, get_maintenance_message
     if is_maintenance_mode():
         _maint_msg = get_maintenance_message()
+        # Hide the sidebar entirely so the maintenance screen is clean
+        st.markdown("""<style>
+section[data-testid="stSidebar"],
+[data-testid="stSidebarCollapsedControl"],
+button[data-testid="stSidebarCollapseButton"] {
+    display: none !important;
+}
+[data-testid="stAppViewContainer"] > .main {
+    margin-left: 0 !important;
+    padding-left: 2rem !important;
+}
+</style>""", unsafe_allow_html=True)
         st.markdown("<br><br>", unsafe_allow_html=True)
         _, _mcol, _ = st.columns([1, 2, 1])
         with _mcol:
