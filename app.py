@@ -26,6 +26,51 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# ── Early maintenance check (needed before CSS injection) ──────
+# We need to know if we're in maintenance mode BEFORE the global <style>
+# block so we can append the sidebar-hiding rules inside it.  Doing this
+# here (before authentication) is safe because the maintenance gate is
+# checked again after auth and calls st.stop() for non-admins.
+from scanners.page_manager import is_maintenance_mode as _early_maint_fn
+_early_in_maint = (
+    _early_maint_fn()
+    and not st.session_state.get("_is_admin", False)
+)
+_maint_sidebar_css = ""
+if _early_in_maint:
+    _maint_sidebar_css = """
+/* ── Maintenance: hide sidebar entirely ── */
+@media (min-width: 769px) {
+    section[data-testid="stSidebar"] {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        transform: none !important;
+    }
+    section[data-testid="stSidebar"] > div:first-child {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+    }
+}
+section[data-testid="stSidebar"],
+[data-testid="stSidebarCollapsedControl"],
+button[data-testid="stSidebarCollapseButton"],
+button[title="Open sidebar"],
+button[aria-label="Open sidebar"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+[data-testid="stAppViewContainer"] > .main,
+[data-testid="stAppViewContainer"] section.main {
+    margin-left: 0 !important;
+    padding-left: 2rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+"""
+
 # ── Global CSS ─────────────────────────────────────────────────
 st.markdown(f"""
 <style>
@@ -489,6 +534,7 @@ div[data-testid="stMarkdownContainer"] div[style*="overflow-x:auto"] {{
 [data-testid="stExpander"] summary span {{
     color: {TEXT_PRIMARY} !important;
 }}
+{_maint_sidebar_css}
 </style>
 """, unsafe_allow_html=True)
 
