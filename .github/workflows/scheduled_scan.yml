@@ -24,6 +24,12 @@ on:
 permissions:
   contents: write          # allow the bot to commit + push scan results
 
+# Prevent two runs of the same slot from overlapping (e.g. duplicate cron fires).
+# cancel-in-progress: false keeps the first run alive; the second is queued, not killed.
+concurrency:
+  group: scheduled-scan-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.slot || 'auto' }}
+  cancel-in-progress: false
+
 
 jobs:
   scan:
@@ -84,9 +90,19 @@ jobs:
             echo "Nothing to commit — scan produced no new data file."
           else
             git commit -m "Auto scan results $(date -u +'%Y-%m-%d %H:%M UTC') [${{ steps.slot.outputs.slot }}]"
-            # Pull remote changes first (another run may have committed in parallel)
-            git pull --rebase origin main || true
-            git push origin main
+
+            # Pull any remote commits made since checkout.
+            # -X ours: on add/add conflict with the same scan-results file
+            # (duplicate cron fires), always keep THIS run's fresh data.
+            if git pull --rebase -X ours origin main; then
+              git push origin main
+            else
+              # Rebase left repo in a broken state — abort cleanly then force-push
+              # our scan data so it's never silently lost.
+              echo "Rebase conflict could not be auto-resolved; force-pushing scan data."
+              git rebase --abort
+              git push --force-with-lease origin main
+            fi
           fi
 
       - name: Upload scan results as artifact
