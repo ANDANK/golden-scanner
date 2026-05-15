@@ -858,15 +858,267 @@ def _render_scanner_tech():
     )
 
 
+# ── Stock Analysis Methodology ─────────────────────────────────
+
+def _render_stock_analysis_methodology():
+    """Tab: How the Stock Analysis page computes its scores and signals."""
+
+    ACCENT_BLUE_LOCAL = "#3B82F6"
+    PURPLE = "#A78BFA"
+
+    # ── Intro blurb ───────────────────────────────────────────────
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {GOLD}33;border-left:4px solid {GOLD};'
+        f'border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:24px;'
+        f'color:{TEXT_MUTED};font-size:13px;line-height:1.7">'
+        f'The <b style="color:{GOLD}">Stock Analysis page</b> runs 9 independent indicator modules on '
+        f'<b style="color:{TEXT_PRIMARY}">Daily + Weekly</b> price data and combines them into three '
+        f'composite scores (Momentum, Trend Strength, Buy Pressure) plus an overall '
+        f'<b style="color:{TEXT_PRIMARY}">Confidence %</b> signal. '
+        f'All scores are 0–100. A ticker appearing in the green zones across most indicators = '
+        f'highest-conviction trade setup.</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ══ Section 1: Composite score formulas ══════════════════════
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin:4px 0 14px">&#127919; Composite Score Formulas</div>',
+        unsafe_allow_html=True,
+    )
+
+    _SCORES = [
+        {
+            "name":  "🔥 Momentum Score",
+            "color": ACCENT_GREEN,
+            "desc":  "Measures short-to-medium-term price acceleration. Weighted toward MACD + RSI because they are the earliest leading indicators of a momentum shift.",
+            "rows": [
+                ("MACD Histogram > 0 (Daily)",    "20 pts", "MACD line above signal — primary momentum trigger"),
+                ("MACD Line > Signal (Daily)",     "15 pts", "Confirmed bullish cross on daily chart"),
+                ("MACD Histogram > 0 (Weekly)",    "10 pts", "Weekly momentum aligns with daily — higher conviction"),
+                ("MACD Line > Signal (Weekly)",    " 8 pts", "Weekly cross bonus — rare, very bullish"),
+                ("RSI 55–68 (Daily)",              "25 pts", "Momentum sweet spot — trending without overbought risk"),
+                ("RSI 50–55 or 68–72 (Daily)",    "12 pts", "Partial credit for adjacent zones"),
+                ("Volume Spike ≥ 1.5× avg",        "12 pts", "High-volume moves show institutional participation"),
+                ("OBV Rising (5-bar slope > 0)",   "10 pts", "On-Balance Volume confirms accumulation"),
+            ],
+            "note": "Max: 100 pts (capped). Formula: sum of all applicable points.",
+        },
+        {
+            "name":  "📈 Trend Strength Score",
+            "color": ACCENT_BLUE_LOCAL,
+            "desc":  "Measures how well the moving-average structure is aligned for a sustained uptrend. Requires the full institutional stack to score highest.",
+            "rows": [
+                ("Price > EMA 20",          "14 pts", "Short-term momentum — price above fast MA"),
+                ("EMA 20 > SMA 50",         "14 pts", "Fast MA above medium MA — uptrend building"),
+                ("Price > SMA 50",          "14 pts", "Medium-term trend confirmed"),
+                ("Price > SMA 200",         "20 pts", "Long-term bull market structure intact"),
+                ("SMA 50 > SMA 200 (Golden Cross)", "14 pts", "Classic Golden Cross — highest weight long-term signal"),
+                ("SMA 200 Slope > 0 (10-bar)", "12 pts", "200-day MA is actively rising — macro trend healthy"),
+                ("SMA 50 Slope > 0 (10-bar)",  "12 pts", "50-day MA is rising — medium-term trend intact"),
+            ],
+            "note": "Max: 100 pts (capped). A full-stack score (all 7 conditions) = 100.",
+        },
+        {
+            "name":  "🌊 Buy Pressure Score",
+            "color": PURPLE,
+            "desc":  "Measures whether smart money is actually entering the stock right now — combines volume, OBV, money flow, breakout proximity, and relative strength.",
+            "rows": [
+                ("Volume Spike ≥ 1.5× avg",    "20 pts", "High volume = institutional conviction"),
+                ("OBV Rising (5-bar slope)",    "15 pts", "On-Balance Volume trending up = accumulation phase"),
+                ("MFI > 60",                    "15 pts", "Money Flow Index: buying pressure dominant"),
+                ("MFI 50–60",                   " 8 pts", "Neutral-to-positive money flow"),
+                ("Price at New 20-Day High",    "20 pts", "Breakout highs attract momentum buyers"),
+                ("Price Within 2% of 20D High", "10 pts", "Near-breakout zone — partial credit"),
+                ("RS vs SPY ≥ 1.05",            "15 pts", "Outperforming the market = money rotating in"),
+                ("MACD Histogram > 0 (Daily)",  "15 pts", "Short-term confirmation of buying momentum"),
+            ],
+            "note": "Max: 100 pts (capped). All 8 conditions can contribute simultaneously.",
+        },
+        {
+            "name":  "💡 Confidence % (Final Signal)",
+            "color": GOLD,
+            "desc":  "The single combined signal shown in the ticker header. It is NOT a simple average — it is a weighted composite with directional bias adjustments applied last.",
+            "rows": [
+                ("Momentum Score × 35%",              "35 pts max", "Highest weight — momentum leads price"),
+                ("Trend Strength Score × 35%",         "35 pts max", "Equal weight — structural backbone of the trade"),
+                ("Buy Pressure Score × 30%",           "30 pts max", "Confirms smart money entry"),
+                ("Full MA Stack bonus",                "+8 pts",     "All 4 MAs aligned = regime confirmation"),
+                ("Below SMA 50 penalty",               "−10 pts",    "Failing the primary trend filter"),
+                ("MACD Cross + Histogram > 0",         "+5 pts",     "Both bullish = momentum accelerating"),
+                ("MACD below signal penalty",          "−5 pts",     "Momentum not yet bullish"),
+                ("RSI 55–68 bonus",                    "+5 pts",     "Ideal momentum zone"),
+                ("RSI > 75 penalty",                   "−8 pts",     "Extended / overbought"),
+                ("RSI < 30 penalty",                   "−4 pts",     "Oversold — possible reversal but not buy signal"),
+                ("RS vs SPY ≥ 1.05 bonus",             "+4 pts",     "Outperforming = leadership"),
+                ("RS vs SPY < 0.92 penalty",           "−4 pts",     "Lagging = avoid"),
+            ],
+            "note": "Final score: 0–100. ≥ 60 = BUY signal. ≤ 40 = SELL signal. 41–59 = NEUTRAL/HOLD.",
+        },
+    ]
+
+    for sc in _SCORES:
+        color = sc["color"]
+        with st.expander(f"{sc['name']}", expanded=False):
+            st.markdown(
+                f'<div style="border-left:4px solid {color};padding:10px 16px;'
+                f'background:linear-gradient(90deg,{color}18,{BG_PANEL});'
+                f'border-radius:0 8px 8px 0;margin-bottom:14px;'
+                f'color:{TEXT_PRIMARY};font-size:13px;line-height:1.6">{sc["desc"]}</div>',
+                unsafe_allow_html=True,
+            )
+            th = (f"padding:7px 12px;color:{TEXT_MUTED};font-size:10px;font-weight:700;"
+                  f"text-transform:uppercase;letter-spacing:.7px;background:{BG_CARD};"
+                  f"border-bottom:1px solid {BORDER_COLOR}44")
+            score_rows = "".join(
+                f'<tr>'
+                f'<td style="padding:7px 12px;color:{TEXT_PRIMARY};font-size:12px;'
+                f'border-bottom:1px solid {BORDER_COLOR}22">{cond}</td>'
+                f'<td style="padding:7px 12px;color:{color};font-weight:800;font-size:12px;'
+                f'font-family:\'DM Mono\',monospace;border-bottom:1px solid {BORDER_COLOR}22;white-space:nowrap">{pts}</td>'
+                f'<td style="padding:7px 12px;color:{TEXT_MUTED};font-size:11px;'
+                f'border-bottom:1px solid {BORDER_COLOR}22">{note}</td>'
+                f'</tr>'
+                for cond, pts, note in sc["rows"]
+            )
+            st.markdown(
+                f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}33">'
+                f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+                f'<thead><tr>'
+                f'<th style="{th}">Condition</th>'
+                f'<th style="{th}">Points</th>'
+                f'<th style="{th}">Notes</th>'
+                f'</tr></thead>'
+                f'<tbody>{score_rows}</tbody>'
+                f'</table></div>'
+                f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:8px;font-style:italic">&#128203; {sc["note"]}</div>',
+                unsafe_allow_html=True,
+            )
+
+    # ══ Section 2: Indicator importance ranking ══════════════════
+    st.markdown(
+        f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
+        f'margin:24px 0 20px"></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin-bottom:14px">&#127942; Indicator Importance Ranking — Highest to Lowest</div>',
+        unsafe_allow_html=True,
+    )
+
+    _INDICATORS = [
+        # (rank, indicator, timeframe, why, color_tier)
+        (1,  "MACD Weekly Cross + Histogram",    "Weekly",       "Best leading signal for swing trades. Weekly confirmation eliminates daily noise. A fresh weekly MACD cross after a pullback = highest-conviction entry.", ACCENT_GREEN),
+        (2,  "MA Trend Stack (Full Alignment)",  "Daily",        "Price > EMA20 > SMA50 > SMA200. When all 4 levels of institutional money are aligned, continuation probability is highest. Partial stacks are significant discounts.", ACCENT_GREEN),
+        (3,  "RSI Zone (Daily + Weekly)",        "Daily+Weekly", "RSI 55–68 is the momentum sweet spot — trending but not overbought. Weekly RSI in this zone confirms a healthy, sustained move. RSI >75 = fade the move.", ACCENT_GREEN),
+        (4,  "MACD Daily Cross + Histogram",     "Daily",        "Confirms short-term momentum direction. Histogram turning positive = momentum starting. Already positive = momentum ongoing. MACD divergence vs price is a major warning sign.", "#60A5FA"),
+        (5,  "Volume Spike (≥ 1.5× avg)",        "Daily",        "Volume is conviction. A price move on low volume frequently reverses. High volume + breakout = institutional buying. Never trust a breakout on <1× volume.", "#60A5FA"),
+        (6,  "Relative Strength vs SPY",         "Daily (63d)",  "Winners lead the market. RS ≥ 1.05 over 63 days = the stock is genuinely outperforming. This filters out stocks that look good in a rising tide but have no alpha.", "#60A5FA"),
+        (7,  "On-Balance Volume (OBV) Slope",    "Daily",        "OBV rising = accumulation (smart money buying). OBV falling while price is flat/up = distribution warning. Divergence between OBV and price often precedes reversals by 1–2 weeks.", GOLD),
+        (8,  "Money Flow Index (MFI)",            "Daily",        "Combines price + volume to measure buying/selling pressure. MFI >60 = money flowing in. More meaningful than volume alone because it weights by dollar flow, not just share count.", GOLD),
+        (9,  "SMA 200 Slope",                    "Daily",        "The 200-day SMA slope tells you the macro trend's health. A rising 200 SMA = long-term uptrend. Flat 200 = transition. Declining 200 = bear market — only short or sit out.", GOLD),
+        (10, "Bollinger Band %B + Squeeze",      "Daily",        "BB Squeeze (bandwidth at 15th percentile) precedes high-volatility directional moves. %B >80% inside a squeeze with volume = high-probability breakout setup.", GOLD),
+        (11, "Breakout: New 20/50-Day High",     "Daily",        "New price highs with volume confirmation signal demand exceeding supply at prior resistance. 50-day new high is more significant than 20-day. Always check volume.", "#FBBF24"),
+        (12, "ATR % + Expansion",                "Daily",        "ATR expanding = trend has energy. Contracting ATR into a BB squeeze = coiled spring. Use ATR to set stop distances — not a round dollar amount.", "#FBBF24"),
+        (13, "SMA 50 Slope",                     "Daily",        "Rising SMA50 = medium-term trend healthy. Useful for confirming the MA stack is improving, not just a one-day pop above the line.", "#FBBF24"),
+        (14, "Relative Strength vs Sector ETF",  "Daily (63d)",  "After confirming RS vs SPY, check RS vs the sector ETF. A stock outperforming both the broad market AND its sector = true sector leader. Best setups have both.", TEXT_MUTED),
+        (15, "Short Interest % + Days to Cover", "Snapshot",     "High short interest (>15% float) combined with rising price = short squeeze fuel. Use as a bonus, not primary signal — fundamentals must support the price.", TEXT_MUTED),
+    ]
+
+    th = (f"padding:8px 12px;color:{TEXT_MUTED};font-size:10px;font-weight:700;"
+          f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
+          f"border-bottom:2px solid {GOLD}44;white-space:nowrap")
+    ind_rows = ""
+    for rank, name, tf, why, color in _INDICATORS:
+        bar_w  = max(4, int((16 - rank) / 15 * 120))
+        bar_c  = color
+        td     = f"padding:9px 12px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:top"
+        ind_rows += (
+            f'<tr>'
+            f'<td style="{td};text-align:center;width:36px">'
+            f'<span style="background:{color}22;color:{color};border:1px solid {color}44;'
+            f'padding:2px 7px;border-radius:4px;font-weight:800;font-size:12px;font-family:\'DM Mono\',monospace">#{rank}</span>'
+            f'</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{color};font-size:12px;font-weight:700;margin-bottom:3px">{name}</div>'
+            f'<div style="background:#1a1a2a;border-radius:2px;height:4px;width:{bar_w}px">'
+            f'<div style="background:{bar_c};height:4px;border-radius:2px;width:100%"></div>'
+            f'</div>'
+            f'</td>'
+            f'<td style="{td};white-space:nowrap">'
+            f'<span style="background:{BG_CARD};color:{TEXT_MUTED};border:1px solid {BORDER_COLOR}44;'
+            f'padding:2px 8px;border-radius:3px;font-size:10px">{tf}</span>'
+            f'</td>'
+            f'<td style="{td};color:{TEXT_MUTED};font-size:11px;line-height:1.6">{why}</td>'
+            f'</tr>'
+        )
+
+    st.markdown(
+        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}44;margin-bottom:20px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>'
+        f'<th style="{th}">#</th>'
+        f'<th style="{th}">Indicator</th>'
+        f'<th style="{th}">Timeframe</th>'
+        f'<th style="{th}">Why It Matters (Highest → Lowest)</th>'
+        f'</tr></thead>'
+        f'<tbody>{ind_rows}</tbody>'
+        f'</table></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ══ Section 3: Signal thresholds ═════════════════════════════
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;'
+        f'padding:16px 20px;margin-top:4px">'
+        f'<div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:10px;'
+        f'text-transform:uppercase;letter-spacing:1px">&#128397; Signal Thresholds</div>'
+        f'<div style="display:flex;gap:16px;flex-wrap:wrap">'
+        f'<div style="background:{ACCENT_GREEN}15;border:1px solid {ACCENT_GREEN}44;border-radius:6px;'
+        f'padding:10px 20px;text-align:center;min-width:110px">'
+        f'<div style="color:{ACCENT_GREEN};font-size:22px;font-weight:800">≥ 60%</div>'
+        f'<div style="color:{ACCENT_GREEN};font-size:11px;font-weight:700;margin-top:2px">🟢 BUY</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
+        f'Confidence ≥ 60<br>Most indicators bullish</div>'
+        f'</div>'
+        f'<div style="background:{YELLOW}15;border:1px solid {YELLOW}44;border-radius:6px;'
+        f'padding:10px 20px;text-align:center;min-width:110px">'
+        f'<div style="color:{YELLOW};font-size:22px;font-weight:800">41–59%</div>'
+        f'<div style="color:{YELLOW};font-size:11px;font-weight:700;margin-top:2px">🟡 NEUTRAL</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
+        f'Mixed signals<br>Watch for resolution</div>'
+        f'</div>'
+        f'<div style="background:{ACCENT_RED}15;border:1px solid {ACCENT_RED}44;border-radius:6px;'
+        f'padding:10px 20px;text-align:center;min-width:110px">'
+        f'<div style="color:{ACCENT_RED};font-size:22px;font-weight:800">≤ 40%</div>'
+        f'<div style="color:{ACCENT_RED};font-size:11px;font-weight:700;margin-top:2px">🔴 SELL</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
+        f'Confidence ≤ 40<br>Avoid or short bias</div>'
+        f'</div>'
+        f'<div style="flex:1;min-width:200px;color:{TEXT_MUTED};font-size:11px;line-height:1.8;'
+        f'padding:4px 0">'
+        f'<b style="color:{TEXT_PRIMARY}">Important:</b> Confidence % is directional — '
+        f'for BUY signals it represents bullish conviction; for SELL signals it shows bearish conviction '
+        f'(100 − composite). A 75% BUY = very high bullish confidence. A 75% SELL = '
+        f'very high bearish conviction. NEUTRAL signals (41–59%) mean indicators are conflicting '
+        f'— reduce size or wait for a resolution.'
+        f'</div>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
 # ── Main render ────────────────────────────────────────────────
 
 def render():
     section_header("⚙️", "Admin Panel", "Scanner reference · Stock universe browser · System info")
 
-    tab1, tab2, tab3 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
         "📊 Scanner Tech & Rankings",
         "📖 Scanner Guide",
         "🗃️ Stock Universe",
+        "🔬 Stock Analysis",
     ])
 
     with tab1:
@@ -877,3 +1129,6 @@ def render():
 
     with tab3:
         _render_universe()
+
+    with tab4:
+        _render_stock_analysis_methodology()

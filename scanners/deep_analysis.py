@@ -1,6 +1,6 @@
 # scanners/deep_analysis.py — Multi-Ticker Deep Technical Analysis Panel
 # 9 indicator modules · Daily + Weekly · Composite scores · Interactive chart
-# Up to 4 tickers, full-color coded output with hover tooltips.
+# Up to 25 tickers, full-color coded output with hover tooltips.
 
 from __future__ import annotations
 
@@ -985,6 +985,120 @@ def render_ticker_panel(a: dict):
 
 
 # ══════════════════════════════════════════════════════════════
+# SUMMARY TABLE — all tickers at a glance
+# ══════════════════════════════════════════════════════════════
+
+def _render_summary_table(analyses: list):
+    """Compact at-a-glance table shown ABOVE per-ticker detail panels."""
+    if not analyses:
+        return
+
+    def _score_bar(score: int) -> str:
+        color = ACCENT_GREEN if score >= 70 else (GOLD if score >= 50 else ACCENT_RED)
+        bar_w = int(score * 44 / 100)
+        return (
+            f'<div style="display:flex;align-items:center;gap:5px">'
+            f'<div style="background:#1a1a2a;border-radius:2px;height:5px;width:44px">'
+            f'<div style="background:{color};height:5px;border-radius:2px;width:{bar_w}px"></div>'
+            f'</div>'
+            f'<span style="color:{color};font-size:11px;font-weight:700">{score}</span>'
+            f'</div>'
+        )
+
+    rows_html = []
+    for a in analyses:
+        sig       = a["signal"]
+        sig_pct   = a["signal_pct"]
+        sig_color = a["signal_color"]
+        circle    = "🟢" if sig == "BUY" else ("🔴" if sig == "SELL" else "🟡")
+
+        # Weekly MACD
+        macd_w_color = ACCENT_GREEN if a["cross_w"] else ACCENT_RED
+        macd_w_label = "Bull ✅" if a["cross_w"] else "Bear ❌"
+        macd_w_vals  = f"{a['m_w']:+.3f} / {a['s_w']:+.3f}"
+
+        # RSI colors
+        def _rsi_color(r):
+            return ACCENT_GREEN if 55 <= r <= 68 else (ACCENT_RED if r > 70 or r < 30 else YELLOW)
+
+        rsi_d_c = _rsi_color(a["rsi_d"])
+        rsi_w_c = _rsi_color(a["rsi_w"])
+
+        # Trend label
+        trend_color = (ACCENT_GREEN if a["trend_level"] == "bull"
+                       else (YELLOW if a["trend_level"] == "warn" else ACCENT_RED))
+        trend_lbl   = "Full Stack" if a["full_stack"] else ("Partial" if a["partial"] else "Weak")
+
+        # Volume & RS
+        vol_color = ACCENT_GREEN if a["vol_spike"] else TEXT_MUTED
+        vol_lbl   = f"{a['vol_ratio']:.1f}×{'🔥' if a['vol_spike'] else ''}"
+        rs_color  = (ACCENT_GREEN if a["rs_spy"] >= 1.05
+                     else (ACCENT_RED if a["rs_spy"] < 0.95 else TEXT_MUTED))
+        rs_lbl    = f"RS {a['rs_spy']:.3f}×"
+
+        chg_c = ACCENT_GREEN if a["chg_pct"] >= 0 else ACCENT_RED
+        td    = f"padding:9px 10px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:middle"
+
+        rows_html.append(f"""<tr>
+          <td style="{td};font-size:18px;text-align:center;width:32px">{circle}</td>
+          <td style="{td}">
+            <div style="color:{GOLD};font-size:14px;font-weight:800;font-family:'DM Mono',monospace;letter-spacing:1px">{a['ticker']}</div>
+            <div style="color:{TEXT_MUTED};font-size:10px;margin-top:1px">${a['price']:.2f}
+              <span style="color:{chg_c}">&nbsp;{a['chg_pct']:+.1f}%</span></div>
+          </td>
+          <td style="{td}">
+            <div style="background:{sig_color}22;border:1px solid {sig_color}55;border-radius:6px;
+                        padding:5px 10px;text-align:center;min-width:72px">
+              <div style="color:{sig_color};font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">{sig}</div>
+              <div style="color:{sig_color};font-size:17px;font-weight:800;line-height:1.1">{sig_pct}%</div>
+            </div>
+          </td>
+          <td style="{td}">
+            <div style="color:{macd_w_color};font-size:11px;font-weight:600">{macd_w_label}</div>
+            <div style="color:{TEXT_MUTED};font-size:10px;font-family:'DM Mono',monospace;margin-top:2px">{macd_w_vals}</div>
+          </td>
+          <td style="{td}">
+            <div style="color:{rsi_d_c};font-size:11px;font-weight:600">D:&nbsp;{a['rsi_d']:.0f}</div>
+            <div style="color:{rsi_w_c};font-size:11px;font-weight:600;margin-top:3px">W:&nbsp;{a['rsi_w']:.0f}</div>
+          </td>
+          <td style="{td}">
+            <div style="color:{trend_color};font-size:11px;font-weight:600;margin-bottom:4px">{trend_lbl}</div>
+            {_score_bar(a['trend_score'])}
+          </td>
+          <td style="{td}">{_score_bar(a['momentum_score'])}</td>
+          <td style="{td}">{_score_bar(a['buy_pressure_score'])}</td>
+          <td style="{td}">
+            <div style="color:{vol_color};font-size:11px;font-weight:600">{vol_lbl}</div>
+            <div style="color:{rs_color};font-size:10px;margin-top:3px">{rs_lbl}</div>
+          </td>
+        </tr>""")
+
+    th = (f"padding:8px 10px;color:{TEXT_MUTED};font-size:10px;font-weight:700;"
+          f"text-transform:uppercase;letter-spacing:.8px;background:{BG_PANEL};"
+          f"border-bottom:2px solid {GOLD}44;white-space:nowrap")
+    headers = ["", "Ticker", "Signal / Conf", "Weekly MACD", "RSI D/W",
+               "Trend Strength", "Momentum", "Buy Pressure", "Vol / RS"]
+    hdr_html = "".join(f'<th style="{th}">{h}</th>' for h in headers)
+
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {GOLD}44;border-radius:10px;'
+        f'margin-bottom:28px;overflow:hidden">'
+        f'<div style="background:{BG_CARD};padding:11px 18px;border-bottom:1px solid {BORDER_COLOR};'
+        f'display:flex;align-items:center;justify-content:space-between">'
+        f'<span style="color:{GOLD};font-size:13px;font-weight:700">📊 Summary — All Tickers at a Glance</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:11px">'
+        f'🟢&thinsp;Buy &nbsp;·&nbsp; 🟡&thinsp;Neutral &nbsp;·&nbsp; 🔴&thinsp;Sell</span>'
+        f'</div>'
+        f'<div style="overflow-x:auto">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>{hdr_html}</tr></thead>'
+        f'<tbody>{"".join(rows_html)}</tbody>'
+        f'</table></div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+# ══════════════════════════════════════════════════════════════
 # MAIN RENDER
 # ══════════════════════════════════════════════════════════════
 
@@ -1001,7 +1115,7 @@ def render():
   <div style="color:{GOLD};font-size:12px;font-weight:700;text-transform:uppercase;
               letter-spacing:1.2px;margin-bottom:10px">🔬 Enter Tickers to Analyze</div>
   <div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:10px">
-    Type 1–5 stock symbols separated by commas, then click <b style="color:{TEXT_PRIMARY}">▶ Analyze</b>.
+    Type 1–25 stock symbols separated by commas, then click <b style="color:{TEXT_PRIMARY}">▶ Analyze</b>.
     Example: <span style="color:{GOLD};font-family:'DM Mono',monospace">AAPL, MSFT, NVDA, TSLA, META</span>
   </div>
 </div>""", unsafe_allow_html=True)
@@ -1011,7 +1125,7 @@ def render():
         ticker_input = st.text_input(
             "Tickers",
             value="AAPL",
-            placeholder="e.g. AAPL, MSFT, NVDA, TSLA",
+            placeholder="e.g. AAPL, MSFT, NVDA, TSLA, META, GOOGL, AMZN …",
             label_visibility="collapsed",
         )
     with col_run:
@@ -1023,10 +1137,10 @@ def render():
 
     import re
     raw     = [t.upper() for t in re.split(r"[\s,;]+", ticker_input.strip()) if t.strip()]
-    tickers = raw[:5]
+    tickers = raw[:25]
 
-    if len(raw) > 5:
-        st.warning(f"Only the first 5 tickers will be analyzed. Dropped: {', '.join(raw[5:])}")
+    if len(raw) > 25:
+        st.warning(f"Only the first 25 tickers will be analyzed. Dropped: {', '.join(raw[25:])}")
 
     if not tickers:
         st.info("Enter 1–5 ticker symbols above and click **▶ Analyze**.")
@@ -1064,7 +1178,7 @@ def render():
             f'<div style="font-size:24px;color:{GOLD};font-family:\'Cormorant Garamond\',serif;margin-bottom:10px">'
             f'Deep Technical Analysis Panel</div>'
             f'<div style="color:{TEXT_MUTED};font-size:14px;max-width:580px;margin:0 auto 28px;line-height:1.8">'
-            f'Enter up to <b style="color:{TEXT_PRIMARY}">5 tickers</b> above and click '
+            f'Enter up to <b style="color:{TEXT_PRIMARY}">25 tickers</b> above and click '
             f'<b style="color:{TEXT_PRIMARY}">&#9658; Analyze</b>. '
             f'Each ticker gets a full multi-color, dual-timeframe technical report '
             f'with hover tooltips, composite scores, and an interactive chart.</div>'
@@ -1107,5 +1221,9 @@ def render():
         st.error("No valid data returned. Check ticker symbols and try again.")
         return
 
+    # ── Summary table (top) ─────────────────────────────────────
+    _render_summary_table(analyses)
+
+    # ── Per-ticker detail panels ────────────────────────────────
     for a in analyses:
         render_ticker_panel(a)
