@@ -771,9 +771,12 @@ def scan_squeeze(tickers, price_min, price_max, require_macd_up, require_vol_tre
                 continue
 
             # Momentum turning up
-            _, _, hist_vals = calc_macd(close)
+            _, _, hist_vals, prev_hist_vals = calc_macd(close)
             rsi = calc_rsi(close)
-            macd_up = float(hist_vals) > 0 if not isinstance(hist_vals, pd.Series) else float(hist_vals.iloc[-1]) > 0
+            h   = float(hist_vals)
+            ph  = float(prev_hist_vals)
+            # Confirmed bullish: histogram positive AND growing (momentum building)
+            macd_up = h > 0 and h > ph
             rsi_up  = rsi_rising(close)
 
             if require_macd_up and not macd_up:
@@ -1064,8 +1067,11 @@ def scan_multifactor(tickers, rsi_min, rsi_max, vol_mult, rs_min,
             if not (rsi_min <= rsi <= rsi_max):
                 continue
 
-            _, _, hist_val = calc_macd(close)
+            _, _, hist_val, prev_hist_val = calc_macd(close)
+            # Confirmed bullish: histogram positive AND growing (momentum building, not fading)
             if float(hist_val) <= 0:
+                continue
+            if float(hist_val) < float(prev_hist_val):
                 continue
 
             vr = vol_above_n_avg(volume, 20, vol_mult)
@@ -1098,7 +1104,7 @@ def scan_multifactor(tickers, rsi_min, rsi_max, vol_mult, rs_min,
             score = 0
             if price > s50 > s200:      score += 20  # trend foundation
             if rsi_min <= rsi <= rsi_max: score += 15  # momentum sweet spot
-            if float(hist_val) > 0:     score += 15  # MACD confirmation
+            if float(hist_val) > 0:     score += 15  # MACD confirmed (positive + growing — guaranteed by filter above)
             if vr >= 2.0:               score += 15
             elif vr >= vol_mult:        score += 10
             if atr_exp:                 score += 10  # volatility expanding

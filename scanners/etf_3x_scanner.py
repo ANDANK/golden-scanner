@@ -74,7 +74,7 @@ def scan_3x_etfs(tickers, rsi_min, rsi_max, vol_mult, price_min, direction_filte
                 if vol_ratio < vol_mult:
                     continue
 
-                _, _, hist = calc_macd(close)
+                _, _, hist, *_ = calc_macd(close)
                 atr_pct = calc_atr(df)
                 atr_exp = atr_expanding(df)
 

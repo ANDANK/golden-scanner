@@ -75,7 +75,7 @@ def scan_leaps(tickers, dte_min, delta_min, delta_max, iv_rank_max, price_min, p
 
             rs = calc_relative_strength(close, spy_close) if not spy_close.empty else 1.0
             rsi = calc_rsi(close)
-            _, _, hist = calc_macd(close)
+            _, _, hist, *_ = calc_macd(close)
 
             _, _, expiries = get_options_chain(ticker)   # dates-only call (calls empty by design)
             if not expiries:

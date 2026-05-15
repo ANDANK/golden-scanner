@@ -548,11 +548,15 @@ def _render_reddit(signal_mode, ticker_filter, sent_filter):
         _card(it, show_engagement=True)
 
 
-def _render_combined(signal_mode, ticker_filter, sent_filter):
+def _render_combined(signal_mode, ticker_filter, sent_filter, yt_key: str = ""):
     with st.spinner("Fetching all feeds…"):
         news   = _fetch_news()
         reddit = _fetch_reddit()
-    all_items = sorted(news + reddit, key=lambda x: -x.get("score", 0))
+        yt     = _fetch_youtube(yt_key) if yt_key else []
+        # Filter out any sentinel error records from YouTube
+        yt = [it for it in yt if "_error" not in it]
+
+    all_items = sorted(news + reddit + yt, key=lambda x: -x.get("score", 0))
     if ticker_filter:
         all_items = [it for it in all_items
                      if any(ticker_filter in t for t in it["tickers"])
@@ -563,7 +567,10 @@ def _render_combined(signal_mode, ticker_filter, sent_filter):
         all_items = [it for it in all_items if it["score"] >= 60]
     _cluster_cards(all_items)
     for it in all_items:
-        _card(it, show_engagement=True)
+        if it.get("type") == "youtube":
+            _yt_card(it)
+        else:
+            _card(it, show_engagement=True)
 
 
 def _render_yt_placeholder():
@@ -589,6 +596,299 @@ def _render_yt_placeholder():
         f'</div>',
         unsafe_allow_html=True,
     )
+
+
+# ── YouTube API fetcher ───────────────────────────────────────────
+
+# Search terms sent to YouTube — each costs 100 quota units
+_YT_QUERIES = [
+    "stock market analysis today",
+    "stocks to buy now",
+    "options trading today",
+    "investing news today",
+    "stock market outlook",
+]
+
+@st.cache_data(ttl=1800, show_spinner=False)   # 30-min cache — YouTube quota is finite
+def _fetch_youtube(api_key: str) -> list:
+    """
+    Search YouTube Data API v3 for recent finance videos.
+    Each _YT_QUERIES entry costs 100 quota units; 3 queries = 300/day here.
+    Results cached 30 min so repeated tab switches don't burn quota.
+    Returns list of items in the same schema as news/reddit items,
+    OR a single sentinel dict {"_error": msg, "_debug": {...}} on failure.
+    """
+    from datetime import timedelta
+
+    # 7-day window — wide enough to survive quiet weekends
+    published_after = (
+        datetime.now(timezone.utc) - timedelta(days=7)
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    items:     list = []
+    seen:      set  = set()
+    api_error: str  = ""
+    debug_log: list = []   # accumulate per-query diagnostics
+
+    # Use only 3 queries to conserve quota (300 units/run)
+    for query in _YT_QUERIES[:3]:
+        try:
+            resp = requests.get(
+                "https://www.googleapis.com/youtube/v3/search",
+                params={
+                    "key":               api_key.strip(),
+                    "q":                 query,
+                    "type":              "video",
+                    "order":             "relevance",
+                    "publishedAfter":    published_after,
+                    "maxResults":        15,
+                    "part":              "snippet",
+                    "relevanceLanguage": "en",
+                    # No videoDuration filter — medium (4-20 min) excluded Shorts
+                    # AND long-form analysis videos (>20 min). Accept all lengths.
+                },
+                timeout=12,
+            )
+
+            status = resp.status_code
+            debug_log.append({"query": query, "http": status})
+
+            if status == 403:
+                data   = resp.json()
+                reason = (data.get("error", {})
+                              .get("errors", [{}])[0]
+                              .get("reason", "unknown"))
+                msg    = data.get("error", {}).get("message", "")
+                api_error = f"HTTP 403 — {reason}: {msg}"
+                break
+            if status != 200:
+                try:
+                    body = resp.json()
+                except Exception:
+                    body = resp.text[:200]
+                api_error = f"HTTP {status} — {body}"
+                break
+
+            raw_items = resp.json().get("items", [])
+            debug_log[-1]["raw_count"] = len(raw_items)
+            kept = 0
+
+            for item in raw_items:
+                video_id = item.get("id", {}).get("videoId", "")
+                if not video_id or video_id in seen:
+                    continue
+                seen.add(video_id)
+
+                snippet = item.get("snippet", {})
+                title   = _strip_html(snippet.get("title", ""))
+                desc    = _strip_html(snippet.get("description", ""))[:220]
+                channel = snippet.get("channelTitle", "YouTube")
+                pub     = snippet.get("publishedAt", "")
+                thumb   = (snippet.get("thumbnails", {})
+                                  .get("medium", {})
+                                  .get("url", ""))
+
+                if not title:
+                    continue
+
+                # NOTE: do NOT apply _is_finance() here — YouTube search already
+                # targets finance topics via the query string. Snippet descriptions
+                # in search results are often truncated and fail keyword checks
+                # even for valid finance videos.
+
+                dt              = _parse_dt(pub)
+                tickers         = _extract_tickers(title + " " + desc)
+                sentiment, clar = _score_sentiment(title + " " + desc)
+                kept += 1
+
+                items.append({
+                    "source":     channel,
+                    "title":      title,
+                    "desc":       desc,
+                    "link":       f"https://www.youtube.com/watch?v={video_id}",
+                    "dt":         dt,
+                    "time_ago":   _time_ago(dt),
+                    "tickers":    tickers,
+                    "sentiment":  sentiment,
+                    "clarity":    clar,
+                    "recency":    _recency_w(dt),
+                    "engagement": 0,
+                    "type":       "youtube",
+                    "thumb":      thumb,
+                    "video_id":   video_id,
+                    "ups":        0, "comments": 0,
+                    "is_dd":      False, "flair": "",
+                })
+
+            debug_log[-1]["kept"] = kept
+
+        except Exception as exc:
+            api_error = str(exc)
+            debug_log.append({"query": query, "exception": api_error})
+            continue
+
+    if api_error and not items:
+        return [{"_error": api_error, "_debug": debug_log}]
+
+    if not items:
+        return [{"_error": "No videos returned by API — possibly quota exhausted or all filtered.",
+                 "_debug": debug_log}]
+
+    max_eng = 1
+    for it in items:
+        it["score"] = _compute_score(
+            it["recency"], 0, max_eng, it["tickers"], it["clarity"]
+        )
+
+    seen_titles, deduped = set(), []
+    for it in sorted(items, key=lambda x: -x.get("score", 0)):
+        key = it["title"][:60].lower()
+        if key not in seen_titles:
+            seen_titles.add(key)
+            deduped.append(it)
+
+    # Attach debug to first item so caller can surface it in an expander
+    if deduped:
+        deduped[0]["_debug"] = debug_log
+    return deduped[:25]
+
+
+def _yt_card(item: dict):
+    """YouTube-specific card with thumbnail."""
+    sentiment  = item.get("sentiment", "Neutral")
+    left_color = {"Bullish": ACCENT_GREEN, "Bearish": ACCENT_RED}.get(sentiment, BORDER_COLOR)
+    title      = item["title"][:110] + ("…" if len(item["title"]) > 110 else "")
+    desc       = item.get("desc", "")
+    link       = item.get("link", "#")
+    tickers    = item.get("tickers", [])
+    score      = item.get("score", 0)
+    thumb      = item.get("thumb", "")
+    channel    = item.get("source", "YouTube")
+
+    thumb_html = (
+        f'<a href="{link}" target="_blank">'
+        f'<img src="{thumb}" style="width:120px;height:68px;object-fit:cover;'
+        f'border-radius:4px;flex-shrink:0" loading="lazy"/></a>'
+        if thumb else ""
+    )
+
+    st.markdown(
+        f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR}55;'
+        f'border-left:3px solid {left_color};border-radius:8px;'
+        f'padding:12px 16px;margin-bottom:8px">'
+        # header row
+        f'<div style="display:flex;justify-content:space-between;align-items:center;'
+        f'flex-wrap:wrap;gap:4px;margin-bottom:10px">'
+        f'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
+        f'{_sent_badge(sentiment)}'
+        f'<span style="background:{BG_DARK};color:#FF0000;border:1px solid {BORDER_COLOR};'
+        f'padding:2px 7px;border-radius:4px;font-size:10px">&#127909; {channel}</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:10px">{item["time_ago"]}</span>'
+        f'</div>'
+        f'{_score_badge(score)}</div>'
+        # body: thumbnail + title + desc
+        f'<div style="display:flex;gap:12px;align-items:flex-start">'
+        f'{thumb_html}'
+        f'<div style="flex:1;min-width:0">'
+        f'<a href="{link}" target="_blank" style="color:{TEXT_PRIMARY};text-decoration:none">'
+        f'<div style="font-size:13px;font-weight:600;line-height:1.5;margin-bottom:4px">{title}</div>'
+        f'</a>'
+        + (f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.5">{desc}</div>' if desc else "")
+        + f'</div></div>'
+        + _ticker_tags(tickers)
+        + _tech_row_html(tickers)
+        + '</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_youtube(api_key: str, signal_mode: bool,
+                    ticker_filter: str, sent_filter: str):
+    # Clear-cache button so user can force a fresh fetch without full reboot
+    col_btn, col_sp = st.columns([1, 5])
+    with col_btn:
+        if st.button("🔄 Refresh YouTube", use_container_width=True, key="_yt_refresh"):
+            st.cache_data.clear()
+            st.rerun()
+
+    with st.spinner("Fetching YouTube finance videos…"):
+        items = _fetch_youtube(api_key)
+
+    # Always show a debug expander so problems are visible
+    first = items[0] if items else {}
+    debug_info = first.get("_debug", [])
+    with st.expander("🔧 Debug — YouTube API status", expanded=("_error" in first)):
+        key_preview = api_key[:8] + "…" if len(api_key) > 8 else api_key
+        st.markdown(f"**Key read:** `{key_preview}` (length {len(api_key)})")
+        if debug_info:
+            for d in debug_info:
+                q    = d.get("query", "?")
+                http = d.get("http", "—")
+                raw  = d.get("raw_count", "—")
+                kept = d.get("kept", "—")
+                exc  = d.get("exception", "")
+                if exc:
+                    st.markdown(f"- `{q}` → ❌ exception: `{exc}`")
+                else:
+                    st.markdown(f"- `{q}` → HTTP {http} · {raw} raw · {kept} kept")
+        else:
+            st.markdown("_No debug data — fetch may not have run yet._")
+
+    # API error surfaced as sentinel record
+    if "_error" in first:
+        err = first["_error"]
+        st.error(
+            f"**YouTube API error:** {err}\n\n"
+            "**Checklist:**\n"
+            "1. Go to [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Library\n"
+            "2. Search for **YouTube Data API v3** and confirm it is **Enabled**\n"
+            "3. Check your API key has no IP/referer restrictions that block Streamlit Cloud\n"
+            "4. Confirm the key in Streamlit secrets is spelled exactly `YOUTUBE_API_KEY`",
+            icon="🔑",
+        )
+        return
+
+    if not items:
+        st.info("No videos returned — try refreshing or check the debug panel above.", icon="ℹ️")
+        return
+
+    if ticker_filter:
+        items = [it for it in items
+                 if any(ticker_filter in t for t in it["tickers"])
+                 or ticker_filter in it["title"].upper()]
+    if sent_filter != "All":
+        items = [it for it in items if it["sentiment"] == sent_filter]
+    if signal_mode:
+        items = [it for it in items if it["score"] >= 60]
+
+    if not items:
+        st.info("No YouTube results match the active filters.", icon="ℹ️")
+        return
+
+    # Summary metrics
+    bull = sum(1 for it in items if it["sentiment"] == "Bullish")
+    bear = sum(1 for it in items if it["sentiment"] == "Bearish")
+    c1, c2, c3 = st.columns(3)
+    with c1: st.markdown(
+        f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;'
+        f'padding:8px 14px;text-align:center"><div style="color:{TEXT_MUTED};font-size:10px">Videos</div>'
+        f'<div style="color:{GOLD};font-size:20px;font-weight:700">{len(items)}</div></div>',
+        unsafe_allow_html=True)
+    with c2: st.markdown(
+        f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;'
+        f'padding:8px 14px;text-align:center"><div style="color:{TEXT_MUTED};font-size:10px">Bullish</div>'
+        f'<div style="color:{ACCENT_GREEN};font-size:20px;font-weight:700">{bull}</div></div>',
+        unsafe_allow_html=True)
+    with c3: st.markdown(
+        f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;'
+        f'padding:8px 14px;text-align:center"><div style="color:{TEXT_MUTED};font-size:10px">Bearish</div>'
+        f'<div style="color:{ACCENT_RED};font-size:20px;font-weight:700">{bear}</div></div>',
+        unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    _cluster_cards(items)
+    for it in items:
+        _yt_card(it)
 
 
 # ── Main entry point ──────────────────────────────────────────────
@@ -634,11 +934,30 @@ def render():
         "&#127760; Combined Feed",
     ])
 
+    # Resolve API key — try multiple access patterns for local vs Streamlit Cloud
+    yt_key = ""
+    try:
+        # Primary: direct key access (works on Streamlit Cloud & local secrets.toml)
+        yt_key = str(st.secrets["YOUTUBE_API_KEY"]).strip()
+    except (KeyError, FileNotFoundError):
+        pass
+    except Exception:
+        try:
+            # Fallback: .get() for AttrDict-style secrets
+            val = st.secrets.get("YOUTUBE_API_KEY")
+            if val:
+                yt_key = str(val).strip()
+        except Exception:
+            yt_key = ""
+
     with t_news:
         _render_hot_news(signal_mode, ticker_filter, sent_filter)
     with t_reddit:
         _render_reddit(signal_mode, ticker_filter, sent_filter)
     with t_youtube:
-        _render_yt_placeholder()
+        if yt_key:
+            _render_youtube(yt_key, signal_mode, ticker_filter, sent_filter)
+        else:
+            _render_yt_placeholder()
     with t_combined:
-        _render_combined(signal_mode, ticker_filter, sent_filter)
+        _render_combined(signal_mode, ticker_filter, sent_filter, yt_key)

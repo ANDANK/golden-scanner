@@ -61,9 +61,12 @@ def scan_momentum(tickers, rsi_min, rsi_max, vol_mult, price_min, price_max,
             if not (rsi_min <= rsi <= rsi_max):
                 diag.skipped(ticker, f"RSI {rsi:.0f} out of range"); continue
 
-            macd_line, signal_line, hist = calc_macd(close)
+            macd_line, signal_line, hist, prev_hist = calc_macd(close)
             if hist <= 0:
                 diag.skipped(ticker, "MACD bearish"); continue
+            # Confirmed bullish: histogram must be growing (momentum building, not fading)
+            if hist < prev_hist:
+                diag.skipped(ticker, "MACD hist declining"); continue
 
             # Volume
             avg_vol = float(volume.iloc[:-1].rolling(20).mean().dropna().iloc[-1]) if len(volume) > 20 else float(volume.mean())

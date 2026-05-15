@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import *
 from utils import section_header, empty_state, metric_card, mini_chart
-from data_loader import get_price_history
+from data_loader import get_price_history, prefetch_tickers
 
 # ── Scanner metadata ────────────────────────────────────────────
 SCANNER_META = {
@@ -110,12 +110,38 @@ def run_combined(tickers: list, include_value: bool = False,
     from scanners.growth_scanner import scan_growth
     from scanners.weekly_scanners import (
         scan_trend_alignment, scan_trend_continuation, scan_momentum_reset,
-        clear_weekly_cache,
+        clear_weekly_cache, prefetch_weekly,
     )
 
     # Clear the process-level weekly cache at the start of each run
     # so stale data from a prior run never bleeds through.
     clear_weekly_cache()
+
+    # ── Batch prefetch — turns 200 sequential API calls → 3 bulk calls ──────
+    # Populate _PROC_PRICE_CACHE before any scanner starts.  Each subsequent
+    # get_price_history() call in the scan loop hits the local dict and makes
+    # zero additional network requests for the same (period, interval) key.
+    status_ph.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:12px;margin:4px 0">'
+        f'Prefetching daily price data…</div>',
+        unsafe_allow_html=True,
+    )
+    prefetch_tickers(tickers, "6mo", "1d")   # Momentum / Trend Stack / Multi-Factor / Growth
+
+    status_ph.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:12px;margin:4px 0">'
+        f'Prefetching weekly price data…</div>',
+        unsafe_allow_html=True,
+    )
+    prefetch_weekly(tickers, years=3)         # Trend Align / Trend Cont. / Reset Bounce
+
+    status_ph.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:12px;margin:4px 0">'
+        f'Prefetching 1-year data for upside targets…</div>',
+        unsafe_allow_html=True,
+    )
+    prefetch_tickers(tickers, "1y", "1d")    # _estimate_upside
+    # ────────────────────────────────────────────────────────────────────────
 
     frames = []
 

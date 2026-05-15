@@ -52,15 +52,26 @@ def calc_rsi(series: pd.Series, period: int = 14) -> float:
 
 
 def calc_macd(series: pd.Series) -> tuple:
-    """Return (macd_line, signal_line, histogram) as floats."""
+    """Return (macd_line, signal_line, histogram, prev_histogram) as floats.
+
+    Interpretation guide:
+      hist > 0                          → MACD line crossed above signal (bullish)
+      hist > 0  AND  hist > prev_hist   → confirmed bullish: histogram growing
+                                           momentum is building, not fading
+      hist[-2] <= 0 AND hist > 0        → fresh bullish crossover (just happened)
+      hist > 0  AND  hist < prev_hist   → bullish but histogram shrinking —
+                                           momentum decelerating, potential reversal
+    """
     if len(series) < 26:
-        return 0.0, 0.0, 0.0
+        return 0.0, 0.0, 0.0, 0.0
     ema12 = calc_ema(series, 12)
     ema26 = calc_ema(series, 26)
     macd = ema12 - ema26
     signal = calc_ema(macd, 9)
     hist = macd - signal
-    return float(macd.iloc[-1]), float(signal.iloc[-1]), float(hist.iloc[-1])
+    valid = hist.dropna()
+    prev_h = float(valid.iloc[-2]) if len(valid) >= 2 else 0.0
+    return float(macd.iloc[-1]), float(signal.iloc[-1]), float(hist.iloc[-1]), prev_h
 
 
 def calc_atr(df: pd.DataFrame, period: int = 14) -> float:

@@ -31,7 +31,7 @@ def scan_etf_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min
                 price = float(close.iloc[-1])
 
                 rsi = calc_rsi(close)
-                _, _, hist = calc_macd(close)
+                _, _, hist, *_ = calc_macd(close)
                 avg_vol = float(volume.rolling(20).mean().dropna().iloc[-1])
                 vol_ratio = float(volume.iloc[-1]) / avg_vol if avg_vol > 0 else 1
 

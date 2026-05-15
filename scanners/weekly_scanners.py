@@ -62,6 +62,64 @@ def clear_weekly_cache():
     _WK_CACHE.clear()
 
 
+def prefetch_weekly(tickers: list, years: int = 3) -> int:
+    """
+    Batch-download weekly bars for all tickers in ONE yf.download() call and
+    populate _WK_CACHE.  Turns 200 sequential weekly API calls → 1 bulk call.
+
+    Called from combined_scanner.run_combined() before the weekly scanners run.
+    Already-cached tickers are skipped automatically.
+
+    Returns the number of tickers successfully cached.
+    """
+    import yfinance as yf
+
+    missing = [t for t in tickers if f"{t}_{years}" not in _WK_CACHE]
+    if not missing:
+        return 0
+
+    try:
+        raw = yf.download(
+            missing,
+            period=f"{years}y",
+            interval="1wk",
+            auto_adjust=True,
+            progress=False,
+            group_by="ticker",
+        )
+    except Exception:
+        return 0
+
+    if raw is None or raw.empty:
+        return 0
+
+    filled = 0
+    for ticker in missing:
+        cache_key = f"{ticker}_{years}"
+        if cache_key in _WK_CACHE:
+            continue
+        try:
+            if len(missing) == 1:
+                df = raw.copy()
+            else:
+                if ticker not in raw.columns.get_level_values(0):
+                    continue
+                df = raw[ticker].copy()
+
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            df = df.dropna(subset=["Close"])
+            if df.empty:
+                continue
+
+            _WK_CACHE[cache_key] = df
+            filled += 1
+        except Exception:
+            continue
+
+    return filled
+
+
 # ══════════════════════════════════════════════════════════════════
 # 2. INDICATOR HELPERS
 # ══════════════════════════════════════════════════════════════════

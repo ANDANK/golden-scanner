@@ -99,7 +99,7 @@ def _get_ind(ticker: str) -> dict:
 
         rsi14      = calc_rsi(close, 14)
         rsi2       = calc_rsi(close, 2)
-        _, _, mhist = calc_macd(close)
+        _, _, mhist, *_ = calc_macd(close)
         atr_pct    = calc_atr(df) if "High" in df.columns else 0.0
 
         vol_ratio = 1.0

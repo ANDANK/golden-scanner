@@ -68,7 +68,7 @@ def scan_growth(tickers, rev_growth_min, eps_growth_min, rs_min, price_min, pric
             if pct_above_sma20 > 15:
                 diag.skipped(ticker, f"over-extended +{pct_above_sma20:.0f}% above SMA20"); continue
 
-            macd_line, signal_line, hist = calc_macd(close)
+            macd_line, signal_line, hist, prev_hist = calc_macd(close)
 
             avg_vol = float(volume.iloc[:-1].rolling(20).mean().dropna().iloc[-1]) if len(volume) > 20 else float(volume.mean())
             curr_vol = float(volume.iloc[-1])
@@ -96,7 +96,8 @@ def scan_growth(tickers, rev_growth_min, eps_growth_min, rs_min, price_min, pric
             if rs >= 1.15: score += 20
             elif rs >= 1.05: score += 12
             if price > sma50: score += 15
-            if hist > 0: score += 10
+            if hist > 0 and hist > prev_hist: score += 10   # confirmed: hist positive AND growing
+            elif hist > 0:                    score += 5    # positive but fading — partial credit
             if vol_ratio >= 1.5: score += 5
             score = min(score, 100)
 

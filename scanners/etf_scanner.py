@@ -64,7 +64,7 @@ def scan_etfs(tickers, rs_min, rsi_min, rsi_max, price_min):
                 if rs < rs_min:
                     continue
 
-                _, _, hist = calc_macd(close)
+                _, _, hist, *_ = calc_macd(close)
                 avg_vol = float(volume.iloc[:-1].rolling(20).mean().dropna().iloc[-1]) if len(volume) > 20 else float(volume.mean())
                 curr_vol = float(volume.iloc[-1])
                 vol_ratio = curr_vol / avg_vol if avg_vol > 0 else 0

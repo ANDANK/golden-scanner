@@ -98,6 +98,66 @@ _PROC_PRICE_CACHE: dict = {}
 _PROC_INFO_CACHE:  dict = {}
 
 
+def prefetch_tickers(tickers: List[str], period: str = "6mo", interval: str = "1d") -> int:
+    """
+    Batch-download OHLCV data for all tickers in ONE yf.download() call and
+    populate _PROC_PRICE_CACHE.  This turns 200 sequential API calls into a
+    single bulk request and is the primary speed optimisation for Golden Scan.
+
+    Returns the number of tickers successfully cached.
+
+    Call this before running any scanner that uses get_price_history():
+        prefetch_tickers(tickers, "6mo",  "1d")   # daily scanners
+        prefetch_tickers(tickers, "1y",   "1d")   # _estimate_upside
+        prefetch_tickers(tickers, "2y",   "1wk")  # weekly scanners
+
+    Already-cached tickers (in _PROC_PRICE_CACHE) are skipped so a second
+    call for the same (period, interval) is a no-op.
+    """
+    missing = [t for t in tickers if (t, period, interval) not in _PROC_PRICE_CACHE]
+    if not missing:
+        return 0
+
+    try:
+        raw = yf.download(
+            missing, period=period, interval=interval,
+            progress=False, auto_adjust=True,
+            group_by="ticker",
+        )
+    except Exception:
+        return 0
+
+    if raw is None or raw.empty:
+        return 0
+
+    filled = 0
+    for ticker in missing:
+        _key = (ticker, period, interval)
+        if _key in _PROC_PRICE_CACHE:
+            continue
+        try:
+            if len(missing) == 1:
+                df = raw.copy()
+            else:
+                if ticker not in raw.columns.get_level_values(0):
+                    continue
+                df = raw[ticker].copy()
+
+            # Drop all-NaN rows and ensure standard column names
+            df = df.dropna(how="all")
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            if df.empty:
+                continue
+
+            _PROC_PRICE_CACHE[_key] = df
+            filled += 1
+        except Exception:
+            continue
+
+    return filled
+
+
 # ── Cached Data Fetchers ───────────────────────────────────────
 
 def _fetch_price_history(ticker: str, period: str, interval: str) -> pd.DataFrame:
