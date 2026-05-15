@@ -619,8 +619,6 @@ NAV_GROUPS = [
         "items": [
             {"key": "💰  CSP — Stocks"},
             {"key": "💰  CSP — ETFs"},
-            {"key": "📦  CC — Stocks"},
-            {"key": "📦  CC — ETFs"},
             {"key": "🧨  LEAPS — Stocks"},
             {"key": "🧨  LEAPS — ETFs"},
             {"key": "⚡  3× ETF Options"},
@@ -888,12 +886,6 @@ elif page == "💰  CSP — Stocks":
     render(universe_mode="stocks")
 elif page == "💰  CSP — ETFs":
     from scanners.csp_scanner import render
-    render(universe_mode="etfs")
-elif page == "📦  CC — Stocks":
-    from scanners.cc_scanner import render
-    render(universe_mode="stocks")
-elif page == "📦  CC — ETFs":
-    from scanners.cc_scanner import render
     render(universe_mode="etfs")
 elif page == "🧨  LEAPS — Stocks":
     from scanners.leaps_scanner import render

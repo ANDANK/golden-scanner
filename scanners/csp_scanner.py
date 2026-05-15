@@ -180,9 +180,9 @@ def render(universe_mode: str = "stocks"):
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ CSP — {mode_lbl} Filters</div>', unsafe_allow_html=True)
         iv_rank_min     = st.slider("Min IV Rank",               0,    100,   25,          key=f"{mk}_iv")
         delta_min, delta_max = st.slider("Delta Range (abs)",    0.05, 0.50, (0.15, 0.30), 0.01, key=f"{mk}_delta")
-        premium_pct_min = st.slider("Min Premium % of Strike",   0.3,  5.0,   0.70,        0.05, key=f"{mk}_prem")
+        premium_pct_min = st.slider("Min Premium % of Strike",   0.3,  5.0,   0.65,        0.05, key=f"{mk}_prem")
         spread_pct_max  = st.slider("Max Bid/Ask Spread %",      1.0,  50.0,  20.0,        0.5,  key=f"{mk}_sprd")
-        dte_min, dte_max = st.slider("DTE Range (days)",         1,    90,   (1, 45),             key=f"{mk}_dte")
+        dte_min, dte_max = st.slider("DTE Range (days)",         1,    90,   (1, 35),             key=f"{mk}_dte")
         if not is_etf:
             universe_size = st.slider("Universe Size (top stocks)", 10, len(SP500_SAMPLE), 20, 10, key=f"{mk}_sz")
         st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;margin:10px 0 4px">⚙️ Scan Speed</div>', unsafe_allow_html=True)

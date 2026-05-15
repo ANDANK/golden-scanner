@@ -165,10 +165,12 @@ def render():
 
     with st.sidebar:
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ 3× ETF Options Filters</div>', unsafe_allow_html=True)
-        iv_rank_min = st.slider("Min IV Rank", 0, 100, 25)
-        delta_min, delta_max = st.slider("Delta Range (abs)", 0.05, 0.50, (0.15, 0.30), 0.01)
-        premium_pct_min = st.slider("Min Premium % of Strike", 0.3, 10.0, 0.70, 0.05)
-        dte_min, dte_max = st.slider("DTE Range", 1, 60, (1, 20))
+        # 3× ETFs carry 3× the volatility of their underlying index.
+        # IV is structurally higher → require more IV rank & more premium.
+        iv_rank_min = st.slider("Min IV Rank", 0, 100, 30)          # was 25
+        delta_min, delta_max = st.slider("Delta Range (abs)", 0.05, 0.50, (0.15, 0.25), 0.01)  # tighter OTM
+        premium_pct_min = st.slider("Min Premium % of Strike", 0.5, 10.0, 1.0, 0.05)  # was 0.70 — 3× should yield more
+        dte_min, dte_max = st.slider("DTE Range", 1, 45, (1, 21))   # max 3 weeks; keep short on leveraged ETFs
 
     st.info("⏱ 3× ETF options scan takes 30–90 seconds.")
 

@@ -51,10 +51,7 @@ ALL_PAGES = [
      "label": "CSP — Stocks"},
     {"group": "Options",   "key": "💰  CSP — ETFs",
      "label": "CSP — ETFs"},
-    {"group": "Options",   "key": "📦  CC — Stocks",
-     "label": "CC — Stocks"},
-    {"group": "Options",   "key": "📦  CC — ETFs",
-     "label": "CC — ETFs"},
+    # CC (Covered Call) removed — requires owning 100 shares per contract.
     {"group": "Options",   "key": "🧨  LEAPS — Stocks",
      "label": "LEAPS — Stocks"},
     {"group": "Options",   "key": "🧨  LEAPS — ETFs",

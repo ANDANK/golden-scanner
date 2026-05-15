@@ -180,7 +180,7 @@ def render(universe_mode: str = "stocks"):
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ LEAPS — {mode_lbl} Filters</div>', unsafe_allow_html=True)
         dte_min = st.slider("Min DTE (days)", 180, 730, 300, key=f"{mk}_dte")
         delta_min, delta_max = st.slider("Delta Range", 0.40, 0.90, (0.60, 0.75), 0.01, key=f"{mk}_delta")
-        iv_rank_max = st.slider("Max IV Rank", 10, 80, 40, key=f"{mk}_iv")
+        iv_rank_max = st.slider("Max IV Rank", 10, 80, 35, key=f"{mk}_iv")
         if not is_etf:
             price_min = st.number_input("Min Stock Price ($)", 5.0, 100.0, 20.0, key=f"{mk}_pmin")
             price_max = st.number_input("Max Stock Price ($)", 50.0, 5000.0, 3000.0, key=f"{mk}_pmax")

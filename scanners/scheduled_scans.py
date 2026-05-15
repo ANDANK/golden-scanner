@@ -74,26 +74,24 @@ def _load_results(slot: str) -> Tuple[pd.DataFrame, str]:
 
 def _run_all_scans() -> pd.DataFrame:
     from scanners.csp_scanner   import scan_csp
-    from scanners.cc_scanner    import scan_cc
     from scanners.leaps_scanner import scan_leaps
 
     stocks = SP500_SAMPLE[:SCHED_STOCKS]
     etfs   = OPTIONS_ETF_UNIVERSE
 
     # (display_label, strategy_tag, universe_label, fn, tickers, positional_args)
+    # CC removed — requires owning 100 shares per contract.
+    # CSP: premium 0.65% (was 0.70%), DTE max 35 (was 45)
+    # LEAPS: IV rank max 35 (was 40) to avoid high-IV noise
     scan_plan = [
         ("CSP — Stocks",   "CSP",   "Stocks", scan_csp,   stocks,
-         (25, 0.15, 0.30, 0.70, 20.0, 1, 45)),
+         (25, 0.15, 0.30, 0.65, 20.0, 1, 35)),
         ("CSP — ETFs",     "CSP",   "ETFs",   scan_csp,   etfs,
-         (25, 0.15, 0.30, 0.70, 20.0, 1, 45)),
-        ("CC — Stocks",    "CC",    "Stocks", scan_cc,    stocks,
-         (0.15, 0.25, 0.70, 1, 20)),
-        ("CC — ETFs",      "CC",    "ETFs",   scan_cc,    etfs,
-         (0.15, 0.25, 0.70, 1, 20)),
+         (25, 0.15, 0.30, 0.65, 20.0, 1, 35)),
         ("LEAPS — Stocks", "LEAPS", "Stocks", scan_leaps, stocks,
-         (300, 0.60, 0.75, 40, 5.0, 5000.0)),
+         (300, 0.60, 0.75, 35, 5.0, 5000.0)),
         ("LEAPS — ETFs",   "LEAPS", "ETFs",   scan_leaps, etfs,
-         (300, 0.60, 0.75, 40, 5.0, 5000.0)),
+         (300, 0.60, 0.75, 35, 5.0, 5000.0)),
     ]
 
     frames = []
