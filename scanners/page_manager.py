@@ -269,8 +269,19 @@ def is_maintenance_mode() -> bool:
 
 
 def get_maintenance_message() -> str:
-    """Return the current admin-set maintenance message (always a string)."""
-    return str(_read_maintenance_file().get("message", _MAINT_MSG_DEFAULT))
+    """Return the current admin-set maintenance message (always a real string).
+    Auto-heals corrupted boolean-as-string values left over from the old
+    GSheets-based storage (e.g. 'True', 'False', '1', '0').
+    """
+    msg = _read_maintenance_file().get("message", _MAINT_MSG_DEFAULT)
+    if not isinstance(msg, str) or msg.strip().lower() in ("true", "false", "1", "0", ""):
+        # Corrupted value — reset to default and persist the healed file
+        _write_maintenance_file(
+            bool(_read_maintenance_file().get("enabled", False)),
+            _MAINT_MSG_DEFAULT,
+        )
+        return _MAINT_MSG_DEFAULT
+    return msg
 
 
 def set_maintenance_mode(enabled: bool, message: str = "") -> None:
