@@ -1069,40 +1069,53 @@ def _render_stock_analysis_methodology():
     )
 
     # ══ Section 3: Signal thresholds ═════════════════════════════
+    TEAL = "#2DD4BF"
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;'
         f'padding:16px 20px;margin-top:4px">'
         f'<div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:10px;'
         f'text-transform:uppercase;letter-spacing:1px">&#128397; Signal Thresholds</div>'
         f'<div style="display:flex;gap:16px;flex-wrap:wrap">'
+        # BUY
         f'<div style="background:{ACCENT_GREEN}15;border:1px solid {ACCENT_GREEN}44;border-radius:6px;'
         f'padding:10px 20px;text-align:center;min-width:110px">'
         f'<div style="color:{ACCENT_GREEN};font-size:22px;font-weight:800">≥ 60%</div>'
         f'<div style="color:{ACCENT_GREEN};font-size:11px;font-weight:700;margin-top:2px">🟢 BUY</div>'
         f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
-        f'Confidence ≥ 60<br>Most indicators bullish</div>'
+        f'Composite ≥ 60<br>Most indicators bullish</div>'
         f'</div>'
+        # NEUTRAL
         f'<div style="background:{YELLOW}15;border:1px solid {YELLOW}44;border-radius:6px;'
         f'padding:10px 20px;text-align:center;min-width:110px">'
         f'<div style="color:{YELLOW};font-size:22px;font-weight:800">41–59%</div>'
         f'<div style="color:{YELLOW};font-size:11px;font-weight:700;margin-top:2px">🟡 NEUTRAL</div>'
         f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
-        f'Mixed signals<br>Watch for resolution</div>'
+        f'Mixed signals<br>Wait for resolution</div>'
         f'</div>'
+        # SETUP
+        f'<div style="background:{TEAL}15;border:1px solid {TEAL}44;border-radius:6px;'
+        f'padding:10px 20px;text-align:center;min-width:130px">'
+        f'<div style="color:{TEAL};font-size:20px;font-weight:800">≤ 40% + 🔄</div>'
+        f'<div style="color:{TEAL};font-size:11px;font-weight:700;margin-top:2px">🔵 SETUP / WATCH</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
+        f'Composite &lt; 40 BUT<br>Weekly MACD turned ✅<br>RSI 28–64 (reset zone)</div>'
+        f'</div>'
+        # SELL
         f'<div style="background:{ACCENT_RED}15;border:1px solid {ACCENT_RED}44;border-radius:6px;'
         f'padding:10px 20px;text-align:center;min-width:110px">'
         f'<div style="color:{ACCENT_RED};font-size:22px;font-weight:800">≤ 40%</div>'
         f'<div style="color:{ACCENT_RED};font-size:11px;font-weight:700;margin-top:2px">🔴 SELL</div>'
         f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
-        f'Confidence ≤ 40<br>Avoid or short bias</div>'
+        f'Composite ≤ 40<br>Avoid or short bias</div>'
         f'</div>'
-        f'<div style="flex:1;min-width:200px;color:{TEXT_MUTED};font-size:11px;line-height:1.8;'
-        f'padding:4px 0">'
-        f'<b style="color:{TEXT_PRIMARY}">Important:</b> Confidence % is directional — '
-        f'for BUY signals it represents bullish conviction; for SELL signals it shows bearish conviction '
-        f'(100 − composite). A 75% BUY = very high bullish confidence. A 75% SELL = '
-        f'very high bearish conviction. NEUTRAL signals (41–59%) mean indicators are conflicting '
-        f'— reduce size or wait for a resolution.'
+        # Explanation
+        f'<div style="flex:1;min-width:200px;color:{TEXT_MUTED};font-size:11px;line-height:1.9;padding:4px 0">'
+        f'<b style="color:{TEXT_PRIMARY}">Confidence % is directional</b> — BUY shows the raw composite; '
+        f'SELL shows 100 − composite (so a 85% SELL = composite of 15 = heavily bearish).<br>'
+        f'<b style="color:{TEAL}">SETUP 🔄</b> is a special tier for stocks where the MA stack is broken '
+        f'(bearish composite) but the <b style="color:{TEXT_PRIMARY}">Weekly MACD just turned positive on '
+        f'a reset RSI</b> — the classic Momentum Reset Bounce entry signal. Not a buy YET, but watch closely. '
+        f'An ⚡ W-MACD conflict badge also appears in the summary table when these signals disagree.'
         f'</div>'
         f'</div></div>',
         unsafe_allow_html=True,

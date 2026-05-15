@@ -483,14 +483,37 @@ def compute_analysis(ticker: str) -> dict | None:
         elif rsi_d < 30:            bias -= 4
         if rs_spy >= 1.05:          bias += 4
         elif rs_spy < 0.92:         bias -= 4
+
+        # ── Reset/Setup bonus ────────────────────────────────────
+        # Weekly MACD turning positive on a reset RSI = potential Momentum Reset Bounce.
+        # The broken MA stack penalises these stocks harshly, so give a partial offset
+        # when the weekly timeframe is genuinely inflecting bullish.
+        reset_setup = (
+            cross_w and hist_pos_w          # weekly MACD bullish
+            and 28 <= rsi_w <= 64           # RSI reset / not overbought (weekly)
+            and not full_stack              # MA stack not yet rebuilt (that's the whole point)
+        )
+        if reset_setup:
+            bias += 12   # partial offset of the -10 below-SMA50 penalty
+
         composite = int(round(max(0, min(100, raw_composite + bias))))
 
+        # ── Signal classification ────────────────────────────────
+        # Four tiers: BUY · NEUTRAL · SETUP (inflecting) · SELL
+        # SETUP fires when composite is still SELL-range but the weekly MACD just
+        # turned positive on a reset RSI — "not a buy YET, but watch closely."
+        TEAL = "#2DD4BF"
         if composite >= 60:
-            signal, signal_pct, signal_color = "BUY",     composite,           ACCENT_GREEN
-        elif composite <= 40:
-            signal, signal_pct, signal_color = "SELL",    100 - composite,     ACCENT_RED
+            signal, signal_pct, signal_color = "BUY",    composite,       ACCENT_GREEN
+        elif 41 <= composite <= 59:
+            signal, signal_pct, signal_color = "NEUTRAL", composite,      YELLOW
+        elif reset_setup:
+            # Composite still bearish, but weekly MACD flip = potential setup
+            signal_pct   = composite              # show the raw composite as the "watch" score
+            signal       = "SETUP 🔄"
+            signal_color = TEAL
         else:
-            signal, signal_pct, signal_color = "NEUTRAL", composite,           YELLOW
+            signal, signal_pct, signal_color = "SELL",   100 - composite, ACCENT_RED
 
         return dict(
             ticker=ticker, name=name, sector=sector, sector_etf=sector_etf,
@@ -515,6 +538,7 @@ def compute_analysis(ticker: str) -> dict | None:
             rs_spy_level=rs_level(rs_spy),   rs_spy_label=rs_label(rs_spy),
             rs_sec_level=rs_level(rs_sector), rs_sec_label=rs_label(rs_sector),
             momentum_score=momentum_score, trend_score=trend_score, buy_pressure_score=buy_pressure_score,
+            composite=composite, reset_setup=reset_setup,
             signal=signal, signal_pct=signal_pct, signal_color=signal_color,
             df_d=df_d, df_w=df_w,
         )
@@ -674,7 +698,8 @@ def render_ticker_panel(a: dict):
         sig        = a["signal"]
         sig_pct    = a["signal_pct"]
         sig_color  = a["signal_color"]
-        sig_icon   = "▲" if sig == "BUY" else ("▼" if sig == "SELL" else "◆")
+        sig_icon   = "▲" if sig == "BUY" else ("▼" if sig == "SELL" else ("🔄" if "SETUP" in sig else "◆"))
+        sig_label  = sig if "SETUP" not in sig else "SETUP"
         arrow_ud   = "▲" if a["chg_pct"] >= 0 else "▼"
         above_e20c = ACCENT_GREEN if a["above_ema20"] else ACCENT_RED
         above_s50c = ACCENT_GREEN if a["above_sma50"] else ACCENT_RED
@@ -697,7 +722,7 @@ def render_ticker_panel(a: dict):
             f'<div style="background:{sig_color}22;border:2px solid {sig_color};border-radius:8px;'
             f'padding:6px 18px;text-align:center;min-width:110px">'
             f'<div style="color:{sig_color};font-size:11px;font-weight:700;text-transform:uppercase;'
-            f'letter-spacing:1.5px">{sig_icon} {sig}</div>'
+            f'letter-spacing:1.5px">{sig_icon} {sig_label}</div>'
             f'<div style="color:{sig_color};font-size:26px;font-weight:800;line-height:1.1">{sig_pct}%</div>'
             f'<div style="color:{sig_color}99;font-size:9px;text-transform:uppercase;letter-spacing:0.8px">confidence</div>'
             f'</div>'
@@ -1005,21 +1030,37 @@ def _render_summary_table(analyses: list):
             f'</div>'
         )
 
+    TEAL = "#2DD4BF"
+
+    def _rsi_color(r):
+        return ACCENT_GREEN if 55 <= r <= 68 else (ACCENT_RED if r > 70 or r < 30 else YELLOW)
+
     rows_html = []
     for a in analyses:
         sig       = a["signal"]
         sig_pct   = a["signal_pct"]
         sig_color = a["signal_color"]
-        circle    = "🟢" if sig == "BUY" else ("🔴" if sig == "SELL" else "🟡")
 
-        # Weekly MACD
+        # Circle: SETUP gets a cyan dot to distinguish from SELL
+        if sig == "BUY":
+            circle = "🟢"
+        elif "SETUP" in sig:
+            circle = "🔵"
+        elif sig == "SELL":
+            circle = "🔴"
+        else:
+            circle = "🟡"
+
+        # Weekly MACD — flag a conflict when SELL/NEUTRAL but weekly is bullish
         macd_w_color = ACCENT_GREEN if a["cross_w"] else ACCENT_RED
         macd_w_label = "Bull ✅" if a["cross_w"] else "Bear ❌"
         macd_w_vals  = f"{a['m_w']:+.3f} / {a['s_w']:+.3f}"
-
-        # RSI colors
-        def _rsi_color(r):
-            return ACCENT_GREEN if 55 <= r <= 68 else (ACCENT_RED if r > 70 or r < 30 else YELLOW)
+        # Conflict = weekly MACD says Buy but overall signal is SELL
+        conflict = a["cross_w"] and a["hist_pos_w"] and sig == "SELL"
+        conflict_tag = (
+            f'<div style="color:{TEAL};font-size:9px;font-weight:700;margin-top:2px">⚡ W-MACD conflict</div>'
+            if conflict else ""
+        )
 
         rsi_d_c = _rsi_color(a["rsi_d"])
         rsi_w_c = _rsi_color(a["rsi_w"])
@@ -1028,6 +1069,14 @@ def _render_summary_table(analyses: list):
         trend_color = (ACCENT_GREEN if a["trend_level"] == "bull"
                        else (YELLOW if a["trend_level"] == "warn" else ACCENT_RED))
         trend_lbl   = "Full Stack" if a["full_stack"] else ("Partial" if a["partial"] else "Weak")
+
+        # Why bearish — show top drag factor for SELL / SETUP tickers
+        drag = ""
+        if sig in ("SELL",) or "SETUP" in sig:
+            if a["trend_score"] == 0:
+                drag = f'<div style="color:{ACCENT_RED};font-size:9px;margin-top:2px">MA stack broken</div>'
+            elif not a["above_sma50"]:
+                drag = f'<div style="color:{ACCENT_RED};font-size:9px;margin-top:2px">Below SMA50</div>'
 
         # Volume & RS
         vol_color = ACCENT_GREEN if a["vol_spike"] else TEXT_MUTED
@@ -1039,6 +1088,13 @@ def _render_summary_table(analyses: list):
         chg_c = ACCENT_GREEN if a["chg_pct"] >= 0 else ACCENT_RED
         td    = f"padding:9px 10px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:middle"
 
+        # For SETUP tickers, show the raw composite (not 100-composite) with teal
+        sig_display = sig.replace(" 🔄", "")  # strip emoji for tight badge
+        sig_note    = (
+            f'<div style="color:{TEAL};font-size:9px;margin-top:2px">Watch for breakout</div>'
+            if "SETUP" in sig else ""
+        )
+
         rows_html.append(f"""<tr>
           <td style="{td};font-size:18px;text-align:center;width:32px">{circle}</td>
           <td style="{td}">
@@ -1049,13 +1105,15 @@ def _render_summary_table(analyses: list):
           <td style="{td}">
             <div style="background:{sig_color}22;border:1px solid {sig_color}55;border-radius:6px;
                         padding:5px 10px;text-align:center;min-width:72px">
-              <div style="color:{sig_color};font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">{sig}</div>
+              <div style="color:{sig_color};font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">{sig_display}</div>
               <div style="color:{sig_color};font-size:17px;font-weight:800;line-height:1.1">{sig_pct}%</div>
             </div>
+            {sig_note}{drag}
           </td>
           <td style="{td}">
             <div style="color:{macd_w_color};font-size:11px;font-weight:600">{macd_w_label}</div>
             <div style="color:{TEXT_MUTED};font-size:10px;font-family:'DM Mono',monospace;margin-top:2px">{macd_w_vals}</div>
+            {conflict_tag}
           </td>
           <td style="{td}">
             <div style="color:{rsi_d_c};font-size:11px;font-weight:600">D:&nbsp;{a['rsi_d']:.0f}</div>
@@ -1087,7 +1145,8 @@ def _render_summary_table(analyses: list):
         f'display:flex;align-items:center;justify-content:space-between">'
         f'<span style="color:{GOLD};font-size:13px;font-weight:700">📊 Summary — All Tickers at a Glance</span>'
         f'<span style="color:{TEXT_MUTED};font-size:11px">'
-        f'🟢&thinsp;Buy &nbsp;·&nbsp; 🟡&thinsp;Neutral &nbsp;·&nbsp; 🔴&thinsp;Sell</span>'
+        f'🟢&thinsp;Buy &nbsp;·&nbsp; 🟡&thinsp;Neutral &nbsp;·&nbsp; '
+        f'🔵&thinsp;<span style="color:#2DD4BF">Setup/Watch</span> &nbsp;·&nbsp; 🔴&thinsp;Sell</span>'
         f'</div>'
         f'<div style="overflow-x:auto">'
         f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
