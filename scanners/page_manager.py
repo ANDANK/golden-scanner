@@ -232,10 +232,7 @@ def save_page_settings(settings: dict) -> None:
 
 _MAINT_KEY     = "__maintenance__"   # kept for backward-compat filtering
 _MAINT_MSG_KEY = "__maintenance_msg__"  # kept for backward-compat filtering
-_MAINT_MSG_DEFAULT = (
-    "We're performing scheduled maintenance and system updates. "
-    "The site will be back up shortly — thank you for your patience."
-)
+_MAINT_MSG_DEFAULT = "Cleaning Lenses! 🔭  Be right back."
 
 
 # ── Local maintenance.json helpers ─────────────────────────────
