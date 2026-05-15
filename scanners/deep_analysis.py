@@ -1593,6 +1593,20 @@ def render():
         "🔬", "Stock Analysis",
         "Multi-ticker · Daily + Weekly · 9 indicator modules · Composite scores · Interactive chart",
     )
+
+    # If navigated via ?goto=gold_standard deep link, auto-click the second tab
+    if st.session_state.pop("_open_gold_standard", False):
+        import streamlit.components.v1 as _comp
+        _comp.html(
+            "<script>"
+            "setTimeout(function(){"
+            "  var tabs=window.parent.document.querySelectorAll('[data-baseweb=\"tab\"]');"
+            "  if(tabs && tabs.length>1) tabs[1].click();"
+            "},400);"
+            "</script>",
+            height=0,
+        )
+
     tab_deep, tab_std = st.tabs(["🔬 Deep Analysis", "✦ Gold Standard"])
     with tab_deep:
         _render_deep_analysis()

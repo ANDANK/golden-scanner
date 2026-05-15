@@ -531,6 +531,38 @@ if not st.session_state["authenticated"]:
     st.stop()
 
 
+# ── Deep-link query param handler ─────────────────────────────
+# Usage:  https://your-app.streamlit.app/?goto=gold_standard
+# Supported values → nav destinations:
+#   gold_standard   → Stock Analysis  (auto-selects Gold Standard tab)
+#   stock_analysis  → Stock Analysis  (Deep Analysis tab)
+#   tracking        → Tracking
+#   watchlist       → WatchList
+#   golden_scan     → Golden Scan
+#   (any nav key)   → routed directly if it matches a known page key
+
+_GOTO_MAP = {
+    "gold_standard":  ("🔬  Stock Analysis",   "Stocks", True),
+    "stock_analysis": ("🔬  Stock Analysis",   "Stocks", False),
+    "tracking":       ("📌  Tracking",          "Dashboard", False),
+    "watchlist":      ("👁  WatchList",         "Dashboard", False),
+    "golden_scan":    ("🔀  Golden Scan",       "Stocks", False),
+    "csp":            ("💰  CSP — Stocks",      "Options", False),
+    "leaps":          ("🧨  LEAPS — Stocks",    "Options", False),
+}
+try:
+    _goto_param = st.query_params.get("goto", "").strip().lower()
+    if _goto_param and _goto_param in _GOTO_MAP:
+        _nav_dest, _nav_group, _open_gs = _GOTO_MAP[_goto_param]
+        st.session_state["nav_page"]          = _nav_dest
+        st.session_state["_nav_open_group"]   = _nav_group
+        if _open_gs:
+            st.session_state["_open_gold_standard"] = True
+        st.query_params.clear()          # remove param from URL after consuming it
+        st.rerun()
+except Exception:
+    pass   # st.query_params not available on older Streamlit — silently skip
+
 # ── Tracker notifications ─────────────────────────────────────
 _pending = st.session_state.get("_tracker_notes", [])
 if _pending:
