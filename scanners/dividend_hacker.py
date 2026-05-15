@@ -545,11 +545,11 @@ def render():
 
     with st.sidebar:
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">📅 Date Range</div>', unsafe_allow_html=True)
-        weeks_ahead = st.slider("Ex-Div window (weeks)", 1, 16, 6)
+        weeks_ahead = st.slider("Ex-Div window (weeks)", 1, 16, 6, key="div_weeks_slider")
         date_to = today + timedelta(weeks=weeks_ahead)
 
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:12px 0 8px">💰 Dividend Yield</div>', unsafe_allow_html=True)
-        yield_min, yield_max = st.slider("Yield range (%)", 0.0, 20.0, (1.0, 20.0), 0.5)
+        yield_min, yield_max = st.slider("Yield range (%)", 0.0, 20.0, (1.0, 20.0), 0.5, key="div_yield_slider")
 
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:12px 0 8px">🔧 Filters</div>', unsafe_allow_html=True)
         exclude_etf  = st.checkbox("Exclude ETFs & Funds", value=False)
