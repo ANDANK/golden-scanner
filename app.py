@@ -33,34 +33,53 @@ st.set_page_config(
     page_title="Golden Scanner",
     page_icon="✦",
     layout="wide",
-    # "hidden" removes the sidebar AND its toggle entirely at the framework level.
-    # Admins are never in maintenance, so they always get the normal "collapsed" state.
-    initial_sidebar_state="hidden" if _early_in_maint else "collapsed",
+    initial_sidebar_state="collapsed",
 )
 
-# ── Sidebar force-visible CSS (excluded during maintenance) ───
-# Defined as a plain string (not f-string) so its CSS braces pass through
-# unchanged when interpolated into the outer f-string below.
-# During maintenance: empty string → framework-level "hidden" already handles it.
-_sidebar_force_css = "" if _early_in_maint else (
-    "@media (min-width: 769px) {\n"
-    "    section[data-testid=\"stSidebar\"] {\n"
-    "        transform: translateX(0) !important;\n"
-    "        min-width: 320px !important; width: 320px !important;\n"
-    "        visibility: visible !important; display: block !important;\n"
-    "    }\n"
-    "    section[data-testid=\"stSidebar\"] > div:first-child {\n"
-    "        transform: translateX(0) !important;\n"
-    "        width: 320px !important; min-width: 320px !important;\n"
-    "    }\n"
-    "    [data-testid=\"stSidebarCollapseButton\"],\n"
-    "    [data-testid=\"stSidebarCollapsedControl\"],\n"
-    "    button[title=\"Close sidebar\"], button[title=\"Collapse sidebar\"],\n"
-    "    button[aria-label=\"Close sidebar\"], button[aria-label=\"Collapse sidebar\"] {\n"
-    "        display: none !important;\n"
-    "    }\n"
-    "}\n"
-)
+# ── Sidebar CSS — force-visible on normal pages, hidden during maintenance ──
+# Plain strings (not f-strings) so CSS braces pass through unchanged when
+# interpolated into the outer f-string below.
+if _early_in_maint:
+    # During maintenance: hide sidebar and its toggle completely.
+    # No force-visible rules are emitted, so this CSS wins unopposed.
+    _sidebar_force_css = (
+        "section[data-testid=\"stSidebar\"],\n"
+        "[data-testid=\"stSidebarCollapsedControl\"],\n"
+        "button[data-testid=\"stSidebarCollapseButton\"],\n"
+        "button[title=\"Open sidebar\"],\n"
+        "button[aria-label=\"Open sidebar\"] {\n"
+        "    display: none !important;\n"
+        "    visibility: hidden !important;\n"
+        "    width: 0 !important;\n"
+        "    min-width: 0 !important;\n"
+        "}\n"
+        "[data-testid=\"stAppViewContainer\"] > .main {\n"
+        "    margin-left: 0 !important;\n"
+        "    padding-left: 2rem !important;\n"
+        "    width: 100% !important;\n"
+        "}\n"
+    )
+else:
+    # Normal mode: force sidebar always visible on desktop.
+    _sidebar_force_css = (
+        "@media (min-width: 769px) {\n"
+        "    section[data-testid=\"stSidebar\"] {\n"
+        "        transform: translateX(0) !important;\n"
+        "        min-width: 320px !important; width: 320px !important;\n"
+        "        visibility: visible !important; display: block !important;\n"
+        "    }\n"
+        "    section[data-testid=\"stSidebar\"] > div:first-child {\n"
+        "        transform: translateX(0) !important;\n"
+        "        width: 320px !important; min-width: 320px !important;\n"
+        "    }\n"
+        "    [data-testid=\"stSidebarCollapseButton\"],\n"
+        "    [data-testid=\"stSidebarCollapsedControl\"],\n"
+        "    button[title=\"Close sidebar\"], button[title=\"Collapse sidebar\"],\n"
+        "    button[aria-label=\"Close sidebar\"], button[aria-label=\"Collapse sidebar\"] {\n"
+        "        display: none !important;\n"
+        "    }\n"
+        "}\n"
+    )
 
 # ── Global CSS ─────────────────────────────────────────────────
 st.markdown(f"""
