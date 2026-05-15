@@ -3,9 +3,11 @@
 # Controls which pages regular users (APP_PASSWORD) can access.
 # Admin users (ADMIN_PASSWORD) always see ALL pages regardless of settings.
 #
-# Storage: data/page_settings.json (local file, persists across sessions).
-# Cache:   st.session_state["_page_settings_cache"] — avoids disk reads
-#          on every Streamlit rerun within a session.
+# Storage priority:
+#   1. Google Sheets tab "PageSettings" (persistent across Streamlit Cloud restarts)
+#   2. data/page_settings.json (local fallback — ephemeral on Streamlit Cloud)
+# Cache:
+#   st.session_state["_page_settings_cache"] — one disk/sheet read per session.
 
 import os
 import json
@@ -15,6 +17,7 @@ DATA_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"
 )
 SETTINGS_FILE = os.path.join(DATA_DIR, "page_settings.json")
+_GS_TAB = "PageSettings"
 
 # ── Canonical page registry ────────────────────────────────────
 # Order matches sidebar NAV_GROUPS in app.py.
@@ -68,10 +71,10 @@ ALL_PAGES = [
      "label": "About & Guide"},
 ]
 
-# Pages that are ALWAYS accessible — cannot be disabled by admin
+# Pages that are ALWAYS accessible — cannot be disabled
 _ALWAYS_ON = {"🏠  Market Overview", "⚙️  Admin Panel"}
 
-# Group display config (icon for UI)
+# Group display config
 GROUP_META = {
     "Dashboard": {"icon": "🏠"},
     "Stocks":    {"icon": "📊"},
@@ -81,10 +84,61 @@ GROUP_META = {
 }
 
 
-# ── Persistence ────────────────────────────────────────────────
+# ── Google Sheets helpers ──────────────────────────────────────
+
+def _gs_ws():
+    """Return the PageSettings worksheet, or None if GSheets not configured."""
+    try:
+        from scanners.gsheet_helper import _gs_sheet
+        return _gs_sheet(_GS_TAB)
+    except Exception:
+        return None
+
+
+def _read_from_gsheets() -> dict | None:
+    """
+    Read settings from the PageSettings GSheet tab.
+    Returns a {key: bool} dict, or None if unavailable.
+    """
+    ws = _gs_ws()
+    if not ws:
+        return None
+    try:
+        rows = ws.get_all_records()
+        if not rows:
+            return None
+        out = {}
+        for row in rows:
+            k = str(row.get("Key", "")).strip()
+            v = str(row.get("Enabled", "true")).strip().lower()
+            if k:
+                out[k] = v not in ("false", "0", "no")
+        return out if out else None
+    except Exception:
+        return None
+
+
+def _save_to_gsheets(settings: dict) -> bool:
+    """
+    Overwrite the PageSettings tab with the current settings dict.
+    Returns True on success.
+    """
+    ws = _gs_ws()
+    if not ws:
+        return False
+    try:
+        ws.clear()
+        all_rows = [["Key", "Enabled"]] + [[k, str(v)] for k, v in settings.items()]
+        ws.update(all_rows, "A1")
+        return True
+    except Exception:
+        return False
+
+
+# ── Local JSON fallback ────────────────────────────────────────
 
 def _read_from_disk() -> dict:
-    """Read JSON from disk, filling defaults for any page not yet recorded."""
+    """Read settings from local JSON, merging with defaults."""
     defaults = {p["key"]: True for p in ALL_PAGES}
     os.makedirs(DATA_DIR, exist_ok=True)
     if os.path.exists(SETTINGS_FILE):
@@ -94,34 +148,69 @@ def _read_from_disk() -> dict:
             defaults.update(saved)
         except Exception:
             pass
-    # Required pages are always True regardless of what was saved
+    return defaults
+
+
+def _save_to_disk(settings: dict) -> None:
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=2, ensure_ascii=False)
+
+
+# ── Unified load / save ────────────────────────────────────────
+
+def _apply_required(settings: dict) -> dict:
+    """Force required pages to True regardless of stored value."""
     for p in ALL_PAGES:
         if p.get("required"):
-            defaults[p["key"]] = True
-    return defaults
+            settings[p["key"]] = True
+    return settings
+
+
+def _load_settings() -> dict:
+    """
+    Load from GSheets if available, else fall back to local JSON.
+    Merges with defaults so any new pages are enabled by default.
+    """
+    defaults = {p["key"]: True for p in ALL_PAGES}
+
+    # Try GSheets first (survives Streamlit Cloud restarts)
+    gs = _read_from_gsheets()
+    if gs is not None:
+        defaults.update(gs)
+        return _apply_required(defaults)
+
+    # Fall back to local JSON
+    disk = _read_from_disk()
+    defaults.update(disk)
+    return _apply_required(defaults)
 
 
 def load_page_settings() -> dict:
     """
-    Return {page_key: bool} — True = page is enabled for regular users.
-    Uses session-state as an in-session cache to avoid repeated disk reads.
+    Return {page_key: bool} — True = enabled for regular users.
+    Uses session-state as an in-session cache (one sheet read per login).
     """
     if "_page_settings_cache" in st.session_state:
         return st.session_state["_page_settings_cache"]
-    data = _read_from_disk()
+    data = _load_settings()
     st.session_state["_page_settings_cache"] = data
     return data
 
 
 def save_page_settings(settings: dict) -> None:
-    """Persist settings to disk and refresh the in-session cache."""
-    # Never allow required pages to be disabled
-    for p in ALL_PAGES:
-        if p.get("required"):
-            settings[p["key"]] = True
-    os.makedirs(DATA_DIR, exist_ok=True)
-    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-        json.dump(settings, f, indent=2, ensure_ascii=False)
+    """
+    Persist settings. Tries GSheets first; falls back to local JSON.
+    Updates the in-session cache so changes are visible immediately.
+    """
+    _apply_required(settings)
+
+    # Try GSheets (primary — survives restarts)
+    if not _save_to_gsheets(settings):
+        # GSheets unavailable — write to local JSON
+        _save_to_disk(settings)
+
+    # Always update the in-session cache
     st.session_state["_page_settings_cache"] = dict(settings)
 
 
@@ -129,11 +218,10 @@ def save_page_settings(settings: dict) -> None:
 
 def is_page_enabled(page_key: str) -> bool:
     """
-    Returns True if the page should be rendered for the current user.
-
-    - Pages in _ALWAYS_ON → always True.
-    - Admin session (_is_admin=True in session_state) → always True.
-    - Regular user → check saved settings (default: True).
+    True if the page should render for the current user.
+    - _ALWAYS_ON pages → always True.
+    - Admin session    → always True.
+    - Regular user     → check saved settings (default True).
     """
     if page_key in _ALWAYS_ON:
         return True

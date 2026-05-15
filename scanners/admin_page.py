@@ -1364,7 +1364,7 @@ def _render_stock_analysis_methodology():
 
 def _render_page_management():
     """Admin tab — toggle page visibility for regular users. 3-column card layout."""
-    from scanners.page_manager import ALL_PAGES, GROUP_META, _read_from_disk, save_page_settings
+    from scanners.page_manager import ALL_PAGES, GROUP_META, _load_settings, save_page_settings
 
     # ── Info banner ───────────────────────────────────────────
     st.markdown(
@@ -1382,8 +1382,8 @@ def _render_page_management():
         unsafe_allow_html=True,
     )
 
-    # Load fresh settings from disk (bypass session cache so admin sees current state)
-    settings = _read_from_disk()
+    # Load fresh settings (bypasses session cache — reads GSheets/disk directly)
+    settings = _load_settings()
 
     # Build ordered group dict
     groups: dict = {}

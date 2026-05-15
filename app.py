@@ -679,7 +679,7 @@ with st.sidebar:
             st.markdown(f'<span class="{" ".join(classes)}"></span>', unsafe_allow_html=True)
         # Show 🔒 for regular users when the page is disabled
         _is_user = not st.session_state.get("_is_admin", False)
-        lock_tag = "  🔒" if _is_user and not _page_enabled(it["key"]) else ""
+        lock_tag = " 🔴" if _is_user and not _page_enabled(it["key"]) else ""
         if st.button(it["key"] + lock_tag, key=f"_nav_{it['key']}", use_container_width=True):
             _go(it["key"])
 
@@ -694,7 +694,7 @@ with st.sidebar:
             st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
         # Show 🔒 for regular users when the page is disabled
         _is_user = not st.session_state.get("_is_admin", False)
-        lock_tag = "  🔒" if _is_user and not _page_enabled(it["key"]) else ""
+        lock_tag = " 🔴" if _is_user and not _page_enabled(it["key"]) else ""
         # Chevrons on BOTH sides telegraph "this expands" without needing a rail.
         # Collapsed: ›  📌  Tracking  ‹    Expanded: ⌄  📌  Tracking  ⌄
         if show_subs:
