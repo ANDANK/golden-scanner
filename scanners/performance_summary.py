@@ -948,8 +948,9 @@ def _render_daily_summary_boxes(df: pd.DataFrame):
         open_opts    = opt_df[opt_df["Status"].str.lower() == "open"]
         expired_opts = opt_df[opt_df["Status"].str.lower().isin(["expired","closed","assigned","called"])]
         realized     = expired_opts["Income"].fillna(0).sum()
+        _qty_mean    = open_opts["Qty"].fillna(1).mean() if not open_opts.empty else 1
         open_prem    = (_nf(open_opts["Premium"].mean()) *
-                        100 * max(1, int(open_opts["Qty"].fillna(1).mean())))
+                        100 * max(1, int(_qty_mean) if _qty_mean == _qty_mean else 1))
         rc           = ACCENT_GREEN if realized >= 0 else ACCENT_RED
         st.markdown(f'<div style="{box_style};border-top:3px solid {GOLD}">'
                     f'<div style="color:{GOLD};font-size:12px;font-weight:700;'
