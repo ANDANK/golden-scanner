@@ -811,6 +811,41 @@ if page and page != "🏠  Market Overview":
 _ROUTER_ALWAYS_ON = {"🏠  Market Overview", "⚙️  Admin Panel"}
 
 
+# ── Maintenance mode gate ──────────────────────────────────────
+# Checked BEFORE the router so every page (including Market Overview)
+# shows the maintenance screen for regular users when the admin enables it.
+# Admin Panel itself is always reachable so the admin can turn it off.
+if page != "⚙️  Admin Panel" and not st.session_state.get("_is_admin", False):
+    from scanners.page_manager import is_maintenance_mode, get_maintenance_message
+    if is_maintenance_mode():
+        _maint_msg = get_maintenance_message()
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        _, _mcol, _ = st.columns([1, 2, 1])
+        with _mcol:
+            st.markdown(
+                f'<div style="background:{BG_CARD};border:1px solid #EF444455;'
+                f'border-top:4px solid #F59E0B;border-radius:14px;'
+                f'padding:60px 40px;text-align:center;margin-top:40px">'
+                f'<div style="font-size:64px;margin-bottom:20px">🚧</div>'
+                f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:32px;'
+                f'color:#F59E0B;font-weight:700;letter-spacing:2px;margin-bottom:14px">'
+                f'Under Maintenance</div>'
+                f'<div style="color:{TEXT_PRIMARY};font-size:15px;line-height:1.9;'
+                f'max-width:420px;margin:0 auto 28px">'
+                f'{_maint_msg}</div>'
+                f'<div style="display:inline-flex;align-items:center;gap:8px;'
+                f'background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);'
+                f'border-radius:20px;padding:8px 20px">'
+                f'<span style="font-size:14px">⏱</span>'
+                f'<span style="color:#F59E0B;font-size:12px;font-weight:600;letter-spacing:1px">'
+                f'CHECK BACK SHORTLY</span>'
+                f'</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        st.stop()
+
+
 def _show_page_disabled(page_label: str) -> None:
     """Friendly 'page unavailable' screen for disabled pages."""
     st.markdown("<br><br>", unsafe_allow_html=True)

@@ -211,6 +211,39 @@ def save_page_settings(settings: dict) -> None:
     st.session_state["_page_settings_cache"] = dict(settings)
 
 
+# ── Maintenance mode ───────────────────────────────────────────
+# Stored as special keys in the same PageSettings dict so no extra
+# storage layer is needed.
+
+_MAINT_KEY     = "__maintenance__"
+_MAINT_MSG_KEY = "__maintenance_msg__"
+_MAINT_MSG_DEFAULT = (
+    "We're performing scheduled maintenance and system updates. "
+    "The site will be back up shortly — thank you for your patience."
+)
+
+
+def is_maintenance_mode() -> bool:
+    """True when admin has enabled maintenance mode for regular users."""
+    return bool(load_page_settings().get(_MAINT_KEY, False))
+
+
+def get_maintenance_message() -> str:
+    """Return the current admin-set maintenance message."""
+    return str(load_page_settings().get(_MAINT_MSG_KEY, _MAINT_MSG_DEFAULT))
+
+
+def set_maintenance_mode(enabled: bool, message: str = "") -> None:
+    """
+    Enable or disable maintenance mode and persist via the normal
+    save_page_settings() path (GSheets → local JSON fallback).
+    """
+    settings = load_page_settings().copy()
+    settings[_MAINT_KEY] = enabled
+    settings[_MAINT_MSG_KEY] = message.strip() if message.strip() else _MAINT_MSG_DEFAULT
+    save_page_settings(settings)
+
+
 # ── Runtime check ──────────────────────────────────────────────
 
 def is_page_enabled(page_key: str) -> bool:
