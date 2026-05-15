@@ -72,7 +72,7 @@ def _load_results(slot: str) -> Tuple[pd.DataFrame, str]:
 
 # ── Run all 6 options scans ────────────────────────────────────
 
-def _run_all_scans() -> pd.DataFrame:
+def _run_all_scans(top_prog=None) -> pd.DataFrame:
     from scanners.csp_scanner   import scan_csp
     from scanners.leaps_scanner import scan_leaps
 
@@ -94,11 +94,13 @@ def _run_all_scans() -> pd.DataFrame:
          (300, 0.60, 0.75, 35, 5.0, 5000.0)),
     ]
 
+    n_plans = len(scan_plan)
     frames = []
-    prog = st.progress(0)
 
     for idx, (label, strategy, universe_lbl, fn, tickers, args) in enumerate(scan_plan):
-        prog.progress(idx / len(scan_plan))
+        pct_done = int((idx / n_plans) * 90)   # reserve last 10% for save/finish
+        if top_prog is not None:
+            top_prog.progress(pct_done, text=f"📡 Strategy {idx+1}/{n_plans}: {label}…")
         st.markdown(
             f'<div style="color:{GOLD};font-size:12px;font-weight:600;'
             f'padding:6px 0 2px;border-top:1px solid {BORDER_COLOR};margin-top:6px">'
@@ -123,8 +125,8 @@ def _run_all_scans() -> pd.DataFrame:
             unsafe_allow_html=True,
         )
 
-    prog.progress(1.0)
-    prog.empty()
+    if top_prog is not None:
+        top_prog.progress(95, text="💾 Saving results…")
 
     if not frames:
         return pd.DataFrame()
@@ -302,16 +304,25 @@ def render():
     # ── Execute scan ──────────────────────────────────────────
     if run_am or run_pm:
         slot = "am" if run_am else "pm"
-        st.markdown(
-            f'<div style="color:{GOLD};font-size:13px;font-weight:600;margin:12px 0 4px">'
-            f'Running {SLOT_LABELS[slot]} scan across all strategies…</div>',
-            unsafe_allow_html=True,
-        )
         run_start = _now_cst().strftime("%H:%M CST")
-        with st.spinner("Scanning — this takes ~4 minutes for all 6 strategies…"):
-            df_new = _run_all_scans()
+
+        # Immediate visible feedback — renders before heavy scan begins
+        st.toast(f"🚀 {SLOT_LABELS[slot]} scan started…", icon="⏳")
+        _scan_banner = st.info(
+            f"⏳ **{SLOT_LABELS[slot]} scan running** — scanning all strategies across stocks & ETFs. "
+            f"This takes ~4 minutes. Please keep this tab open…",
+            icon="🔍",
+        )
+        _top_prog = st.progress(0, text="Initializing scan…")
+
+        # Run (internal scanners update their own sub-progress bars)
+        df_new = _run_all_scans(_top_prog)
+
+        _top_prog.progress(100, text="✅ All strategies complete!")
+        _scan_banner.empty()
+
         _save_results(slot, df_new)
-        st.success(f"✅ {SLOT_LABELS[slot]} scan complete — {len(df_new)} total setup(s) found.")
+        st.success(f"✅ {SLOT_LABELS[slot]} scan complete at {run_start} — {len(df_new)} total setup(s) found.")
         from data_loader import show_api_warnings
         show_api_warnings()
         # Reload
