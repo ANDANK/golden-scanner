@@ -277,12 +277,27 @@ def render():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Action buttons ────────────────────────────────────────
-    col1, col2, col3 = st.columns([1, 1, 4])
-    with col1:
-        run_am = st.button("🌅 Run AM Scan", use_container_width=True, key="sched_run_am")
-    with col2:
-        run_pm = st.button("🌇 Run PM Scan", use_container_width=True, key="sched_run_pm")
+    # ── Action buttons (admin-only) ───────────────────────────────
+    _is_admin = st.session_state.get("_is_admin", False)
+    run_am = False
+    run_pm = False
+
+    if _is_admin:
+        col1, col2, col3 = st.columns([1, 1, 4])
+        with col1:
+            run_am = st.button("🌅 Run AM Scan", use_container_width=True, key="sched_run_am")
+        with col2:
+            run_pm = st.button("🌇 Run PM Scan", use_container_width=True, key="sched_run_pm")
+    else:
+        st.markdown(
+            f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
+            f'border-left:3px solid {BORDER_COLOR};border-radius:6px;'
+            f'padding:10px 16px;font-size:12px;color:{TEXT_MUTED};margin-bottom:8px">'
+            f'🔒 <strong style="color:{TEXT_PRIMARY}">Manual scan triggers are restricted to admins.</strong>'
+            f' Scans run automatically at 9 AM &amp; 1 PM CST — results appear here once complete.'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
     # ── Execute scan ──────────────────────────────────────────
     if run_am or run_pm:
