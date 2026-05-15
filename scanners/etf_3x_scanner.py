@@ -64,8 +64,7 @@ def scan_3x_etfs(tickers, rsi_min, rsi_max, vol_mult, price_min, direction_filte
                 if not (rsi_min <= rsi <= rsi_max):
                     continue
 
-                if price < sma20:
-                    continue
+                above_sma20 = price >= sma20   # used as score bonus below (not a hard gate)
 
                 avg_vol = float(volume.iloc[:-1].rolling(20).mean().dropna().iloc[-1]) if len(volume) > 20 else float(volume.mean())
                 curr_vol = float(volume.iloc[-1])
@@ -83,8 +82,9 @@ def scan_3x_etfs(tickers, rsi_min, rsi_max, vol_mult, price_min, direction_filte
 
                 # Trend intensity
                 intensity_score = 0
-                if price > sma20 > sma50:         intensity_score += 35
-                elif price > sma20:               intensity_score += 20
+                if above_sma20 and price > sma50: intensity_score += 35   # price > SMA20 > SMA50
+                elif above_sma20:                 intensity_score += 20   # price > SMA20 only
+                else:                             intensity_score += 5    # below SMA20 — partial credit
                 if rsi_min <= rsi <= rsi_max:     intensity_score += 20
                 if hist > 0:                      intensity_score += 20
                 if vol_ratio >= 2.0:              intensity_score += 15
@@ -129,8 +129,8 @@ def render():
     with st.sidebar:
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ 3× ETF Filters</div>', unsafe_allow_html=True)
         direction_filter = st.selectbox("Direction", ["Both", "Bullish", "Bearish"])
-        rsi_min, rsi_max = st.slider("RSI Range", 30, 85, (55, 70))
-        vol_mult  = st.slider("Min Volume Multiplier", 1.0, 5.0, 1.25, 0.05)
+        rsi_min, rsi_max = st.slider("RSI Range", 30, 85, (45, 75))
+        vol_mult  = st.slider("Min Volume Multiplier", 0.5, 5.0, 1.0, 0.05)
         price_min = st.number_input("Min Price ($)", 1.0, 50.0, 5.0)
 
     col1, col2 = st.columns([1, 5])
@@ -190,5 +190,5 @@ def render():
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">
             <div style="font-size:36px;margin-bottom:12px">⚡</div>
             <div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:8px">3× Leveraged ETF Momentum Finder</div>
-            <div style="font-size:13px">Short-term high-velocity directional plays.<br>Criteria: Price > 20/50 SMA · RSI {rsi_min}–{rsi_max} · Volume ≥ {vol_mult}×</div>
+            <div style="font-size:13px">Short-term high-velocity directional plays.<br>Criteria: RSI {rsi_min}–{rsi_max} · Volume ≥ {vol_mult}× · >20 SMA scores higher</div>
         </div>""", unsafe_allow_html=True)

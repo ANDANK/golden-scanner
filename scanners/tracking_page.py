@@ -389,15 +389,6 @@ def render():
         if section_df.empty:
             return
 
-        st.markdown(
-            f'<div style="color:{label_color};font-size:13px;font-weight:700;'
-            f'text-transform:uppercase;letter-spacing:1px;'
-            f'border-left:3px solid {label_color};padding:6px 10px;'
-            f'background:{BG_PANEL};margin:16px 0 6px;border-radius:0 4px 4px 0">'
-            f'{section_label}</div>',
-            unsafe_allow_html=True,
-        )
-
         # ── Filters + Sort (single row) ──────────────────────────
         _fdf = section_df.copy()
 
@@ -553,10 +544,14 @@ def render():
                 )
 
     # ── Render Options section then Stocks section ─────────────
-    _render_section(opt_df, "⚙️ Options Positions — CSP · CC · LEAPS",
-                    "#A78BFA", "options", is_options=True)
-    _render_section(stk_df, "📈 Stock Positions — Golden Scan · Momentum · Stock",
-                    ACCENT_GREEN, "stocks", is_options=False)
+    if not opt_df.empty:
+        with st.expander(f"**⚙️ Options Positions — CSP · LEAPS** — {len(opt_df)} position(s)", expanded=True):
+            _render_section(opt_df, "⚙️ Options Positions — CSP · LEAPS",
+                            "#A78BFA", "options", is_options=True)
+    if not stk_df.empty:
+        with st.expander(f"**📈 Stock Positions — Golden Scan · Momentum** — {len(stk_df)} position(s)", expanded=True):
+            _render_section(stk_df, "📈 Stock Positions — Golden Scan · Momentum · Stock",
+                            ACCENT_GREEN, "stocks", is_options=False)
 
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:6px">'

@@ -1268,11 +1268,11 @@ _OPT_COLS   = ["Ticker", "Strategy", "Universe", "Strike", "Premium", "DTE",
 _STOCK_COLS = ["Ticker", "Strategy", "Style", "Entry_Stock_Price", "Current_Price",
                "Status", "PL_Dollar", "PL_Pct", "Source", "Score"]
 
-# Ordered strategy list — CSP → CC → LEAPS → Stocks (maintained everywhere)
+# Ordered strategy list — CSP → LEAPS → CC → Stocks (matches Scheduled Scans order)
 _STRATEGY_ORDER = [
     ("CSP",         "💰 Cash-Secured Puts (CSP)",  GOLD),
-    ("CC",          "📦 Covered Calls (CC)",        "#A78BFA"),
     ("LEAPS",       "🧨 LEAPS",                    "#60A5FA"),
+    ("CC",          "📦 Covered Calls (CC)",        "#A78BFA"),
     ("Golden Scan", "📊 Stocks / Golden Scan",      ACCENT_GREEN),
     ("Momentum",    "📈 Momentum",                  ACCENT_GREEN),
     ("Stock",       "🏦 Stocks",                   ACCENT_GREEN),
@@ -1297,10 +1297,10 @@ def _render_daily_tab(df: pd.DataFrame):
         is_stock = strat.upper() in _STOCK_STRATS
         show_cols = _STOCK_COLS if is_stock else [c for c in _OPT_COLS if c in sub.columns]
         show_cols = [c for c in show_cols if c in sub.columns]
-        _section_label(f"{label_text} — {len(sub)} position(s)", color)
-        sub_sorted = sub.sort_values("PL_Dollar", ascending=False, na_position="last")
-        _positions_table_html(sub_sorted, show_cols, show_close_signal=is_stock,
-                              context=f"daily_{strat}")
+        with st.expander(f"**{label_text}** — {len(sub)} position(s)", expanded=True):
+            sub_sorted = sub.sort_values("PL_Dollar", ascending=False, na_position="last")
+            _positions_table_html(sub_sorted, show_cols, show_close_signal=is_stock,
+                                  context=f"daily_{strat}")
 
 
 def _render_monthly_tab(df: pd.DataFrame):
@@ -1413,16 +1413,16 @@ def _render_monthly_tab(df: pd.DataFrame):
                                     .dt.strftime("%Y-%m-%d"))
 
     if not opt_m.empty:
-        _section_label(f"⚙️ Options Positions — {selected}", GOLD)
-        _positions_table_html(
-            month_df2[opt_mask].sort_values("Entry_Date", ascending=False),
-            opt_show, context=f"monthly_opt_{selected}")
+        with st.expander(f"**⚙️ Options Positions — {selected}** — {len(opt_m)} position(s)", expanded=True):
+            _positions_table_html(
+                month_df2[opt_mask].sort_values("Entry_Date", ascending=False),
+                opt_show, context=f"monthly_opt_{selected}")
 
     if not stock_m.empty:
-        _section_label(f"📊 Stock / GS Positions — {selected}", ACCENT_GREEN)
-        _positions_table_html(
-            month_df2[~opt_mask].sort_values("Entry_Date", ascending=False),
-            stk_show, show_close_signal=True, context=f"monthly_stk_{selected}")
+        with st.expander(f"**📊 Stock / GS Positions — {selected}** — {len(stock_m)} position(s)", expanded=True):
+            _positions_table_html(
+                month_df2[~opt_mask].sort_values("Entry_Date", ascending=False),
+                stk_show, show_close_signal=True, context=f"monthly_stk_{selected}")
 
     # ── Top Gainers / Losers ───────────────────────────────────────
     by_tkr_m = (month_df.groupby("Ticker")["Income"].sum().reset_index()
