@@ -1068,10 +1068,11 @@ def scan_multifactor(tickers, rsi_min, rsi_max, vol_mult, rs_min,
                 continue
 
             _, _, hist_val, prev_hist_val = calc_macd(close)
-            # Confirmed bullish: histogram positive AND growing (momentum building, not fading)
+            # MACD histogram must be positive (momentum above zero).
+            # Growing requirement removed — MF already has 6 other hard gates
+            # (trend, RSI, vol, ATR, near-high, RS). Hist > 0 is sufficient;
+            # growing hist gets a scoring bonus below instead.
             if float(hist_val) <= 0:
-                continue
-            if float(hist_val) < float(prev_hist_val):
                 continue
 
             vr = vol_above_n_avg(volume, 20, vol_mult)
@@ -1104,7 +1105,8 @@ def scan_multifactor(tickers, rsi_min, rsi_max, vol_mult, rs_min,
             score = 0
             if price > s50 > s200:      score += 20  # trend foundation
             if rsi_min <= rsi <= rsi_max: score += 15  # momentum sweet spot
-            if float(hist_val) > 0:     score += 15  # MACD confirmed (positive + growing — guaranteed by filter above)
+            if float(hist_val) > 0:     score += 12  # MACD positive
+            if float(hist_val) > float(prev_hist_val): score += 3  # bonus: histogram also growing
             if vr >= 2.0:               score += 15
             elif vr >= vol_mult:        score += 10
             if atr_exp:                 score += 10  # volatility expanding

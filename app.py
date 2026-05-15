@@ -473,6 +473,22 @@ div[data-testid="stMarkdownContainer"] div[style*="overflow-x:auto"] {{
     background: linear-gradient(90deg, transparent, {GOLD}44, transparent);
     margin: 20px 0;
 }}
+
+/* ── Expander headers — light-blue tinted background ── */
+[data-testid="stExpander"] summary {{
+    background: rgba(59, 130, 246, 0.10) !important;
+    border: 1px solid rgba(59, 130, 246, 0.22) !important;
+    border-radius: 6px !important;
+    padding: 8px 14px !important;
+}}
+[data-testid="stExpander"] summary:hover {{
+    background: rgba(59, 130, 246, 0.18) !important;
+    border-color: rgba(59, 130, 246, 0.40) !important;
+}}
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span {{
+    color: {TEXT_PRIMARY} !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 

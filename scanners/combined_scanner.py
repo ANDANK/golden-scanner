@@ -166,7 +166,7 @@ def run_combined(tickers: list, include_value: bool = False,
     # ── Core daily-chart scanners ─────────────────────────────────
     _run("Momentum",    scan_momentum,    tickers, 50, 72, 1.1, price_min, price_max, 0, 0)
     _run("Trend Stack", scan_trend_stack, tickers, 55, 70, 1.3, 3.0, 1.03, price_min)
-    _run("Multi-Factor",scan_multifactor, tickers, 50, 72, 1.1, 1.0, False, 5.0, price_min, price_max)
+    _run("Multi-Factor",scan_multifactor, tickers, 50, 72, 1.1, 1.0, False, 7.0, price_min, price_max)
 
     # ── Weekly-chart setups ───────────────────────────────────────
     _run("Trend Align",  scan_trend_alignment,  tickers,
