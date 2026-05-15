@@ -1018,6 +1018,8 @@ def _render_summary_table(analyses: list):
     if not analyses:
         return
 
+    TEAL = "#2DD4BF"
+
     def _score_bar(score: int) -> str:
         color = ACCENT_GREEN if score >= 70 else (GOLD if score >= 50 else ACCENT_RED)
         bar_w = int(score * 44 / 100)
@@ -1025,12 +1027,8 @@ def _render_summary_table(analyses: list):
             f'<div style="display:flex;align-items:center;gap:5px">'
             f'<div style="background:#1a1a2a;border-radius:2px;height:5px;width:44px">'
             f'<div style="background:{color};height:5px;border-radius:2px;width:{bar_w}px"></div>'
-            f'</div>'
-            f'<span style="color:{color};font-size:11px;font-weight:700">{score}</span>'
-            f'</div>'
+            f'</div><span style="color:{color};font-size:11px;font-weight:700">{score}</span></div>'
         )
-
-    TEAL = "#2DD4BF"
 
     def _rsi_color(r):
         return ACCENT_GREEN if 55 <= r <= 68 else (ACCENT_RED if r > 70 or r < 30 else YELLOW)
@@ -1041,95 +1039,72 @@ def _render_summary_table(analyses: list):
         sig_pct   = a["signal_pct"]
         sig_color = a["signal_color"]
 
-        # Circle: SETUP gets a cyan dot to distinguish from SELL
-        if sig == "BUY":
-            circle = "🟢"
-        elif "SETUP" in sig:
-            circle = "🔵"
-        elif sig == "SELL":
-            circle = "🔴"
-        else:
-            circle = "🟡"
+        circle = "🟢" if sig == "BUY" else ("🔵" if "SETUP" in sig else ("🔴" if sig == "SELL" else "🟡"))
 
-        # Weekly MACD — flag a conflict when SELL/NEUTRAL but weekly is bullish
         macd_w_color = ACCENT_GREEN if a["cross_w"] else ACCENT_RED
         macd_w_label = "Bull ✅" if a["cross_w"] else "Bear ❌"
         macd_w_vals  = f"{a['m_w']:+.3f} / {a['s_w']:+.3f}"
-        # Conflict = weekly MACD says Buy but overall signal is SELL
-        conflict = a["cross_w"] and a["hist_pos_w"] and sig == "SELL"
-        conflict_tag = (
-            f'<div style="color:{TEAL};font-size:9px;font-weight:700;margin-top:2px">⚡ W-MACD conflict</div>'
-            if conflict else ""
-        )
+        conflict     = a["cross_w"] and a["hist_pos_w"] and sig == "SELL"
+        conflict_tag = f'<div style="color:{TEAL};font-size:9px;font-weight:700;margin-top:2px">&#9889; W-MACD conflict</div>' if conflict else ""
 
         rsi_d_c = _rsi_color(a["rsi_d"])
         rsi_w_c = _rsi_color(a["rsi_w"])
 
-        # Trend label
-        trend_color = (ACCENT_GREEN if a["trend_level"] == "bull"
-                       else (YELLOW if a["trend_level"] == "warn" else ACCENT_RED))
+        trend_color = ACCENT_GREEN if a["trend_level"] == "bull" else (YELLOW if a["trend_level"] == "warn" else ACCENT_RED)
         trend_lbl   = "Full Stack" if a["full_stack"] else ("Partial" if a["partial"] else "Weak")
 
-        # Why bearish — show top drag factor for SELL / SETUP tickers
         drag = ""
-        if sig in ("SELL",) or "SETUP" in sig:
+        if sig == "SELL" or "SETUP" in sig:
             if a["trend_score"] == 0:
                 drag = f'<div style="color:{ACCENT_RED};font-size:9px;margin-top:2px">MA stack broken</div>'
             elif not a["above_sma50"]:
                 drag = f'<div style="color:{ACCENT_RED};font-size:9px;margin-top:2px">Below SMA50</div>'
 
-        # Volume & RS
         vol_color = ACCENT_GREEN if a["vol_spike"] else TEXT_MUTED
-        vol_lbl   = f"{a['vol_ratio']:.1f}×{'🔥' if a['vol_spike'] else ''}"
-        rs_color  = (ACCENT_GREEN if a["rs_spy"] >= 1.05
-                     else (ACCENT_RED if a["rs_spy"] < 0.95 else TEXT_MUTED))
-        rs_lbl    = f"RS {a['rs_spy']:.3f}×"
+        vol_lbl   = f"{a['vol_ratio']:.1f}&times;{'&#128293;' if a['vol_spike'] else ''}"
+        rs_color  = ACCENT_GREEN if a["rs_spy"] >= 1.05 else (ACCENT_RED if a["rs_spy"] < 0.95 else TEXT_MUTED)
+        rs_lbl    = f"RS {a['rs_spy']:.3f}&times;"
 
-        chg_c = ACCENT_GREEN if a["chg_pct"] >= 0 else ACCENT_RED
-        td    = f"padding:9px 10px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:middle"
+        chg_c       = ACCENT_GREEN if a["chg_pct"] >= 0 else ACCENT_RED
+        sig_display = sig.replace(" 🔄", "")
+        sig_note    = f'<div style="color:{TEAL};font-size:9px;margin-top:2px">Watch for breakout</div>' if "SETUP" in sig else ""
+        td          = f"padding:9px 10px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:middle"
 
-        # For SETUP tickers, show the raw composite (not 100-composite) with teal
-        sig_display = sig.replace(" 🔄", "")  # strip emoji for tight badge
-        sig_note    = (
-            f'<div style="color:{TEAL};font-size:9px;margin-top:2px">Watch for breakout</div>'
-            if "SETUP" in sig else ""
+        # Build each row as a single-line join — NO embedded newlines (they break st.markdown HTML parsing)
+        row = (
+            f'<tr>'
+            f'<td style="{td};font-size:18px;text-align:center;width:32px">{circle}</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{GOLD};font-size:14px;font-weight:800;font-family:\'DM Mono\',monospace;letter-spacing:1px">{a["ticker"]}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:1px">'
+            f'${a["price"]:.2f}&nbsp;<span style="color:{chg_c}">{a["chg_pct"]:+.1f}%</span></div>'
+            f'</td>'
+            f'<td style="{td}">'
+            f'<div style="background:{sig_color}22;border:1px solid {sig_color}55;border-radius:6px;padding:5px 10px;text-align:center;min-width:72px">'
+            f'<div style="color:{sig_color};font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">{sig_display}</div>'
+            f'<div style="color:{sig_color};font-size:17px;font-weight:800;line-height:1.1">{sig_pct}%</div>'
+            f'</div>{sig_note}{drag}'
+            f'</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{macd_w_color};font-size:11px;font-weight:600">{macd_w_label}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:10px;font-family:\'DM Mono\',monospace;margin-top:2px">{macd_w_vals}</div>'
+            f'{conflict_tag}</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{rsi_d_c};font-size:11px;font-weight:600">D:&nbsp;{a["rsi_d"]:.0f}</div>'
+            f'<div style="color:{rsi_w_c};font-size:11px;font-weight:600;margin-top:3px">W:&nbsp;{a["rsi_w"]:.0f}</div>'
+            f'</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{trend_color};font-size:11px;font-weight:600;margin-bottom:4px">{trend_lbl}</div>'
+            f'{_score_bar(a["trend_score"])}</td>'
+            f'<td style="{td}">{_score_bar(a["momentum_score"])}</td>'
+            f'<td style="{td}">{_score_bar(a["buy_pressure_score"])}</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{vol_color};font-size:11px;font-weight:600">{vol_lbl}</div>'
+            f'<div style="color:{rs_color};font-size:10px;margin-top:3px">{rs_lbl}</div>'
+            f'</td>'
+            f'</tr>'
         )
-
-        rows_html.append(f"""<tr>
-          <td style="{td};font-size:18px;text-align:center;width:32px">{circle}</td>
-          <td style="{td}">
-            <div style="color:{GOLD};font-size:14px;font-weight:800;font-family:'DM Mono',monospace;letter-spacing:1px">{a['ticker']}</div>
-            <div style="color:{TEXT_MUTED};font-size:10px;margin-top:1px">${a['price']:.2f}
-              <span style="color:{chg_c}">&nbsp;{a['chg_pct']:+.1f}%</span></div>
-          </td>
-          <td style="{td}">
-            <div style="background:{sig_color}22;border:1px solid {sig_color}55;border-radius:6px;
-                        padding:5px 10px;text-align:center;min-width:72px">
-              <div style="color:{sig_color};font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">{sig_display}</div>
-              <div style="color:{sig_color};font-size:17px;font-weight:800;line-height:1.1">{sig_pct}%</div>
-            </div>
-            {sig_note}{drag}
-          </td>
-          <td style="{td}">
-            <div style="color:{macd_w_color};font-size:11px;font-weight:600">{macd_w_label}</div>
-            <div style="color:{TEXT_MUTED};font-size:10px;font-family:'DM Mono',monospace;margin-top:2px">{macd_w_vals}</div>
-            {conflict_tag}
-          </td>
-          <td style="{td}">
-            <div style="color:{rsi_d_c};font-size:11px;font-weight:600">D:&nbsp;{a['rsi_d']:.0f}</div>
-            <div style="color:{rsi_w_c};font-size:11px;font-weight:600;margin-top:3px">W:&nbsp;{a['rsi_w']:.0f}</div>
-          </td>
-          <td style="{td}">
-            <div style="color:{trend_color};font-size:11px;font-weight:600;margin-bottom:4px">{trend_lbl}</div>
-            {_score_bar(a['trend_score'])}
-          </td>
-          <td style="{td}">{_score_bar(a['momentum_score'])}</td>
-          <td style="{td}">{_score_bar(a['buy_pressure_score'])}</td>
-          <td style="{td}">
-            <div style="color:{vol_color};font-size:11px;font-weight:600">{vol_lbl}</div>
-            <div style="color:{rs_color};font-size:10px;margin-top:3px">{rs_lbl}</div>
-          </td>
-        </tr>""")
+        rows_html.append(row)
 
     th = (f"padding:8px 10px;color:{TEXT_MUTED};font-size:10px;font-weight:700;"
           f"text-transform:uppercase;letter-spacing:.8px;background:{BG_PANEL};"
@@ -1143,11 +1118,11 @@ def _render_summary_table(analyses: list):
         f'margin-bottom:28px;overflow:hidden">'
         f'<div style="background:{BG_CARD};padding:11px 18px;border-bottom:1px solid {BORDER_COLOR};'
         f'display:flex;align-items:center;justify-content:space-between">'
-        f'<span style="color:{GOLD};font-size:13px;font-weight:700">📊 Summary — All Tickers at a Glance</span>'
+        f'<span style="color:{GOLD};font-size:13px;font-weight:700">&#128202; Summary &#8212; All Tickers at a Glance</span>'
         f'<span style="color:{TEXT_MUTED};font-size:11px">'
-        f'🟢&thinsp;Buy &nbsp;·&nbsp; 🟡&thinsp;Neutral &nbsp;·&nbsp; '
-        f'🔵&thinsp;<span style="color:#2DD4BF">Setup/Watch</span> &nbsp;·&nbsp; 🔴&thinsp;Sell</span>'
-        f'</div>'
+        f'&#x1F7E2;&thinsp;Buy &nbsp;&middot;&nbsp; &#x1F7E1;&thinsp;Neutral &nbsp;&middot;&nbsp; '
+        f'&#x1F535;&thinsp;<span style="color:{TEAL}">Setup/Watch</span> &nbsp;&middot;&nbsp; &#x1F534;&thinsp;Sell'
+        f'</span></div>'
         f'<div style="overflow-x:auto">'
         f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
         f'<thead><tr>{hdr_html}</tr></thead>'
@@ -1168,16 +1143,15 @@ def render():
     )
 
     # ── Ticker input — prominent, in main content area ──────────
-    st.markdown(f"""
-<div style="background:{BG_PANEL};border:1px solid {GOLD}44;border-radius:10px;
-            padding:18px 24px;margin-bottom:20px">
-  <div style="color:{GOLD};font-size:12px;font-weight:700;text-transform:uppercase;
-              letter-spacing:1.2px;margin-bottom:10px">🔬 Enter Tickers to Analyze</div>
-  <div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:10px">
-    Type 1–25 stock symbols separated by commas, then click <b style="color:{TEXT_PRIMARY}">▶ Analyze</b>.
-    Example: <span style="color:{GOLD};font-family:'DM Mono',monospace">AAPL, MSFT, NVDA, TSLA, META</span>
-  </div>
-</div>""", unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {GOLD}44;border-radius:10px;padding:18px 24px;margin-bottom:20px">'
+        f'<div style="color:{GOLD};font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px">&#128302; Enter Tickers to Analyze</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:10px">'
+        f'Type 1&#8211;25 stock symbols separated by commas, then click <b style="color:{TEXT_PRIMARY}">&#9658; Analyze</b>. '
+        f'Example: <span style="color:{GOLD};font-family:\'DM Mono\',monospace">AAPL, MSFT, NVDA, TSLA, META</span>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
 
     col_input, col_run, col_clr = st.columns([4, 1, 1])
     with col_input:
@@ -1253,20 +1227,20 @@ def render():
         return
 
     # Ticker pill bar (shown when running)
-    st.markdown(f"""
-<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;
-            padding:10px 18px;margin-bottom:20px;display:flex;align-items:center;
-            gap:12px;flex-wrap:wrap">
-  <span style="color:{TEXT_MUTED};font-size:12px">Analyzing:</span>
-  {''.join(
-    f'<span style="background:{BG_CARD};border:1px solid {GOLD}55;color:{GOLD};'
-    f'padding:4px 14px;border-radius:4px;font-family:\'DM Mono\',monospace;font-weight:700;font-size:13px">{t}</span>'
-    for t in tickers
-  )}
-  <span style="color:{TEXT_MUTED};font-size:11px;margin-left:auto">
-    Data via YFinance · Daily + Weekly timeframes
-  </span>
-</div>""", unsafe_allow_html=True)
+    ticker_pills = "".join(
+        f'<span style="background:{BG_CARD};border:1px solid {GOLD}55;color:{GOLD};'
+        f'padding:4px 14px;border-radius:4px;font-family:\'DM Mono\',monospace;font-weight:700;font-size:13px">{t}</span>'
+        for t in tickers
+    )
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;'
+        f'padding:10px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+        f'<span style="color:{TEXT_MUTED};font-size:12px">Analyzing:</span>'
+        f'{ticker_pills}'
+        f'<span style="color:{TEXT_MUTED};font-size:11px;margin-left:auto">Data via YFinance &middot; Daily + Weekly timeframes</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     # Run analysis ──────────────────────────────────────────────
     analyses = []
