@@ -71,10 +71,8 @@ STANDARD_TICKERS = [
     # Speculative / High Growth
     "ASTS","RKLB","BBAI","BMNR","OKLO",
 ]
-# Deduplicate while preserving order
-_seen: set = set()
-STANDARD_TICKERS = [t for t in STANDARD_TICKERS if not (_seen.add(t) or t in _seen)]
-del _seen
+# Deduplicate while preserving order (dict.fromkeys is O(n) and correct)
+STANDARD_TICKERS = list(dict.fromkeys(STANDARD_TICKERS))
 
 _STD_CACHE_KEY = "_std_scan_results"
 _STD_TS_KEY    = "_std_scan_ts"
