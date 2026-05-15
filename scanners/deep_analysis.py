@@ -37,7 +37,7 @@ SECTOR_ETF = {
 
 YELLOW = "#FBBF24"
 
-# ── Standard Watchlist — fixed ticker universe ─────────────────
+# ── Gold Standard — fixed ticker universe ─────────────────────
 STANDARD_TICKERS = [
     # Mega Cap Tech
     "AAPL","MSFT","GOOGL","GOOG","AMZN","META","NVDA","TSLA",
@@ -1371,7 +1371,7 @@ def _render_standard_watchlist():
             f'<div style="background:{BG_PANEL};border:1px solid {GOLD}33;border-radius:10px;'
             f'padding:32px;text-align:center;margin-top:8px">'
             f'<div style="font-size:42px;margin-bottom:14px">&#128202;</div>'
-            f'<div style="color:{GOLD};font-size:20px;font-weight:700;margin-bottom:10px">Standard Watchlist</div>'
+            f'<div style="color:{GOLD};font-size:20px;font-weight:700;margin-bottom:10px">Gold Standard</div>'
             f'<div style="color:{TEXT_MUTED};font-size:13px;line-height:1.8;max-width:540px;margin:0 auto 20px">'
             f'Scans <b style="color:{TEXT_PRIMARY}">{n} pre-loaded tickers</b> (no duplicates) using the same 9-indicator '
             f'engine as Deep Analysis. Results cached for <b style="color:{TEXT_PRIMARY}">4 hours</b>.'
@@ -1588,12 +1588,12 @@ def _render_deep_analysis():
 
 
 def render():
-    """Entry point — page header + two tabs: Deep Analysis · Standard Watchlist."""
+    """Entry point — page header + two tabs: Deep Analysis · Gold Standard."""
     section_header(
         "🔬", "Stock Analysis",
         "Multi-ticker · Daily + Weekly · 9 indicator modules · Composite scores · Interactive chart",
     )
-    tab_deep, tab_std = st.tabs(["🔬 Deep Analysis", "📋 Standard Watchlist"])
+    tab_deep, tab_std = st.tabs(["🔬 Deep Analysis", "✦ Gold Standard"])
     with tab_deep:
         _render_deep_analysis()
     with tab_std:

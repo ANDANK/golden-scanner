@@ -1251,7 +1251,7 @@ def _render_stock_analysis_methodology():
         unsafe_allow_html=True,
     )
 
-    # ══ Section 5: Standard Watchlist reference ═══════════════════
+    # ══ Section 5: Gold Standard reference ════════════════════════
     st.markdown(
         f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
         f'margin:24px 0 20px"></div>',
@@ -1259,7 +1259,7 @@ def _render_stock_analysis_methodology():
     )
     st.markdown(
         f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:1.2px;margin-bottom:14px">&#128202; Standard Watchlist — How It Works</div>',
+        f'letter-spacing:1.2px;margin-bottom:14px">&#10022; Gold Standard — How It Works</div>',
         unsafe_allow_html=True,
     )
 
@@ -1267,7 +1267,7 @@ def _render_stock_analysis_methodology():
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;'
         f'padding:16px 20px;margin-bottom:16px">'
         f'<div style="color:{TEXT_PRIMARY};font-size:13px;line-height:1.8;margin-bottom:12px">'
-        f'The <b style="color:{GOLD}">📋 Standard Watchlist</b> tab (inside Stock Analysis) runs the full '
+        f'The <b style="color:{GOLD}">✦ Gold Standard</b> tab (inside Stock Analysis) runs the full '
         f'9-indicator engine on a fixed list of 117 pre-loaded tickers with a single button press. '
         f'No typing required. Results are cached for 4 hours — pressing the button again within '
         f'4 hours returns the cached table instantly without re-fetching data.'
@@ -1350,7 +1350,7 @@ def _render_stock_analysis_methodology():
         f'<div style="background:{BG_PANEL};border:1px solid {GOLD}33;border-left:3px solid {GOLD};'
         f'border-radius:0 6px 6px 0;padding:12px 16px;color:{TEXT_MUTED};font-size:12px;line-height:1.8">'
         f'<b style="color:{GOLD}">&#128161; Recommended workflow:</b> '
-        f'Run Standard Watchlist each morning → filter by <b style="color:{TEXT_PRIMARY}">BUY + SETUP</b> → '
+        f'Run Gold Standard each morning → filter by <b style="color:{TEXT_PRIMARY}">BUY + SETUP</b> → '
         f'sort by <b style="color:{TEXT_PRIMARY}">Confidence ↓</b> → '
         f'for any SETUP tickers with D-MACD also turning Bull, open the '
         f'<b style="color:{GOLD}">Deep Analysis</b> tab and type the ticker for a full report including '
