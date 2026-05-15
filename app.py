@@ -751,7 +751,8 @@ page = st.session_state.get("nav_page", "🏠  Market Overview")
 if page and page != "🏠  Market Overview":
     _c1, _c2 = st.columns([1, 11])
     with _c1:
-        st.button("🏠 Home", key="_main_home", use_container_width=True, on_click=_go_home)
+        if st.button("🏠 Home", key="_main_home", use_container_width=True):
+            _go_home()
     st.markdown(f'<div style="height:2px;background:linear-gradient(90deg,{GOLD}44,transparent);margin-bottom:8px"></div>', unsafe_allow_html=True)
 
 # ── Page visibility guard ──────────────────────────────────────
