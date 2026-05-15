@@ -688,17 +688,32 @@ from scanners.page_manager import is_page_enabled as _page_enabled
 def _group_all_disabled(grp: dict) -> bool:
     """
     True when every page in this nav group is disabled for the current user.
-    Admins always see everything, so this returns False for admin sessions.
-    Market Overview and Admin Panel are always-on, so their groups are
-    never fully locked.
+    Admins always see everything → always returns False for admin sessions.
+    Always-on pages (Market Overview, Admin Panel) can never be disabled →
+    their groups are never fully locked.
     """
     if st.session_state.get("_is_admin", False):
         return False
-    for it in grp.get("items", []):
-        if _page_enabled(it["key"]):
+    items = grp.get("items", [])
+    if not items:
+        return False  # empty group — don't lock
+
+    # Load settings ONCE for the whole group check (avoids re-reading cache)
+    from scanners.page_manager import load_page_settings as _lps, _ALWAYS_ON as _AO
+    _settings = _lps()
+
+    for it in items:
+        key = it["key"]
+        # Always-on pages are never disabled
+        if key in _AO:
             return False
+        # If this page is enabled (True is the default), group is NOT fully locked
+        if _settings.get(key, True):
+            return False
+        # Check children too
         for child in it.get("children", []):
-            if _page_enabled(child["key"]):
+            ck = child["key"]
+            if ck in _AO or _settings.get(ck, True):
                 return False
     return True
 
