@@ -703,138 +703,148 @@ def _group_all_disabled(grp: dict) -> bool:
     return True
 
 # ── Sidebar ────────────────────────────────────────────────────
-with st.sidebar:
-    # Logo block — display only, NOT clickable. (Removed by user request.)
-    st.markdown(f"""
-    <div style="display:flex;align-items:center;gap:10px;padding:16px 8px 6px 8px;border-bottom:1px solid {BORDER_COLOR};margin-bottom:6px">
-        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
-            <circle cx="18" cy="18" r="16" stroke="{GOLD}" stroke-width="1.5" fill="none" opacity="0.35"/>
-            <circle cx="18" cy="18" r="10" stroke="{GOLD}" stroke-width="1.5" fill="none" opacity="0.6"/>
-            <circle cx="18" cy="18" r="3" fill="{GOLD}" opacity="0.9"/>
-            <line x1="18" y1="2" x2="18" y2="8" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
-            <line x1="18" y1="28" x2="18" y2="34" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
-            <line x1="2" y1="18" x2="8" y2="18" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
-            <line x1="28" y1="18" x2="34" y2="18" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
-            <line x1="13" y1="18" x2="23" y2="18" stroke="{GOLD}" stroke-width="1" opacity="0.4"/>
-            <line x1="18" y1="13" x2="18" y2="23" stroke="{GOLD}" stroke-width="1" opacity="0.4"/>
-        </svg>
-        <div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:{GOLD};letter-spacing:2px;line-height:1.1">GOLDEN SCANNER</div>
-            <div style="color:{TEXT_MUTED};font-size:9px;letter-spacing:2.5px;text-transform:uppercase;margin-top:2px">Precision Trading Intelligence</div>
+# Maintenance check BEFORE the sidebar renders — if active the sidebar is
+# simply never added to the DOM (no CSS battles with the force-visible rules).
+from scanners.page_manager import is_maintenance_mode as _maint_check_fn
+_in_maintenance = (
+    not st.session_state.get("_is_admin", False)
+    and st.session_state.get("nav_page", "🏠  Market Overview") != "⚙️  Admin Panel"
+    and _maint_check_fn()
+)
+
+if not _in_maintenance:
+    with st.sidebar:
+        # Logo block — display only, NOT clickable. (Removed by user request.)
+        st.markdown(f"""
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 8px 6px 8px;border-bottom:1px solid {BORDER_COLOR};margin-bottom:6px">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+                <circle cx="18" cy="18" r="16" stroke="{GOLD}" stroke-width="1.5" fill="none" opacity="0.35"/>
+                <circle cx="18" cy="18" r="10" stroke="{GOLD}" stroke-width="1.5" fill="none" opacity="0.6"/>
+                <circle cx="18" cy="18" r="3" fill="{GOLD}" opacity="0.9"/>
+                <line x1="18" y1="2" x2="18" y2="8" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
+                <line x1="18" y1="28" x2="18" y2="34" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
+                <line x1="2" y1="18" x2="8" y2="18" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
+                <line x1="28" y1="18" x2="34" y2="18" stroke="{GOLD}" stroke-width="1.5" opacity="0.7"/>
+                <line x1="13" y1="18" x2="23" y2="18" stroke="{GOLD}" stroke-width="1" opacity="0.4"/>
+                <line x1="18" y1="13" x2="18" y2="23" stroke="{GOLD}" stroke-width="1" opacity="0.4"/>
+            </svg>
+            <div>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:{GOLD};letter-spacing:2px;line-height:1.1">GOLDEN SCANNER</div>
+                <div style="color:{TEXT_MUTED};font-size:9px;letter-spacing:2.5px;text-transform:uppercase;margin-top:2px">Precision Trading Intelligence</div>
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    # ── Grouped, collapsible nav ──────────────────────────────
-    current_page = st.session_state.get("nav_page", "🏠  Market Overview")
+        # ── Grouped, collapsible nav ──────────────────────────────
+        current_page = st.session_state.get("nav_page", "🏠  Market Overview")
 
-    def _render_nav_item(it, indent=False):
-        is_active = it["key"] == current_page
-        # Combine sub + active markers into ONE span so they share an
-        # element-container. If kept separate, sub-marker's adjacent-sibling
-        # selector ` + .element-container` points to the active-marker's
-        # container instead of the button — losing the indent on active sub-items.
-        classes = []
-        if indent:
-            classes.append("gs-sub-marker")
-        if is_active:
-            classes.append("gs-active-marker")
-        if classes:
-            st.markdown(f'<span class="{" ".join(classes)}"></span>', unsafe_allow_html=True)
-        # Show 🔒 for regular users when the page is disabled
-        _is_user = not st.session_state.get("_is_admin", False)
-        lock_tag = " 🔴" if _is_user and not _page_enabled(it["key"]) else ""
-        if st.button(it["key"] + lock_tag, key=f"_nav_{it['key']}", use_container_width=True):
-            _go(it["key"])
+        def _render_nav_item(it, indent=False):
+            is_active = it["key"] == current_page
+            # Combine sub + active markers into ONE span so they share an
+            # element-container. If kept separate, sub-marker's adjacent-sibling
+            # selector ` + .element-container` points to the active-marker's
+            # container instead of the button — losing the indent on active sub-items.
+            classes = []
+            if indent:
+                classes.append("gs-sub-marker")
+            if is_active:
+                classes.append("gs-active-marker")
+            if classes:
+                st.markdown(f'<span class="{" ".join(classes)}"></span>', unsafe_allow_html=True)
+            # Show 🔒 for regular users when the page is disabled
+            _is_user = not st.session_state.get("_is_admin", False)
+            lock_tag = " 🔴" if _is_user and not _page_enabled(it["key"]) else ""
+            if st.button(it["key"] + lock_tag, key=f"_nav_{it['key']}", use_container_width=True):
+                _go(it["key"])
 
-    def _render_item_with_children(it):
-        # Single-button design: clicking Tracking ALWAYS navigates to it.
-        # Sub-menu visibility is derived from active state.
-        is_active = it["key"] == current_page
-        child_active = any(c["key"] == current_page for c in it.get("children", []))
-        show_subs = is_active or child_active
+        def _render_item_with_children(it):
+            # Single-button design: clicking Tracking ALWAYS navigates to it.
+            # Sub-menu visibility is derived from active state.
+            is_active = it["key"] == current_page
+            child_active = any(c["key"] == current_page for c in it.get("children", []))
+            show_subs = is_active or child_active
 
-        if is_active:
-            st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
-        # Show 🔒 for regular users when the page is disabled
-        _is_user = not st.session_state.get("_is_admin", False)
-        lock_tag = " 🔴" if _is_user and not _page_enabled(it["key"]) else ""
-        # Chevrons on BOTH sides telegraph "this expands" without needing a rail.
-        # Collapsed: ›  📌  Tracking  ‹    Expanded: ⌄  📌  Tracking  ⌄
-        if show_subs:
-            label = "⌄  " + it["key"] + lock_tag + "  ⌄"
-        else:
-            label = "›  " + it["key"] + lock_tag + "  ‹"
-        if st.button(label, key=f"_nav_{it['key']}", use_container_width=True):
-            _go(it["key"])
+            if is_active:
+                st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
+            # Show 🔒 for regular users when the page is disabled
+            _is_user = not st.session_state.get("_is_admin", False)
+            lock_tag = " 🔴" if _is_user and not _page_enabled(it["key"]) else ""
+            # Chevrons on BOTH sides telegraph "this expands" without needing a rail.
+            # Collapsed: ›  📌  Tracking  ‹    Expanded: ⌄  📌  Tracking  ⌄
+            if show_subs:
+                label = "⌄  " + it["key"] + lock_tag + "  ⌄"
+            else:
+                label = "›  " + it["key"] + lock_tag + "  ‹"
+            if st.button(label, key=f"_nav_{it['key']}", use_container_width=True):
+                _go(it["key"])
 
-        if show_subs:
-            for child in it.get("children", []):
-                _render_nav_item(child, indent=True)
+            if show_subs:
+                for child in it.get("children", []):
+                    _render_nav_item(child, indent=True)
 
-    for grp in NAV_GROUPS:
-        is_open = st.session_state.get("_nav_open_group") == grp["sep"]
-        marker = "gs-admin-marker" if grp.get("dim") else "gs-group-marker"
-        _locked = _group_all_disabled(grp)
+        for grp in NAV_GROUPS:
+            is_open = st.session_state.get("_nav_open_group") == grp["sep"]
+            marker = "gs-admin-marker" if grp.get("dim") else "gs-group-marker"
+            _locked = _group_all_disabled(grp)
 
-        # If the currently open group just became fully locked, close it.
-        if _locked and is_open:
-            st.session_state["_nav_open_group"] = None
-            is_open = False
+            # If the currently open group just became fully locked, close it.
+            if _locked and is_open:
+                st.session_state["_nav_open_group"] = None
+                is_open = False
 
-        st.markdown(f'<span class="{marker}"></span>', unsafe_allow_html=True)
+            st.markdown(f'<span class="{marker}"></span>', unsafe_allow_html=True)
 
-        if _locked:
-            # ── Locked group: all pages disabled — show a non-interactive header ──
-            st.markdown(
-                f'<div style="display:flex;align-items:center;gap:8px;'
-                f'padding:7px 14px;border-radius:6px;'
-                f'background:rgba(255,255,255,0.02);'
-                f'border:1px solid {BORDER_COLOR}44;'
-                f'color:{TEXT_MUTED};font-size:11px;font-weight:600;'
-                f'letter-spacing:1.5px;text-transform:uppercase;'
-                f'cursor:not-allowed;opacity:0.45;user-select:none;'
-                f'margin-bottom:2px">'
-                f'<span>🔒</span>'
-                f'<span>{grp["sep"].upper()}</span>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            # ── Normal group: accordion toggle ──
-            header_label = f"{grp['icon']}  {grp['sep'].upper()}    {'▾' if is_open else '▸'}"
-            if st.button(header_label, key=f"_grp_{grp['sep']}", use_container_width=True):
-                # Strict accordion: open this group, close all others.
-                # If clicking the already-open group, close it.
-                st.session_state["_nav_open_group"] = None if is_open else grp["sep"]
-                st.rerun()
+            if _locked:
+                # ── Locked group: all pages disabled — show a non-interactive header ──
+                st.markdown(
+                    f'<div style="display:flex;align-items:center;gap:8px;'
+                    f'padding:7px 14px;border-radius:6px;'
+                    f'background:rgba(255,255,255,0.02);'
+                    f'border:1px solid {BORDER_COLOR}44;'
+                    f'color:{TEXT_MUTED};font-size:11px;font-weight:600;'
+                    f'letter-spacing:1.5px;text-transform:uppercase;'
+                    f'cursor:not-allowed;opacity:0.45;user-select:none;'
+                    f'margin-bottom:2px">'
+                    f'<span>🔒</span>'
+                    f'<span>{grp["sep"].upper()}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                # ── Normal group: accordion toggle ──
+                header_label = f"{grp['icon']}  {grp['sep'].upper()}    {'▾' if is_open else '▸'}"
+                if st.button(header_label, key=f"_grp_{grp['sep']}", use_container_width=True):
+                    # Strict accordion: open this group, close all others.
+                    # If clicking the already-open group, close it.
+                    st.session_state["_nav_open_group"] = None if is_open else grp["sep"]
+                    st.rerun()
 
-            # Body — only render when this is the open group
-            if is_open:
-                if not grp["items"]:
-                    st.markdown(
-                        f'<div style="padding:6px 12px;color:{TEXT_MUTED};font-size:11px;font-style:italic">No admin tools yet</div>',
-                        unsafe_allow_html=True,
-                    )
-                for it in grp["items"]:
-                    if it.get("children"):
-                        _render_item_with_children(it)
-                    else:
-                        _render_nav_item(it)
+                # Body — only render when this is the open group
+                if is_open:
+                    if not grp["items"]:
+                        st.markdown(
+                            f'<div style="padding:6px 12px;color:{TEXT_MUTED};font-size:11px;font-style:italic">No admin tools yet</div>',
+                            unsafe_allow_html=True,
+                        )
+                    for it in grp["items"]:
+                        if it.get("children"):
+                            _render_item_with_children(it)
+                        else:
+                            _render_nav_item(it)
 
-    # ── ⚙️ Settings block — same gold-header treatment ───────
-    st.markdown('<div class="gs-global-row">⚙️ Settings</div>', unsafe_allow_html=True)
-    st.session_state["_show_prepost"] = st.checkbox(
-        "Pre/Post Market Price",
-        value=st.session_state.get("_show_prepost", False),
-        help="Appends current extended-hours price to every scanner result table. Adds ~1s per ticker.",
-    )
+        # ── ⚙️ Settings block — same gold-header treatment ───────
+        st.markdown('<div class="gs-global-row">⚙️ Settings</div>', unsafe_allow_html=True)
+        st.session_state["_show_prepost"] = st.checkbox(
+            "Pre/Post Market Price",
+            value=st.session_state.get("_show_prepost", False),
+            help="Appends current extended-hours price to every scanner result table. Adds ~1s per ticker.",
+        )
 
-    st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center;margin-top:14px;line-height:1.6">'
-        f'Data via YFinance · Refreshes every 5 min<br>⚠️ Not financial advice</div>',
-        unsafe_allow_html=True,
-    )
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center;margin-top:14px;line-height:1.6">'
+            f'Data via YFinance · Refreshes every 5 min<br>⚠️ Not financial advice</div>',
+            unsafe_allow_html=True,
+        )
 
 # Expose `page` for the router below (legacy variable name preserved)
 page = st.session_state.get("nav_page", "🏠  Market Overview")
@@ -855,50 +865,37 @@ _ROUTER_ALWAYS_ON = {"🏠  Market Overview", "⚙️  Admin Panel"}
 
 
 # ── Maintenance mode gate ──────────────────────────────────────
-# Checked BEFORE the router so every page (including Market Overview)
-# shows the maintenance screen for regular users when the admin enables it.
-# Admin Panel itself is always reachable so the admin can turn it off.
-if page != "⚙️  Admin Panel" and not st.session_state.get("_is_admin", False):
-    from scanners.page_manager import is_maintenance_mode, get_maintenance_message
-    if is_maintenance_mode():
-        _maint_msg = get_maintenance_message()
-        # Hide the sidebar entirely so the maintenance screen is clean
-        st.markdown("""<style>
-section[data-testid="stSidebar"],
-[data-testid="stSidebarCollapsedControl"],
-button[data-testid="stSidebarCollapseButton"] {
-    display: none !important;
-}
-[data-testid="stAppViewContainer"] > .main {
-    margin-left: 0 !important;
-    padding-left: 2rem !important;
-}
-</style>""", unsafe_allow_html=True)
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        _, _mcol, _ = st.columns([1, 2, 1])
-        with _mcol:
-            st.markdown(
-                f'<div style="background:{BG_CARD};border:1px solid #EF444455;'
-                f'border-top:4px solid #F59E0B;border-radius:14px;'
-                f'padding:60px 40px;text-align:center;margin-top:40px">'
-                f'<div style="font-size:64px;margin-bottom:20px">🚧</div>'
-                f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:32px;'
-                f'color:#F59E0B;font-weight:700;letter-spacing:2px;margin-bottom:14px">'
-                f'Under Maintenance</div>'
-                f'<div style="color:{TEXT_PRIMARY};font-size:15px;line-height:1.9;'
-                f'max-width:420px;margin:0 auto 28px">'
-                f'{_maint_msg}</div>'
-                f'<div style="display:inline-flex;align-items:center;gap:8px;'
-                f'background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);'
-                f'border-radius:20px;padding:8px 20px">'
-                f'<span style="font-size:14px">⏱</span>'
-                f'<span style="color:#F59E0B;font-size:12px;font-weight:600;letter-spacing:1px">'
-                f'CHECK BACK SHORTLY</span>'
-                f'</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-        st.stop()
+# _in_maintenance was evaluated BEFORE the sidebar rendered so the sidebar
+# was never added to the DOM — no CSS battle needed.
+# Admin Panel is always reachable so the admin can turn maintenance off.
+if _in_maintenance:
+    from scanners.page_manager import get_maintenance_message
+    _maint_msg = get_maintenance_message()
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    _, _mcol, _ = st.columns([1, 2, 1])
+    with _mcol:
+        st.markdown(
+            f'<div style="background:{BG_CARD};border:1px solid #EF444455;'
+            f'border-top:4px solid #F59E0B;border-radius:14px;'
+            f'padding:60px 40px;text-align:center;margin-top:40px">'
+            f'<div style="font-size:64px;margin-bottom:20px">🚧</div>'
+            f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:32px;'
+            f'color:#F59E0B;font-weight:700;letter-spacing:2px;margin-bottom:14px">'
+            f'Under Maintenance</div>'
+            f'<div style="color:{TEXT_PRIMARY};font-size:15px;line-height:1.9;'
+            f'max-width:420px;margin:0 auto 28px">'
+            f'{_maint_msg}</div>'
+            f'<div style="display:inline-flex;align-items:center;gap:8px;'
+            f'background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);'
+            f'border-radius:20px;padding:8px 20px">'
+            f'<span style="font-size:14px">⏱</span>'
+            f'<span style="color:#F59E0B;font-size:12px;font-weight:600;letter-spacing:1px">'
+            f'CHECK BACK SHORTLY</span>'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+    st.stop()
 
 
 def _show_page_disabled(page_label: str) -> None:
