@@ -1122,6 +1122,243 @@ def _render_stock_analysis_methodology():
         unsafe_allow_html=True,
     )
 
+    # ══ Section 4: SETUP signal — what it means & how to trade ═══
+    st.markdown(
+        f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
+        f'margin:24px 0 20px"></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin-bottom:14px">&#x1F535; SETUP &#x1F504; Signal — What It Means &amp; How to Trade It</div>',
+        unsafe_allow_html=True,
+    )
+
+    # What it is
+    st.markdown(
+        f'<div style="background:{TEAL}0D;border:1px solid {TEAL}44;border-left:4px solid {TEAL};'
+        f'border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px">'
+        f'<div style="color:{TEAL};font-size:12px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1px;margin-bottom:8px">&#128161; What SETUP Means</div>'
+        f'<div style="color:{TEXT_PRIMARY};font-size:13px;line-height:1.8">'
+        f'<b>SETUP = "The engine is warming up, but the car hasn\'t moved yet."</b><br>'
+        f'The stock has been in a correction or downtrend (MA stack broken, composite &lt; 40), '
+        f'but the <b style="color:{TEAL}">Weekly MACD just turned positive</b> while RSI is in the '
+        f'28–64 reset zone. This is the early signal of the '
+        f'<b style="color:{TEXT_PRIMARY}">Momentum Reset Bounce</b> pattern — smart money starting '
+        f'to accumulate before the trend officially recovers. You are seeing it <b>before</b> the '
+        f'breakout, not after. That\'s the opportunity — and the risk.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Three conditions
+    cond_rows = [
+        (f"Weekly MACD cross ✅ (MACD &gt; Signal line)", TEAL,
+         "The most important signal. Weekly MACD crossing above its signal line means medium-term momentum is inflecting from bearish to bullish. One weekly candle does not confirm — watch for 2–3 consecutive weeks of positive histogram to build confidence."),
+        (f"Weekly MACD histogram &gt; 0", TEAL,
+         "The histogram measures the distance between MACD and signal. Growing positive histogram = momentum accelerating. Shrinking or negative histogram after a cross = false start, stay out."),
+        (f"Weekly RSI 28–64 (reset zone)", ACCENT_BLUE_LOCAL,
+         "RSI has cooled from a prior high (worked off overbought) and is turning up from a low base. This is ideal entry timing — not oversold panic, not yet overbought. RSI below 28 = still falling, wait. RSI above 64 = already moving, chasing risk."),
+        (f"MA stack NOT yet rebuilt (that's the point)", YELLOW,
+         "The stock is still below SMA50 or the full MA alignment hasn't recovered. This is why the signal is SETUP not BUY. The MA stack rebuilding is the confirmation you wait for — it signals the recovery is real, not just a dead-cat bounce."),
+    ]
+    for cond, color, detail in cond_rows:
+        st.markdown(
+            f'<div style="display:flex;gap:12px;padding:9px 0;border-bottom:1px solid {BORDER_COLOR}22">'
+            f'<div style="width:4px;background:{color};border-radius:2px;flex-shrink:0"></div>'
+            f'<div>'
+            f'<div style="color:{color};font-size:12px;font-weight:700;margin-bottom:3px">{cond}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">{detail}</div>'
+            f'</div></div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # Action table
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:11px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1px;margin-bottom:10px">&#127919; Action Plan — What To Do With a SETUP Signal</div>',
+        unsafe_allow_html=True,
+    )
+
+    action_rows = [
+        ("Watch only", f"background:{BG_CARD}", TEXT_MUTED,
+         "SETUP just appeared with no other confirmation",
+         "Zero position. Add to watchlist. Check back in 1–2 weeks.",
+         "Too early. One weekly MACD cross can reverse. No conviction yet."),
+        ("Starter position (25–33%)", f"background:{TEAL}0D", TEAL,
+         "Weekly MACD positive 2nd consecutive week AND Daily MACD also turning Bull AND RSI daily crossing 50",
+         "Enter 25–33% of intended position size. Set stop below recent swing low.",
+         "Early entry with controlled risk. You get in before the crowd at lower price."),
+        ("Add to half size (50%)", f"background:{ACCENT_GREEN}0D", ACCENT_GREEN,
+         "Price reclaims EMA20 on daily with expanding volume",
+         "Add another 25% position. Raise stop to breakeven on first tranche.",
+         "Price is now showing buying momentum. First confirmation of recovery."),
+        ("Full position (100%)", f"background:{ACCENT_GREEN}18", ACCENT_GREEN,
+         "Price reclaims SMA50 with volume + RSI daily in 55–68 zone",
+         "Add final tranche. This is now a BUY signal — the SETUP has resolved.",
+         "Full MA recovery = high-conviction trend resumption. Institutional buyers confirmed."),
+        ("Exit the idea", f"background:{ACCENT_RED}0D", ACCENT_RED,
+         "Weekly RSI falls back below 28 OR weekly MACD histogram turns negative again",
+         "Cut the position. The setup failed — this is a downtrend continuation, not a bounce.",
+         "Failed setups happen ~40% of the time. Small loss early beats large loss later."),
+    ]
+
+    th = (f"padding:8px 12px;color:{TEXT_MUTED};font-size:9px;font-weight:700;"
+          f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
+          f"border-bottom:2px solid {GOLD}44;white-space:nowrap")
+    act_html = ""
+    for action, row_bg, color, trigger, trade, reason in action_rows:
+        act_html += (
+            f'<tr style="{row_bg}">'
+            f'<td style="padding:9px 12px;font-weight:700;font-size:12px;color:{color};white-space:nowrap">{action}</td>'
+            f'<td style="padding:9px 12px;color:{TEXT_PRIMARY};font-size:11px;line-height:1.5">{trigger}</td>'
+            f'<td style="padding:9px 12px;color:{TEXT_PRIMARY};font-size:11px;line-height:1.5">{trade}</td>'
+            f'<td style="padding:9px 12px;color:{TEXT_MUTED};font-size:11px;line-height:1.5">{reason}</td>'
+            f'</tr>'
+        )
+
+    st.markdown(
+        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}33;margin-bottom:20px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>'
+        f'<th style="{th}">Action</th>'
+        f'<th style="{th}">Trigger / Confirmation</th>'
+        f'<th style="{th}">What to Do</th>'
+        f'<th style="{th}">Why</th>'
+        f'</tr></thead>'
+        f'<tbody>{act_html}</tbody>'
+        f'</table></div>',
+        unsafe_allow_html=True,
+    )
+
+    # Key insight box
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {TEAL}33;border-left:3px solid {TEAL};'
+        f'border-radius:0 6px 6px 0;padding:12px 16px;margin-bottom:8px;'
+        f'color:{TEXT_MUTED};font-size:12px;line-height:1.8">'
+        f'<b style="color:{TEAL}">&#128161; Key insight:</b> '
+        f'SETUP stocks fail ~35–40% of the time (the weekly MACD cross reverses). '
+        f'The edge comes from <b style="color:{TEXT_PRIMARY}">position sizing</b> — '
+        f'starter positions mean a failed setup costs you 1–2%, while a successful setup '
+        f'that becomes a BUY can return 15–40% before you add full size. '
+        f'The &#9889; W-MACD conflict badge (SELL overall but weekly MACD bullish) is the '
+        f'earliest-possible SETUP precursor — watch those especially on high-quality tickers '
+        f'(NVDA, MSFT, AAPL, etc.) during market pullbacks.'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ══ Section 5: Standard Watchlist reference ═══════════════════
+    st.markdown(
+        f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
+        f'margin:24px 0 20px"></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin-bottom:14px">&#128202; Standard Watchlist — How It Works</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;'
+        f'padding:16px 20px;margin-bottom:16px">'
+        f'<div style="color:{TEXT_PRIMARY};font-size:13px;line-height:1.8;margin-bottom:12px">'
+        f'The <b style="color:{GOLD}">📋 Standard Watchlist</b> tab (inside Stock Analysis) runs the full '
+        f'9-indicator engine on a fixed list of 117 pre-loaded tickers with a single button press. '
+        f'No typing required. Results are cached for 4 hours — pressing the button again within '
+        f'4 hours returns the cached table instantly without re-fetching data.'
+        f'</div>'
+        f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'
+
+        f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;padding:12px">'
+        f'<div style="color:{GOLD};font-size:11px;font-weight:700;margin-bottom:6px">&#9654; Run Scan</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">Runs all 117 tickers. '
+        f'If results are &lt; 4h old, shows cached table immediately. Progress bar shown on fresh scan.</div>'
+        f'</div>'
+
+        f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;padding:12px">'
+        f'<div style="color:{GOLD};font-size:11px;font-weight:700;margin-bottom:6px">&#x1F504; Clear &amp; Rescan</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">Forces a full fresh scan '
+        f'regardless of cache age. Use when market has moved significantly since last scan.</div>'
+        f'</div>'
+
+        f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;padding:12px">'
+        f'<div style="color:{GOLD};font-size:11px;font-weight:700;margin-bottom:6px">&#128465; Clear Cache</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">Wipes the cached results '
+        f'without triggering a new scan. Returns to the landing screen.</div>'
+        f'</div>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    # Table column guide
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:11px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1px;margin-bottom:10px">&#128203; Standard Table Columns Explained</div>',
+        unsafe_allow_html=True,
+    )
+
+    col_rows = [
+        ("🟢/🔵/🟡/🔴", "Signal circle",    "Green=Buy · Blue=Setup · Yellow=Neutral · Red=Sell at a glance"),
+        ("Ticker",        "Symbol + price",   "Current price and day change %. Click ticker in Deep Analysis for full report."),
+        ("Signal %",      "Confidence badge", "BUY: raw composite (higher=more bullish). SELL: 100−composite (higher=more bearish). SETUP: raw composite shown in teal."),
+        ("W-MACD",        "Weekly MACD",      "Bull/Bear cross on weekly chart + raw MACD/Signal values. Weekly confirmation is highest-weight signal. ⚡ conflict badge when weekly bullish but overall SELL."),
+        ("D-MACD ★",      "Daily MACD",       "NEW COLUMN. Bull=cross up + histogram positive. Cross~=crossed but histogram still negative (weak signal). Bear=below signal. Shows short-term momentum direction."),
+        ("RSI D/W",       "RSI daily/weekly", "D=daily RSI, W=weekly RSI. Green=55–68 momentum zone. Red=overbought >70 or oversold <30. Yellow=neutral."),
+        ("Trend",         "MA stack label",   "Full=Price>EMA20>SMA50>SMA200 (strongest). Part=partial alignment. Weak=broken stack. Score bar shows 0–100."),
+        ("Mom",           "Momentum score",   "0–100 bar. MACD+RSI+Volume+OBV combined. ≥70 green, 50–69 yellow, <50 red."),
+        ("Buy↑",          "Buy Pressure",     "0–100 bar. Volume spike+OBV+MFI+breakout proximity+RS vs SPY combined."),
+        ("Vol/RS",        "Volume + RS",       "Volume ratio vs 20-day avg (🔥=spike ≥1.5×). RS=relative strength vs SPY (>1.05=outperforming)."),
+        ("Breakout ★",    "Breakout status",  "NEW COLUMN. 🚀 Confirmed=new 20-day high + volume spike. ⚡ Near=within 2% of high. —=no breakout."),
+    ]
+
+    th2 = (f"padding:7px 12px;color:{TEXT_MUTED};font-size:9px;font-weight:700;"
+           f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
+           f"border-bottom:2px solid {GOLD}44")
+    col_html = ""
+    for i, (col, label, desc) in enumerate(col_rows):
+        bg = BG_CARD if i % 2 == 0 else BG_PANEL
+        new_tag = f'<span style="background:{TEAL}22;color:{TEAL};border:1px solid {TEAL}44;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px">NEW</span>' if "★" in col else ""
+        col_clean = col.replace(" ★", "")
+        col_html += (
+            f'<tr style="background:{bg}">'
+            f'<td style="padding:8px 12px;color:{GOLD};font-weight:700;font-size:12px;white-space:nowrap;font-family:\'DM Mono\',monospace">{col_clean}{new_tag}</td>'
+            f'<td style="padding:8px 12px;color:{TEXT_MUTED};font-size:11px;white-space:nowrap">{label}</td>'
+            f'<td style="padding:8px 12px;color:{TEXT_PRIMARY};font-size:11px;line-height:1.6">{desc}</td>'
+            f'</tr>'
+        )
+
+    st.markdown(
+        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}33;margin-bottom:16px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>'
+        f'<th style="{th2}">Column</th>'
+        f'<th style="{th2}">What it is</th>'
+        f'<th style="{th2}">How to read it</th>'
+        f'</tr></thead>'
+        f'<tbody>{col_html}</tbody>'
+        f'</table></div>',
+        unsafe_allow_html=True,
+    )
+
+    # Workflow tip
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {GOLD}33;border-left:3px solid {GOLD};'
+        f'border-radius:0 6px 6px 0;padding:12px 16px;color:{TEXT_MUTED};font-size:12px;line-height:1.8">'
+        f'<b style="color:{GOLD}">&#128161; Recommended workflow:</b> '
+        f'Run Standard Watchlist each morning → filter by <b style="color:{TEXT_PRIMARY}">BUY + SETUP</b> → '
+        f'sort by <b style="color:{TEXT_PRIMARY}">Confidence ↓</b> → '
+        f'for any SETUP tickers with D-MACD also turning Bull, open the '
+        f'<b style="color:{GOLD}">Deep Analysis</b> tab and type the ticker for a full report including '
+        f'RSI gauge, Bollinger Bands, breakout chart, short squeeze data, and ATR for stop placement.'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
 
 # ── Main render ────────────────────────────────────────────────
 
