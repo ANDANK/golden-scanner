@@ -42,6 +42,7 @@ def scan_momentum(tickers, rsi_min, rsi_max, vol_mult, price_min, price_max,
                 diag.skipped(ticker, "price out of range"); continue
 
             # SMA
+            sma20  = float(calc_sma(close, 20).iloc[-1])
             sma50  = float(calc_sma(close, 50).iloc[-1])
             # Use sma50 as sma200 placeholder when history is short so
             # price > sma50 > sma200 never fires falsely (sma50 == sma200 → not >)
@@ -50,6 +51,11 @@ def scan_momentum(tickers, rsi_min, rsi_max, vol_mult, price_min, price_max,
             # Only bullish trend
             if price < sma50:
                 diag.skipped(ticker, "below SMA50"); continue
+
+            # Skip over-extended stocks (price too far above SMA20)
+            pct_above_sma20 = (price - sma20) / sma20 * 100 if sma20 > 0 else 0
+            if pct_above_sma20 > 15:
+                diag.skipped(ticker, f"over-extended +{pct_above_sma20:.0f}% above SMA20"); continue
 
             rsi = calc_rsi(close)
             if not (rsi_min <= rsi <= rsi_max):

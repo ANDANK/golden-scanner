@@ -59,6 +59,15 @@ def scan_growth(tickers, rev_growth_min, eps_growth_min, rs_min, price_min, pric
                 diag.skipped(ticker, "RS too low"); continue
 
             rsi = calc_rsi(close)
+
+            # Skip overbought / over-extended stocks
+            if rsi > 75:
+                diag.skipped(ticker, f"RSI overbought {rsi:.0f}"); continue
+            sma20 = float(calc_sma(close, 20).iloc[-1])
+            pct_above_sma20 = (price - sma20) / sma20 * 100 if sma20 > 0 else 0
+            if pct_above_sma20 > 15:
+                diag.skipped(ticker, f"over-extended +{pct_above_sma20:.0f}% above SMA20"); continue
+
             macd_line, signal_line, hist = calc_macd(close)
 
             avg_vol = float(volume.iloc[:-1].rolling(20).mean().dropna().iloc[-1]) if len(volume) > 20 else float(volume.mean())

@@ -403,6 +403,8 @@ def compute_analysis(ticker: str) -> dict | None:
         above_ema20     = price > ema20_v
         above_sma50     = price > sma50_v
         above_sma200    = (price > sma200_v) if sma200_v else False
+        # % price is stretched above EMA20 — key over-extension gauge
+        pct_above_ema20 = (price - ema20_v) / ema20_v * 100 if ema20_v > 0 else 0.0
         ema20_above_50  = ema20_v > sma50_v
         sma50_above_200 = (sma50_v > sma200_v) if sma200_v else False
 
@@ -552,9 +554,25 @@ def compute_analysis(ticker: str) -> dict | None:
         elif not above_sma50:       bias -= 10
         if cross_d and hist_pos_d:  bias += 5
         elif not cross_d:           bias -= 5
-        if 55 <= rsi_d <= 68:       bias += 5
-        elif rsi_d > 75:            bias -= 8
-        elif rsi_d < 30:            bias -= 4
+
+        # ── RSI daily — tiered overbought penalties ───────────────
+        if 55 <= rsi_d <= 68:       bias += 5    # sweet spot
+        elif rsi_d >= 80:           bias -= 20   # very overbought — near exhaustion
+        elif rsi_d >= 75:           bias -= 12   # overbought
+        elif rsi_d >= 70:           bias -= 5    # mildly overbought
+        elif rsi_d < 30:            bias -= 4    # oversold
+
+        # ── RSI weekly — overbought penalty ──────────────────────
+        if rsi_w >= 75:             bias -= 12
+        elif rsi_w >= 70:           bias -= 6
+
+        # ── Price stretched above EMA20 ───────────────────────────
+        # 3× ETFs (SOXL, TQQQ) routinely reach 30–40% above EMA20 on big runs.
+        # Regular stocks at 15%+ are typically over-extended.
+        if pct_above_ema20 >= 25:   bias -= 15   # massively stretched
+        elif pct_above_ema20 >= 15: bias -= 8    # meaningfully stretched
+        elif pct_above_ema20 >= 10: bias -= 4    # slightly stretched
+
         if rs_spy >= 1.05:          bias += 4
         elif rs_spy < 0.92:         bias -= 4
 
@@ -572,22 +590,41 @@ def compute_analysis(ticker: str) -> dict | None:
 
         composite = int(round(max(0, min(100, raw_composite + bias))))
 
+        # ── Over-extension flag ──────────────────────────────────
+        # Fires when the stock has run too far regardless of trend health.
+        # Conditions (any one is enough):
+        #   • Daily RSI ≥ 75 (overbought)
+        #   • Both daily AND weekly RSI ≥ 70 (overbought on both TFs)
+        #   • Price ≥ 20% above EMA20 (massively stretched — common in 3× ETFs)
+        #   • Daily RSI ≥ 70 AND price ≥ 15% above EMA20 (combo signal)
+        over_extended = (
+            rsi_d >= 75
+            or (rsi_d >= 70 and rsi_w >= 70)
+            or pct_above_ema20 >= 20
+            or (rsi_d >= 70 and pct_above_ema20 >= 15)
+        )
+
         # ── Signal classification ────────────────────────────────
-        # Four tiers: BUY · NEUTRAL · SETUP (inflecting) · SELL
-        # SETUP fires when composite is still SELL-range but the weekly MACD just
-        # turned positive on a reset RSI — "not a buy YET, but watch closely."
-        TEAL = "#2DD4BF"
-        if composite >= 60:
-            signal, signal_pct, signal_color = "BUY",    composite,       ACCENT_GREEN
+        # Five tiers: EXTENDED · BUY · NEUTRAL · SETUP · SELL
+        TEAL   = "#2DD4BF"
+        ORANGE = "#F97316"
+        if over_extended and composite >= 45:
+            # Underlying trend still positive but price has run too far.
+            # Don't chase — wait for RSI reset or EMA20 mean-reversion.
+            signal       = "EXTENDED 🔥"
+            signal_pct   = composite
+            signal_color = ORANGE
+        elif composite >= 60:
+            signal, signal_pct, signal_color = "BUY",     composite,       ACCENT_GREEN
         elif 41 <= composite <= 59:
-            signal, signal_pct, signal_color = "NEUTRAL", composite,      YELLOW
+            signal, signal_pct, signal_color = "NEUTRAL",  composite,      YELLOW
         elif reset_setup:
             # Composite still bearish, but weekly MACD flip = potential setup
-            signal_pct   = composite              # show the raw composite as the "watch" score
+            signal_pct   = composite
             signal       = "SETUP 🔄"
             signal_color = TEAL
         else:
-            signal, signal_pct, signal_color = "SELL",   100 - composite, ACCENT_RED
+            signal, signal_pct, signal_color = "SELL",    100 - composite, ACCENT_RED
 
         return dict(
             ticker=ticker, name=name, sector=sector, sector_etf=sector_etf,
@@ -613,6 +650,7 @@ def compute_analysis(ticker: str) -> dict | None:
             rs_sec_level=rs_level(rs_sector), rs_sec_label=rs_label(rs_sector),
             momentum_score=momentum_score, trend_score=trend_score, buy_pressure_score=buy_pressure_score,
             composite=composite, reset_setup=reset_setup,
+            over_extended=over_extended, pct_above_ema20=pct_above_ema20,
             signal=signal, signal_pct=signal_pct, signal_color=signal_color,
             df_d=df_d, df_w=df_w,
         )
@@ -1113,7 +1151,7 @@ def _render_summary_table(analyses: list):
         sig_pct   = a["signal_pct"]
         sig_color = a["signal_color"]
 
-        circle = "🟢" if sig == "BUY" else ("🔵" if "SETUP" in sig else ("🔴" if sig == "SELL" else "🟡"))
+        circle = ("🟢" if sig == "BUY" else ("🟠" if "EXTENDED" in sig else ("🔵" if "SETUP" in sig else ("🔴" if sig == "SELL" else "🟡"))))
 
         macd_w_color = ACCENT_GREEN if a["cross_w"] else ACCENT_RED
         macd_w_label = "Bull ✅" if a["cross_w"] else "Bear ❌"
@@ -1140,8 +1178,14 @@ def _render_summary_table(analyses: list):
         rs_lbl    = f"RS {a['rs_spy']:.3f}&times;"
 
         chg_c       = ACCENT_GREEN if a["chg_pct"] >= 0 else ACCENT_RED
-        sig_display = sig.replace(" 🔄", "")
-        sig_note    = f'<div style="color:{TEAL};font-size:9px;margin-top:2px">Watch for breakout</div>' if "SETUP" in sig else ""
+        sig_display = sig.replace(" 🔄", "").replace(" 🔥", "")
+        if "EXTENDED" in sig:
+            _ext = a.get("pct_above_ema20", 0)
+            sig_note = f'<div style="color:#F97316;font-size:9px;margin-top:2px">+{_ext:.0f}% above EMA20 — wait for reset</div>'
+        elif "SETUP" in sig:
+            sig_note = f'<div style="color:{TEAL};font-size:9px;margin-top:2px">Watch for breakout</div>'
+        else:
+            sig_note = ""
         td          = f"padding:9px 10px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:middle"
 
         # Build each row as a single-line join — NO embedded newlines (they break st.markdown HTML parsing)
@@ -1237,7 +1281,7 @@ def _render_standard_table(analyses: list):
         sig_pct   = a["signal_pct"]
         sig_color = a["signal_color"]
 
-        circle = "🟢" if sig == "BUY" else ("🔵" if "SETUP" in sig else ("🔴" if sig == "SELL" else "🟡"))
+        circle = ("🟢" if sig == "BUY" else ("🟠" if "EXTENDED" in sig else ("🔵" if "SETUP" in sig else ("🔴" if sig == "SELL" else "🟡"))))
 
         # Weekly MACD
         mw_c  = ACCENT_GREEN if a["cross_w"] else ACCENT_RED
@@ -1267,8 +1311,14 @@ def _render_standard_table(analyses: list):
         chg_c   = ACCENT_GREEN if a["chg_pct"] >= 0 else ACCENT_RED
         vol_c   = ACCENT_GREEN if a["vol_spike"] else TEXT_MUTED
         rs_c    = ACCENT_GREEN if a["rs_spy"] >= 1.05 else (ACCENT_RED if a["rs_spy"] < 0.95 else TEXT_MUTED)
-        sig_lbl = sig.replace(" 🔄", "")
-        sig_note = f'<span style="color:{TEAL};font-size:8px;display:block">watch</span>' if "SETUP" in sig else ""
+        sig_lbl = sig.replace(" 🔄", "").replace(" 🔥", "")
+        if "EXTENDED" in sig:
+            _ext = a.get("pct_above_ema20", 0)
+            sig_note = f'<span style="color:#F97316;font-size:8px;display:block">+{_ext:.0f}% EMA20</span>'
+        elif "SETUP" in sig:
+            sig_note = f'<span style="color:{TEAL};font-size:8px;display:block">watch</span>'
+        else:
+            sig_note = ""
         conflict = a["cross_w"] and a["hist_pos_w"] and sig == "SELL"
         cf_tag   = f'<span style="color:{TEAL};font-size:8px">&#9889;conflict</span>' if conflict else ""
         td       = f"padding:7px 8px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:middle"
