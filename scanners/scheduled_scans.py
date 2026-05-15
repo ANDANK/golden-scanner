@@ -29,6 +29,7 @@ SLOTS                = {"am": (9, 0), "pm": (13, 0)}
 SLOT_LABELS          = {"am": "Morning  9:00 AM CST", "pm": "Afternoon  1:00 PM CST"}
 SLOT_ICONS           = {"am": "🌅", "pm": "🌇"}
 AUTO_TRACK_THRESHOLD = 60          # min score to auto-add diff tickers
+STRAT_DISPLAY_ORDER  = ["CSP", "LEAPS", "CC"]   # fixed display order; unknowns appended last
 
 
 # ── Helpers ────────────────────────────────────────────────────
@@ -248,15 +249,17 @@ def render():
         "Auto-runs at 9 AM & 1 PM CST · Diffs new vs morning setups · Score ≥ 60 auto-tracked",
     )
 
+    _is_admin = st.session_state.get("_is_admin", False)
     now_cst   = _now_cst()
     auto_slot = _current_slot()
 
     # ── Load today's stored results ───────────────────────────
-    df_am, am_at = _load_results("am")
-    df_pm, pm_at = _load_results("pm")
+    with st.spinner("Loading today's scan results…"):
+        df_am, am_at = _load_results("am")
+        df_pm, pm_at = _load_results("pm")
 
-    # ── Auto-run banner ───────────────────────────────────────
-    if auto_slot:
+    # ── Auto-run banner (admin only) ──────────────────────────
+    if _is_admin and auto_slot:
         label = SLOT_LABELS[auto_slot]
         already_run = (df_am if auto_slot == "am" else df_pm)
         if already_run.empty:
@@ -278,7 +281,6 @@ def render():
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ── Action buttons (admin-only) ───────────────────────────────
-    _is_admin = st.session_state.get("_is_admin", False)
     run_am = False
     run_pm = False
 
@@ -332,7 +334,10 @@ def render():
 
     if not tab_labels:
         st.markdown("<br>", unsafe_allow_html=True)
-        empty_state("No scans run today yet. Click ▶ Run AM Scan to start.")
+        if _is_admin:
+            empty_state("No scans run today yet. Click ▶ Run AM Scan to start.")
+        else:
+            empty_state("No scans have run today yet — check back after 9 AM CST.")
         return
 
     tabs = st.tabs(tab_labels)
@@ -396,44 +401,47 @@ def _show_results(df: pd.DataFrame, slot_label: str):
         unsafe_allow_html=True,
     )
 
-    for strat in _fdf.get("Strategy", pd.Series()).unique():
+    # ── Ordered strategies: CSP → LEAPS → CC → everything else ──
+    _all_unique = list(_fdf["Strategy"].dropna().unique()) if "Strategy" in _fdf.columns else []
+    _ordered = [s for s in STRAT_DISPLAY_ORDER if s in _all_unique]
+    _ordered += sorted(s for s in _all_unique if s not in STRAT_DISPLAY_ORDER)
+
+    for strat in _ordered:
+        if "Strategy" not in _fdf.columns or strat not in _fdf["Strategy"].values:
+            continue
         sub = _fdf[_fdf["Strategy"] == strat].drop(columns=["Strategy", "Universe"], errors="ignore")
-        st.markdown(
-            f'<div style="color:{GOLD};font-size:12px;font-weight:600;'
-            f'text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px">'
-            f'{strat} — {len(sub)} setup(s)</div>',
-            unsafe_allow_html=True,
-        )
 
-        # ── Auto-track high-scoring picks (scheduled runs only) ──
-        source_tag = f"{slot_prefix}·{strat}"
-        for _, row in sub.iterrows():
-            tk = str(row.get("Ticker", "")).strip()
-            if not tk:
-                continue
-            try:
-                score = int(float(str(row.get("Score", 0) or 0)))
-            except Exception:
-                score = 0
-            _auto_key = f"{tk}_{slot_prefix}_{_today_str}"
-            if score >= AUTO_TRACK_THRESHOLD and _auto_key not in _auto_set:
+        # Collapsible section — expanded by default so results are immediately visible
+        with st.expander(f"**{strat}** — {len(sub)} setup(s)", expanded=True):
+            # ── Auto-track high-scoring picks (scheduled runs only) ──
+            source_tag = f"{slot_prefix}·{strat}"
+            for _, row in sub.iterrows():
+                tk = str(row.get("Ticker", "")).strip()
+                if not tk:
+                    continue
                 try:
-                    from scanners.gsheet_helper import add_to_tracking
-                    price_str = str(row.get("Stock Price", row.get("Price", "")))
-                    # Build proper extra_meta so Score, Style, HOLD are stored correctly
-                    _extra = {
-                        "Score_At_Track": str(score),
-                        "HOLD":           str(row.get("Hold", row.get("HOLD", ""))),
-                        "Est_Upside":     str(row.get("Est. Upside %", "")),
-                        "Style":          str(row.get("Style", "")),
-                    }
-                    ok, _ = add_to_tracking(tk, strat, source_tag, price_str, _extra)
-                    if ok:
-                        _auto_set.add(_auto_key)
+                    score = int(float(str(row.get("Score", 0) or 0)))
                 except Exception:
-                    pass
+                    score = 0
+                _auto_key = f"{tk}_{slot_prefix}_{_today_str}"
+                if score >= AUTO_TRACK_THRESHOLD and _auto_key not in _auto_set:
+                    try:
+                        from scanners.gsheet_helper import add_to_tracking
+                        price_str = str(row.get("Stock Price", row.get("Price", "")))
+                        # Build proper extra_meta so Score, Style, HOLD are stored correctly
+                        _extra = {
+                            "Score_At_Track": str(score),
+                            "HOLD":           str(row.get("Hold", row.get("HOLD", ""))),
+                            "Est_Upside":     str(row.get("Est. Upside %", "")),
+                            "Style":          str(row.get("Style", "")),
+                        }
+                        ok, _ = add_to_tracking(tk, strat, source_tag, price_str, _extra)
+                        if ok:
+                            _auto_set.add(_auto_key)
+                    except Exception:
+                        pass
 
-        render_results_table(sub, strategy=strat, source=f"Sched-{slot_label}")
+            render_results_table(sub, strategy=strat, source=f"Sched-{slot_label}")
 
 
 def _diff_html_rows(df: pd.DataFrame, accent_color: str):
