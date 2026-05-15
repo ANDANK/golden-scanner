@@ -635,6 +635,9 @@ if "_nav_open_group" not in st.session_state:
         st.session_state.get("nav_page", "🏠  Market Overview")
     )
 
+# ── Page visibility helper (needed by sidebar nav labels) ──────
+from scanners.page_manager import is_page_enabled as _page_enabled
+
 # ── Sidebar ────────────────────────────────────────────────────
 with st.sidebar:
     # Logo block — display only, NOT clickable. (Removed by user request.)
@@ -756,7 +759,7 @@ if page and page != "🏠  Market Overview":
     st.markdown(f'<div style="height:2px;background:linear-gradient(90deg,{GOLD}44,transparent);margin-bottom:8px"></div>', unsafe_allow_html=True)
 
 # ── Page visibility guard ──────────────────────────────────────
-from scanners.page_manager import is_page_enabled as _page_enabled
+# (_page_enabled already imported above, before the sidebar)
 
 # Pages exempt from the visibility check (always rendered)
 _ROUTER_ALWAYS_ON = {"🏠  Market Overview", "⚙️  Admin Panel"}
