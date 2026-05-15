@@ -537,6 +537,7 @@ _SCANNER_ABBREV = {
     "Momentum Reset Bounce": "MRS",
     "Momentum":              "M",
     "Growth":                "G",
+    "Golden Scan":           "GS",   # normalise legacy source tags stored as "AM·Golden Scan"
 }
 
 
@@ -581,6 +582,7 @@ _NEVER_SHOW_COLS = {
     "Breakeven", "Assign Risk", "Trend", "Ann. Return", "Ann. Return %",
     "Read %", "Upside Cap %", "P(Assign) %", "Near Resist.", "Leverage",
     "Spread %", "Yield %",
+    "Universe",   # used internally for source-tag building; not a user-facing column
 }
 
 
@@ -790,8 +792,10 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
             elif slot_pfx:
                 row_source = f"{slot_pfx}{strategy}"
         elif slot_pfx:
-            # Options scheduled scan — prefix with slot + strategy name
-            row_source = f"{slot_pfx}{strategy}"
+            # Options/other scheduled scan — prefix with slot + strategy + universe (if available)
+            _univ_val = str(row.get("Universe", "")).strip() if "Universe" in df.columns else ""
+            _univ_sfx = f"·{_univ_val}" if _univ_val and _univ_val.lower() not in ("nan", "none", "") else ""
+            row_source = f"{slot_pfx}{strategy}{_univ_sfx}"
 
         # Manual Track button gets "man·" prefix; scheduled scans keep AM·/PM· prefix
         track_source = row_source if slot_pfx else f"man·{row_source}"

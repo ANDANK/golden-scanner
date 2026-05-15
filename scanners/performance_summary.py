@@ -739,7 +739,8 @@ def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool 
                                        ("Trend Alignment","TA"),("Trend Align","TA"),
                                        ("Trend Stack","TS"),("Multi-Factor","MF"),
                                        ("Momentum Reset Bounce","MRS"),("Reset Bounce","MRS"),
-                                       ("Momentum","M"),("Growth","G")]:
+                                       ("Momentum","M"),("Growth","G"),
+                                       ("Golden Scan","GS")]:
                         _src_abbr = _src_abbr.replace(_full, _ab)
                     st.markdown(
                         f'<div style="{td};color:{TEXT_MUTED};font-size:10px" title="{val_s}">'

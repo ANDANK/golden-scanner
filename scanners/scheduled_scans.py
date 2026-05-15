@@ -418,12 +418,13 @@ def _show_results(df: pd.DataFrame, slot_label: str):
     for strat in _ordered:
         if "Strategy" not in _fdf.columns or strat not in _fdf["Strategy"].values:
             continue
-        sub = _fdf[_fdf["Strategy"] == strat].drop(columns=["Strategy", "Universe"], errors="ignore")
+        # Keep "Universe" so render_results_table can embed it in the source tag
+        # (hidden from display via _NEVER_SHOW_COLS in utils.py)
+        sub = _fdf[_fdf["Strategy"] == strat].drop(columns=["Strategy"], errors="ignore")
 
         # Collapsible section — expanded by default so results are immediately visible
         with st.expander(f"**{strat}** — {len(sub)} setup(s)", expanded=True):
             # ── Auto-track high-scoring picks (scheduled runs only) ──
-            source_tag = f"{slot_prefix}·{strat}"
             for _, row in sub.iterrows():
                 tk = str(row.get("Ticker", "")).strip()
                 if not tk:
@@ -437,6 +438,11 @@ def _show_results(df: pd.DataFrame, slot_label: str):
                     try:
                         from scanners.gsheet_helper import add_to_tracking
                         price_str = str(row.get("Stock Price", row.get("Price", "")))
+                        # Include Universe (Stocks / ETFs) in the source tag so tracking shows
+                        # "AM·CSP·Stocks" / "AM·LEAPS·ETFs" instead of the bare "AM·CSP"
+                        _univ = str(row.get("Universe", "")).strip()
+                        _univ_sfx = f"·{_univ}" if _univ and _univ.lower() not in ("nan", "none", "") else ""
+                        source_tag = f"{slot_prefix}·{strat}{_univ_sfx}"
                         # Build proper extra_meta so Score, Style, HOLD are stored correctly
                         _extra = {
                             "Score_At_Track": str(score),

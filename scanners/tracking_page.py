@@ -25,6 +25,7 @@ _SRC_ABBREV = {
     "Reset Bounce":          "MRS",
     "Momentum":              "M",
     "Growth":                "G",
+    "Golden Scan":           "GS",   # normalise legacy "AM·Golden Scan" tags
 }
 
 def _abbrev_src(src: str) -> str:
