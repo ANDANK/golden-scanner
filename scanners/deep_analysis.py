@@ -9,7 +9,8 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import sys, os
+import sys, os, time
+from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import *
@@ -35,6 +36,81 @@ SECTOR_ETF = {
 }
 
 YELLOW = "#FBBF24"
+
+# ── Standard Watchlist — fixed ticker universe ─────────────────
+STANDARD_TICKERS = [
+    # Mega Cap Tech
+    "AAPL","MSFT","GOOGL","GOOG","AMZN","META","NVDA","TSLA",
+    # Semiconductors
+    "AVGO","AMD","MU","TSM","AMAT","LRCX","ASML","TXN","MRVL","SMCI","ARM",
+    # Software / Cloud / AI
+    "CRM","ORCL","INTU","ADBE","NOW","SNOW","PLTR","CRWD","OKTA",
+    "PANW","TWLO","DOCU","SHOP","NFLX","TTD","CRWV","DELL","IBM",
+    # Finance
+    "JPM","GS","MS","AXP","BLK","SPGI","COF","V","MA","BRK-B",
+    # Healthcare / Pharma
+    "LLY","ABBV","REGN","VRTX","PFE","MRK","TMO","UNH","JNJ","AMGN",
+    # Consumer / Retail
+    "COST","HD","MCD","CMG","KO","PEP","NKE","DIS","SBUX","WMT","LOW",
+    # Industrial / Energy
+    "GE","DE","BA","XOM","CVX","COP","LIN","NEE","DUK","SO",
+    # Airlines / Travel
+    "DAL","UAL","AAL","LUV","CCL","UBER",
+    # Other Stocks
+    "F","VZ","UPS","PYPL","CVS","ROKU","GOLD",
+    # Broad Market ETFs
+    "SPY","VOO","QQQ","IWM","IVW","SCHD",
+    # Income ETFs
+    "JEPI","QYLD","TSLY",
+    # Leveraged ETFs (Bull)
+    "TQQQ","UPRO","SPXL","TECL","SOXL","NVDL","TSLL",
+    # Inverse / Short ETFs
+    "SQQQ","SOXS",
+    # Sector / Thematic ETFs
+    "ROBO","SRVR","URA",
+    # Speculative / High Growth
+    "ASTS","RKLB","BBAI","BMNR","OKLO",
+]
+# Deduplicate while preserving order
+_seen: set = set()
+STANDARD_TICKERS = [t for t in STANDARD_TICKERS if not (_seen.add(t) or t in _seen)]
+del _seen
+
+_STD_CACHE_KEY = "_std_scan_results"
+_STD_TS_KEY    = "_std_scan_ts"
+_STD_TTL       = 4 * 3600   # 4 hours
+
+
+def _get_standard_results(force: bool = False):
+    """Return (results_list, scan_ts) using session_state for 4h TTL caching.
+
+    Results are dicts from compute_analysis() with df_d / df_w / _arrow stripped
+    (DataFrames not needed for the summary table and can't be pickled portably).
+    """
+    now = time.time()
+    has_valid = (
+        _STD_CACHE_KEY in st.session_state
+        and _STD_TS_KEY  in st.session_state
+        and (now - st.session_state[_STD_TS_KEY]) < _STD_TTL
+        and not force
+    )
+    if has_valid:
+        return st.session_state[_STD_CACHE_KEY], st.session_state[_STD_TS_KEY]
+
+    _SKIP = {"df_d", "df_w", "_arrow"}
+    results = []
+    n = len(STANDARD_TICKERS)
+    prog = st.progress(0, text="Starting scan…")
+    for i, tk in enumerate(STANDARD_TICKERS):
+        prog.progress((i + 1) / n, text=f"Analyzing {tk}… ({i+1}/{n})")
+        a = compute_analysis(tk)
+        if a:
+            results.append({k: v for k, v in a.items() if k not in _SKIP})
+    prog.empty()
+
+    st.session_state[_STD_CACHE_KEY] = results
+    st.session_state[_STD_TS_KEY]    = now
+    return results, now
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1133,15 +1209,266 @@ def _render_summary_table(analyses: list):
 
 
 # ══════════════════════════════════════════════════════════════
+# STANDARD WATCHLIST TABLE
+# ══════════════════════════════════════════════════════════════
+
+def _render_standard_table(analyses: list):
+    """Extended summary table with Daily MACD + Breakout columns. No newlines inside rows."""
+    if not analyses:
+        st.info("No results to display.")
+        return
+
+    TEAL = "#2DD4BF"
+
+    def _score_bar(score: int) -> str:
+        color = ACCENT_GREEN if score >= 70 else (GOLD if score >= 50 else ACCENT_RED)
+        bar_w = int(score * 36 / 100)
+        return (
+            f'<div style="display:flex;align-items:center;gap:4px">'
+            f'<div style="background:#1a1a2a;border-radius:2px;height:4px;width:36px">'
+            f'<div style="background:{color};height:4px;border-radius:2px;width:{bar_w}px"></div>'
+            f'</div><span style="color:{color};font-size:10px;font-weight:700">{score}</span></div>'
+        )
+
+    def _rsi_c(r):
+        return ACCENT_GREEN if 55 <= r <= 68 else (ACCENT_RED if r > 70 or r < 30 else YELLOW)
+
+    rows_html = []
+    for a in analyses:
+        sig       = a["signal"]
+        sig_pct   = a["signal_pct"]
+        sig_color = a["signal_color"]
+
+        circle = "🟢" if sig == "BUY" else ("🔵" if "SETUP" in sig else ("🔴" if sig == "SELL" else "🟡"))
+
+        # Weekly MACD
+        mw_c  = ACCENT_GREEN if a["cross_w"] else ACCENT_RED
+        mw_lbl = "Bull&#10003;" if a["cross_w"] else "Bear&#10007;"
+        mw_v  = f"{a['m_w']:+.3f}/{a['s_w']:+.3f}"
+
+        # Daily MACD (extra column 1)
+        if a["cross_d"] and a["hist_pos_d"]:
+            dm_c = ACCENT_GREEN; dm_lbl = "Bull&#10003;"
+        elif a["cross_d"]:
+            dm_c = YELLOW; dm_lbl = "Cross~"
+        else:
+            dm_c = ACCENT_RED; dm_lbl = "Bear&#10007;"
+
+        # Breakout (extra column 2)
+        bl = a.get("brk_level", "neutral")
+        if bl == "bull":
+            brk_c = ACCENT_GREEN; brk_lbl = "&#128640;Conf"
+        elif bl == "warn":
+            brk_c = YELLOW; brk_lbl = "&#9889;Near"
+        else:
+            brk_c = TEXT_MUTED; brk_lbl = "&#8212;"
+
+        rsi_dc = _rsi_c(a["rsi_d"]); rsi_wc = _rsi_c(a["rsi_w"])
+        trend_c = ACCENT_GREEN if a["trend_level"] == "bull" else (YELLOW if a["trend_level"] == "warn" else ACCENT_RED)
+        trend_lbl = "Full" if a["full_stack"] else ("Part" if a["partial"] else "Weak")
+        chg_c   = ACCENT_GREEN if a["chg_pct"] >= 0 else ACCENT_RED
+        vol_c   = ACCENT_GREEN if a["vol_spike"] else TEXT_MUTED
+        rs_c    = ACCENT_GREEN if a["rs_spy"] >= 1.05 else (ACCENT_RED if a["rs_spy"] < 0.95 else TEXT_MUTED)
+        sig_lbl = sig.replace(" 🔄", "")
+        sig_note = f'<span style="color:{TEAL};font-size:8px;display:block">watch</span>' if "SETUP" in sig else ""
+        conflict = a["cross_w"] and a["hist_pos_w"] and sig == "SELL"
+        cf_tag   = f'<span style="color:{TEAL};font-size:8px">&#9889;conflict</span>' if conflict else ""
+        td       = f"padding:7px 8px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:middle"
+
+        row = (
+            f'<tr>'
+            f'<td style="{td};text-align:center;width:24px;font-size:16px">{circle}</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{GOLD};font-size:13px;font-weight:800;font-family:\'DM Mono\',monospace">{a["ticker"]}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:10px">${a["price"]:.2f}&nbsp;<span style="color:{chg_c}">{a["chg_pct"]:+.1f}%</span></div>'
+            f'</td>'
+            f'<td style="{td}">'
+            f'<div style="background:{sig_color}22;border:1px solid {sig_color}44;border-radius:5px;padding:3px 8px;text-align:center">'
+            f'<div style="color:{sig_color};font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.6px">{sig_lbl}</div>'
+            f'<div style="color:{sig_color};font-size:15px;font-weight:800;line-height:1.1">{sig_pct}%</div>'
+            f'</div>{sig_note}'
+            f'</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{mw_c};font-size:10px;font-weight:600">{mw_lbl}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:9px;font-family:\'DM Mono\',monospace">{mw_v}</div>'
+            f'{cf_tag}</td>'
+            f'<td style="{td};text-align:center">'
+            f'<div style="color:{dm_c};font-size:10px;font-weight:600">{dm_lbl}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:9px">{a["h_d"]:+.3f}</div>'
+            f'</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{rsi_dc};font-size:10px;font-weight:600">D:{a["rsi_d"]:.0f}</div>'
+            f'<div style="color:{rsi_wc};font-size:10px;font-weight:600">W:{a["rsi_w"]:.0f}</div>'
+            f'</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{trend_c};font-size:10px;font-weight:600;margin-bottom:2px">{trend_lbl}</div>'
+            f'{_score_bar(a["trend_score"])}</td>'
+            f'<td style="{td}">{_score_bar(a["momentum_score"])}</td>'
+            f'<td style="{td}">{_score_bar(a["buy_pressure_score"])}</td>'
+            f'<td style="{td}">'
+            f'<div style="color:{vol_c};font-size:10px;font-weight:600">{a["vol_ratio"]:.1f}&times;{"&#128293;" if a["vol_spike"] else ""}</div>'
+            f'<div style="color:{rs_c};font-size:9px">RS {a["rs_spy"]:.3f}&times;</div>'
+            f'</td>'
+            f'<td style="{td};text-align:center">'
+            f'<div style="color:{brk_c};font-size:10px;font-weight:600">{brk_lbl}</div>'
+            f'</td>'
+            f'</tr>'
+        )
+        rows_html.append(row)
+
+    th = (f"padding:7px 8px;color:{TEXT_MUTED};font-size:9px;font-weight:700;"
+          f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
+          f"border-bottom:2px solid {GOLD}44;white-space:nowrap")
+    headers = ["", "Ticker", "Signal", "W-MACD", "D-MACD", "RSI D/W",
+               "Trend", "Mom", "Buy&#x2191;", "Vol/RS", "Breakout"]
+    hdr_html = "".join(f'<th style="{th}">{h}</th>' for h in headers)
+
+    st.markdown(
+        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}33">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>{hdr_html}</tr></thead>'
+        f'<tbody>{"".join(rows_html)}</tbody>'
+        f'</table></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_standard_watchlist():
+    """Standard pre-loaded watchlist — no ticker input needed."""
+    TEAL = "#2DD4BF"
+
+    # ── Top control bar ──────────────────────────────────────────
+    b1, b2, b3, _sp = st.columns([1.1, 1.4, 1.1, 4])
+    with b1:
+        run_btn = st.button("▶ Run Scan", use_container_width=True, type="primary", key="std_run")
+    with b2:
+        clear_btn = st.button("🔄 Clear & Rescan", use_container_width=True, key="std_clear")
+    with b3:
+        if st.button("🗑️ Clear Cache", use_container_width=True, key="std_clear_only"):
+            st.session_state.pop(_STD_CACHE_KEY, None)
+            st.session_state.pop(_STD_TS_KEY, None)
+            st.session_state.pop("_std_show", None)
+            st.rerun()
+
+    if clear_btn:
+        st.session_state.pop(_STD_CACHE_KEY, None)
+        st.session_state.pop(_STD_TS_KEY, None)
+        st.session_state["_std_show"] = True
+        st.rerun()
+
+    if run_btn:
+        st.session_state["_std_show"] = True
+
+    # ── Not yet triggered → show landing ────────────────────────
+    if not st.session_state.get("_std_show"):
+        n = len(STANDARD_TICKERS)
+        # Check if stale cached results exist
+        has_cache = _STD_CACHE_KEY in st.session_state
+        age_str = ""
+        if has_cache and _STD_TS_KEY in st.session_state:
+            age_sec = time.time() - st.session_state[_STD_TS_KEY]
+            age_min = int(age_sec // 60)
+            age_str = f" — last scan {age_min}m ago (cached for 4h)"
+        st.markdown(
+            f'<div style="background:{BG_PANEL};border:1px solid {GOLD}33;border-radius:10px;'
+            f'padding:32px;text-align:center;margin-top:8px">'
+            f'<div style="font-size:42px;margin-bottom:14px">&#128202;</div>'
+            f'<div style="color:{GOLD};font-size:20px;font-weight:700;margin-bottom:10px">Standard Watchlist</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:13px;line-height:1.8;max-width:540px;margin:0 auto 20px">'
+            f'Scans <b style="color:{TEXT_PRIMARY}">{n} pre-loaded tickers</b> using the same 9-indicator '
+            f'engine as Deep Analysis. Results cached for <b style="color:{TEXT_PRIMARY}">4 hours</b>.'
+            f'{age_str}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:11px">&#9654; Click <b style="color:{GOLD}">Run Scan</b> to start &nbsp;·&nbsp; Results show Signal, W-MACD, D-MACD, RSI, Trend, Momentum, Buy Pressure, Breakout</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    # ── Get results (from cache or fresh scan) ───────────────────
+    results, scan_ts = _get_standard_results()
+
+    if not results:
+        st.error("Scan returned no results. Check your internet connection and try again.")
+        return
+
+    # ── Filters + sort bar ───────────────────────────────────────
+    f1, f2, f3, f4 = st.columns([2.5, 2, 2, 1.5])
+    with f1:
+        sig_filter = st.multiselect(
+            "Signal", ["BUY", "SETUP", "NEUTRAL", "SELL"],
+            default=[], placeholder="All signals", key="std_sig_f",
+            label_visibility="collapsed",
+        )
+    with f2:
+        sort_by = st.selectbox(
+            "Sort", ["Confidence ↓", "Momentum ↓", "Trend ↓", "Buy Pressure ↓",
+                     "Ticker A→Z", "Signal"],
+            key="std_sort", label_visibility="collapsed",
+        )
+    with f3:
+        search_q = st.text_input("", placeholder="🔍 Filter ticker…",
+                                 key="std_search", label_visibility="collapsed")
+    with f4:
+        show_setup = st.checkbox("Setup only", key="std_setup_only")
+
+    # Apply filters
+    filtered = results[:]
+    if search_q:
+        q = search_q.upper().strip()
+        filtered = [a for a in filtered if q in a["ticker"]]
+    if sig_filter:
+        filtered = [a for a in filtered if any(f in a["signal"] for f in sig_filter)]
+    if show_setup:
+        filtered = [a for a in filtered if "SETUP" in a["signal"]]
+
+    # Apply sort
+    def _sort_key(a):
+        if sort_by == "Confidence ↓":
+            return -a["signal_pct"] if a["signal"] == "BUY" else (0 if "SETUP" in a["signal"] or a["signal"] == "NEUTRAL" else a["signal_pct"])
+        elif sort_by == "Momentum ↓":      return -a["momentum_score"]
+        elif sort_by == "Trend ↓":         return -a["trend_score"]
+        elif sort_by == "Buy Pressure ↓":  return -a["buy_pressure_score"]
+        elif sort_by == "Ticker A→Z":      return a["ticker"]
+        elif sort_by == "Signal":
+            order = {"BUY": 0, "SETUP 🔄": 1, "NEUTRAL": 2, "SELL": 3}
+            return order.get(a["signal"], 2)
+        return a["ticker"]
+
+    filtered.sort(key=_sort_key)
+
+    # ── Summary stats strip ──────────────────────────────────────
+    total = len(results)
+    n_buy  = sum(1 for a in results if a["signal"] == "BUY")
+    n_setup= sum(1 for a in results if "SETUP" in a["signal"])
+    n_neut = sum(1 for a in results if a["signal"] == "NEUTRAL")
+    n_sell = sum(1 for a in results if a["signal"] == "SELL")
+    scan_dt = datetime.fromtimestamp(scan_ts).strftime("%Y-%m-%d %H:%M")
+    ttl_rem = max(0, int((_STD_TTL - (time.time() - scan_ts)) / 60))
+
+    st.markdown(
+        f'<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;'
+        f'background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:8px;'
+        f'padding:10px 16px;margin-bottom:14px">'
+        f'<span style="color:{TEXT_MUTED};font-size:11px">&#128202; Showing <b style="color:{TEXT_PRIMARY}">{len(filtered)}</b> of {total} tickers</span>'
+        f'<span style="color:{ACCENT_GREEN};font-size:11px;font-weight:600">&#x1F7E2; {n_buy} Buy</span>'
+        f'<span style="color:#2DD4BF;font-size:11px;font-weight:600">&#x1F535; {n_setup} Setup</span>'
+        f'<span style="color:{YELLOW};font-size:11px;font-weight:600">&#x1F7E1; {n_neut} Neutral</span>'
+        f'<span style="color:{ACCENT_RED};font-size:11px;font-weight:600">&#x1F534; {n_sell} Sell</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:10px;margin-left:auto">'
+        f'Scanned {scan_dt} &nbsp;&middot;&nbsp; cache expires in {ttl_rem}m</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    _render_standard_table(filtered)
+
+
+# ══════════════════════════════════════════════════════════════
 # MAIN RENDER
 # ══════════════════════════════════════════════════════════════
 
-def render():
-    section_header(
-        "🔬", "Stock Analysis",
-        "Multi-ticker · Daily + Weekly · 9 indicator modules · Composite scores · Interactive chart",
-    )
-
+def _render_deep_analysis():
+    """Deep per-ticker analysis with full indicator panels."""
     # ── Ticker input — prominent, in main content area ──────────
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {GOLD}44;border-radius:10px;padding:18px 24px;margin-bottom:20px">'
@@ -1260,3 +1587,16 @@ def render():
     # ── Per-ticker detail panels ────────────────────────────────
     for a in analyses:
         render_ticker_panel(a)
+
+
+def render():
+    """Entry point — page header + two tabs: Deep Analysis · Standard Watchlist."""
+    section_header(
+        "🔬", "Stock Analysis",
+        "Multi-ticker · Daily + Weekly · 9 indicator modules · Composite scores · Interactive chart",
+    )
+    tab_deep, tab_std = st.tabs(["🔬 Deep Analysis", "📋 Standard Watchlist"])
+    with tab_deep:
+        _render_deep_analysis()
+    with tab_std:
+        _render_standard_watchlist()
