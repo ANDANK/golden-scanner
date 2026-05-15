@@ -377,23 +377,32 @@ def scan_trend_alignment(tickers: list,
             if avg_vol_d < 200_000:
                 continue
 
-            # Daily MACD fresh cross: histogram ≤ 0 → > 0
+            # Daily MACD fresh cross within the last 3 bars (was: exactly today only)
+            # Requiring the cross on exactly the current bar meant stocks that crossed
+            # 1–2 days ago were silently dropped even though the signal is still fresh.
             ema12 = calc_ema(close_d, 12)
             ema26 = calc_ema(close_d, 26)
             macd_line = ema12 - ema26
             sig_line  = calc_ema(macd_line, 9)
             hist_d    = macd_line - sig_line
-            if not (float(hist_d.iloc[-2]) <= 0 and float(hist_d.iloc[-1]) > 0):
+            if len(hist_d.dropna()) < 4:
+                continue
+            fresh_cross = (
+                (float(hist_d.iloc[-2]) <= 0 and float(hist_d.iloc[-1]) > 0) or  # today
+                (float(hist_d.iloc[-3]) <= 0 and float(hist_d.iloc[-2]) > 0) or  # yesterday
+                (float(hist_d.iloc[-4]) <= 0 and float(hist_d.iloc[-3]) > 0)      # 2 days ago
+            )
+            if not fresh_cross:
                 continue
 
-            # Daily RSI 55–70; hard avoid above 78
+            # Daily RSI 55–78; hard avoid above 78
             rsi_d = calc_rsi(close_d)
             if not (55 <= rsi_d <= 78):
                 continue
 
-            # ADX > 20 (daily)
+            # ADX > 18 (daily) — lowered from 20 to catch earlier-stage trends
             adx = calc_adx(df_d, period=14)
-            if adx < 20:
+            if adx < 18:
                 continue
 
             # ── Weekly data ───────────────────────────────────────
@@ -618,8 +627,10 @@ def scan_momentum_reset(tickers: list,
             ema10w = calc_ema(close_wk, 10)
             ema21w = calc_ema(close_wk, 21)
 
-            # Pullback to either EMA (required)
-            touch_10, touch_21 = _pullback_to_ema(df_wk, ema10w, ema21w, tol=0.04)
+            # Pullback to either EMA (required) — tol=0.025 (was 0.04)
+            # Tighter tolerance avoids stocks that are merely "near" the EMA
+            # but haven't genuinely pulled back to it.
+            touch_10, touch_21 = _pullback_to_ema(df_wk, ema10w, ema21w, tol=0.025)
             if not (touch_10 or touch_21):
                 continue
 
@@ -628,9 +639,12 @@ def scan_momentum_reset(tickers: list,
             if not (48 <= rsi_wk <= 62):
                 continue
 
-            # RSI turning up vs 3 weeks ago
-            rsi_3w = calc_rsi(close_wk.iloc[:-3], period=14) if len(close_wk) > 17 else rsi_wk
+            # RSI must be turning up vs 3 weeks ago (hard requirement — was scoring-only)
+            # A reset bounce that isn't inflecting upward hasn't started yet.
+            rsi_3w    = calc_rsi(close_wk.iloc[:-3], period=14) if len(close_wk) > 17 else rsi_wk
             rsi_rising = rsi_wk > rsi_3w
+            if not rsi_rising:
+                continue
 
             # Weekly MACD histogram status
             hist_prev, hist_curr = _weekly_macd_hist(close_wk)
@@ -645,6 +659,11 @@ def scan_momentum_reset(tickers: list,
             reversal_candle = _bullish_reversal_candle(df_wk)
             vol             = df_wk["Volume"].squeeze()
             vol_increasing  = float(vol.iloc[-1]) > float(vol.iloc[-2]) if len(vol) >= 2 else False
+
+            # At least one demand signal required: reversal candle OR volume increasing
+            # (was scoring-only — now a gate so we only see confirmed bounces)
+            if not (reversal_candle or vol_increasing):
+                continue
             wk_vol_ratio    = _weekly_vol_ratio(df_wk, lookback=20)
             rs              = _weekly_rs(close_wk, spy_close, lookback=26)
 
