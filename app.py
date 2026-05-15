@@ -476,33 +476,58 @@ div[data-testid="stMarkdownContainer"] div[style*="overflow-x:auto"] {{
 </style>
 """, unsafe_allow_html=True)
 
-# ── Password Gate ──────────────────────────────────────────────
+# ── Session state init ─────────────────────────────────────────
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
+if "_is_admin" not in st.session_state:
+    st.session_state["_is_admin"] = False
 
+# ── Password Gate ──────────────────────────────────────────────
 if not st.session_state["authenticated"]:
     _, col, _ = st.columns([1, 2, 1])
     with col:
-        st.markdown(f"""
-        <div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-top:3px solid {GOLD};
-                    border-radius:12px;padding:40px 32px;text-align:center;margin-top:80px">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:36px;color:{GOLD};font-weight:700;letter-spacing:3px;margin-bottom:6px">✦ GOLDEN SCANNER</div>
-            <div style="color:{TEXT_MUTED};font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-bottom:32px">Precision Trading Intelligence</div>
-            <div style="color:{TEXT_MUTED};font-size:13px;margin-bottom:16px">Enter your access password to continue</div>
-        </div>
-        """, unsafe_allow_html=True)
-        pwd = st.text_input("Password", type="password", placeholder="Enter password…", label_visibility="collapsed")
+        st.markdown(
+            f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
+            f'border-top:3px solid {GOLD};border-radius:12px;padding:40px 32px;'
+            f'text-align:center;margin-top:80px">'
+            f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:36px;color:{GOLD};'
+            f'font-weight:700;letter-spacing:3px;margin-bottom:6px">✦ GOLDEN SCANNER</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:11px;letter-spacing:3px;'
+            f'text-transform:uppercase;margin-bottom:32px">Precision Trading Intelligence</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:13px;margin-bottom:16px">'
+            f'Enter your access password to continue</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        pwd = st.text_input(
+            "Password", type="password",
+            placeholder="Enter password…", label_visibility="collapsed",
+        )
         if st.button("🔓  Enter Golden Scanner", use_container_width=True):
             try:
-                correct = st.secrets["APP_PASSWORD"]
+                app_pwd   = st.secrets["APP_PASSWORD"]
+                admin_pwd = st.secrets["ADMIN_PASSWORD"]
             except Exception:
-                correct = os.environ.get("APP_PASSWORD", "password!")
-            if pwd == correct:
+                app_pwd   = os.environ.get("APP_PASSWORD",   "password!")
+                admin_pwd = os.environ.get("ADMIN_PASSWORD", "admin!")
+            if pwd == admin_pwd:
+                # Admin: sees all pages + admin panel unlocked automatically
                 st.session_state["authenticated"] = True
+                st.session_state["_is_admin"]     = True
+                st.session_state["_admin_auth"]   = True
+                st.rerun()
+            elif pwd == app_pwd:
+                # Regular user: sees only enabled pages
+                st.session_state["authenticated"] = True
+                st.session_state["_is_admin"]     = False
                 st.rerun()
             else:
                 st.error("Incorrect password. Please try again.")
-        st.markdown(f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center;margin-top:16px">⚠️ Not financial advice · Educational use only</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center;margin-top:16px">'
+            f'⚠️ Not financial advice · Educational use only</div>',
+            unsafe_allow_html=True,
+        )
     st.stop()
 
 
@@ -723,8 +748,44 @@ if page and page != "🏠  Market Overview":
         st.button("🏠 Home", key="_main_home", use_container_width=True, on_click=_go_home)
     st.markdown(f'<div style="height:2px;background:linear-gradient(90deg,{GOLD}44,transparent);margin-bottom:8px"></div>', unsafe_allow_html=True)
 
+# ── Page visibility guard ──────────────────────────────────────
+from scanners.page_manager import is_page_enabled as _page_enabled
+
+# Pages exempt from the visibility check (always rendered)
+_ROUTER_ALWAYS_ON = {"🏠  Market Overview", "⚙️  Admin Panel"}
+
+
+def _show_page_disabled(page_label: str) -> None:
+    """Friendly 'page unavailable' screen for disabled pages."""
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    _, _dcol, _ = st.columns([1, 2, 1])
+    with _dcol:
+        st.markdown(
+            f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
+            f'border-top:3px solid #EF4444;border-radius:12px;'
+            f'padding:56px 36px;text-align:center;margin-top:40px">'
+            f'<div style="font-size:56px;margin-bottom:18px">🔒</div>'
+            f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:30px;'
+            f'color:#EF4444;font-weight:700;letter-spacing:1.5px;margin-bottom:12px">'
+            f'Page Unavailable</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:14px;line-height:2;margin-bottom:28px">'
+            f'<strong style="color:{TEXT_PRIMARY}">{page_label}</strong> is currently disabled.<br>'
+            f'Please contact the administrator to request access.</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:11px;text-transform:uppercase;'
+            f'letter-spacing:1.5px;border-top:1px solid {BORDER_COLOR};padding-top:18px">'
+            f'📧&nbsp; Contact Admin for Access</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+
 # ── Page Router ────────────────────────────────────────────────
-if page == "🏠  Market Overview":
+# Intercept disabled pages BEFORE the routing chain fires.
+# Admin users and always-on pages bypass this check entirely.
+if page not in _ROUTER_ALWAYS_ON and not _page_enabled(page):
+    _label = page.split("  ", 1)[-1] if "  " in page else page
+    _show_page_disabled(_label)
+elif page == "🏠  Market Overview":
     from scanners.home import render
     render()
 elif page == "📱  Social Trends":

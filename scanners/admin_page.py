@@ -1362,6 +1362,120 @@ def _render_stock_analysis_methodology():
 
 # ── Main render ────────────────────────────────────────────────
 
+def _render_page_management():
+    """Admin tab — toggle page visibility for regular users."""
+    from scanners.page_manager import ALL_PAGES, GROUP_META, _read_from_disk, save_page_settings
+
+    # ── Info banner ───────────────────────────────────────────
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
+        f'border-left:3px solid {GOLD};border-radius:8px;padding:14px 18px;margin-bottom:24px">'
+        f'<div style="color:{GOLD};font-size:13px;font-weight:600;margin-bottom:6px">'
+        f'ℹ️ How Page Visibility Works</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.8">'
+        f'<strong style="color:{TEXT_PRIMARY}">Regular users</strong> (APP_PASSWORD) only see '
+        f'<em>enabled</em> pages. Disabled pages show a "Contact Admin" screen instead of content.<br>'
+        f'<strong style="color:{TEXT_PRIMARY}">Admin users</strong> (ADMIN_PASSWORD) always see '
+        f'<em>all pages</em> regardless of these settings.<br>'
+        f'<strong style="color:{TEXT_PRIMARY}">Required pages</strong> (🔒) cannot be disabled.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Load fresh settings from disk (bypass session cache for admin edits)
+    settings = _read_from_disk()
+
+    # Group pages preserving list order
+    groups: dict = {}
+    for p in ALL_PAGES:
+        g = p["group"]
+        if g not in groups:
+            groups[g] = []
+        groups[g].append(p)
+
+    new_settings: dict = {}
+
+    for gi, (group_name, pages) in enumerate(groups.items()):
+        meta = GROUP_META.get(group_name, {"icon": "📁"})
+        icon = meta["icon"]
+
+        # Group header bar
+        st.markdown(
+            f'<div style="background:linear-gradient(90deg,rgba(245,200,66,0.12),rgba(245,200,66,0.03));'
+            f'border:1px solid rgba(245,200,66,0.2);border-radius:6px;padding:8px 16px;'
+            f'margin:18px 0 8px;color:{GOLD};font-size:11px;font-weight:700;'
+            f'letter-spacing:1.6px;text-transform:uppercase">{icon}  {group_name}</div>',
+            unsafe_allow_html=True,
+        )
+
+        for pi, p in enumerate(pages):
+            is_required = p.get("required", False)
+            is_sub      = "parent" in p
+            current_val = settings.get(p["key"], True)
+            widget_key  = f"_pm_tog_{gi}_{pi}"
+
+            lbl_col, tog_col = st.columns([8, 1])
+
+            with lbl_col:
+                indent  = "padding-left:24px;" if is_sub else ""
+                prefix  = "↳" if is_sub else "•"
+                txt_clr = TEXT_MUTED if is_required else TEXT_PRIMARY
+                req_badge = (
+                    f'&nbsp;<span style="background:rgba(245,200,66,0.13);color:{GOLD};'
+                    f'font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;'
+                    f'padding:1px 7px;border-radius:10px;border:1px solid rgba(245,200,66,0.28)">'
+                    f'REQUIRED</span>'
+                    if is_required else ""
+                )
+                st.markdown(
+                    f'<div style="{indent}color:{txt_clr};font-size:13px;'
+                    f'padding:5px 0;line-height:1.4">{prefix} {p["label"]}{req_badge}</div>',
+                    unsafe_allow_html=True,
+                )
+
+            with tog_col:
+                if is_required:
+                    # Render as disabled (always ON)
+                    try:
+                        st.toggle("", value=True, disabled=True, key=widget_key)
+                    except Exception:
+                        st.checkbox("", value=True, disabled=True, key=widget_key)
+                    new_settings[p["key"]] = True
+                else:
+                    try:
+                        val = st.toggle("", value=current_val, key=widget_key)
+                    except Exception:
+                        val = st.checkbox("", value=current_val, key=widget_key)
+                    new_settings[p["key"]] = val
+
+    # ── Save bar ─────────────────────────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
+        f'margin-bottom:20px"></div>',
+        unsafe_allow_html=True,
+    )
+
+    _disabled_count = sum(1 for k, v in new_settings.items() if not v)
+    _enabled_count  = len(new_settings) - _disabled_count
+
+    col_save, col_status, _ = st.columns([2, 4, 2])
+    with col_save:
+        if st.button("💾  Save Page Settings", key="_pm_save_btn", use_container_width=True):
+            save_page_settings(new_settings)
+            st.success(
+                f"✅ Saved — {_enabled_count} pages enabled, "
+                f"{_disabled_count} disabled. Changes take effect immediately."
+            )
+    with col_status:
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:12px;padding:8px 0">'
+            f'Currently: <strong style="color:{GOLD}">{_enabled_count}</strong> enabled · '
+            f'<strong style="color:#EF4444">{_disabled_count}</strong> disabled</div>',
+            unsafe_allow_html=True,
+        )
+
+
 def render():
     # ── Admin password gate ────────────────────────────────────
     if not st.session_state.get("_admin_auth", False):
@@ -1412,11 +1526,12 @@ def render():
 
     section_header("⚙️", "Admin Panel", "Scanner reference · Stock universe browser · System info")
 
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📊 Scanner Tech & Rankings",
         "📖 Scanner Guide",
         "🗃️ Stock Universe",
         "🔬 Stock Analysis",
+        "🗂️ Page Management",
     ])
 
     with tab1:
@@ -1430,3 +1545,6 @@ def render():
 
     with tab4:
         _render_stock_analysis_methodology()
+
+    with tab5:
+        _render_page_management()
