@@ -674,7 +674,10 @@ with st.sidebar:
             classes.append("gs-active-marker")
         if classes:
             st.markdown(f'<span class="{" ".join(classes)}"></span>', unsafe_allow_html=True)
-        if st.button(it["key"], key=f"_nav_{it['key']}", use_container_width=True):
+        # Show 🔒 for regular users when the page is disabled
+        _is_user = not st.session_state.get("_is_admin", False)
+        lock_tag = "  🔒" if _is_user and not _page_enabled(it["key"]) else ""
+        if st.button(it["key"] + lock_tag, key=f"_nav_{it['key']}", use_container_width=True):
             _go(it["key"])
 
     def _render_item_with_children(it):
@@ -686,12 +689,15 @@ with st.sidebar:
 
         if is_active:
             st.markdown('<span class="gs-active-marker"></span>', unsafe_allow_html=True)
+        # Show 🔒 for regular users when the page is disabled
+        _is_user = not st.session_state.get("_is_admin", False)
+        lock_tag = "  🔒" if _is_user and not _page_enabled(it["key"]) else ""
         # Chevrons on BOTH sides telegraph "this expands" without needing a rail.
         # Collapsed: ›  📌  Tracking  ‹    Expanded: ⌄  📌  Tracking  ⌄
         if show_subs:
-            label = "⌄  " + it["key"] + "  ⌄"
+            label = "⌄  " + it["key"] + lock_tag + "  ⌄"
         else:
-            label = "›  " + it["key"] + "  ‹"
+            label = "›  " + it["key"] + lock_tag + "  ‹"
         if st.button(label, key=f"_nav_{it['key']}", use_container_width=True):
             _go(it["key"])
 
