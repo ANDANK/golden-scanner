@@ -23,6 +23,7 @@ def scan_3x_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
 
     with st.spinner("Scanning 3× ETF options for high-premium setups…"):
         results = []
+        skips = {}      # reason → count, shown after scan for diagnostics
         progress = st.progress(0)
         today = datetime.now()
 
@@ -31,6 +32,7 @@ def scan_3x_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
             try:
                 df = get_price_history(ticker, period="3mo")
                 if df.empty or len(df) < 20:
+                    skips["no price history"] = skips.get("no price history", 0) + 1
                     continue
 
                 close = df["Close"].squeeze()
@@ -40,6 +42,7 @@ def scan_3x_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
 
                 calls, puts, expiries = get_options_chain(ticker)
                 if (calls.empty and puts.empty) or not expiries:
+                    skips["no options chain"] = skips.get("no options chain", 0) + 1
                     continue
 
                 best_exp = None
@@ -54,6 +57,7 @@ def scan_3x_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
                         continue
 
                 if best_exp is None:
+                    skips["no expiry in DTE range"] = skips.get("no expiry in DTE range", 0) + 1
                     continue
 
                 exp_str, dte = best_exp
@@ -62,10 +66,12 @@ def scan_3x_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
                 # Use puts (CSP on 3x ETF — higher premium, higher risk)
                 chain = puts_ch
                 if chain.empty:
+                    skips["empty puts chain"] = skips.get("empty puts chain", 0) + 1
                     continue
 
                 otm = chain[chain["strike"] < price].copy()
                 if otm.empty:
+                    skips["no OTM strikes"] = skips.get("no OTM strikes", 0) + 1
                     continue
 
                 target_delta = 0.20
@@ -84,17 +90,20 @@ def scan_3x_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
                 mid = (bid + ask) / 2 if bid + ask > 0 else float(row.get("lastPrice", 0) or 0)
 
                 if mid <= 0:
+                    skips["no premium (bid/ask/lastPrice all 0)"] = skips.get("no premium (bid/ask/lastPrice all 0)", 0) + 1
                     continue
 
                 spread_pct = ((ask - bid) / mid * 100) if mid > 0 else 999
                 premium_pct = (mid / strike) * 100
                 if premium_pct < premium_pct_min:
+                    skips[f"premium too low (<{premium_pct_min}%)"] = skips.get(f"premium too low (<{premium_pct_min}%)", 0) + 1
                     continue
 
                 iv = float(row.get("impliedVolatility", 0.50) or 0.50)
                 iv_rank = approx_iv_rank(iv)
 
                 if iv_rank < iv_rank_min:
+                    skips["IV rank too low"] = skips.get("IV rank too low", 0) + 1
                     continue
 
                 delta_abs = abs(float(row.get("delta", target_delta) or target_delta))
@@ -117,10 +126,12 @@ def scan_3x_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
                 score = 0
                 if iv_rank >= 60: score += 30
                 elif iv_rank >= 40: score += 20
-                if premium_pct >= 4: score += 30
-                elif premium_pct >= 2: score += 20
-                elif premium_pct >= 1: score += 10
-                if spread_pct <= 5: score += 20
+                elif iv_rank >= 20: score += 10
+                if premium_pct >= 4:    score += 30
+                elif premium_pct >= 2:  score += 20
+                elif premium_pct >= 1:  score += 15
+                elif premium_pct >= 0.75: score += 8   # partial credit for borderline premium
+                if spread_pct <= 5:  score += 20
                 elif spread_pct <= 10: score += 10
                 if pvr >= 0.5: score += 20
                 score = min(score, 100)
@@ -153,6 +164,15 @@ def scan_3x_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
 
         progress.empty()
 
+    # Show skip diagnostics so the user can see why tickers were excluded
+    if skips:
+        skip_lines = " · ".join(f"{reason}: {n}" for reason, n in sorted(skips.items(), key=lambda x: -x[1]))
+        st.markdown(
+            f'<div style="color:#888;font-size:11px;margin:4px 0 2px">'
+            f'ℹ️ Skipped: {skip_lines}</div>',
+            unsafe_allow_html=True,
+        )
+
     df_out = pd.DataFrame(results)
     if not df_out.empty:
         df_out = df_out.sort_values("Score", ascending=False).reset_index(drop=True)
@@ -167,10 +187,10 @@ def render():
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ 3× ETF Options Filters</div>', unsafe_allow_html=True)
         # 3× ETFs carry 3× the volatility of their underlying index.
         # IV is structurally higher → require more IV rank & more premium.
-        iv_rank_min = st.slider("Min IV Rank", 0, 100, 30)          # was 25
-        delta_min, delta_max = st.slider("Delta Range (abs)", 0.05, 0.50, (0.15, 0.25), 0.01)  # tighter OTM
-        premium_pct_min = st.slider("Min Premium % of Strike", 0.5, 10.0, 1.0, 0.05)  # was 0.70 — 3× should yield more
-        dte_min, dte_max = st.slider("DTE Range", 1, 45, (1, 21))   # max 3 weeks; keep short on leveraged ETFs
+        iv_rank_min = st.slider("Min IV Rank", 0, 100, 20)           # 3× ETFs structurally have high IV
+        delta_min, delta_max = st.slider("Delta Range (abs)", 0.05, 0.50, (0.15, 0.30), 0.01)
+        premium_pct_min = st.slider("Min Premium % of Strike", 0.3, 10.0, 0.75, 0.05)  # 0.75% achievable at 14-30 DTE
+        dte_min, dte_max = st.slider("DTE Range", 1, 60, (7, 30))   # extended to 30 for more time value
 
     st.info("⏱ 3× ETF options scan takes 30–90 seconds.")
 
@@ -209,5 +229,5 @@ def render():
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">
             <div style="font-size:36px;margin-bottom:12px">⚡</div>
             <div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:8px">3× ETF Options — High Premium Setups</div>
-            <div style="font-size:13px">Elevated IV creates outsized premiums — but risk matches the reward.<br>Criteria: IV Rank &gt; {iv_rank_min} · Premium &gt; {premium_pct_min}% · DTE {dte_min}–{dte_max}</div>
+            <div style="font-size:13px">Elevated IV creates outsized premiums — but risk matches the reward.<br>Criteria: IV Rank ≥ {iv_rank_min} · Premium ≥ {premium_pct_min}% · DTE {dte_min}–{dte_max}</div>
         </div>""", unsafe_allow_html=True)
