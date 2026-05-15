@@ -865,6 +865,7 @@ def _render_stock_analysis_methodology():
 
     ACCENT_BLUE_LOCAL = "#3B82F6"
     PURPLE = "#A78BFA"
+    YELLOW = "#FBBF24"   # not exported from config — define locally
 
     # ── Intro blurb ───────────────────────────────────────────────
     st.markdown(
