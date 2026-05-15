@@ -1363,29 +1363,29 @@ def _render_stock_analysis_methodology():
 # ── Main render ────────────────────────────────────────────────
 
 def _render_page_management():
-    """Admin tab — toggle page visibility for regular users."""
+    """Admin tab — toggle page visibility for regular users. 3-column card layout."""
     from scanners.page_manager import ALL_PAGES, GROUP_META, _read_from_disk, save_page_settings
 
     # ── Info banner ───────────────────────────────────────────
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
-        f'border-left:3px solid {GOLD};border-radius:8px;padding:14px 18px;margin-bottom:24px">'
-        f'<div style="color:{GOLD};font-size:13px;font-weight:600;margin-bottom:6px">'
+        f'border-left:3px solid {GOLD};border-radius:8px;padding:16px 20px;margin-bottom:28px">'
+        f'<div style="color:{GOLD};font-size:15px;font-weight:600;margin-bottom:8px">'
         f'ℹ️ How Page Visibility Works</div>'
-        f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.8">'
+        f'<div style="color:{TEXT_MUTED};font-size:14px;line-height:1.9">'
         f'<strong style="color:{TEXT_PRIMARY}">Regular users</strong> (APP_PASSWORD) only see '
         f'<em>enabled</em> pages. Disabled pages show a "Contact Admin" screen instead of content.<br>'
         f'<strong style="color:{TEXT_PRIMARY}">Admin users</strong> (ADMIN_PASSWORD) always see '
-        f'<em>all pages</em> regardless of these settings.<br>'
-        f'<strong style="color:{TEXT_PRIMARY}">Required pages</strong> (🔒) cannot be disabled.</div>'
+        f'<em>all pages</em> regardless of these settings. &nbsp;'
+        f'<strong style="color:{TEXT_PRIMARY}">🔒 Required</strong> pages cannot be disabled.</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
 
-    # Load fresh settings from disk (bypass session cache for admin edits)
+    # Load fresh settings from disk (bypass session cache so admin sees current state)
     settings = _read_from_disk()
 
-    # Group pages preserving list order
+    # Build ordered group dict
     groups: dict = {}
     for p in ALL_PAGES:
         g = p["group"]
@@ -1394,83 +1394,91 @@ def _render_page_management():
         groups[g].append(p)
 
     new_settings: dict = {}
+    group_list = list(groups.items())
 
-    for gi, (group_name, pages) in enumerate(groups.items()):
-        meta = GROUP_META.get(group_name, {"icon": "📁"})
-        icon = meta["icon"]
+    # ── 3-column card grid ────────────────────────────────────
+    # Groups: Dashboard | Stocks | Options  (row 1)
+    #         Dividend  | Info   | —        (row 2)
+    grid = st.columns(3, gap="large")
 
-        # Group header bar
-        st.markdown(
-            f'<div style="background:linear-gradient(90deg,rgba(245,200,66,0.12),rgba(245,200,66,0.03));'
-            f'border:1px solid rgba(245,200,66,0.2);border-radius:6px;padding:8px 16px;'
-            f'margin:18px 0 8px;color:{GOLD};font-size:11px;font-weight:700;'
-            f'letter-spacing:1.6px;text-transform:uppercase">{icon}  {group_name}</div>',
-            unsafe_allow_html=True,
-        )
+    for gi, (group_name, pages) in enumerate(group_list):
+        icon = GROUP_META.get(group_name, {"icon": "📁"})["icon"]
 
-        for pi, p in enumerate(pages):
-            is_required = p.get("required", False)
-            is_sub      = "parent" in p
-            current_val = settings.get(p["key"], True)
-            widget_key  = f"_pm_tog_{gi}_{pi}"
+        with grid[gi % 3]:
+            # Group card header
+            st.markdown(
+                f'<div style="background:linear-gradient(135deg,rgba(245,200,66,0.16),rgba(245,200,66,0.04));'
+                f'border:1px solid rgba(245,200,66,0.28);border-radius:8px;'
+                f'padding:11px 18px;margin-bottom:14px;">'
+                f'<span style="color:{GOLD};font-size:14px;font-weight:700;'
+                f'letter-spacing:1.8px;text-transform:uppercase">'
+                f'{icon}&nbsp; {group_name}</span></div>',
+                unsafe_allow_html=True,
+            )
 
-            lbl_col, tog_col = st.columns([8, 1])
+            for pi, p in enumerate(pages):
+                is_required = p.get("required", False)
+                is_sub      = "parent" in p
+                current_val = settings.get(p["key"], True)
+                widget_key  = f"_pm_tog_{gi}_{pi}"
 
-            with lbl_col:
-                indent  = "padding-left:24px;" if is_sub else ""
-                prefix  = "↳" if is_sub else "•"
-                txt_clr = TEXT_MUTED if is_required else TEXT_PRIMARY
-                req_badge = (
-                    f'&nbsp;<span style="background:rgba(245,200,66,0.13);color:{GOLD};'
-                    f'font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;'
-                    f'padding:1px 7px;border-radius:10px;border:1px solid rgba(245,200,66,0.28)">'
-                    f'REQUIRED</span>'
-                    if is_required else ""
-                )
-                st.markdown(
-                    f'<div style="{indent}color:{txt_clr};font-size:13px;'
-                    f'padding:5px 0;line-height:1.4">{prefix} {p["label"]}{req_badge}</div>',
-                    unsafe_allow_html=True,
-                )
+                lbl_col, tog_col = st.columns([6, 1])
 
-            with tog_col:
-                if is_required:
-                    # Render as disabled (always ON)
-                    try:
-                        st.toggle("", value=True, disabled=True, key=widget_key)
-                    except Exception:
-                        st.checkbox("", value=True, disabled=True, key=widget_key)
-                    new_settings[p["key"]] = True
-                else:
-                    try:
-                        val = st.toggle("", value=current_val, key=widget_key)
-                    except Exception:
-                        val = st.checkbox("", value=current_val, key=widget_key)
-                    new_settings[p["key"]] = val
+                with lbl_col:
+                    indent  = "padding-left:22px;" if is_sub else ""
+                    prefix  = "↳" if is_sub else "•"
+                    txt_clr = TEXT_MUTED if is_required else TEXT_PRIMARY
+                    req_badge = (
+                        f'&nbsp;<span style="background:rgba(245,200,66,0.14);color:{GOLD};'
+                        f'font-size:10px;font-weight:700;letter-spacing:0.6px;'
+                        f'text-transform:uppercase;padding:2px 8px;border-radius:10px;'
+                        f'border:1px solid rgba(245,200,66,0.30)">REQUIRED</span>'
+                        if is_required else ""
+                    )
+                    st.markdown(
+                        f'<div style="{indent}color:{txt_clr};font-size:15px;'
+                        f'padding:7px 0;line-height:1.5">'
+                        f'{prefix}&nbsp;{p["label"]}{req_badge}</div>',
+                        unsafe_allow_html=True,
+                    )
 
-    # ── Save bar ─────────────────────────────────────────────
+                with tog_col:
+                    if is_required:
+                        try:
+                            st.toggle("", value=True, disabled=True, key=widget_key)
+                        except Exception:
+                            st.checkbox("", value=True, disabled=True, key=widget_key)
+                        new_settings[p["key"]] = True
+                    else:
+                        try:
+                            val = st.toggle("", value=current_val, key=widget_key)
+                        except Exception:
+                            val = st.checkbox("", value=current_val, key=widget_key)
+                        new_settings[p["key"]] = val
+
+    # ── Save bar ──────────────────────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(
         f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
-        f'margin-bottom:20px"></div>',
+        f'margin-bottom:22px"></div>',
         unsafe_allow_html=True,
     )
 
-    _disabled_count = sum(1 for k, v in new_settings.items() if not v)
+    _disabled_count = sum(1 for v in new_settings.values() if not v)
     _enabled_count  = len(new_settings) - _disabled_count
 
-    col_save, col_status, _ = st.columns([2, 4, 2])
+    col_save, col_status, _ = st.columns([2, 5, 1])
     with col_save:
         if st.button("💾  Save Page Settings", key="_pm_save_btn", use_container_width=True):
             save_page_settings(new_settings)
             st.success(
                 f"✅ Saved — {_enabled_count} pages enabled, "
-                f"{_disabled_count} disabled. Changes take effect immediately."
+                f"{_disabled_count} disabled. Changes are live immediately."
             )
     with col_status:
         st.markdown(
-            f'<div style="color:{TEXT_MUTED};font-size:12px;padding:8px 0">'
-            f'Currently: <strong style="color:{GOLD}">{_enabled_count}</strong> enabled · '
+            f'<div style="color:{TEXT_MUTED};font-size:15px;padding:8px 4px">'
+            f'<strong style="color:{GOLD}">{_enabled_count}</strong> enabled &nbsp;·&nbsp; '
             f'<strong style="color:#EF4444">{_disabled_count}</strong> disabled</div>',
             unsafe_allow_html=True,
         )
