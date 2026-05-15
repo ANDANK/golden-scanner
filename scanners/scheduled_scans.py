@@ -437,12 +437,33 @@ def _show_results(df: pd.DataFrame, slot_label: str):
                 if score >= AUTO_TRACK_THRESHOLD and _auto_key not in _auto_set:
                     try:
                         from scanners.gsheet_helper import add_to_tracking
+                        from utils import _SCANNER_ABBREV
                         price_str = str(row.get("Stock Price", row.get("Price", "")))
-                        # Include Universe (Stocks / ETFs) in the source tag so tracking shows
-                        # "AM·CSP·Stocks" / "AM·LEAPS·ETFs" instead of the bare "AM·CSP"
-                        _univ = str(row.get("Universe", "")).strip()
-                        _univ_sfx = f"·{_univ}" if _univ and _univ.lower() not in ("nan", "none", "") else ""
-                        source_tag = f"{slot_prefix}·{strat}{_univ_sfx}"
+
+                        # ── Build source_tag mirroring render_results_table logic ──
+                        # Priority 1: Golden Scan — use Scanners column → "AM·GS·TC + MF (2)"
+                        _sc_raw = str(row.get("Scanners", "")).strip()
+                        if _sc_raw and _sc_raw.lower() not in ("nan", "none", ""):
+                            _parts = [p.strip() for p in _sc_raw.split(" + ")
+                                      if p.strip() and p.strip().lower() != "nan"]
+                            if _parts:
+                                _abbr = [_SCANNER_ABBREV.get(p, p) for p in _parts]
+                                source_tag = f"{slot_prefix}·GS·{' + '.join(_abbr[:6])} ({len(_parts)})"
+                            else:
+                                source_tag = f"{slot_prefix}·{strat}"
+                        # Priority 2: Headlines — use Catalysts column → "AM·H&C·..."
+                        elif "Catalysts" in row.index:
+                            _cat = str(row.get("Catalysts", "")).strip()
+                            source_tag = (f"{slot_prefix}·H&C·{_cat[:50]}"
+                                          if _cat and _cat.lower() not in ("nan", "none", "")
+                                          else f"{slot_prefix}·{strat}")
+                        # Priority 3: Options / other — include Universe if available
+                        else:
+                            _univ = str(row.get("Universe", "")).strip()
+                            _univ_sfx = (f"·{_univ}"
+                                         if _univ and _univ.lower() not in ("nan", "none", "")
+                                         else "")
+                            source_tag = f"{slot_prefix}·{strat}{_univ_sfx}"
                         # Build proper extra_meta so Score, Style, HOLD are stored correctly
                         _extra = {
                             "Score_At_Track": str(score),
