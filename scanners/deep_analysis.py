@@ -1373,7 +1373,7 @@ def _render_standard_watchlist():
             f'<div style="font-size:42px;margin-bottom:14px">&#128202;</div>'
             f'<div style="color:{GOLD};font-size:20px;font-weight:700;margin-bottom:10px">Standard Watchlist</div>'
             f'<div style="color:{TEXT_MUTED};font-size:13px;line-height:1.8;max-width:540px;margin:0 auto 20px">'
-            f'Scans <b style="color:{TEXT_PRIMARY}">{n} pre-loaded tickers</b> using the same 9-indicator '
+            f'Scans <b style="color:{TEXT_PRIMARY}">{n} pre-loaded tickers</b> (no duplicates) using the same 9-indicator '
             f'engine as Deep Analysis. Results cached for <b style="color:{TEXT_PRIMARY}">4 hours</b>.'
             f'{age_str}</div>'
             f'<div style="color:{TEXT_MUTED};font-size:11px">&#9654; Click <b style="color:{GOLD}">Run Scan</b> to start &nbsp;·&nbsp; Results show Signal, W-MACD, D-MACD, RSI, Trend, Momentum, Buy Pressure, Breakout</div>'
