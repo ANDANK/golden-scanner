@@ -1535,12 +1535,12 @@ def render():
     section_header("⚙️", "Admin Panel", "Scanner reference · Stock universe browser · System info")
 
     # ── Maintenance mode card (always visible at top of admin panel) ──────
+    # Message is HARDCODED ("Cleaning Lenses! 🔭  Be right back.") — no text_area,
+    # no storage read.  Admin just toggles ON / OFF.
     from scanners.page_manager import (
-        is_maintenance_mode, get_maintenance_message, set_maintenance_mode,
-        _MAINT_MSG_DEFAULT,
+        is_maintenance_mode, set_maintenance_mode, _MAINT_MSG_DEFAULT,
     )
     _maint_on  = is_maintenance_mode()
-    _maint_msg = get_maintenance_message()
 
     _maint_border = "#EF4444" if _maint_on else BORDER_COLOR
     _maint_bg     = "rgba(239,68,68,0.07)" if _maint_on else BG_PANEL
@@ -1550,47 +1550,32 @@ def render():
     st.markdown(
         f'<div style="background:{_maint_bg};border:1px solid {_maint_border};'
         f'border-left:4px solid {_status_color};border-radius:8px;'
-        f'padding:14px 18px;margin-bottom:18px">'
-        f'<div style="display:flex;justify-content:space-between;align-items:center">'
-        f'<div>'
+        f'padding:14px 18px;margin-bottom:12px">'
         f'<div style="color:{TEXT_PRIMARY};font-size:13px;font-weight:700;margin-bottom:3px">'
-        f'🚧 Site Maintenance Mode</div>'
-        f'<div style="color:{_status_color};font-size:11px;font-weight:600">{_status_label}</div>'
-        f'</div>'
-        f'</div>'
+        f'🔭 Site Maintenance Mode</div>'
+        f'<div style="color:{_status_color};font-size:11px;font-weight:600;margin-bottom:6px">{_status_label}</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px">'
+        f'Message shown to users: <b style="color:{TEXT_PRIMARY}">{_MAINT_MSG_DEFAULT}</b></div>'
         f'</div>',
         unsafe_allow_html=True,
     )
 
     _mc1, _mc2 = st.columns([3, 1])
-    with _mc1:
-        _new_msg = st.text_area(
-            "Maintenance message shown to users",
-            value=_maint_msg,
-            height=80,
-            key="_maint_msg_input",
-            placeholder=_MAINT_MSG_DEFAULT,
-            label_visibility="visible",
-        )
     with _mc2:
-        st.markdown("<div style='height:26px'></div>", unsafe_allow_html=True)
         if _maint_on:
             if st.button("✅ Disable Maintenance", use_container_width=True, key="_maint_disable_btn",
                          help="Restore site access for all regular users"):
-                set_maintenance_mode(False, _new_msg)
+                set_maintenance_mode(False)
                 st.session_state.pop("_page_settings_cache", None)
                 st.success("✅ Maintenance mode disabled — site is live.")
                 st.rerun()
         else:
             if st.button("🚧 Enable Maintenance", use_container_width=True, key="_maint_enable_btn",
-                         help="Block all regular users with a maintenance message"):
-                if not _new_msg.strip():
-                    st.warning("Enter a maintenance message before enabling.")
-                else:
-                    set_maintenance_mode(True, _new_msg)
-                    st.session_state.pop("_page_settings_cache", None)
-                    st.warning("🚧 Maintenance mode is now ACTIVE. Regular users are blocked.")
-                    st.rerun()
+                         help="Block all regular users — shows 'Cleaning Lenses! 🔭  Be right back.'"):
+                set_maintenance_mode(True)
+                st.session_state.pop("_page_settings_cache", None)
+                st.warning("🚧 Maintenance mode is now ACTIVE. Regular users are blocked.")
+                st.rerun()
 
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:10px;margin-bottom:20px">'

@@ -266,28 +266,21 @@ def is_maintenance_mode() -> bool:
 
 
 def get_maintenance_message() -> str:
-    """Return the current admin-set maintenance message (always a real string).
-    Auto-heals corrupted boolean-as-string values left over from the old
-    GSheets-based storage (e.g. 'True', 'False', '1', '0').
+    """Return the maintenance message.
+    HARDCODED to _MAINT_MSG_DEFAULT — never reads from any storage.
+    This prevents the 'True' corruption that occurred when the old code
+    stored the message as a boolean in Google Sheets.
     """
-    msg = _read_maintenance_file().get("message", _MAINT_MSG_DEFAULT)
-    if not isinstance(msg, str) or msg.strip().lower() in ("true", "false", "1", "0", ""):
-        # Corrupted value — reset to default and persist the healed file
-        _write_maintenance_file(
-            bool(_read_maintenance_file().get("enabled", False)),
-            _MAINT_MSG_DEFAULT,
-        )
-        return _MAINT_MSG_DEFAULT
-    return msg
+    return _MAINT_MSG_DEFAULT
 
 
 def set_maintenance_mode(enabled: bool, message: str = "") -> None:
     """
     Enable or disable maintenance mode.  Persists to data/maintenance.json.
-    Also clears the in-session page-settings cache so sidebar state refreshes.
+    The message is always _MAINT_MSG_DEFAULT (hardcoded) — the message param
+    is kept for backward-compatibility only and is ignored.
     """
-    msg = message.strip() if message.strip() else _MAINT_MSG_DEFAULT
-    _write_maintenance_file(enabled, msg)
+    _write_maintenance_file(enabled, _MAINT_MSG_DEFAULT)
     # Invalidate the page-settings cache so any callers that gate on it
     # pick up the new state on the next request.
     st.session_state.pop("_page_settings_cache", None)

@@ -18,58 +18,49 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from config import *
 
-# ── Page Config ────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Golden Scanner",
-    page_icon="✦",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
-
-# ── Early maintenance check (needed before CSS injection) ──────
-# We need to know if we're in maintenance mode BEFORE the global <style>
-# block so we can append the sidebar-hiding rules inside it.  Doing this
-# here (before authentication) is safe because the maintenance gate is
-# checked again after auth and calls st.stop() for non-admins.
+# ── Maintenance check BEFORE set_page_config ──────────────────
+# is_maintenance_mode() uses only Python stdlib — safe before any st.* call.
+# We check here so we can pass initial_sidebar_state="hidden" to set_page_config,
+# which removes the sidebar at the Streamlit framework level (no CSS battle).
 from scanners.page_manager import is_maintenance_mode as _early_maint_fn
 _early_in_maint = (
     _early_maint_fn()
     and not st.session_state.get("_is_admin", False)
 )
-_maint_sidebar_css = ""
-if _early_in_maint:
-    _maint_sidebar_css = """
-/* ── Maintenance: hide sidebar entirely ── */
-@media (min-width: 769px) {
-    section[data-testid="stSidebar"] {
-        display: none !important;
-        visibility: hidden !important;
-        width: 0 !important;
-        min-width: 0 !important;
-        transform: none !important;
-    }
-    section[data-testid="stSidebar"] > div:first-child {
-        display: none !important;
-        width: 0 !important;
-        min-width: 0 !important;
-    }
-}
-section[data-testid="stSidebar"],
-[data-testid="stSidebarCollapsedControl"],
-button[data-testid="stSidebarCollapseButton"],
-button[title="Open sidebar"],
-button[aria-label="Open sidebar"] {
-    display: none !important;
-    visibility: hidden !important;
-}
-[data-testid="stAppViewContainer"] > .main,
-[data-testid="stAppViewContainer"] section.main {
-    margin-left: 0 !important;
-    padding-left: 2rem !important;
-    width: 100% !important;
-    max-width: 100% !important;
-}
-"""
+
+# ── Page Config ────────────────────────────────────────────────
+st.set_page_config(
+    page_title="Golden Scanner",
+    page_icon="✦",
+    layout="wide",
+    # "hidden" removes the sidebar AND its toggle entirely at the framework level.
+    # Admins are never in maintenance, so they always get the normal "collapsed" state.
+    initial_sidebar_state="hidden" if _early_in_maint else "collapsed",
+)
+
+# ── Sidebar force-visible CSS (excluded during maintenance) ───
+# Defined as a plain string (not f-string) so its CSS braces pass through
+# unchanged when interpolated into the outer f-string below.
+# During maintenance: empty string → framework-level "hidden" already handles it.
+_sidebar_force_css = "" if _early_in_maint else (
+    "@media (min-width: 769px) {\n"
+    "    section[data-testid=\"stSidebar\"] {\n"
+    "        transform: translateX(0) !important;\n"
+    "        min-width: 320px !important; width: 320px !important;\n"
+    "        visibility: visible !important; display: block !important;\n"
+    "    }\n"
+    "    section[data-testid=\"stSidebar\"] > div:first-child {\n"
+    "        transform: translateX(0) !important;\n"
+    "        width: 320px !important; min-width: 320px !important;\n"
+    "    }\n"
+    "    [data-testid=\"stSidebarCollapseButton\"],\n"
+    "    [data-testid=\"stSidebarCollapsedControl\"],\n"
+    "    button[title=\"Close sidebar\"], button[title=\"Collapse sidebar\"],\n"
+    "    button[aria-label=\"Close sidebar\"], button[aria-label=\"Collapse sidebar\"] {\n"
+    "        display: none !important;\n"
+    "    }\n"
+    "}\n"
+)
 
 # ── Global CSS ─────────────────────────────────────────────────
 st.markdown(f"""
@@ -117,24 +108,8 @@ div[data-testid="stSidebarNavItems"] {{ display: none !important; }}
 .st-emotion-cache-1rtdyuf,
 .st-emotion-cache-eczf2c {{ display: none !important; }}
 
-/* ── Desktop: force sidebar always visible ── */
-@media (min-width: 769px) {{
-    section[data-testid="stSidebar"] {{
-        transform: translateX(0) !important;
-        min-width: 320px !important; width: 320px !important;
-        visibility: visible !important; display: block !important;
-    }}
-    section[data-testid="stSidebar"] > div:first-child {{
-        transform: translateX(0) !important;
-        width: 320px !important; min-width: 320px !important;
-    }}
-    [data-testid="stSidebarCollapseButton"],
-    [data-testid="stSidebarCollapsedControl"],
-    button[title="Close sidebar"], button[title="Collapse sidebar"],
-    button[aria-label="Close sidebar"], button[aria-label="Collapse sidebar"] {{
-        display: none !important;
-    }}
-}}
+/* ── Desktop: force sidebar always visible (omitted during maintenance) ── */
+{_sidebar_force_css}
 
 /* ── Mobile ── */
 @media (max-width: 768px) {{
@@ -534,7 +509,6 @@ div[data-testid="stMarkdownContainer"] div[style*="overflow-x:auto"] {{
 [data-testid="stExpander"] summary span {{
     color: {TEXT_PRIMARY} !important;
 }}
-{_maint_sidebar_css}
 </style>
 """, unsafe_allow_html=True)
 
@@ -930,32 +904,32 @@ _ROUTER_ALWAYS_ON = {"🏠  Market Overview", "⚙️  Admin Panel"}
 # was never added to the DOM — no CSS battle needed.
 # Admin Panel is always reachable so the admin can turn maintenance off.
 if _in_maintenance:
-    from scanners.page_manager import get_maintenance_message
-    _maint_msg = get_maintenance_message()
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    _, _mcol, _ = st.columns([1, 2, 1])
-    with _mcol:
-        st.markdown(
-            f'<div style="background:{BG_CARD};border:1px solid #EF444455;'
-            f'border-top:4px solid #F59E0B;border-radius:14px;'
-            f'padding:60px 40px;text-align:center;margin-top:40px">'
-            f'<div style="font-size:64px;margin-bottom:20px">🚧</div>'
-            f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:32px;'
-            f'color:#F59E0B;font-weight:700;letter-spacing:2px;margin-bottom:14px">'
-            f'Under Maintenance</div>'
-            f'<div style="color:{TEXT_PRIMARY};font-size:15px;line-height:1.9;'
-            f'max-width:420px;margin:0 auto 28px">'
-            f'{_maint_msg}</div>'
-            f'<div style="display:inline-flex;align-items:center;gap:8px;'
-            f'background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);'
-            f'border-radius:20px;padding:8px 20px">'
-            f'<span style="font-size:14px">⏱</span>'
-            f'<span style="color:#F59E0B;font-size:12px;font-weight:600;letter-spacing:1px">'
-            f'CHECK BACK SHORTLY</span>'
-            f'</div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+    # Message is HARDCODED — never read from any storage (avoids "True" corruption).
+    _MAINT_DISPLAY_MSG = "Cleaning Lenses! 🔭  Be right back."
+    st.markdown(
+        f'<div style="display:flex;align-items:center;justify-content:center;'
+        f'min-height:70vh">'
+        f'<div style="background:{BG_CARD};border:1px solid #EF444455;'
+        f'border-top:4px solid #F59E0B;border-radius:14px;'
+        f'padding:60px 48px;text-align:center;max-width:480px">'
+        f'<div style="font-size:64px;margin-bottom:20px">🔭</div>'
+        f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:32px;'
+        f'color:#F59E0B;font-weight:700;letter-spacing:2px;margin-bottom:16px">'
+        f'Under Maintenance</div>'
+        f'<div style="color:{TEXT_PRIMARY};font-size:16px;line-height:1.8;'
+        f'margin-bottom:28px">'
+        f'{_MAINT_DISPLAY_MSG}</div>'
+        f'<div style="display:inline-flex;align-items:center;gap:8px;'
+        f'background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);'
+        f'border-radius:20px;padding:8px 20px">'
+        f'<span style="font-size:14px">⏱</span>'
+        f'<span style="color:#F59E0B;font-size:12px;font-weight:600;letter-spacing:1px">'
+        f'CHECK BACK SHORTLY</span>'
+        f'</div>'
+        f'</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
     st.stop()
 
 
