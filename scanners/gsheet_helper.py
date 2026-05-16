@@ -135,13 +135,15 @@ def add_to_tracking(ticker: str, strategy: str, source: str = "",
     ticker = ticker.upper().strip()
     today_str = datetime.now().strftime("%Y-%m-%d")
     existing = get_tracking()
-    # Dedup: same ticker + same calendar date (allow re-tracking on future days)
+    # Dedup: same ticker + same strategy + same calendar date.
+    # Allowing different strategies (e.g. CSP + LEAPS on the same ticker same day).
     if any(
         str(r.get("Ticker", "")).upper() == ticker
+        and str(r.get("Strategy", "")).upper() == strategy.upper()
         and str(r.get("Added_Date", "")).startswith(today_str)
         for r in existing
     ):
-        return False, f"{ticker} already tracked today."
+        return False, f"{ticker}/{strategy} already tracked today."
 
     action = "Sell" if strategy in _SELL_STRATEGIES else "Buy"
     qty    = "1 contract" if strategy in _OPTION_STRATEGIES else "100 shares"

@@ -77,20 +77,15 @@ SLOT          = os.environ.get("SCAN_SLOT", "am").lower()
 DATA_DIR      = os.path.join(ROOT, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
-OPTIONS_SCAN_STOCKS = int(os.environ.get("OPTIONS_SCAN_STOCKS",  20))  # top N stocks for CSP / CC / LEAPS scans
-GOLDEN_SCAN_TICKERS = int(os.environ.get("GOLDEN_SCAN_TICKERS",  50))  # top N stocks for Golden Scan
+OPTIONS_SCAN_STOCKS = int(os.environ.get("OPTIONS_SCAN_STOCKS",  75))  # top N stocks for CSP / LEAPS scans
+GOLDEN_SCAN_TICKERS = int(os.environ.get("GOLDEN_SCAN_TICKERS", 250))  # top N stocks for Golden Scan
 SCORE_MIN           = int(os.environ.get("SCORE_MIN",            60))  # auto-track threshold
-BATCH_SIZE          = int(os.environ.get("SCAN_BATCH_SIZE",      20))  # tickers per batch
+BATCH_SIZE          = int(os.environ.get("SCAN_BATCH_SIZE",      22))  # tickers per batch
 BATCH_PAUSE_S       = int(os.environ.get("SCAN_BATCH_PAUSE",     30))  # seconds between batches
 
 
 def log(msg: str):
     print(f"[{datetime.utcnow().strftime('%H:%M:%S')}] {msg}", flush=True)
-
-
-# ── Batch pause (same logic as the Streamlit scanners) ────────
-BATCH_SIZE    = 20
-BATCH_PAUSE_S = 30
 
 
 def _batch_sleep(i: int, total: int):
@@ -108,13 +103,13 @@ def _batch_sleep(i: int, total: int):
 
 def _scan_csp(tickers):
     from scanners.csp_scanner import scan_csp
-    df, _ = scan_csp(tickers, 25, 0.15, 0.30, 0.70, 20.0, 1, 45,
+    df, _ = scan_csp(tickers, 25, 0.15, 0.30, 0.65, 20.0, 1, 35,
                      batch_size=BATCH_SIZE, batch_pause=BATCH_PAUSE_S)
     return df
 
 def _scan_leaps(tickers):
     from scanners.leaps_scanner import scan_leaps
-    df, _ = scan_leaps(tickers, 300, 0.60, 0.75, 40, 5.0, 5000.0,
+    df, _ = scan_leaps(tickers, 300, 0.60, 0.75, 35, 5.0, 5000.0,
                        batch_size=BATCH_SIZE, batch_pause=BATCH_PAUSE_S)
     return df
 

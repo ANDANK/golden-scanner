@@ -23,13 +23,17 @@ except Exception:
 
 # ── Config ─────────────────────────────────────────────────────
 DATA_DIR             = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
-SCHED_STOCKS         = 20          # tickers per stock scan (keep short for automation)
+SCHED_STOCKS         = 75          # top N SP500 stocks for CSP / LEAPS scans (matches headless)
+SCHED_GOLDEN         = 250         # top N SP500 tickers for Golden Scan (matches headless)
+SCHED_BATCH_SIZE     = 22          # tickers per batch (matches headless)
+SCHED_BATCH_PAUSE    = 30          # seconds between batches (matches headless)
 SCHED_WINDOW_MIN     = 45          # minutes after target time the auto-banner still shows
 SLOTS                = {"am": (9, 0), "pm": (13, 0)}
 SLOT_LABELS          = {"am": "Morning 10:30 AM CST", "pm": "Afternoon  1:00 PM CST"}
 SLOT_ICONS           = {"am": "🌅", "pm": "🌇"}
 AUTO_TRACK_THRESHOLD = 60          # min score to auto-add diff tickers
-STRAT_DISPLAY_ORDER  = ["CSP", "LEAPS"]   # fixed display order; unknowns appended last
+STRAT_DISPLAY_ORDER  = ["Golden Scan", "CSP", "LEAPS"]  # fixed display order; unknowns appended last
+_GH_RAW_BASE         = "https://raw.githubusercontent.com/ANDANK/golden-scanner/main/data"
 
 
 # ── Helpers ────────────────────────────────────────────────────
@@ -59,45 +63,112 @@ def _save_results(slot: str, df: pd.DataFrame):
 
 
 def _load_results(slot: str) -> Tuple[pd.DataFrame, str]:
+    """
+    Load scan results for the given slot (am/pm).
+    Priority:
+      1. Local disk  — written by UI-triggered scan (fast, immediate)
+      2. GitHub raw  — committed by GitHub Actions (survives Streamlit restarts)
+    If both exist, return whichever has the later run_at timestamp so the
+    most-recent run always wins regardless of which path produced it.
+    """
+    local_d: dict | None = None
+    gh_d:    dict | None = None
+
+    # ── 1. Local disk ─────────────────────────────────────────
     path = _results_path(slot)
-    if not os.path.exists(path):
-        return pd.DataFrame(), ""
+    if os.path.exists(path):
+        try:
+            with open(path) as f:
+                local_d = json.load(f)
+        except Exception:
+            local_d = None
+
+    # ── 2. GitHub raw URL (GitHub Actions-committed results) ──
     try:
-        with open(path) as f:
-            d = json.load(f)
-        return pd.DataFrame(d.get("results", [])), d.get("run_at", "")
+        import urllib.request as _ur
+        today   = date.today().isoformat()
+        gh_url  = f"{_GH_RAW_BASE}/sched_{slot}_{today}.json"
+        with _ur.urlopen(gh_url, timeout=5) as resp:
+            gh_d = json.loads(resp.read())
     except Exception:
+        gh_d = None
+
+    # ── Pick the most-recent (or whichever is available) ──────
+    def _ts(d: dict) -> str:
+        return d.get("run_at", "") if d else ""
+
+    if local_d and gh_d:
+        best = local_d if _ts(local_d) >= _ts(gh_d) else gh_d
+    else:
+        best = local_d or gh_d
+
+    if not best:
         return pd.DataFrame(), ""
+
+    # Cache the winner locally so next load skips the GitHub fetch
+    if best is gh_d:
+        try:
+            with open(path, "w") as f:
+                json.dump(best, f)
+        except Exception:
+            pass
+
+    return pd.DataFrame(best.get("results", [])), best.get("run_at", "")
 
 
 # ── Run all 6 options scans ────────────────────────────────────
 
 def _run_all_scans(top_prog=None) -> pd.DataFrame:
-    from scanners.csp_scanner   import scan_csp
-    from scanners.leaps_scanner import scan_leaps
+    from scanners.csp_scanner      import scan_csp
+    from scanners.leaps_scanner    import scan_leaps
+    from scanners.combined_scanner import run_combined
 
-    stocks = SP500_SAMPLE[:SCHED_STOCKS]
-    etfs   = OPTIONS_ETF_UNIVERSE
+    stocks        = SP500_SAMPLE[:SCHED_STOCKS]
+    golden_tickers = SP500_SAMPLE[:SCHED_GOLDEN]
+    etfs          = OPTIONS_ETF_UNIVERSE
 
-    # (display_label, strategy_tag, universe_label, fn, tickers, positional_args)
+    # Shared batch params — match headless_scan.py exactly
+    _bs = SCHED_BATCH_SIZE
+    _bp = SCHED_BATCH_PAUSE
+
+    # Thin placeholder so run_combined's status_ph calls are no-ops in headless mode
+    class _PH:
+        def markdown(self, *a, **kw): pass
+        def empty(self):              pass
+        def progress(self, *a, **kw): pass
+
+    def _golden_fn(tickers):
+        return run_combined(tickers, include_value=False, include_growth=False,
+                            status_ph=_PH())
+
+    def _csp_fn(tickers):
+        df, _ = scan_csp(tickers, 25, 0.15, 0.30, 0.65, 20.0, 1, 35,
+                         batch_size=_bs, batch_pause=_bp)
+        return df
+
+    def _leaps_fn(tickers):
+        df, _ = scan_leaps(tickers, 300, 0.60, 0.75, 35, 5.0, 5000.0,
+                           batch_size=_bs, batch_pause=_bp)
+        return df
+
+    # (display_label, strategy_tag, universe_label, fn, tickers)
     # CC removed — requires owning 100 shares per contract.
-    # CSP: premium 0.65% (was 0.70%), DTE max 35 (was 45)
-    # LEAPS: IV rank max 35 (was 40) to avoid high-IV noise
+    # Parameters match headless_scan.py exactly:
+    #   CSP:   premium 0.65%, DTE max 35
+    #   LEAPS: IV rank max 35
+    #   Batch: size 22, pause 30 s
     scan_plan = [
-        ("CSP — Stocks",   "CSP",   "Stocks", scan_csp,   stocks,
-         (25, 0.15, 0.30, 0.65, 20.0, 1, 35)),
-        ("CSP — ETFs",     "CSP",   "ETFs",   scan_csp,   etfs,
-         (25, 0.15, 0.30, 0.65, 20.0, 1, 35)),
-        ("LEAPS — Stocks", "LEAPS", "Stocks", scan_leaps, stocks,
-         (300, 0.60, 0.75, 35, 5.0, 5000.0)),
-        ("LEAPS — ETFs",   "LEAPS", "ETFs",   scan_leaps, etfs,
-         (300, 0.60, 0.75, 35, 5.0, 5000.0)),
+        ("Golden Scan",    "Golden Scan", "Stock",  _golden_fn, golden_tickers),
+        ("CSP — Stocks",   "CSP",         "Stocks", _csp_fn,    stocks),
+        ("CSP — ETFs",     "CSP",         "ETFs",   _csp_fn,    etfs),
+        ("LEAPS — Stocks", "LEAPS",       "Stocks", _leaps_fn,  stocks),
+        ("LEAPS — ETFs",   "LEAPS",       "ETFs",   _leaps_fn,  etfs),
     ]
 
     n_plans = len(scan_plan)
     frames = []
 
-    for idx, (label, strategy, universe_lbl, fn, tickers, args) in enumerate(scan_plan):
+    for idx, (label, strategy, universe_lbl, fn, tickers) in enumerate(scan_plan):
         pct_done = int((idx / n_plans) * 90)   # reserve last 10% for save/finish
         if top_prog is not None:
             top_prog.progress(pct_done, text=f"📡 Strategy {idx+1}/{n_plans}: {label}…")
@@ -108,7 +179,9 @@ def _run_all_scans(top_prog=None) -> pd.DataFrame:
             unsafe_allow_html=True,
         )
         try:
-            df, _ = fn(tickers, *args)
+            df = fn(tickers)
+            if not isinstance(df, pd.DataFrame):
+                df = pd.DataFrame()
         except Exception as e:
             st.warning(f"{label} failed: {e}")
             df = pd.DataFrame()
@@ -433,7 +506,7 @@ def _show_results(df: pd.DataFrame, slot_label: str):
                     score = int(float(str(row.get("Score", 0) or 0)))
                 except Exception:
                     score = 0
-                _auto_key = f"{tk}_{slot_prefix}_{_today_str}"
+                _auto_key = f"{tk}_{strat}_{slot_prefix}_{_today_str}"
                 if score >= AUTO_TRACK_THRESHOLD and _auto_key not in _auto_set:
                     try:
                         from scanners.gsheet_helper import add_to_tracking
