@@ -67,6 +67,8 @@ ALL_PAGES = [
     # ── Info ───────────────────────────────────────────────────
     {"group": "Info",      "key": "ℹ️  About & Guide",
      "label": "About & Guide"},
+    {"group": "Info",      "key": "🔧  Tech Details",
+     "label": "Tech Details"},
 ]
 
 # Pages that are ALWAYS accessible — cannot be disabled

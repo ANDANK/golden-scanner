@@ -674,6 +674,7 @@ NAV_GROUPS = [
         "sep": "Info", "icon": "ℹ️", "expanded": False,
         "items": [
             {"key": "ℹ️  About & Guide"},
+            {"key": "🔧  Tech Details"},
         ],
     },
     {
@@ -1035,6 +1036,9 @@ elif page == "📅  Dividend + CC Capture":
     render()
 elif page == "ℹ️  About & Guide":
     from scanners.about import render
+    render()
+elif page == "🔧  Tech Details":
+    from scanners.tech_details import render
     render()
 elif page == "⚙️  Admin Panel":
     from scanners.admin_page import render

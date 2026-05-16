@@ -1,6 +1,5 @@
-# scanners/admin_page.py — Admin Panel
-# Tab 1: Scanner guide with parameters
-# Tab 2: Deduplicated stock universe browser
+# scanners/tech_details.py — Technical Details (moved from Admin Panel)
+# Tabs: Scanner Guide · Universe Browser · Scanner Tech & Rankings · Stock Analysis Methodology
 
 import streamlit as st
 import pandas as pd
@@ -10,17 +9,18 @@ from config import *
 from utils import section_header, metric_card
 
 
-# ── Scanner catalog ────────────────────────────────────────────
+# ── Scanner catalog (CC removed) ───────────────────────────────
 
 SCANNERS = [
     {
         "key":   "Golden Scan",
         "emoji": "🔀",
         "color": GOLD,
-        "desc":  "Combines all scanners, scores each signal, and ranks by multi-factor conviction. Best starting point for daily scans.",
+        "desc":  "Combines all scanners, scores each signal, and ranks by multi-factor conviction. Best starting point for daily scans. Also runs automatically at 10:30 AM and 1:00 PM CST on market days.",
         "params": [
             ("Universe", f"{len(SP500_SAMPLE)} tickers", "Stocks + ETFs"),
             ("Scoring",  "Multi-factor", "Price · Volume · Technicals · Fundamentals"),
+            ("Auto-runs", "AM & PM", "Results on Scheduled Scans page"),
         ],
         "criteria": "Runs Momentum, Growth, Value, and Headlines sub-scans. Each ticker is scored 0–100 and ranked.",
     },
@@ -79,26 +79,14 @@ SCANNERS = [
         "key":   "CSP",
         "emoji": "💰",
         "color": ACCENT_GREEN,
-        "desc":  "Cash-Secured Puts — sell OTM puts on stocks you want to own. Collects premium while waiting for a better entry.",
+        "desc":  "Cash-Secured Puts — sell OTM puts on stocks you want to own. Collects premium while waiting for a better entry. Runs on 75 top stocks + options ETF universe in scheduled scans.",
         "params": [
             ("IV Rank",   f"≥ {CSP_DEFAULTS['iv_rank_min']}",      "High IV = fat premium"),
             ("Delta",     f"{CSP_DEFAULTS['delta_min']}–{CSP_DEFAULTS['delta_max']}", "Strike selection"),
-            ("Premium",   f"≥ {CSP_DEFAULTS['premium_pct_min']}%",  "Of stock price per week"),
-            ("DTE",       f"{CSP_DEFAULTS['dte_min']}–{CSP_DEFAULTS['dte_max']} days", "Days to expiration"),
+            ("Premium",   "≥ 0.65%",                                "Of stock price per week"),
+            ("DTE",       "25–35 days",                             "Days to expiration"),
         ],
         "criteria": "Sell action · Strike below market · Positive theta · Bid/ask spread check",
-    },
-    {
-        "key":   "CC",
-        "emoji": "📦",
-        "color": ACCENT_BLUE,
-        "desc":  "Covered Calls — sell OTM calls against a long stock position to generate income.",
-        "params": [
-            ("Delta",    f"{CC_DEFAULTS['delta_min']}–{CC_DEFAULTS['delta_max']}", "Strike above market"),
-            ("Premium",  f"≥ {CC_DEFAULTS['premium_pct_min']}%",  "Of stock price"),
-            ("DTE",      f"{CC_DEFAULTS['dte_min']}–{CC_DEFAULTS['dte_max']} days", ""),
-        ],
-        "criteria": "Sell action · OTM call · Premium yield per expiration · Bid/ask spread check",
     },
     {
         "key":   "LEAPS",
@@ -108,7 +96,7 @@ SCANNERS = [
         "params": [
             ("DTE",      f"≥ {LEAPS_DEFAULTS['dte_min']} days",     "12–24 month expirations"),
             ("Delta",    f"{LEAPS_DEFAULTS['delta_min']}–{LEAPS_DEFAULTS['delta_max']}", "Deep ITM"),
-            ("IV Rank",  f"≤ {LEAPS_DEFAULTS['iv_rank_max']}",      "Buy when IV is low"),
+            ("IV Rank",  "≤ 35",                                     "Buy when IV is low"),
         ],
         "criteria": "Buy action · High delta (ITM) · Long dated · Low IV environment preferred",
     },
@@ -155,8 +143,6 @@ SCANNERS = [
 # ── Universe builder ───────────────────────────────────────────
 
 def _build_universe_df() -> pd.DataFrame:
-    """Deduplicated ticker table from all config universe lists."""
-    # Map ticker → set of universe names
     ticker_map: dict[str, list] = {}
 
     def _add(tickers, label):
@@ -165,34 +151,189 @@ def _build_universe_df() -> pd.DataFrame:
             if label not in ticker_map[t]:
                 ticker_map[t].append(label)
 
-    _add(SP500_SAMPLE[:200],            "Stock Universe (top 200)")
-    _add(SP500_SAMPLE[200:],            "Stock Universe (extended)")
-    _add(ETF_UNIVERSE,                  "ETF Universe")
-    _add(ETF_3X_UNIVERSE,               "3× ETF Scanner")
-    _add(OPTIONS_ETF_UNIVERSE,          "Options ETF")
+    _add(SP500_SAMPLE[:200],   "Stock Universe (top 200)")
+    _add(SP500_SAMPLE[200:],   "Stock Universe (extended)")
+    _add(ETF_UNIVERSE,         "ETF Universe")
+    _add(ETF_3X_UNIVERSE,      "3× ETF Scanner")
+    _add(OPTIONS_ETF_UNIVERSE, "Options ETF")
 
     rows = [
-        {
-            "Ticker":     t,
-            "Used In":    ", ".join(v),
-            "# Lists":    len(v),
-        }
+        {"Ticker": t, "Used In": ", ".join(v), "# Lists": len(v)}
         for t, v in sorted(ticker_map.items())
     ]
     return pd.DataFrame(rows)
 
 
-# ── Render helpers ─────────────────────────────────────────────
+# ── Scanner Tech Rankings — per-scanner action guides ──────────
+
+_RANKINGS = [
+    {
+        "scanner":    "Trend Continuation",
+        "tier":       "Tier 1",
+        "rating":     9.8,
+        "hold":       "2–6 months",
+        "confidence": "Extremely High",
+        "count":      "Low",
+        "noise":      "Very Low",
+        "icon":       "📈",
+        "action": {
+            "brief":   "Base break + RS highs + Vol ≥ 1.5×",
+            "sizing":  "MUST BUY → 1.5–2× position",
+            "checks": [
+                "Weekly chart shows 8–20 week tight base (price range ≤ 15% width)",
+                "Current weekly bar closed above the prior 8-week high (resistance break)",
+                "RS line vs SPY at a new 26-week high — rising faster than the market",
+                "Weekly volume ≥ 1.5× the 20-week average on the breakout candle",
+            ],
+            "must_buy":     "All 4 confirmed simultaneously — highest conviction setup on the platform. Full size immediately.",
+            "partial":      "3/4 confirmed → standard 1× size. 2/4 → watchlist only, wait for confirmation.",
+            "sizing_detail":"1.5–2× standard. Reduce to 1× if daily RSI is already above 72 at entry (elevated).",
+            "avoid":        "Volume below average on the breakout week — false breakout risk is high. Wait for next week.",
+        },
+    },
+    {
+        "scanner":    "Trend Stack",
+        "tier":       "Tier 1",
+        "rating":     9.5,
+        "hold":       "1–4 months",
+        "confidence": "Extremely High",
+        "count":      "Low",
+        "noise":      "Very Low",
+        "icon":       "🏛",
+        "action": {
+            "brief":   "Full 4-MA stack + rising 200 SMA + RSI 50–65",
+            "sizing":  "MUST BUY → 1–1.5× position",
+            "checks": [
+                "Daily chart: all 4 MAs visually stacked (Price > EMA20 > SMA50 > SMA200)",
+                "200-day SMA is sloping upward — compare its level to 10 days ago",
+                "Daily RSI is between 50–65 (not extended; 65–72 is elevated risk zone)",
+                "Volume is at minimum slightly above the 20-day average line",
+            ],
+            "must_buy":     "Full 4-MA stack + 200 SMA rising + RSI 50–65 + any volume ≥ 1.1× → MUST BUY",
+            "partial":      "Full stack but RSI 65–72: standard 1× with tighter stop. Stack incomplete: skip.",
+            "sizing_detail":"1–1.5× standard at RSI 50–65. Drop to 0.5× if RSI 65–72 (entry risk higher).",
+            "avoid":        "200 SMA flat or declining. Partial MA stack (only 3/4). RSI already > 72.",
+        },
+    },
+    {
+        "scanner":    "Trend Alignment",
+        "tier":       "Tier 1",
+        "rating":     9.4,
+        "hold":       "1–4 months",
+        "confidence": "Very High",
+        "count":      "Medium",
+        "noise":      "Low",
+        "icon":       "🎯",
+        "action": {
+            "brief":   "Fresh MACD cross + weekly resistance break + rising 30W SMA",
+            "sizing":  "MUST BUY → 1–1.25× position",
+            "checks": [
+                "Daily MACD histogram just crossed zero (check: yesterday ≤ 0, today > 0)",
+                "Visually confirm 30-week SMA is sloping upward vs 4 weeks ago",
+                "Weekly close is above the highest close of the prior 8 weekly bars",
+                "ADX > 25 on daily chart (confirms a real trend, not sideways chop)",
+            ],
+            "must_buy":     "Fresh MACD cross + rising 30W SMA + weekly resistance break confirmed → MUST BUY",
+            "partial":      "MACD cross but no resistance break yet: half size, wait for weekly break. Old MACD cross: skip.",
+            "sizing_detail":"Standard 1×. Aggressive: 1.25× if ADX > 30 also confirmed.",
+            "avoid":        "MACD histogram already positive for 3+ bars (not fresh — old signal, already priced in).",
+        },
+    },
+    {
+        "scanner":    "Multi-Factor",
+        "tier":       "Tier 1",
+        "rating":     9.2,
+        "hold":       "1–3 months",
+        "confidence": "Very High",
+        "count":      "Medium",
+        "noise":      "Low",
+        "icon":       "🎯",
+        "action": {
+            "brief":   "7/7 conditions + Score ≥ 80 + near 20D high",
+            "sizing":  "7/7 → 1.5×, 6/7 → 1×, ≤5/7 → watch only",
+            "checks": [
+                "Check the conditions count in the result (aim for 7/7 — all independent signals aligned)",
+                "Price is at or within 2% of the 20-day high (breakout zone, not extended)",
+                "MACD histogram bar is visually green and growing (not just barely positive)",
+                "Volume bar is taller than the average line on the chart — confirms participation",
+            ],
+            "must_buy":     "Score ≥ 80 AND 7/7 conditions AND price near 20D high → MUST BUY. 7/7 is rare and highest conviction.",
+            "partial":      "6/7 + score ≥ 70: standard size (1×). 5/7: watchlist or 0.5× max.",
+            "sizing_detail":"7/7 → 1.5× standard. 6/7 → 1×. ≤5/7 → watchlist only.",
+            "avoid":        "Score ≥ 80 but price extended far above 20D high (>5% above) — wait for a pullback.",
+        },
+    },
+    {
+        "scanner":    "Momentum Reset Bounce",
+        "tier":       "Tier 1",
+        "rating":     9.2,
+        "hold":       "1–3 months",
+        "confidence": "Very High",
+        "count":      "Low–Medium",
+        "noise":      "Low",
+        "icon":       "🔄",
+        "action": {
+            "brief":   "EMA touch + weekly MACD turning + bullish candle + SPY ≥ 30W SMA",
+            "sizing":  "Enter in two tranches: 50% now + 50% on EMA20 reclaim",
+            "checks": [
+                "Weekly chart: the week's low touched the 10W or 21W EMA line (price dipped to it, didn't break below)",
+                "Weekly MACD histogram just crossed from negative to zero/positive (first green bar after red)",
+                "Weekly candle is bullish: close > open AND close in the upper half of the week's range",
+                "SPY daily chart is above its own 30-week SMA (bull market context must be intact)",
+            ],
+            "must_buy":     "All 4 confirmed: EMA touch (no close below) + fresh MACD cross + bullish candle + SPY bullish → enter first tranche",
+            "partial":      "3/4: half size first tranche only. Wait 1 more weekly bar for full confirmation.",
+            "sizing_detail":"Tranche 1: 50% of standard when MACD crosses. Tranche 2: +50% when daily EMA20 reclaimed.",
+            "avoid":        "Price closed below the EMA it touched — that's a breakdown, not a bounce. Exit immediately.",
+        },
+    },
+    {
+        "scanner":    "Momentum",
+        "tier":       "Tier 2",
+        "rating":     8.7,
+        "hold":       "2–8 weeks",
+        "confidence": "High",
+        "count":      "Medium–High",
+        "noise":      "Moderate",
+        "icon":       "⚡",
+        "action": {
+            "brief":   "Score ≥ 80 + RSI 55–65 + sector ETF also bullish",
+            "sizing":  "Solo: 0.5–0.75×. Confirmed by weekly scanner: 1×",
+            "checks": [
+                "Check the sector ETF (e.g., XLK for tech, XLE for energy) is also above its SMA50",
+                "Daily RSI is 55–65 — sweet spot. Above 68: wait for a pullback. Below 55: pass.",
+                "MACD histogram has been positive for ≥ 2 bars (not just freshly crossed — needs follow-through)",
+                "Cross-check with weekly scanners: same ticker in Trend Continuation or Trend Stack? If yes, upgrade to 1× size.",
+            ],
+            "must_buy":     "Score ≥ 80 + RSI 55–65 + sector ETF bullish + confirmed by a weekly scanner → full 1× position",
+            "partial":      "Score ≥ 75 but no weekly confirmation: 0.5–0.75× max. High noise — use as watchlist feeder.",
+            "sizing_detail":"0.5–0.75× standard as standalone. 1× standard if confirmed by Trend Continuation or Trend Stack.",
+            "avoid":        "RSI > 68 (extended, chase risk). Sector ETF in downtrend. Score < 70 (insufficient alignment).",
+        },
+    },
+]
+
+_CONF_COLOR = {
+    "Extremely High": ACCENT_GREEN,
+    "Very High":      "#60A5FA",
+    "High":           GOLD,
+    "Moderate":       "#FBBF24",
+}
+_NOISE_COLOR = {
+    "Very Low": ACCENT_GREEN,
+    "Low":      "#60A5FA",
+    "Moderate": "#FBBF24",
+    "High":     ACCENT_RED,
+}
+
+
+# ── Render: Scanner Guide ─────────────────────────────────────
 
 def _render_guide():
-    # Summary strip — scanner count + quick stat
     c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("📡 Scanners Available", str(len(SCANNERS)))
-    with c2:
-        st.metric("🗂️ Universe Size", f"{len(SP500_SAMPLE):,} tickers")
-    with c3:
-        st.metric("⚡ Options ETFs", f"{len(OPTIONS_ETF_UNIVERSE)} liquid ETFs")
+    with c1: st.metric("📡 Scanners Available", str(len(SCANNERS)))
+    with c2: st.metric("🗂️ Universe Size", f"{len(SP500_SAMPLE):,} tickers")
+    with c3: st.metric("⚡ Options ETFs", f"{len(OPTIONS_ETF_UNIVERSE)} liquid ETFs")
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(
@@ -202,13 +343,12 @@ def _render_guide():
         unsafe_allow_html=True,
     )
 
-    # Group scanners visually
     groups = {
-        "📊 Multi-Factor": ["Golden Scan"],
-        "📈 Equity Scans": ["Momentum", "Growth", "Value", "Headlines"],
-        "🎯 Options Strategies": ["CSP", "CC", "LEAPS"],
+        "📊 Multi-Factor":       ["Golden Scan"],
+        "📈 Equity Scans":       ["Momentum", "Growth", "Value", "Headlines"],
+        "🎯 Options Strategies": ["CSP", "LEAPS"],
         "💰 Income & Dividends": ["Dividend", "Div+CC"],
-        "⚡ Leveraged": ["3x ETFs"],
+        "⚡ Leveraged":          ["3x ETFs"],
     }
 
     for group_name, keys in groups.items():
@@ -222,7 +362,6 @@ def _render_guide():
         for sc in group_scanners:
             color = sc["color"]
             with st.expander(f"{sc['emoji']}  **{sc['key']}**", expanded=False):
-                # Accent header bar
                 st.markdown(
                     f'<div style="border-left:4px solid {color};padding:10px 16px;'
                     f'background:linear-gradient(90deg,{color}18,{BG_PANEL});'
@@ -231,15 +370,12 @@ def _render_guide():
                     f'</div>',
                     unsafe_allow_html=True,
                 )
-
-                # Default param metric cards
                 if sc["params"]:
                     cols = st.columns(min(len(sc["params"]), 4))
                     for col, (label, value, help_text) in zip(cols, sc["params"]):
                         with col:
                             st.metric(label=label, value=value, help=help_text or None)
 
-            # Technical criteria
             st.markdown(
                 f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:10px;'
                 f'border-top:1px solid {BORDER_COLOR};padding-top:8px">'
@@ -248,22 +384,22 @@ def _render_guide():
             )
 
 
+# ── Render: Universe Browser ──────────────────────────────────
+
 def _render_universe():
     df = _build_universe_df()
     total_unique = len(df)
     multi_list   = int((df["# Lists"] >= 2).sum())
     etf_count    = int(df["Ticker"].isin(ETF_UNIVERSE + OPTIONS_ETF_UNIVERSE + ETF_3X_UNIVERSE).sum())
 
-    # Summary metrics
     m1, m2, m3, m4 = st.columns(4)
-    with m1: st.metric("Unique Tickers",  f"{total_unique:,}")
-    with m2: st.metric("In Multiple Lists", f"{multi_list}")
-    with m3: st.metric("ETF / Fund Count",  f"{etf_count}")
-    with m4: st.metric("Stock-Only",  f"{total_unique - etf_count:,}")
+    with m1: st.metric("Unique Tickers",     f"{total_unique:,}")
+    with m2: st.metric("In Multiple Lists",  f"{multi_list}")
+    with m3: st.metric("ETF / Fund Count",   f"{etf_count}")
+    with m4: st.metric("Stock-Only",         f"{total_unique - etf_count:,}")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Search
     c1, c2 = st.columns([4, 1])
     with c1:
         search = st.text_input("", placeholder="🔍 Search ticker or universe name…",
@@ -286,19 +422,14 @@ def _render_universe():
         unsafe_allow_html=True,
     )
 
-    # Colour-code rows: gold = 3+ lists, green = 2 lists, default = 1 list
     def _style_rows(row):
         if row["# Lists"] >= 3:
-            bg = f"background-color: {GOLD}22; color: {GOLD};"
+            return [f"background-color: {GOLD}22; color: {GOLD};"] * len(row)
         elif row["# Lists"] == 2:
-            bg = f"background-color: {ACCENT_GREEN}11; color: {ACCENT_GREEN};"
-        else:
-            bg = ""
-        return [bg] * len(row)
+            return [f"background-color: {ACCENT_GREEN}11; color: {ACCENT_GREEN};"] * len(row)
+        return [""] * len(row)
 
     styled = filtered.style.apply(_style_rows, axis=1)
-
-    import streamlit.components.v1 as components
     st.dataframe(
         styled,
         use_container_width=True,
@@ -310,8 +441,6 @@ def _render_universe():
             "# Lists":  st.column_config.NumberColumn("# Lists", width="small", format="%d"),
         },
     )
-
-    # Legend
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:8px">'
         f'<span style="color:{GOLD};font-weight:600">■</span> Gold row = appears in 3+ lists &nbsp;·&nbsp; '
@@ -321,100 +450,11 @@ def _render_universe():
     )
 
 
-# ── Scanner Tech & Rankings data ──────────────────────────────
-
-_RANKINGS = [
-    {
-        "scanner":    "Trend Continuation",
-        "tier":       "Tier 1",
-        "rating":     9.8,
-        "hold":       "2–6 months",
-        "confidence": "Extremely High",
-        "count":      "Low",
-        "noise":      "Very Low",
-        "rec":        "Must Keep",
-        "icon":       "📈",
-    },
-    {
-        "scanner":    "Trend Stack",
-        "tier":       "Tier 1",
-        "rating":     9.5,
-        "hold":       "1–4 months",
-        "confidence": "Extremely High",
-        "count":      "Low",
-        "noise":      "Very Low",
-        "rec":        "Must Keep",
-        "icon":       "🏛",
-    },
-    {
-        "scanner":    "Trend Alignment",
-        "tier":       "Tier 1",
-        "rating":     9.4,
-        "hold":       "1–4 months",
-        "confidence": "Very High",
-        "count":      "Medium",
-        "noise":      "Low",
-        "rec":        "Must Keep",
-        "icon":       "🎯",
-    },
-    {
-        "scanner":    "Multi-Factor",
-        "tier":       "Tier 1",
-        "rating":     9.2,
-        "hold":       "1–3 months",
-        "confidence": "Very High",
-        "count":      "Medium",
-        "noise":      "Low",
-        "rec":        "Must Keep",
-        "icon":       "🎯",
-    },
-    {
-        "scanner":    "Momentum Reset Bounce",
-        "tier":       "Tier 1",
-        "rating":     9.2,
-        "hold":       "1–3 months",
-        "confidence": "Very High",
-        "count":      "Low–Medium",
-        "noise":      "Low",
-        "rec":        "Must Keep",
-        "icon":       "🔄",
-    },
-    {
-        "scanner":    "Momentum",
-        "tier":       "Tier 2",
-        "rating":     8.7,
-        "hold":       "2–8 weeks",
-        "confidence": "High",
-        "count":      "Medium–High",
-        "noise":      "Moderate",
-        "rec":        "Keep",
-        "icon":       "⚡",
-    },
-]
-
-_CONF_COLOR = {
-    "Extremely High": ACCENT_GREEN,
-    "Very High":      "#60A5FA",
-    "High":           GOLD,
-    "Moderate":       "#FBBF24",
-}
-_NOISE_COLOR = {
-    "Very Low": ACCENT_GREEN,
-    "Low":      "#60A5FA",
-    "Moderate": "#FBBF24",
-    "High":     ACCENT_RED,
-}
-_REC_COLOR = {
-    "Must Keep": ACCENT_GREEN,
-    "Keep":      GOLD,
-    "Review":    "#FBBF24",
-}
-
+# ── Render: Scanner Tech & Rankings ──────────────────────────
 
 def _render_scanner_tech():
-    """Tab: Scanner Tech & Rankings"""
 
-    # ── 1. Ratings table ─────────────────────────────────────────
+    # ── 1. Rankings table ─────────────────────────────────────────
     st.markdown(
         f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
         f'letter-spacing:1.2px;margin-bottom:12px">&#127942; Scanner Rankings</div>',
@@ -424,8 +464,8 @@ def _render_scanner_tech():
     th = (f'color:{TEXT_MUTED};font-size:10px;font-weight:700;letter-spacing:.8px;'
           f'text-transform:uppercase;padding:9px 14px;border-bottom:2px solid {GOLD}55;'
           f'background:{BG_PANEL};white-space:nowrap')
-    headers = ["Scanner", "Tier", "Rating", "Best Hold", "Confidence\nWks→Months",
-               "Stock Count", "Noise", "Recommendation"]
+    headers = ["Scanner", "Tier", "Rating", "Best Hold", "Confidence",
+               "Stock Count", "Noise", "Action Guide"]
     hdr_html = "".join(f'<th style="{th}">{h}</th>' for h in headers)
 
     rows_html = []
@@ -437,9 +477,10 @@ def _render_scanner_tech():
         tier_c  = GOLD if r["tier"] == "Tier 1" else TEXT_MUTED
         conf_c  = _CONF_COLOR.get(r["confidence"], TEXT_MUTED)
         noise_c = _NOISE_COLOR.get(r["noise"], TEXT_MUTED)
-        rec_c   = _REC_COLOR.get(r["rec"], TEXT_MUTED)
         td      = f'padding:9px 14px;border-bottom:1px solid {BORDER_COLOR}22;background:{bg}'
 
+        action      = r["action"]
+        must_color  = ACCENT_GREEN if r["tier"] == "Tier 1" else GOLD
         rows_html.append(f"""
         <tr>
           <td style="{td};color:{GOLD};font-weight:700;font-size:13px">
@@ -459,14 +500,14 @@ def _render_scanner_tech():
           <td style="{td};color:{TEXT_MUTED};font-size:12px">{r['count']}</td>
           <td style="{td};color:{noise_c};font-size:12px">{r['noise']}</td>
           <td style="{td}">
-            <span style="background:{rec_c}22;color:{rec_c};border:1px solid {rec_c}44;
-                         padding:2px 9px;border-radius:4px;font-size:11px;font-weight:700">
-              {r['rec']}</span>
+            <div style="color:{must_color};font-size:11px;font-weight:700;margin-bottom:3px">
+              {action['brief']}</div>
+            <div style="color:{TEXT_MUTED};font-size:10px;line-height:1.4">{action['sizing']}</div>
           </td>
         </tr>""")
 
     st.markdown(
-        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}44;margin-bottom:28px">'
+        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}44;margin-bottom:20px">'
         f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
         f'<thead><tr>{hdr_html}</tr></thead>'
         f'<tbody>{"".join(rows_html)}</tbody>'
@@ -474,20 +515,124 @@ def _render_scanner_tech():
         unsafe_allow_html=True,
     )
 
-    # ── 2. Technical documentation ────────────────────────────────
+    # ── 2. Per-scanner action guide cards ─────────────────────────
     st.markdown(
         f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
-        f'margin:4px 0 24px"></div>',
+        f'margin:4px 0 20px"></div>',
         unsafe_allow_html=True,
     )
     st.markdown(
         f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:1.2px;margin-bottom:16px">&#128203; Technical Documentation</div>',
+        f'letter-spacing:1.2px;margin-bottom:14px">&#128203; Per-Scanner Action Playbook</div>',
+        unsafe_allow_html=True,
+    )
+
+    for r in _RANKINGS:
+        action  = r["action"]
+        tier_c  = ACCENT_GREEN if r["tier"] == "Tier 1" else GOLD
+        must_c  = ACCENT_GREEN if r["tier"] == "Tier 1" else GOLD
+
+        with st.expander(f"{r['icon']}  **{r['scanner']}** — {r['hold']} hold · {r['confidence']} confidence",
+                         expanded=False):
+            st.markdown(
+                f'<div style="border-left:4px solid {tier_c};padding:10px 16px;'
+                f'background:linear-gradient(90deg,{tier_c}12,{BG_PANEL});'
+                f'border-radius:0 8px 8px 0;margin-bottom:14px">'
+                f'<span style="color:{TEXT_PRIMARY};font-size:13px;line-height:1.6">'
+                f'<b style="color:{tier_c}">{r["tier"]}</b> scanner · Rating <b>{r["rating"]}/10</b> · '
+                f'Noise: <b>{r["noise"]}</b></span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+            c_left, c_right = st.columns([3, 2])
+
+            with c_left:
+                st.markdown(
+                    f'<div style="color:{tier_c};font-size:10px;font-weight:700;'
+                    f'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'
+                    f'&#9989; What to Check Manually Before Entering</div>',
+                    unsafe_allow_html=True,
+                )
+                check_items = "".join(
+                    f'<div style="padding:7px 0;border-bottom:1px solid {BORDER_COLOR}22;'
+                    f'display:flex;gap:10px;align-items:flex-start">'
+                    f'<span style="color:{tier_c};font-size:14px;flex-shrink:0">✓</span>'
+                    f'<div style="color:{TEXT_PRIMARY};font-size:12px;line-height:1.5">{chk}</div>'
+                    f'</div>'
+                    for chk in action["checks"]
+                )
+                st.markdown(
+                    f'<div style="background:{BG_PANEL};border-radius:6px;padding:4px 12px 2px">'
+                    f'{check_items}</div>',
+                    unsafe_allow_html=True,
+                )
+
+                if action.get("avoid"):
+                    st.markdown(
+                        f'<div style="background:{ACCENT_RED}0D;border:1px solid {ACCENT_RED}33;'
+                        f'border-radius:6px;padding:10px 14px;margin-top:12px">'
+                        f'<div style="color:{ACCENT_RED};font-size:10px;font-weight:700;'
+                        f'text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">&#128683; Avoid</div>'
+                        f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">{action["avoid"]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+
+            with c_right:
+                st.markdown(
+                    f'<div style="color:{must_c};font-size:10px;font-weight:700;'
+                    f'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'
+                    f'&#9889; MUST BUY Trigger</div>',
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    f'<div style="background:{must_c}15;border:1px solid {must_c}44;'
+                    f'border-radius:6px;padding:12px 14px;margin-bottom:10px">'
+                    f'<div style="color:{must_c};font-size:12px;font-weight:700;margin-bottom:6px">&#127942; MUST BUY when:</div>'
+                    f'<div style="color:{TEXT_PRIMARY};font-size:12px;line-height:1.7">{action["must_buy"]}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+                st.markdown(
+                    f'<div style="color:{GOLD};font-size:10px;font-weight:700;'
+                    f'text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">'
+                    f'&#128176; Position Sizing</div>',
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    f'<div style="background:{BG_PANEL};border-radius:6px;padding:10px 14px;margin-bottom:8px">'
+                    f'<div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:5px">{action["sizing"]}</div>'
+                    f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">{action["sizing_detail"]}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+                if action.get("partial"):
+                    st.markdown(
+                        f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
+                        f'border-radius:6px;padding:9px 12px">'
+                        f'<div style="color:{TEXT_MUTED};font-size:10px;font-weight:700;'
+                        f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Partial Signal</div>'
+                        f'<div style="color:{TEXT_PRIMARY};font-size:11px;line-height:1.5">{action["partial"]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+
+    # ── 3. Technical documentation ────────────────────────────────
+    st.markdown(
+        f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
+        f'margin:20px 0 24px"></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin-bottom:16px">&#128203; Technical Documentation — Scanner Conditions & Scoring</div>',
         unsafe_allow_html=True,
     )
 
     _DOC_SECTIONS = [
-        # ── Weekly setups ──────────────────────────────────────────
         {
             "key":   "Trend Alignment",
             "icon":  "🎯",
@@ -607,7 +752,6 @@ def _render_scanner_tech():
                 ("RS vs SPY ≥ 1.0", "7 pts", ""),
             ],
         },
-        # ── Daily setups ───────────────────────────────────────────
         {
             "key":   "Trend Stack",
             "icon":  "🏛",
@@ -740,13 +884,9 @@ def _render_scanner_tech():
     ]
 
     for doc in _DOC_SECTIONS:
-        color  = doc["color"]
+        color   = doc["color"]
         badge_c = doc["badge_c"]
-        with st.expander(
-            f"{doc['icon']}  **{doc['key']}** — {doc['style']}",
-            expanded=False,
-        ):
-            # Header bar
+        with st.expander(f"{doc['icon']}  **{doc['key']}** — {doc['style']}", expanded=False):
             st.markdown(
                 f'<div style="border-left:4px solid {color};padding:12px 16px;'
                 f'background:linear-gradient(90deg,{color}18,{BG_PANEL});'
@@ -765,7 +905,6 @@ def _render_scanner_tech():
             c_left, c_right = st.columns([3, 2])
 
             with c_left:
-                # Core conditions
                 st.markdown(
                     f'<div style="color:{color};font-size:10px;font-weight:700;'
                     f'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'
@@ -785,7 +924,6 @@ def _render_scanner_tech():
                     unsafe_allow_html=True,
                 )
 
-                # Avoid list (if any)
                 if doc.get("avoid"):
                     st.markdown(
                         f'<div style="color:{ACCENT_RED};font-size:10px;font-weight:700;'
@@ -805,7 +943,6 @@ def _render_scanner_tech():
                     )
 
             with c_right:
-                # Scoring breakdown
                 st.markdown(
                     f'<div style="color:{GOLD};font-size:10px;font-weight:700;'
                     f'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'
@@ -843,7 +980,6 @@ def _render_scanner_tech():
                     unsafe_allow_html=True,
                 )
 
-    # ── Footer note ───────────────────────────────────────────────
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-left:3px solid {GOLD};'
         f'border-radius:0 6px 6px 0;padding:12px 16px;margin-top:20px;'
@@ -858,16 +994,14 @@ def _render_scanner_tech():
     )
 
 
-# ── Stock Analysis Methodology ─────────────────────────────────
+# ── Render: Stock Analysis Methodology ───────────────────────
 
 def _render_stock_analysis_methodology():
-    """Tab: How the Stock Analysis page computes its scores and signals."""
-
     ACCENT_BLUE_LOCAL = "#3B82F6"
     PURPLE = "#A78BFA"
-    YELLOW = "#FBBF24"   # not exported from config — define locally
+    YELLOW = "#FBBF24"
+    TEAL   = "#2DD4BF"
 
-    # ── Intro blurb ───────────────────────────────────────────────
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {GOLD}33;border-left:4px solid {GOLD};'
         f'border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:24px;'
@@ -881,7 +1015,6 @@ def _render_stock_analysis_methodology():
         unsafe_allow_html=True,
     )
 
-    # ══ Section 1: Composite score formulas ══════════════════════
     st.markdown(
         f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
         f'letter-spacing:1.2px;margin:4px 0 14px">&#127919; Composite Score Formulas</div>',
@@ -996,7 +1129,6 @@ def _render_stock_analysis_methodology():
                 unsafe_allow_html=True,
             )
 
-    # ══ Section 2: Indicator importance ranking ══════════════════
     st.markdown(
         f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
         f'margin:24px 0 20px"></div>',
@@ -1009,7 +1141,6 @@ def _render_stock_analysis_methodology():
     )
 
     _INDICATORS = [
-        # (rank, indicator, timeframe, why, color_tier)
         (1,  "MACD Weekly Cross + Histogram",    "Weekly",       "Best leading signal for swing trades. Weekly confirmation eliminates daily noise. A fresh weekly MACD cross after a pullback = highest-conviction entry.", ACCENT_GREEN),
         (2,  "MA Trend Stack (Full Alignment)",  "Daily",        "Price > EMA20 > SMA50 > SMA200. When all 4 levels of institutional money are aligned, continuation probability is highest. Partial stacks are significant discounts.", ACCENT_GREEN),
         (3,  "RSI Zone (Daily + Weekly)",        "Daily+Weekly", "RSI 55–68 is the momentum sweet spot — trending but not overbought. Weekly RSI in this zone confirms a healthy, sustained move. RSI >75 = fade the move.", ACCENT_GREEN),
@@ -1033,7 +1164,6 @@ def _render_stock_analysis_methodology():
     ind_rows = ""
     for rank, name, tf, why, color in _INDICATORS:
         bar_w  = max(4, int((16 - rank) / 15 * 120))
-        bar_c  = color
         td     = f"padding:9px 12px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:top"
         ind_rows += (
             f'<tr>'
@@ -1044,7 +1174,7 @@ def _render_stock_analysis_methodology():
             f'<td style="{td}">'
             f'<div style="color:{color};font-size:12px;font-weight:700;margin-bottom:3px">{name}</div>'
             f'<div style="background:#1a1a2a;border-radius:2px;height:4px;width:{bar_w}px">'
-            f'<div style="background:{bar_c};height:4px;border-radius:2px;width:100%"></div>'
+            f'<div style="background:{color};height:4px;border-radius:2px;width:100%"></div>'
             f'</div>'
             f'</td>'
             f'<td style="{td};white-space:nowrap">'
@@ -1069,60 +1199,48 @@ def _render_stock_analysis_methodology():
         unsafe_allow_html=True,
     )
 
-    # ══ Section 3: Signal thresholds ═════════════════════════════
-    TEAL = "#2DD4BF"
+    # ── Signal Thresholds ─────────────────────────────────────────
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;'
         f'padding:16px 20px;margin-top:4px">'
         f'<div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:10px;'
         f'text-transform:uppercase;letter-spacing:1px">&#128397; Signal Thresholds</div>'
         f'<div style="display:flex;gap:16px;flex-wrap:wrap">'
-        # BUY
         f'<div style="background:{ACCENT_GREEN}15;border:1px solid {ACCENT_GREEN}44;border-radius:6px;'
         f'padding:10px 20px;text-align:center;min-width:110px">'
         f'<div style="color:{ACCENT_GREEN};font-size:22px;font-weight:800">≥ 60%</div>'
         f'<div style="color:{ACCENT_GREEN};font-size:11px;font-weight:700;margin-top:2px">🟢 BUY</div>'
         f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
-        f'Composite ≥ 60<br>Most indicators bullish</div>'
-        f'</div>'
-        # NEUTRAL
+        f'Composite ≥ 60<br>Most indicators bullish</div></div>'
         f'<div style="background:{YELLOW}15;border:1px solid {YELLOW}44;border-radius:6px;'
         f'padding:10px 20px;text-align:center;min-width:110px">'
         f'<div style="color:{YELLOW};font-size:22px;font-weight:800">41–59%</div>'
         f'<div style="color:{YELLOW};font-size:11px;font-weight:700;margin-top:2px">🟡 NEUTRAL</div>'
         f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
-        f'Mixed signals<br>Wait for resolution</div>'
-        f'</div>'
-        # SETUP
+        f'Mixed signals<br>Wait for resolution</div></div>'
         f'<div style="background:{TEAL}15;border:1px solid {TEAL}44;border-radius:6px;'
         f'padding:10px 20px;text-align:center;min-width:130px">'
         f'<div style="color:{TEAL};font-size:20px;font-weight:800">≤ 40% + 🔄</div>'
         f'<div style="color:{TEAL};font-size:11px;font-weight:700;margin-top:2px">🔵 SETUP / WATCH</div>'
         f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
-        f'Composite &lt; 40 BUT<br>Weekly MACD turned ✅<br>RSI 28–64 (reset zone)</div>'
-        f'</div>'
-        # SELL
+        f'Composite &lt; 40 BUT<br>Weekly MACD turned ✅<br>RSI 28–64 (reset zone)</div></div>'
         f'<div style="background:{ACCENT_RED}15;border:1px solid {ACCENT_RED}44;border-radius:6px;'
         f'padding:10px 20px;text-align:center;min-width:110px">'
         f'<div style="color:{ACCENT_RED};font-size:22px;font-weight:800">≤ 40%</div>'
         f'<div style="color:{ACCENT_RED};font-size:11px;font-weight:700;margin-top:2px">🔴 SELL</div>'
         f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px;line-height:1.4">'
-        f'Composite ≤ 40<br>Avoid or short bias</div>'
-        f'</div>'
-        # Explanation
+        f'Composite ≤ 40<br>Avoid or short bias</div></div>'
         f'<div style="flex:1;min-width:200px;color:{TEXT_MUTED};font-size:11px;line-height:1.9;padding:4px 0">'
         f'<b style="color:{TEXT_PRIMARY}">Confidence % is directional</b> — BUY shows the raw composite; '
         f'SELL shows 100 − composite (so a 85% SELL = composite of 15 = heavily bearish).<br>'
         f'<b style="color:{TEAL}">SETUP 🔄</b> is a special tier for stocks where the MA stack is broken '
         f'(bearish composite) but the <b style="color:{TEXT_PRIMARY}">Weekly MACD just turned positive on '
-        f'a reset RSI</b> — the classic Momentum Reset Bounce entry signal. Not a buy YET, but watch closely. '
-        f'An ⚡ W-MACD conflict badge also appears in the summary table when these signals disagree.'
-        f'</div>'
-        f'</div></div>',
+        f'a reset RSI</b> — the classic Momentum Reset Bounce entry signal.'
+        f'</div></div></div>',
         unsafe_allow_html=True,
     )
 
-    # ══ Section 4: SETUP signal — what it means & how to trade ═══
+    # ── SETUP Signal Action Plan ──────────────────────────────────
     st.markdown(
         f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
         f'margin:24px 0 20px"></div>',
@@ -1134,7 +1252,6 @@ def _render_stock_analysis_methodology():
         unsafe_allow_html=True,
     )
 
-    # What it is
     st.markdown(
         f'<div style="background:{TEAL}0D;border:1px solid {TEAL}44;border-left:4px solid {TEAL};'
         f'border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:16px">'
@@ -1146,40 +1263,8 @@ def _render_stock_analysis_methodology():
         f'but the <b style="color:{TEAL}">Weekly MACD just turned positive</b> while RSI is in the '
         f'28–64 reset zone. This is the early signal of the '
         f'<b style="color:{TEXT_PRIMARY}">Momentum Reset Bounce</b> pattern — smart money starting '
-        f'to accumulate before the trend officially recovers. You are seeing it <b>before</b> the '
-        f'breakout, not after. That\'s the opportunity — and the risk.</div>'
+        f'to accumulate before the trend officially recovers.</div>'
         f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    # Three conditions
-    cond_rows = [
-        (f"Weekly MACD cross ✅ (MACD &gt; Signal line)", TEAL,
-         "The most important signal. Weekly MACD crossing above its signal line means medium-term momentum is inflecting from bearish to bullish. One weekly candle does not confirm — watch for 2–3 consecutive weeks of positive histogram to build confidence."),
-        (f"Weekly MACD histogram &gt; 0", TEAL,
-         "The histogram measures the distance between MACD and signal. Growing positive histogram = momentum accelerating. Shrinking or negative histogram after a cross = false start, stay out."),
-        (f"Weekly RSI 28–64 (reset zone)", ACCENT_BLUE_LOCAL,
-         "RSI has cooled from a prior high (worked off overbought) and is turning up from a low base. This is ideal entry timing — not oversold panic, not yet overbought. RSI below 28 = still falling, wait. RSI above 64 = already moving, chasing risk."),
-        (f"MA stack NOT yet rebuilt (that's the point)", YELLOW,
-         "The stock is still below SMA50 or the full MA alignment hasn't recovered. This is why the signal is SETUP not BUY. The MA stack rebuilding is the confirmation you wait for — it signals the recovery is real, not just a dead-cat bounce."),
-    ]
-    for cond, color, detail in cond_rows:
-        st.markdown(
-            f'<div style="display:flex;gap:12px;padding:9px 0;border-bottom:1px solid {BORDER_COLOR}22">'
-            f'<div style="width:4px;background:{color};border-radius:2px;flex-shrink:0"></div>'
-            f'<div>'
-            f'<div style="color:{color};font-size:12px;font-weight:700;margin-bottom:3px">{cond}</div>'
-            f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">{detail}</div>'
-            f'</div></div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-
-    # Action table
-    st.markdown(
-        f'<div style="color:{GOLD};font-size:11px;font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:1px;margin-bottom:10px">&#127919; Action Plan — What To Do With a SETUP Signal</div>',
         unsafe_allow_html=True,
     )
 
@@ -1188,15 +1273,15 @@ def _render_stock_analysis_methodology():
          "SETUP just appeared with no other confirmation",
          "Zero position. Add to watchlist. Check back in 1–2 weeks.",
          "Too early. One weekly MACD cross can reverse. No conviction yet."),
-        ("Starter position (25–33%)", f"background:{TEAL}0D", TEAL,
+        ("Starter (25–33%)", f"background:{TEAL}0D", TEAL,
          "Weekly MACD positive 2nd consecutive week AND Daily MACD also turning Bull AND RSI daily crossing 50",
          "Enter 25–33% of intended position size. Set stop below recent swing low.",
          "Early entry with controlled risk. You get in before the crowd at lower price."),
-        ("Add to half size (50%)", f"background:{ACCENT_GREEN}0D", ACCENT_GREEN,
+        ("Add to half (50%)", f"background:{ACCENT_GREEN}0D", ACCENT_GREEN,
          "Price reclaims EMA20 on daily with expanding volume",
          "Add another 25% position. Raise stop to breakeven on first tranche.",
          "Price is now showing buying momentum. First confirmation of recovery."),
-        ("Full position (100%)", f"background:{ACCENT_GREEN}18", ACCENT_GREEN,
+        ("Full (100%)", f"background:{ACCENT_GREEN}18", ACCENT_GREEN,
          "Price reclaims SMA50 with volume + RSI daily in 55–68 zone",
          "Add final tranche. This is now a BUY signal — the SETUP has resolved.",
          "Full MA recovery = high-conviction trend resumption. Institutional buyers confirmed."),
@@ -1206,9 +1291,9 @@ def _render_stock_analysis_methodology():
          "Failed setups happen ~40% of the time. Small loss early beats large loss later."),
     ]
 
-    th = (f"padding:8px 12px;color:{TEXT_MUTED};font-size:9px;font-weight:700;"
-          f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
-          f"border-bottom:2px solid {GOLD}44;white-space:nowrap")
+    th_a = (f"padding:8px 12px;color:{TEXT_MUTED};font-size:9px;font-weight:700;"
+            f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
+            f"border-bottom:2px solid {GOLD}44;white-space:nowrap")
     act_html = ""
     for action, row_bg, color, trigger, trade, reason in action_rows:
         act_html += (
@@ -1224,34 +1309,29 @@ def _render_stock_analysis_methodology():
         f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}33;margin-bottom:20px">'
         f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
         f'<thead><tr>'
-        f'<th style="{th}">Action</th>'
-        f'<th style="{th}">Trigger / Confirmation</th>'
-        f'<th style="{th}">What to Do</th>'
-        f'<th style="{th}">Why</th>'
+        f'<th style="{th_a}">Action</th>'
+        f'<th style="{th_a}">Trigger / Confirmation</th>'
+        f'<th style="{th_a}">What to Do</th>'
+        f'<th style="{th_a}">Why</th>'
         f'</tr></thead>'
         f'<tbody>{act_html}</tbody>'
         f'</table></div>',
         unsafe_allow_html=True,
     )
 
-    # Key insight box
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {TEAL}33;border-left:3px solid {TEAL};'
         f'border-radius:0 6px 6px 0;padding:12px 16px;margin-bottom:8px;'
         f'color:{TEXT_MUTED};font-size:12px;line-height:1.8">'
         f'<b style="color:{TEAL}">&#128161; Key insight:</b> '
-        f'SETUP stocks fail ~35–40% of the time (the weekly MACD cross reverses). '
-        f'The edge comes from <b style="color:{TEXT_PRIMARY}">position sizing</b> — '
-        f'starter positions mean a failed setup costs you 1–2%, while a successful setup '
-        f'that becomes a BUY can return 15–40% before you add full size. '
-        f'The &#9889; W-MACD conflict badge (SELL overall but weekly MACD bullish) is the '
-        f'earliest-possible SETUP precursor — watch those especially on high-quality tickers '
-        f'(NVDA, MSFT, AAPL, etc.) during market pullbacks.'
-        f'</div>',
+        f'SETUP stocks fail ~35–40% of the time. The edge comes from '
+        f'<b style="color:{TEXT_PRIMARY}">position sizing</b> — '
+        f'starter positions mean a failed setup costs 1–2%, while a successful setup '
+        f'that becomes a BUY can return 15–40% before you add full size.</div>',
         unsafe_allow_html=True,
     )
 
-    # ══ Section 5: Gold Standard reference ════════════════════════
+    # ── Gold Standard reference ────────────────────────────────────
     st.markdown(
         f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
         f'margin:24px 0 20px"></div>',
@@ -1262,325 +1342,64 @@ def _render_stock_analysis_methodology():
         f'letter-spacing:1.2px;margin-bottom:14px">&#10022; Gold Standard — How It Works</div>',
         unsafe_allow_html=True,
     )
-
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;'
         f'padding:16px 20px;margin-bottom:16px">'
         f'<div style="color:{TEXT_PRIMARY};font-size:13px;line-height:1.8;margin-bottom:12px">'
         f'The <b style="color:{GOLD}">✦ Gold Standard</b> tab (inside Stock Analysis) runs the full '
         f'9-indicator engine on a fixed list of 117 pre-loaded tickers with a single button press. '
-        f'No typing required. Results are cached for 4 hours — pressing the button again within '
-        f'4 hours returns the cached table instantly without re-fetching data.'
+        f'No typing required. Results are cached for 4 hours.'
         f'</div>'
         f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'
-
         f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;padding:12px">'
         f'<div style="color:{GOLD};font-size:11px;font-weight:700;margin-bottom:6px">&#9654; Run Scan</div>'
         f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">Runs all 117 tickers. '
-        f'If results are &lt; 4h old, shows cached table immediately. Progress bar shown on fresh scan.</div>'
-        f'</div>'
-
+        f'If results are &lt; 4h old, shows cached table immediately.</div></div>'
         f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;padding:12px">'
         f'<div style="color:{GOLD};font-size:11px;font-weight:700;margin-bottom:6px">&#x1F504; Clear &amp; Rescan</div>'
         f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">Forces a full fresh scan '
-        f'regardless of cache age. Use when market has moved significantly since last scan.</div>'
-        f'</div>'
-
+        f'regardless of cache age. Use when market has moved significantly.</div></div>'
         f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:6px;padding:12px">'
         f'<div style="color:{GOLD};font-size:11px;font-weight:700;margin-bottom:6px">&#128465; Clear Cache</div>'
-        f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">Wipes the cached results '
-        f'without triggering a new scan. Returns to the landing screen.</div>'
-        f'</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.6">Wipes cached results '
+        f'without triggering a new scan. Returns to the landing screen.</div></div>'
         f'</div></div>',
         unsafe_allow_html=True,
     )
 
-    # Table column guide
-    st.markdown(
-        f'<div style="color:{GOLD};font-size:11px;font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:1px;margin-bottom:10px">&#128203; Standard Table Columns Explained</div>',
-        unsafe_allow_html=True,
-    )
-
-    col_rows = [
-        ("🟢/🔵/🟡/🔴", "Signal circle",    "Green=Buy · Blue=Setup · Yellow=Neutral · Red=Sell at a glance"),
-        ("Ticker",        "Symbol + price",   "Current price and day change %. Click ticker in Deep Analysis for full report."),
-        ("Signal %",      "Confidence badge", "BUY: raw composite (higher=more bullish). SELL: 100−composite (higher=more bearish). SETUP: raw composite shown in teal."),
-        ("W-MACD",        "Weekly MACD",      "Bull/Bear cross on weekly chart + raw MACD/Signal values. Weekly confirmation is highest-weight signal. ⚡ conflict badge when weekly bullish but overall SELL."),
-        ("D-MACD ★",      "Daily MACD",       "NEW COLUMN. Bull=cross up + histogram positive. Cross~=crossed but histogram still negative (weak signal). Bear=below signal. Shows short-term momentum direction."),
-        ("RSI D/W",       "RSI daily/weekly", "D=daily RSI, W=weekly RSI. Green=55–68 momentum zone. Red=overbought >70 or oversold <30. Yellow=neutral."),
-        ("Trend",         "MA stack label",   "Full=Price>EMA20>SMA50>SMA200 (strongest). Part=partial alignment. Weak=broken stack. Score bar shows 0–100."),
-        ("Mom",           "Momentum score",   "0–100 bar. MACD+RSI+Volume+OBV combined. ≥70 green, 50–69 yellow, <50 red."),
-        ("Buy↑",          "Buy Pressure",     "0–100 bar. Volume spike+OBV+MFI+breakout proximity+RS vs SPY combined."),
-        ("Vol/RS",        "Volume + RS",       "Volume ratio vs 20-day avg (🔥=spike ≥1.5×). RS=relative strength vs SPY (>1.05=outperforming)."),
-        ("Breakout ★",    "Breakout status",  "NEW COLUMN. 🚀 Confirmed=new 20-day high + volume spike. ⚡ Near=within 2% of high. —=no breakout."),
-    ]
-
-    th2 = (f"padding:7px 12px;color:{TEXT_MUTED};font-size:9px;font-weight:700;"
-           f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
-           f"border-bottom:2px solid {GOLD}44")
-    col_html = ""
-    for i, (col, label, desc) in enumerate(col_rows):
-        bg = BG_CARD if i % 2 == 0 else BG_PANEL
-        new_tag = f'<span style="background:{TEAL}22;color:{TEAL};border:1px solid {TEAL}44;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px">NEW</span>' if "★" in col else ""
-        col_clean = col.replace(" ★", "")
-        col_html += (
-            f'<tr style="background:{bg}">'
-            f'<td style="padding:8px 12px;color:{GOLD};font-weight:700;font-size:12px;white-space:nowrap;font-family:\'DM Mono\',monospace">{col_clean}{new_tag}</td>'
-            f'<td style="padding:8px 12px;color:{TEXT_MUTED};font-size:11px;white-space:nowrap">{label}</td>'
-            f'<td style="padding:8px 12px;color:{TEXT_PRIMARY};font-size:11px;line-height:1.6">{desc}</td>'
-            f'</tr>'
-        )
-
-    st.markdown(
-        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}33;margin-bottom:16px">'
-        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
-        f'<thead><tr>'
-        f'<th style="{th2}">Column</th>'
-        f'<th style="{th2}">What it is</th>'
-        f'<th style="{th2}">How to read it</th>'
-        f'</tr></thead>'
-        f'<tbody>{col_html}</tbody>'
-        f'</table></div>',
-        unsafe_allow_html=True,
-    )
-
-    # Workflow tip
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {GOLD}33;border-left:3px solid {GOLD};'
         f'border-radius:0 6px 6px 0;padding:12px 16px;color:{TEXT_MUTED};font-size:12px;line-height:1.8">'
         f'<b style="color:{GOLD}">&#128161; Recommended workflow:</b> '
         f'Run Gold Standard each morning → filter by <b style="color:{TEXT_PRIMARY}">BUY + SETUP</b> → '
         f'sort by <b style="color:{TEXT_PRIMARY}">Confidence ↓</b> → '
-        f'for any SETUP tickers with D-MACD also turning Bull, open the '
-        f'<b style="color:{GOLD}">Deep Analysis</b> tab and type the ticker for a full report including '
-        f'RSI gauge, Bollinger Bands, breakout chart, short squeeze data, and ATR for stop placement.'
-        f'</div>',
+        f'for SETUP tickers with D-MACD also turning Bull, open the '
+        f'<b style="color:{GOLD}">Deep Analysis</b> tab for a full report.</div>',
         unsafe_allow_html=True,
     )
 
 
 # ── Main render ────────────────────────────────────────────────
 
-def _render_page_management():
-    """Admin tab — toggle page visibility for regular users. 3-column card layout."""
-    from scanners.page_manager import ALL_PAGES, GROUP_META, _load_settings, save_page_settings
-
-    # ── Info banner ───────────────────────────────────────────
-    st.markdown(
-        f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
-        f'border-left:3px solid {GOLD};border-radius:8px;padding:16px 20px;margin-bottom:28px">'
-        f'<div style="color:{GOLD};font-size:15px;font-weight:600;margin-bottom:8px">'
-        f'ℹ️ How Page Visibility Works</div>'
-        f'<div style="color:{TEXT_MUTED};font-size:14px;line-height:1.9">'
-        f'<strong style="color:{TEXT_PRIMARY}">Regular users</strong> (APP_PASSWORD) only see '
-        f'<em>enabled</em> pages. Disabled pages show a "Contact Admin" screen instead of content.<br>'
-        f'<strong style="color:{TEXT_PRIMARY}">Admin users</strong> (ADMIN_PASSWORD) always see '
-        f'<em>all pages</em> regardless of these settings. &nbsp;'
-        f'<strong style="color:{TEXT_PRIMARY}">🔒 Required</strong> pages cannot be disabled.</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    # Load fresh settings (bypasses session cache — reads GSheets/disk directly)
-    settings = _load_settings()
-
-    # Build ordered group dict
-    groups: dict = {}
-    for p in ALL_PAGES:
-        g = p["group"]
-        if g not in groups:
-            groups[g] = []
-        groups[g].append(p)
-
-    new_settings: dict = {}
-    group_list = list(groups.items())
-
-    # ── 3-column card grid ────────────────────────────────────
-    # Groups: Dashboard | Stocks | Options  (row 1)
-    #         Dividend  | Info   | —        (row 2)
-    grid = st.columns(3, gap="large")
-
-    for gi, (group_name, pages) in enumerate(group_list):
-        icon = GROUP_META.get(group_name, {"icon": "📁"})["icon"]
-
-        with grid[gi % 3]:
-            # Group card header
-            st.markdown(
-                f'<div style="background:linear-gradient(135deg,rgba(245,200,66,0.16),rgba(245,200,66,0.04));'
-                f'border:1px solid rgba(245,200,66,0.28);border-radius:8px;'
-                f'padding:11px 18px;margin-bottom:14px;">'
-                f'<span style="color:{GOLD};font-size:14px;font-weight:700;'
-                f'letter-spacing:1.8px;text-transform:uppercase">'
-                f'{icon}&nbsp; {group_name}</span></div>',
-                unsafe_allow_html=True,
-            )
-
-            for pi, p in enumerate(pages):
-                is_required = p.get("required", False)
-                is_sub      = "parent" in p
-                current_val = settings.get(p["key"], True)
-                widget_key  = f"_pm_tog_{gi}_{pi}"
-
-                lbl_col, tog_col = st.columns([6, 1])
-
-                with lbl_col:
-                    indent  = "padding-left:22px;" if is_sub else ""
-                    prefix  = "↳" if is_sub else "•"
-                    txt_clr = TEXT_MUTED if is_required else TEXT_PRIMARY
-                    req_badge = (
-                        f'&nbsp;<span style="background:rgba(245,200,66,0.14);color:{GOLD};'
-                        f'font-size:10px;font-weight:700;letter-spacing:0.6px;'
-                        f'text-transform:uppercase;padding:2px 8px;border-radius:10px;'
-                        f'border:1px solid rgba(245,200,66,0.30)">REQUIRED</span>'
-                        if is_required else ""
-                    )
-                    st.markdown(
-                        f'<div style="{indent}color:{txt_clr};font-size:15px;'
-                        f'padding:7px 0;line-height:1.5">'
-                        f'{prefix}&nbsp;{p["label"]}{req_badge}</div>',
-                        unsafe_allow_html=True,
-                    )
-
-                with tog_col:
-                    if is_required:
-                        try:
-                            st.toggle("", value=True, disabled=True, key=widget_key)
-                        except Exception:
-                            st.checkbox("", value=True, disabled=True, key=widget_key)
-                        new_settings[p["key"]] = True
-                    else:
-                        try:
-                            val = st.toggle("", value=current_val, key=widget_key)
-                        except Exception:
-                            val = st.checkbox("", value=current_val, key=widget_key)
-                        new_settings[p["key"]] = val
-
-    # ── Save bar ──────────────────────────────────────────────
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown(
-        f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
-        f'margin-bottom:22px"></div>',
-        unsafe_allow_html=True,
-    )
-
-    _disabled_count = sum(1 for v in new_settings.values() if not v)
-    _enabled_count  = len(new_settings) - _disabled_count
-
-    col_save, col_status, _ = st.columns([2, 5, 1])
-    with col_save:
-        if st.button("💾  Save Page Settings", key="_pm_save_btn", use_container_width=True):
-            save_page_settings(new_settings)
-            st.success(
-                f"✅ Saved — {_enabled_count} pages enabled, "
-                f"{_disabled_count} disabled. Changes are live immediately."
-            )
-    with col_status:
-        st.markdown(
-            f'<div style="color:{TEXT_MUTED};font-size:15px;padding:8px 4px">'
-            f'<strong style="color:{GOLD}">{_enabled_count}</strong> enabled &nbsp;·&nbsp; '
-            f'<strong style="color:#EF4444">{_disabled_count}</strong> disabled</div>',
-            unsafe_allow_html=True,
-        )
-
-
 def render():
-    # ── Admin password gate ────────────────────────────────────
-    if not st.session_state.get("_admin_auth", False):
-        st.markdown("<br>", unsafe_allow_html=True)
-        _, col, _ = st.columns([1, 2, 1])
-        with col:
-            st.markdown(
-                f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
-                f'border-top:3px solid {GOLD};border-radius:12px;padding:36px 32px;text-align:center;margin-top:40px">'
-                f'<div style="font-size:44px;margin-bottom:12px">🔐</div>'
-                f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:{GOLD};'
-                f'font-weight:700;letter-spacing:2px;margin-bottom:8px">Admin Panel</div>'
-                f'<div style="color:{TEXT_MUTED};font-size:11px;letter-spacing:2px;'
-                f'text-transform:uppercase;margin-bottom:28px">Restricted Access — Enter Password</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-            pwd = st.text_input(
-                "Admin password",
-                type="password",
-                placeholder="Admin password…",
-                label_visibility="collapsed",
-                key="_admin_pwd_input",
-            )
-            if st.button("🔓  Unlock Admin Panel", use_container_width=True, key="_admin_unlock_btn"):
-                try:
-                    correct = st.secrets["ADMIN_PASSWORD"]
-                except Exception:
-                    correct = os.environ.get("ADMIN_PASSWORD", "admin!")
-                if pwd == correct:
-                    st.session_state["_admin_auth"] = True
-                    st.rerun()
-                else:
-                    st.error("❌ Incorrect admin password. Please try again.")
-            st.markdown(
-                f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center;margin-top:14px">'
-                f'🔒 Admin access is logged for security purposes.</div>',
-                unsafe_allow_html=True,
-            )
-        return   # ← stop here; don't render panel content
+    section_header("🔧", "Tech Details",
+                   "Scanner guide · Universe browser · Scanner rankings & action playbook · Stock Analysis methodology")
 
-    # ── Lock button ────────────────────────────────────────────
-    _hdr_col, _lock_col = st.columns([11, 1])
-    with _lock_col:
-        if st.button("🔒 Lock", key="_admin_lock_btn", help="Lock the Admin Panel"):
-            st.session_state["_admin_auth"] = False
-            st.rerun()
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📊 Scanner Tech & Rankings",
+        "📖 Scanner Guide",
+        "🗃️ Stock Universe",
+        "🔬 Stock Analysis",
+    ])
 
-    section_header("⚙️", "Admin Panel", "Page visibility management · Maintenance mode")
+    with tab1:
+        _render_scanner_tech()
 
-    # ── Maintenance mode card (always visible at top of admin panel) ──────
-    # Message is HARDCODED ("Cleaning Lenses! 🔭  Be right back.") — no text_area,
-    # no storage read.  Admin just toggles ON / OFF.
-    from scanners.page_manager import (
-        is_maintenance_mode, set_maintenance_mode, _MAINT_MSG_DEFAULT,
-    )
-    _maint_on  = is_maintenance_mode()
+    with tab2:
+        _render_guide()
 
-    _maint_border = "#EF4444" if _maint_on else BORDER_COLOR
-    _maint_bg     = "rgba(239,68,68,0.07)" if _maint_on else BG_PANEL
-    _status_color = "#EF4444" if _maint_on else ACCENT_GREEN
-    _status_label = "🔴 ACTIVE — Regular users see maintenance screen" if _maint_on else "🟢 OFF — Site is live for all users"
+    with tab3:
+        _render_universe()
 
-    st.markdown(
-        f'<div style="background:{_maint_bg};border:1px solid {_maint_border};'
-        f'border-left:4px solid {_status_color};border-radius:8px;'
-        f'padding:14px 18px;margin-bottom:12px">'
-        f'<div style="color:{TEXT_PRIMARY};font-size:13px;font-weight:700;margin-bottom:3px">'
-        f'🔭 Site Maintenance Mode</div>'
-        f'<div style="color:{_status_color};font-size:11px;font-weight:600;margin-bottom:6px">{_status_label}</div>'
-        f'<div style="color:{TEXT_MUTED};font-size:11px">'
-        f'Message shown to users: <b style="color:{TEXT_PRIMARY}">{_MAINT_MSG_DEFAULT}</b></div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    _mc1, _mc2 = st.columns([3, 1])
-    with _mc2:
-        if _maint_on:
-            if st.button("✅ Disable Maintenance", use_container_width=True, key="_maint_disable_btn",
-                         help="Restore site access for all regular users"):
-                set_maintenance_mode(False)
-                st.session_state.pop("_page_settings_cache", None)
-                st.success("✅ Maintenance mode disabled — site is live.")
-                st.rerun()
-        else:
-            if st.button("🚧 Enable Maintenance", use_container_width=True, key="_maint_enable_btn",
-                         help="Block all regular users — shows 'Cleaning Lenses! 🔭  Be right back.'"):
-                set_maintenance_mode(True)
-                st.session_state.pop("_page_settings_cache", None)
-                st.warning("🚧 Maintenance mode is now ACTIVE. Regular users are blocked.")
-                st.rerun()
-
-    st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:10px;margin-bottom:20px">'
-        f'ℹ️ Admin users are never affected — you always see the full site regardless of this setting.</div>',
-        unsafe_allow_html=True,
-    )
-
-    _render_page_management()
+    with tab4:
+        _render_stock_analysis_methodology()

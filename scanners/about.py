@@ -81,18 +81,18 @@ def render():
         )
 
         nav_items = [
-            ("&#127968;", "Market Overview", "Live market indices + strategy signals for SPY, QQQ, TSLA"),
-            ("&#128241;", "Social Trends", "Financial news, Reddit discussions, YouTube — signal-scored"),
-            ("&#128257;", "Golden Scan", "All stock scanners merged — multi-signal picks ranked first"),
-            ("&#128300;", "Stock Analysis", "Deep single-ticker technical breakdown across multiple timeframes"),
+            ("&#127968;", "Market Overview",   "Live market indices + strategy signals for SPY, QQQ, TSLA"),
+            ("&#128241;", "Social Trends",     "Financial news, Reddit discussions, YouTube — signal-scored"),
+            ("&#128197;", "Scheduled Scans",   "Auto-runs at 10:30 AM & 1:00 PM CST — Golden Scan + CSP + LEAPS results"),
+            ("&#128257;", "Golden Scan",       "All stock scanners merged — multi-signal picks ranked first"),
+            ("&#128300;", "Stock Analysis",    "Deep single-ticker technical breakdown across multiple timeframes"),
             ("&#9889;&#128202;", "3&#215; Leveraged ETFs", "High-velocity directional momentum setups"),
-            ("&#9889;&#128200;", "3&#215; ETF Options", "Premium selling on leveraged instruments"),
             ("&#128176;", "Cash-Secured Puts", "Income from selling puts on stocks you want to own"),
-            ("&#128230;", "Covered Calls", "Monthly income by selling calls against shares you hold"),
-            ("&#128248;", "LEAPS", "Long-dated calls as a capital-efficient stock replacement"),
-            ("&#128200;", "ETF Options", "Premium selling on broad, liquid ETF options"),
-            ("&#128181;", "Upcoming Dividends", "Ex-dividend plays with strong chart setups"),
-            ("&#128197;", "Dividend + CC Capture", "Combine dividend income with covered call premium"),
+            ("&#128248;", "LEAPS",             "Long-dated calls as a capital-efficient stock replacement"),
+            ("&#9889;&#128200;", "3&#215; ETF Options",    "Premium selling on leveraged instruments"),
+            ("&#128200;", "ETF Options",       "Premium selling on broad, liquid ETF options"),
+            ("&#128181;", "Upcoming Dividends","Ex-dividend plays with strong chart setups"),
+            ("&#128451;", "Tracking",          "Log trade setups — auto-populated from AM/PM scheduled scans"),
         ]
         cards = "".join(
             f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:8px;padding:10px 14px">'
@@ -111,9 +111,10 @@ def render():
         st.markdown(
             f'<h3 style="color:{GOLD};font-family:\'Cormorant Garamond\',serif;margin-top:24px">Tips</h3>'
             f'<ul style="color:{TEXT_PRIMARY};font-size:13px;line-height:2.2">'
-            f'<li>Start with <b>Golden Scan</b> each morning — tickers appearing in multiple scanners have the highest conviction</li>'
-            f'<li>Check <b>Social Trends</b> first to see what the market is talking about before trading</li>'
-            f'<li>For options, always confirm the underlying stock trend before selling premium</li>'
+            f'<li>Check <b>Scheduled Scans</b> first — Golden Scan + CSP + LEAPS run automatically at 10:30 AM &amp; 1:00 PM CST</li>'
+            f'<li>Start with <b>Golden Scan</b> — tickers appearing in multiple scanners (high Scanner Count) have the highest conviction</li>'
+            f'<li>Check <b>Social Trends</b> to see what the market is talking about before trading</li>'
+            f'<li>For options (CSP / LEAPS), always confirm the underlying stock trend before entering</li>'
             f'<li>3&#215; ETF trades should be sized conservatively — they move fast in both directions</li>'
             f'<li>Data refreshes every 5 minutes. Use the &#128260; Refresh button to force an update</li>'
             f'<li>The Score column ranks quality — it is a relative ranking tool, not a binary buy/sell trigger</li>'
@@ -131,7 +132,9 @@ def render():
             f'<div style="color:{TEXT_MUTED};font-size:13px;padding:8px 0 16px">'
             f'All stock scanners share a common universe of S&P 500 stocks and key ETFs. '
             f'<b style="color:{GOLD}">Golden Scan</b> runs them all at once — use individual scanners '
-            f'when you want focused results for a specific strategy.</div>',
+            f'when you want focused results for a specific strategy. '
+            f'Golden Scan also runs automatically at <b style="color:{GOLD}">10:30 AM &amp; 1:00 PM CST</b> '
+            f'on market days — check the Scheduled Scans page for the latest results.</div>',
             unsafe_allow_html=True,
         )
 
@@ -245,9 +248,9 @@ def render():
     with tabs[3]:
         st.markdown(
             f'<div style="color:{TEXT_MUTED};font-size:13px;padding:8px 0 16px">'
-            f'All options scanners look for premium-selling opportunities — strategies where you '
-            f'collect income upfront and profit when the underlying stays within a range. '
-            f'Higher implied volatility = more premium collected.</div>',
+            f'Options scanners surface premium-selling and capital-efficient buying opportunities. '
+            f'CSP and LEAPS run automatically in scheduled scans (10:30 AM &amp; 1:00 PM CST) on 75 '
+            f'top stocks + liquid ETF universe. Higher implied volatility = more premium collected.</div>',
             unsafe_allow_html=True,
         )
         _expander("💰", "Cash-Secured Puts (CSP)",
@@ -258,20 +261,10 @@ def render():
             "The scanner surfaces stocks with elevated option premiums and bullish trends — "
             "the ideal environment for selling puts. Key columns: Strike (the price at which "
             "you'd buy the stock), Premium % (annualized return if the put expires worthless), "
-            "and Breakeven (the price below which you start losing money).",
+            "and Breakeven (the price below which you start losing money). "
+            "Default: premium ≥ 0.65% of stock price, DTE 25–35 days.",
             "Best candidates: stocks you would genuinely want to own at a 5–15% discount. "
             "Never sell puts on stocks you are not comfortable holding."
-        )
-        _expander("📦", "Covered Calls (CC)",
-            "You sell a call option against shares you already own. The buyer pays you a premium. "
-            "If the stock stays below your strike, you keep shares plus premium. "
-            "If it rises above the strike, your shares get called away at that price — "
-            "you still profit, just not beyond the strike.",
-            "The scanner finds stocks with elevated premiums and sideways-to-mild-uptrend price action — "
-            "the sweet spot for covered calls. Key columns: Premium % (monthly income rate), "
-            "Upside Cap % (how much you can gain before the stock is called), "
-            "and DTE (days until expiration).",
-            "Best used as a recurring income strategy on stocks you already own and plan to hold."
         )
         _expander("🧨", "LEAPS",
             "Long-dated deep-in-the-money call options that behave similarly to owning shares, "
@@ -341,17 +334,6 @@ def render():
             "to confirm the stock has a healthy technical setup.",
             "A high dividend yield on a falling stock is often a warning sign, not an opportunity. "
             "The technical score filters help avoid these situations."
-        )
-        _expander("📅", "Dividend + CC Capture",
-            "A two-income strategy: buy shares before the ex-dividend date to capture the dividend, "
-            "then simultaneously sell a covered call to collect additional premium. "
-            "Two income streams from one position.",
-            "The scanner finds stocks where the combination of dividend yield plus covered call premium "
-            "creates an attractive combined return. Total Return % column shows the combined income "
-            "potential. Review carefully — the call strike determines how much upside you retain "
-            "if the stock rallies.",
-            "This strategy works best on stable, dividend-paying companies that trade in a consistent range. "
-            "High-volatility dividend stocks can gap down after the ex-date, erasing the income."
         )
 
     # ── Tab 7: Reading Results ─────────────────────────────────────
