@@ -674,13 +674,13 @@ NAV_GROUPS = [
         "sep": "Info", "icon": "ℹ️", "expanded": False,
         "items": [
             {"key": "ℹ️  About & Guide"},
-            {"key": "🔧  Tech Details"},
         ],
     },
     {
         "sep": "Admin", "icon": "🔐", "expanded": False, "dim": True,
         "items": [
             {"key": "⚙️  Admin Panel", "label": "Admin Panel", "icon": "⚙️"},
+            {"key": "🔧  Tech Details", "label": "Tech Details", "icon": "🔧"},
         ],
     },
 ]

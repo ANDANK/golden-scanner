@@ -67,8 +67,7 @@ ALL_PAGES = [
     # ── Info ───────────────────────────────────────────────────
     {"group": "Info",      "key": "ℹ️  About & Guide",
      "label": "About & Guide"},
-    {"group": "Info",      "key": "🔧  Tech Details",
-     "label": "Tech Details"},
+    # Tech Details is admin-only — not user-toggleable, not in Page Management.
 ]
 
 # Pages that are ALWAYS accessible — cannot be disabled
