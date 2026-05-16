@@ -21,54 +21,79 @@ WATCHLIST_CSV = os.path.join(DATA_DIR, "watchlist.csv")
 
 # ── Google Sheets helpers ──────────────────────────────────────
 
+@st.cache_resource(show_spinner=False)
 def _gs_client():
-    """Return authorised gspread client, or None if not configured.
+    """
+    Return an authorised gspread client, cached for the lifetime of the
+    Streamlit process so we authenticate only once (not once per function call).
 
     Credential priority:
       1. st.secrets["gsheets"]  — Streamlit Cloud
       2. GOOGLE_CREDS_JSON env var — GitHub Actions / headless mode
+
+    Uses gspread.service_account_from_dict() (gspread 5+, preferred).
+    Falls back to gspread.authorize() with updated scopes for older versions.
     """
     try:
         import gspread, json as _json
-        from google.oauth2.service_account import Credentials
-        scopes = [
-            "https://spreadsheets.google.com/feeds",
-            "https://www.googleapis.com/auth/drive",
-        ]
+
         info = None
-        # ── 1. Streamlit secrets ──────────────────────────────
+
+        # ── 1. Streamlit secrets ───────────────────────────────
         try:
-            sec = st.secrets["gsheets"]
-            info = {
-                "type":              sec["type"],
-                "project_id":        sec["project_id"],
-                "private_key_id":    sec["private_key_id"],
-                "private_key":       sec["private_key"].replace("\\n", "\n"),
-                "client_email":      sec["client_email"],
-                "client_id":         sec["client_id"],
-                "auth_uri":          "https://accounts.google.com/o/oauth2/auth",
-                "token_uri":         "https://oauth2.googleapis.com/token",
+            sec   = st.secrets["gsheets"]
+            email = sec["client_email"]
+            info  = {
+                "type":                        sec["type"],
+                "project_id":                  sec["project_id"],
+                "private_key_id":              sec["private_key_id"],
+                "private_key":                 sec["private_key"].replace("\\n", "\n"),
+                "client_email":                email,
+                "client_id":                   sec["client_id"],
+                "auth_uri":                    "https://accounts.google.com/o/oauth2/auth",
+                "token_uri":                   "https://oauth2.googleapis.com/token",
+                # Required by newer gspread / google-auth versions:
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "client_x509_cert_url": (
+                    f"https://www.googleapis.com/robot/v1/metadata/x509/"
+                    f"{email.replace('@', '%40')}"
+                ),
             }
         except Exception:
             pass
-        # ── 2. Env-var fallback (headless / GitHub Actions) ───
+
+        # ── 2. Env-var fallback (headless / GitHub Actions) ────
         if info is None:
             creds_raw = os.environ.get("GOOGLE_CREDS_JSON", "")
             if not creds_raw:
                 return None
             info = _json.loads(creds_raw)
+
+        # ── Try modern service_account_from_dict (gspread 5+) ──
+        try:
+            return gspread.service_account_from_dict(info)
+        except AttributeError:
+            pass   # older gspread — fall through
+
+        # ── Legacy authorize() with updated scopes ─────────────
+        from google.oauth2.service_account import Credentials
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
         creds = Credentials.from_service_account_info(info, scopes=scopes)
         return gspread.authorize(creds)
+
     except Exception:
         return None
 
 
-def _gs_sheet(tab: str):
-    """Return a worksheet, creating the tab if it doesn't exist.
-
-    Sheet-ID priority:
-      1. st.secrets["gsheets"]["sheet_id"]  — Streamlit Cloud
-      2. GOOGLE_SHEET_ID env var             — GitHub Actions / headless
+@st.cache_resource(show_spinner=False)
+def _gs_spreadsheet():
+    """
+    Return the opened gspread Spreadsheet, cached for the process lifetime.
+    Opening the spreadsheet is an HTTP call — we want it to happen once, not
+    once per page render.
     """
     try:
         client = _gs_client()
@@ -80,14 +105,55 @@ def _gs_sheet(tab: str):
             sheet_id = os.environ.get("GOOGLE_SHEET_ID", "")
         if not sheet_id:
             return None
-        sh = client.open_by_key(sheet_id)
+        return client.open_by_key(sheet_id)
+    except Exception:
+        return None
+
+
+def _gs_sheet(tab: str):
+    """Return a worksheet object (creates the tab if it doesn't exist).
+    Uses the cached spreadsheet — no re-authentication on each call.
+    """
+    try:
+        sh = _gs_spreadsheet()
+        if sh is None:
+            return None
         try:
             return sh.worksheet(tab)
         except Exception:
-            ws = sh.add_worksheet(title=tab, rows=1000, cols=20)
-            return ws
+            # Tab doesn't exist yet — create it
+            return sh.add_worksheet(title=tab, rows=1000, cols=20)
     except Exception:
         return None
+
+
+def _ws_get_all_records(ws) -> list:
+    """
+    Read all records from a worksheet, with a robust fallback for gspread
+    API changes (get_all_records() behaviour changed in 5.x / 6.x).
+    Falls back to get_all_values() → manual dict construction if needed.
+    """
+    try:
+        # numericise_ignore keeps numbers as strings — avoids type-coercion errors
+        try:
+            return ws.get_all_records(numericise_ignore=["all"]) or []
+        except TypeError:
+            # Older gspread doesn't support numericise_ignore
+            return ws.get_all_records() or []
+    except Exception:
+        # Final fallback: raw values → dicts
+        try:
+            all_vals = ws.get_all_values()
+            if not all_vals or len(all_vals) < 2:
+                return []
+            headers = all_vals[0]
+            return [
+                {h: (row[i] if i < len(row) else "") for i, h in enumerate(headers)}
+                for row in all_vals[1:]
+                if any(row)   # skip blank rows
+            ]
+        except Exception:
+            return []
 
 
 def _ensure_headers(ws, headers: list):
@@ -137,22 +203,20 @@ def _current_price(ticker: str) -> str:
 def get_tracking() -> list:
     ws = _gs_sheet("Tracking")
     if ws:
-        try:
-            _ensure_headers(ws, TRACKING_HEADERS)
-            return ws.get_all_records()
-        except Exception:
-            pass
+        _ensure_headers(ws, TRACKING_HEADERS)
+        rows = _ws_get_all_records(ws)
+        if rows is not None:   # empty list is valid (no data yet)
+            return rows
     return _csv_read(TRACKING_CSV, TRACKING_HEADERS)
 
 
 def get_watchlist() -> list:
     ws = _gs_sheet("WatchList")
     if ws:
-        try:
-            _ensure_headers(ws, WATCHLIST_HEADERS)
-            return ws.get_all_records()
-        except Exception:
-            pass
+        _ensure_headers(ws, WATCHLIST_HEADERS)
+        rows = _ws_get_all_records(ws)
+        if rows is not None:
+            return rows
     return _csv_read(WATCHLIST_CSV, WATCHLIST_HEADERS)
 
 
@@ -346,11 +410,10 @@ def get_performance() -> list:
     """Load all rows from the Performance tab (or CSV fallback)."""
     ws = _gs_sheet("Performance")
     if ws:
-        try:
-            _ensure_headers(ws, PERFORMANCE_HEADERS)
-            return ws.get_all_records()
-        except Exception:
-            pass
+        _ensure_headers(ws, PERFORMANCE_HEADERS)
+        rows = _ws_get_all_records(ws)
+        if rows is not None:
+            return rows
     return _csv_read(PERF_CSV, PERFORMANCE_HEADERS)
 
 
@@ -452,18 +515,38 @@ def update_performance_row(row_index: int, fields: dict) -> bool:
 
 def show_storage_banner() -> None:
     """
-    Display a one-time warning if Google Sheets is not set up.
+    Display a one-time warning if Google Sheets is not set up or reachable.
     Call this at the top of tracking_page.render() and watchlist_page.render().
     Data stored in local CSV is ephemeral on Streamlit Cloud — lost on restart.
     """
     if using_google_sheets():
         return  # All good — Sheets is live
+
     if gsheets_configured():
+        # Credentials exist but the connection failed.
+        # Give the user specific things to check.
+        _client_ok = _gs_client() is not None
+        _sheet_ok  = _gs_spreadsheet() is not None if _client_ok else False
+        if not _client_ok:
+            _hint = (
+                "Authentication failed — check that `private_key` in Secrets is "
+                "correctly formatted (newlines as `\\n`, not literal line breaks)."
+            )
+        elif not _sheet_ok:
+            _hint = (
+                "Spreadsheet not found — verify `sheet_id` in Secrets is the "
+                "long ID from the Google Sheet URL, and that the service account "
+                "email has **Editor** access to that sheet."
+            )
+        else:
+            _hint = (
+                "Worksheet tab could not be opened — the sheet may have been "
+                "renamed or the service account may lack Editor access."
+            )
         st.warning(
-            "⚠️ **Google Sheets credentials found but connection failed.** "
-            "Check that your service account has Editor access to the sheet "
-            "and that the `sheet_id` in Secrets is correct. "
-            "Tracking data is temporarily using local CSV (lost on app restart).",
+            f"⚠️ **Google Sheets credentials found but connection failed.** "
+            f"{_hint} "
+            f"Tracking data is temporarily using local CSV (lost on app restart).",
             icon="⚠️",
         )
     else:
