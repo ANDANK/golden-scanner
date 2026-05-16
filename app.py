@@ -1022,9 +1022,54 @@ elif page == "📅  Dividend + CC Capture":
 elif page == "ℹ️  About & Guide":
     from scanners.about import render
     render()
-elif page == "🔧  Tech Details":
-    from scanners.tech_details import render
-    render()
-elif page == "⚙️  Admin Panel":
-    from scanners.admin_page import render
-    render()
+elif page in ("⚙️  Admin Panel", "🔧  Tech Details"):
+    # ── Shared Admin gate — one password unlocks the entire Admin menu ──
+    if not st.session_state.get("_admin_auth", False):
+        st.markdown("<br>", unsafe_allow_html=True)
+        _, _gc, _ = st.columns([1, 2, 1])
+        with _gc:
+            st.markdown(
+                f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
+                f'border-top:3px solid {GOLD};border-radius:12px;padding:40px 36px;'
+                f'text-align:center;margin-top:48px">'
+                f'<div style="font-size:48px;margin-bottom:14px">🔐</div>'
+                f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;color:{GOLD};'
+                f'font-weight:700;letter-spacing:2px;margin-bottom:6px">Admin Area</div>'
+                f'<div style="color:{TEXT_MUTED};font-size:11px;letter-spacing:2px;'
+                f'text-transform:uppercase;margin-bottom:28px">'
+                f'Restricted Access · Enter Password</div>'
+                f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:20px">'
+                f'One password unlocks all Admin pages for this session.</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            _pwd = st.text_input(
+                "Admin password", type="password",
+                placeholder="Admin password…",
+                label_visibility="collapsed",
+                key="_admin_gate_pwd",
+            )
+            if st.button("🔓  Unlock Admin Area", use_container_width=True,
+                         key="_admin_gate_btn"):
+                try:
+                    _correct = st.secrets["ADMIN_PASSWORD"]
+                except Exception:
+                    _correct = os.environ.get("ADMIN_PASSWORD", "admin!")
+                if _pwd == _correct:
+                    st.session_state["_admin_auth"] = True
+                    st.rerun()
+                else:
+                    st.error("❌ Incorrect admin password. Please try again.")
+            st.markdown(
+                f'<div style="color:{TEXT_MUTED};font-size:10px;'
+                f'text-align:center;margin-top:14px">'
+                f'🔒 Admin access is logged for security purposes.</div>',
+                unsafe_allow_html=True,
+            )
+    else:
+        if page == "⚙️  Admin Panel":
+            from scanners.admin_page import render
+            render()
+        elif page == "🔧  Tech Details":
+            from scanners.tech_details import render
+            render()

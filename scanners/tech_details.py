@@ -1382,46 +1382,6 @@ def _render_stock_analysis_methodology():
 # ── Main render ────────────────────────────────────────────────
 
 def render():
-    # ── Admin password gate (shared key with Admin Panel) ──────
-    if not st.session_state.get("_admin_auth", False):
-        st.markdown("<br>", unsafe_allow_html=True)
-        _, col, _ = st.columns([1, 2, 1])
-        with col:
-            st.markdown(
-                f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
-                f'border-top:3px solid {GOLD};border-radius:12px;padding:36px 32px;text-align:center;margin-top:40px">'
-                f'<div style="font-size:44px;margin-bottom:12px">🔧</div>'
-                f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:{GOLD};'
-                f'font-weight:700;letter-spacing:2px;margin-bottom:8px">Tech Details</div>'
-                f'<div style="color:{TEXT_MUTED};font-size:11px;letter-spacing:2px;'
-                f'text-transform:uppercase;margin-bottom:28px">Admin Access Required</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-            pwd = st.text_input(
-                "Admin password",
-                type="password",
-                placeholder="Admin password…",
-                label_visibility="collapsed",
-                key="_tech_pwd_input",
-            )
-            if st.button("🔓  Unlock Tech Details", use_container_width=True, key="_tech_unlock_btn"):
-                try:
-                    correct = st.secrets["ADMIN_PASSWORD"]
-                except Exception:
-                    correct = os.environ.get("ADMIN_PASSWORD", "admin!")
-                if pwd == correct:
-                    st.session_state["_admin_auth"] = True   # shared with Admin Panel
-                    st.rerun()
-                else:
-                    st.error("❌ Incorrect admin password.")
-            st.markdown(
-                f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center;margin-top:14px">'
-                f'🔒 Admin access only.</div>',
-                unsafe_allow_html=True,
-            )
-        return  # ← stop here
-
     # ── Lock button ────────────────────────────────────────────
     _, _lock_col = st.columns([11, 1])
     with _lock_col:
