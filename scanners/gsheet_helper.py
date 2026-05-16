@@ -200,7 +200,9 @@ def _current_price(ticker: str) -> str:
 
 # ── Public API ─────────────────────────────────────────────────
 
+@st.cache_data(ttl=120, show_spinner=False)
 def get_tracking() -> list:
+    """Read all Tracking rows. Cached 2 min — cleared automatically after writes."""
     ws = _gs_sheet("Tracking")
     if ws:
         _ensure_headers(ws, TRACKING_HEADERS)
@@ -210,7 +212,9 @@ def get_tracking() -> list:
     return _csv_read(TRACKING_CSV, TRACKING_HEADERS)
 
 
+@st.cache_data(ttl=120, show_spinner=False)
 def get_watchlist() -> list:
+    """Read all WatchList rows. Cached 2 min — cleared automatically after writes."""
     ws = _gs_sheet("WatchList")
     if ws:
         _ensure_headers(ws, WATCHLIST_HEADERS)
@@ -259,6 +263,7 @@ def add_to_tracking(ticker: str, strategy: str, source: str = "",
         try:
             _ensure_headers(ws, TRACKING_HEADERS)
             ws.append_row([row[h] for h in TRACKING_HEADERS])
+            get_tracking.clear()   # bust read cache so next render shows new row
             return True, f"{ticker} added to Tracking ({action} {qty})"
         except Exception as e:
             return False, f"Sheet error: {e}"
@@ -266,6 +271,7 @@ def add_to_tracking(ticker: str, strategy: str, source: str = "",
         rows = _csv_read(TRACKING_CSV, TRACKING_HEADERS)
         rows.append(row)
         _csv_write(TRACKING_CSV, rows, TRACKING_HEADERS)
+        get_tracking.clear()
         return True, f"{ticker} added to Tracking ({action} {qty})"
 
 
@@ -289,6 +295,7 @@ def add_to_watchlist(ticker: str, source: str = "", entry_price: str = "") -> tu
         try:
             _ensure_headers(ws, WATCHLIST_HEADERS)
             ws.append_row([row[h] for h in WATCHLIST_HEADERS])
+            get_watchlist.clear()   # bust read cache
             return True, f"{ticker} added to WatchList"
         except Exception as e:
             return False, f"Sheet error: {e}"
@@ -296,6 +303,7 @@ def add_to_watchlist(ticker: str, source: str = "", entry_price: str = "") -> tu
         rows = _csv_read(WATCHLIST_CSV, WATCHLIST_HEADERS)
         rows.append(row)
         _csv_write(WATCHLIST_CSV, rows, WATCHLIST_HEADERS)
+        get_watchlist.clear()
         return True, f"{ticker} added to WatchList"
 
 
@@ -324,6 +332,7 @@ def remove_from_tracking(ticker: str, added_date: str = "") -> bool:
                     if not row_vals[date_col].startswith(date_key):
                         continue
                 ws.delete_rows(row_i)
+                get_tracking.clear()   # bust read cache after delete
                 return True
             return False
         except Exception:
@@ -339,6 +348,7 @@ def remove_from_tracking(ticker: str, added_date: str = "") -> bool:
                 continue
             new_rows.append(r)
         _csv_write(TRACKING_CSV, new_rows, TRACKING_HEADERS)
+        get_tracking.clear()
         return removed
 
 
@@ -350,6 +360,7 @@ def remove_from_watchlist(ticker: str) -> bool:
             cell = ws.find(ticker, in_column=1)
             if cell:
                 ws.delete_rows(cell.row)
+            get_watchlist.clear()   # bust read cache after delete
             return True
         except Exception:
             return False
@@ -357,6 +368,7 @@ def remove_from_watchlist(ticker: str) -> bool:
         rows = _csv_read(WATCHLIST_CSV, WATCHLIST_HEADERS)
         rows = [r for r in rows if str(r.get("Ticker","")).upper() != ticker]
         _csv_write(WATCHLIST_CSV, rows, WATCHLIST_HEADERS)
+        get_watchlist.clear()
         return True
 
 
@@ -406,8 +418,9 @@ _ETF_SET = {
 }
 
 
+@st.cache_data(ttl=120, show_spinner=False)
 def get_performance() -> list:
-    """Load all rows from the Performance tab (or CSV fallback)."""
+    """Load all Performance rows. Cached 2 min — cleared automatically after writes."""
     ws = _gs_sheet("Performance")
     if ws:
         _ensure_headers(ws, PERFORMANCE_HEADERS)
@@ -487,6 +500,7 @@ def add_to_performance(ticker: str, strategy: str, source: str = "",
         try:
             _ensure_headers(ws, PERFORMANCE_HEADERS)
             ws.append_row([row[h] for h in PERFORMANCE_HEADERS])
+            get_performance.clear()   # bust read cache
             return True, f"{ticker} added to Performance ({strategy})"
         except Exception as e:
             return False, f"Performance sheet error: {e}"
@@ -494,6 +508,7 @@ def add_to_performance(ticker: str, strategy: str, source: str = "",
         rows = _csv_read(PERF_CSV, PERFORMANCE_HEADERS)
         rows.append(row)
         _csv_write(PERF_CSV, rows, PERFORMANCE_HEADERS)
+        get_performance.clear()
         return True, f"{ticker} added to Performance CSV ({strategy})"
 
 
@@ -508,6 +523,7 @@ def update_performance_row(row_index: int, fields: dict) -> bool:
             if field in headers:
                 col = headers.index(field) + 1
                 ws.update_cell(row_index, col, str(value))
+        get_performance.clear()   # bust read cache after cell update
         return True
     except Exception:
         return False

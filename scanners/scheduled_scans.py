@@ -62,9 +62,13 @@ def _save_results(slot: str, df: pd.DataFrame):
         json.dump(data, f, default=str)
 
 
+@st.cache_data(ttl=300, show_spinner=False)
 def _load_results(slot: str) -> Tuple[pd.DataFrame, str]:
     """
     Load scan results for the given slot (am/pm).
+    Cached for 5 minutes — the GitHub HTTP call (1–2 s) only fires once
+    per TTL window instead of on every Streamlit rerun.
+
     Priority:
       1. Local disk  — written by UI-triggered scan (fast, immediate)
       2. GitHub raw  — committed by GitHub Actions (survives Streamlit restarts)
@@ -395,6 +399,7 @@ def render():
         _scan_banner.empty()
 
         _save_results(slot, df_new)
+        _load_results.clear()   # bust cache so next render picks up new results immediately
         st.success(f"✅ {SLOT_LABELS[slot]} scan complete at {run_start} — {len(df_new)} total setup(s) found.")
 
         # ── Sync score > 70 AM/PM items to Performance tab ────

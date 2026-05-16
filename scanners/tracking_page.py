@@ -42,7 +42,7 @@ def _abbrev_src(src: str) -> str:
 def _cb_delete_tracking(ticker: str, added_date: str):
     """Remove one tracking row then let Streamlit's natural rerun refresh the table."""
     remove_from_tracking(ticker, added_date)
-    st.cache_data.clear()
+    # get_tracking.clear() is called inside remove_from_tracking() — no need to nuke all caches
 
 
 # ── Helpers ────────────────────────────────────────────────────

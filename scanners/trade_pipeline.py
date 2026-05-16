@@ -152,30 +152,89 @@ def _render_pipeline_diagram():
     )
 
 
+# ── Lazy tab bar CSS ───────────────────────────────────────────
+# Overrides the global gold-gradient button style for these specific
+# tab-switch buttons so they look like the green tab bar above.
+
+_LAZY_TAB_CSS = f"""
+<style>
+/* Lazy-tab button row — reset to tab-like appearance */
+div[data-testid="stHorizontalBlock"] .element-container:has(.gs-lazy-tab) + .element-container .stButton > button,
+div[data-testid="stHorizontalBlock"] [data-testid="element-container"]:has(.gs-lazy-tab) + [data-testid="element-container"] .stButton > button {{
+    background: transparent !important;
+    color: {TEXT_MUTED} !important;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    padding: 14px 0 !important;
+    letter-spacing: 0.4px !important;
+    transition: color 0.15s !important;
+}}
+</style>
+"""
+
 # ── Main render ────────────────────────────────────────────────
 
 def render():
     st.markdown(_TAB_CSS, unsafe_allow_html=True)
+    st.markdown(_LAZY_TAB_CSS, unsafe_allow_html=True)
 
     _render_pipeline_diagram()
-
     st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs([
-        "📅  Scheduled Scans",
-        "📌  Tracking",
-        "📈  Performance",
-    ])
+    # ── Lazy tab switching — only render the ACTIVE tab ────────
+    # Streamlit's st.tabs() runs ALL tab content on every rerun, even
+    # the hidden ones. For heavy pages (GSheets reads + price fetches +
+    # GitHub HTTP calls), that means 3× the work on every interaction.
+    # We use session state + conditional rendering so only 1 tab fires.
 
-    with tab1:
+    _TAB_DEFS = [
+        ("scans",       "📅  Scheduled Scans"),
+        ("tracking",    "📌  Tracking"),
+        ("performance", "📈  Performance"),
+    ]
+
+    if "_pipeline_tab" not in st.session_state:
+        st.session_state["_pipeline_tab"] = "scans"
+
+    _active = st.session_state["_pipeline_tab"]
+
+    # ── Tab button bar ──────────────────────────────────────────
+    _cols = st.columns(len(_TAB_DEFS))
+    for (_key, _label), _col in zip(_TAB_DEFS, _cols):
+        _is_active = _active == _key
+        with _col:
+            # Active tab: green text + bottom border via inline HTML
+            if _is_active:
+                st.markdown(
+                    f'<div style="text-align:center;padding:12px 0 10px;'
+                    f'border-bottom:3px solid {ACCENT_GREEN};'
+                    f'color:{ACCENT_GREEN};font-size:14px;font-weight:700;'
+                    f'letter-spacing:0.4px;cursor:default">{_label}</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                if st.button(_label, key=f"_ptab_{_key}", use_container_width=True):
+                    st.session_state["_pipeline_tab"] = _key
+                    st.rerun()
+
+    # Separator line
+    st.markdown(
+        f'<div style="height:2px;background:{ACCENT_GREEN}44;margin:0 0 16px"></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Render only the active tab ──────────────────────────────
+    if _active == "scans":
         from scanners.scheduled_scans import render as _render_scans
         _render_scans()
-
-    with tab2:
+    elif _active == "tracking":
         from scanners.tracking_page import render as _render_tracking
         _render_tracking()
-
-    with tab3:
+    elif _active == "performance":
         try:
             from scanners.performance_summary import render as _render_perf
         except ImportError:
