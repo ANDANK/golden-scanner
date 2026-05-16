@@ -566,10 +566,9 @@ if not st.session_state["authenticated"]:
                 app_pwd   = os.environ.get("APP_PASSWORD",   "password!")
                 admin_pwd = os.environ.get("ADMIN_PASSWORD", "admin!")
             if pwd == admin_pwd:
-                # Admin: sees all pages + admin panel unlocked automatically
+                # Admin: sees all pages + Admin menu fully open
                 st.session_state["authenticated"] = True
                 st.session_state["_is_admin"]     = True
-                st.session_state["_admin_auth"]   = True
                 st.rerun()
             elif pwd == app_pwd:
                 # Regular user: sees only enabled pages
@@ -824,7 +823,12 @@ if not _in_maintenance:
         for grp in NAV_GROUPS:
             is_open = st.session_state.get("_nav_open_group") == grp["sep"]
             marker = "gs-admin-marker" if grp.get("dim") else "gs-group-marker"
-            _locked = _group_all_disabled(grp)
+            # Admin group (dim=True): locked for regular users, always open for admin.
+            # All other groups: locked when every page in the group is disabled.
+            if grp.get("dim"):
+                _locked = not st.session_state.get("_is_admin", False)
+            else:
+                _locked = _group_all_disabled(grp)
 
             # If the currently open group just became fully locked, close it.
             if _locked and is_open:
@@ -834,13 +838,14 @@ if not _in_maintenance:
             st.markdown(f'<span class="{marker}"></span>', unsafe_allow_html=True)
 
             if _locked:
-                # ── Locked group: all pages disabled — non-interactive red header ──
+                # ── Any locked group (Admin for non-admin users, or Options/Dividend
+                #    when all pages are disabled) — identical non-interactive banner.
                 st.markdown(
                     f'<div style="display:flex;align-items:center;gap:8px;'
-                    f'padding:7px 14px;border-radius:6px;'
+                    f'padding:7px 14px;border-radius:6px;margin-top:10px;'
                     f'background:rgba(239,68,68,0.07);'
                     f'border:1px solid rgba(239,68,68,0.28);'
-                    f'cursor:not-allowed;user-select:none;margin-bottom:2px">'
+                    f'cursor:not-allowed;user-select:none">'
                     f'<span style="font-size:13px">🔒</span>'
                     f'<span style="color:{TEXT_MUTED};font-size:11px;font-weight:600;'
                     f'letter-spacing:1.5px;text-transform:uppercase;opacity:0.6">'
@@ -863,46 +868,16 @@ if not _in_maintenance:
 
                 # Body — only render when this is the open group
                 if is_open:
-                    # ── Admin group: show sidebar password gate if not unlocked ──
-                    if grp.get("dim") and not st.session_state.get("_admin_auth", False):
+                    if not grp["items"]:
                         st.markdown(
-                            f'<div style="padding:10px 4px 6px">'
-                            f'<div style="color:{TEXT_MUTED};font-size:11px;text-align:center;'
-                            f'margin-bottom:8px;letter-spacing:0.5px">'
-                            f'🔒 Admin access required</div>'
-                            f'</div>',
+                            f'<div style="padding:6px 12px;color:{TEXT_MUTED};font-size:11px;font-style:italic">No items yet</div>',
                             unsafe_allow_html=True,
                         )
-                        _sb_pwd = st.text_input(
-                            "", type="password",
-                            placeholder="Admin password…",
-                            label_visibility="collapsed",
-                            key="_sidebar_admin_pwd",
-                        )
-                        if st.button("🔓  Unlock", use_container_width=True,
-                                     key="_sidebar_admin_unlock"):
-                            try:
-                                _sb_correct = st.secrets["ADMIN_PASSWORD"]
-                            except Exception:
-                                _sb_correct = os.environ.get("ADMIN_PASSWORD", "admin!")
-                            if _sb_pwd == _sb_correct:
-                                st.session_state["_admin_auth"] = True
-                                # Navigate to Admin Panel as default landing page
-                                st.session_state["nav_page"] = "⚙️  Admin Panel"
-                                st.rerun()
-                            else:
-                                st.error("❌ Incorrect password")
-                    else:
-                        if not grp["items"]:
-                            st.markdown(
-                                f'<div style="padding:6px 12px;color:{TEXT_MUTED};font-size:11px;font-style:italic">No admin tools yet</div>',
-                                unsafe_allow_html=True,
-                            )
-                        for it in grp["items"]:
-                            if it.get("children"):
-                                _render_item_with_children(it)
-                            else:
-                                _render_nav_item(it)
+                    for it in grp["items"]:
+                        if it.get("children"):
+                            _render_item_with_children(it)
+                        else:
+                            _render_nav_item(it)
 
         # ── ⚙️ Settings block — same gold-header treatment ───────
         st.markdown('<div class="gs-global-row">⚙️ Settings</div>', unsafe_allow_html=True)
@@ -1053,10 +1028,9 @@ elif page == "ℹ️  About & Guide":
     from scanners.about import render
     render()
 elif page in ("⚙️  Admin Panel", "🔧  Tech Details"):
-    # Gate lives in the sidebar (Admin accordion). This is only reached when
-    # nav_page is set to an Admin page without going through the sidebar
-    # (e.g. leftover session state after a page reload).
-    if not st.session_state.get("_admin_auth", False):
+    # Admin pages are only reachable when logged in as admin (_is_admin=True).
+    # If a non-admin somehow has an admin nav_page in session state, bounce home.
+    if not st.session_state.get("_is_admin", False):
         st.session_state["nav_page"] = "🏠  Market Overview"
         st.rerun()
     elif page == "⚙️  Admin Panel":

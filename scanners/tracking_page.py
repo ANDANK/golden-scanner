@@ -452,12 +452,12 @@ def render():
             _fdf = _fdf.sort_values(["Strategy", "Added_Date"], ascending=[True, False])
 
         if is_options:
-            # Options: Ticker | Strategy | Action | Strike | Entry | Current | P&L | Score | Added | Source | 🗑
-            _W = [1.0, 0.9, 0.5, 0.65, 0.65, 0.7, 1.05, 0.5, 0.75, 1.3, 0.35]
-            _H = ["Ticker", "Strategy", "Action", "Strike", "Premium", "Current $", "P&L (est.)", "Score", "Added", "Source", ""]
+            # Options: no remove button — they auto-close on expiry in Performance
+            _W = [1.0, 0.9, 0.5, 0.65, 0.65, 0.7, 1.05, 0.5, 0.75, 1.3]
+            _H = ["Ticker", "Strategy", "Action", "Strike", "Premium", "Current $", "P&L (est.)", "Score", "Added", "Source"]
         else:
-            # Stocks: Ticker | Strategy | Style | Entry | Current | P&L | Score | Added | Source | 🗑
-            _W = [1.0, 1.0, 0.85, 0.65, 0.65, 1.0, 0.5, 0.75, 1.4, 0.38]
+            # Stocks: Ticker | Strategy | Style | Entry | Current | P&L | Score | Added | Source | Remove
+            _W = [1.0, 1.0, 0.85, 0.65, 0.65, 1.0, 0.5, 0.75, 1.4, 0.5]
             _H = ["Ticker", "Strategy", "Style", "Entry $", "Current $", "P&L (est.)", "Score", "Added", "Source", ""]
 
         # Header row
@@ -532,17 +532,18 @@ def render():
                 with row_cols[col_i]:
                     st.markdown(f'<div style="{td_bg}">{html}</div>', unsafe_allow_html=True)
 
-            # Inline delete button (last column)
-            _safe_tk = _re.sub(r"[^a-zA-Z0-9]", "_", tk)
-            with row_cols[-1]:
-                st.button(
-                    "🗑",
-                    key=f"del_{_del_key_base}_{row_i}_{_safe_tk}",
-                    help=f"Remove {tk} ({added}) from tracking",
-                    use_container_width=True,
-                    on_click=_cb_delete_tracking,
-                    args=(tk, added),
-                )
+            # Remove button — stocks only (options auto-close on expiry via Performance)
+            if not is_options:
+                _safe_tk = _re.sub(r"[^a-zA-Z0-9]", "_", tk)
+                with row_cols[-1]:
+                    st.button(
+                        "Remove",
+                        key=f"del_{_del_key_base}_{row_i}_{_safe_tk}",
+                        help=f"Remove {tk} ({added}) from tracking",
+                        use_container_width=True,
+                        on_click=_cb_delete_tracking,
+                        args=(tk, added),
+                    )
 
     # ── Render Options section then Stocks section ─────────────
     if not opt_df.empty:

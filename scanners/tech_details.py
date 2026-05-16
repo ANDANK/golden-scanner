@@ -1382,13 +1382,6 @@ def _render_stock_analysis_methodology():
 # ── Main render ────────────────────────────────────────────────
 
 def render():
-    # ── Lock button ────────────────────────────────────────────
-    _, _lock_col = st.columns([11, 1])
-    with _lock_col:
-        if st.button("🔒 Lock", key="_tech_lock_btn", help="Lock Tech Details"):
-            st.session_state["_admin_auth"] = False
-            st.rerun()
-
     section_header("🔧", "Tech Details",
                    "Scanner guide · Universe browser · Scanner rankings & action playbook · Stock Analysis methodology")
 

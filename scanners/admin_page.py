@@ -1485,13 +1485,6 @@ def _render_page_management():
 
 
 def render():
-    # ── Lock button ────────────────────────────────────────────
-    _hdr_col, _lock_col = st.columns([11, 1])
-    with _lock_col:
-        if st.button("🔒 Lock", key="_admin_lock_btn", help="Lock the Admin Panel"):
-            st.session_state["_admin_auth"] = False
-            st.rerun()
-
     section_header("⚙️", "Admin Panel", "Page visibility management · Maintenance mode")
 
     # ── Maintenance mode card (always visible at top of admin panel) ──────

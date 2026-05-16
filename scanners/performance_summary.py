@@ -563,8 +563,8 @@ def _render_close_button(row: dict, row_index: int, context: str = ""):
     import hashlib
     _ctx = hashlib.md5(f"{context}{ticker}{row_index}".encode()).hexdigest()[:6]
     key  = f"close_{_ctx}"
-    if st.button("✖", key=key, use_container_width=True,
-                 help=f"Close {ticker} at today's price"):
+    if st.button("Exit", key=key, use_container_width=True,
+                 help=f"Record close for {ticker} at today's price"):
         cp = _current_prices((ticker,)).get(ticker)
         if cp is None:
             st.warning("Could not fetch current price. Try again.")
@@ -802,7 +802,18 @@ def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool 
         # ── Inline Action column (real Streamlit widget) ─────────
         with row_c[-1]:
             if is_open:
-                _render_close_button(r.to_dict(), ridx + 2, context=context)
+                _strat_upper = str(r.get("Strategy", "")).upper()
+                _is_opt_pos  = _strat_upper in (_SELL_STRATS | _DEBIT_STRATS)
+                if _is_opt_pos:
+                    # Options auto-close on expiry — no manual close button
+                    _exp_disp = str(r.get("Expiry_Date", ""))[:10] if pd.notna(r.get("Expiry_Date")) else "—"
+                    st.markdown(
+                        f'<div style="padding:5px 4px;font-size:9px;color:{TEXT_MUTED};'
+                        f'text-align:center;background:{bg};line-height:1.4">'
+                        f'Auto ↻<br><span style="font-size:8px">{_exp_disp}</span></div>',
+                        unsafe_allow_html=True)
+                else:
+                    _render_close_button(r.to_dict(), ridx + 2, context=context)
             else:
                 st.markdown(
                     f'<div style="padding:5px 4px;font-size:14px;color:{ACCENT_GREEN};'
@@ -1664,6 +1675,116 @@ def _render_analytics_tab(df: pd.DataFrame):
 
 
 # ══════════════════════════════════════════════════════════════════
+# 8b. OPEN / CLOSED POSITION TAB RENDERERS
+# ══════════════════════════════════════════════════════════════════
+
+def _render_open_tab(df: pd.DataFrame):
+    """Open positions — options show 'Auto ↻ expiry', stocks get Exit button."""
+    open_df = df[df["Status"].str.lower() == "open"].copy()
+
+    if open_df.empty:
+        st.markdown(
+            f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;'
+            f'padding:50px 20px;text-align:center;color:{TEXT_MUTED};margin:12px 0">'
+            f'<div style="font-size:40px;margin-bottom:12px">📂</div>'
+            f'<div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:6px">No Open Positions</div>'
+            f'<div style="font-size:12px">All positions are closed, or add one via ➕ Add Position above.</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    # ── Quick KPIs ────────────────────────────────────────────────
+    open_pnl   = open_df["PL_Dollar"].fillna(0).sum()
+    opt_open   = open_df[open_df["Strategy"].str.upper().isin(_SELL_STRATS | _DEBIT_STRATS)]
+    stk_open   = open_df[~open_df["Strategy"].str.upper().isin(_SELL_STRATS | _DEBIT_STRATS)]
+    pnl_color  = ACCENT_GREEN if open_pnl >= 0 else ACCENT_RED
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1: _kpi("Open Positions",   str(len(open_df)),        color="#60A5FA")
+    with c2: _kpi("Options Open",     str(len(opt_open)),        color="#A78BFA")
+    with c3: _kpi("Stocks Open",      str(len(stk_open)),        color=ACCENT_GREEN)
+    with c4: _kpi("Unrealized P&L",   f"${open_pnl:+,.2f}",     color=pnl_color)
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+    # ── Summary boxes ─────────────────────────────────────────────
+    _render_daily_summary_boxes(open_df)
+
+    # ── Positions by strategy ─────────────────────────────────────
+    for strat, label_text, color in _STRATEGY_ORDER:
+        sub = open_df[open_df["Strategy"] == strat].copy()
+        if sub.empty:
+            continue
+        is_stock   = strat.upper() in _STOCK_STRATS
+        show_cols  = _STOCK_COLS if is_stock else [c for c in _OPT_COLS if c in sub.columns]
+        show_cols  = [c for c in show_cols if c in sub.columns]
+        if "Expiry_Date" in sub.columns:
+            sub["Expiry_Date"] = (pd.to_datetime(sub["Expiry_Date"], errors="coerce")
+                                  .dt.strftime("%Y-%m-%d"))
+        with st.expander(f"**{label_text}** — {len(sub)} open", expanded=True):
+            _positions_table_html(
+                sub.sort_values("Entry_Date", ascending=False, na_position="last"),
+                show_cols, show_close_signal=is_stock,
+                context=f"open_{strat}",
+            )
+
+
+def _render_closed_tab(df: pd.DataFrame):
+    """Closed / expired positions — no action button, shows realized P&L summary."""
+    _CLOSED_STATUSES = {"expired", "closed", "assigned", "called", "loss"}
+    closed_df = df[df["Status"].str.lower().isin(_CLOSED_STATUSES)].copy()
+
+    if closed_df.empty:
+        st.markdown(
+            f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;'
+            f'padding:50px 20px;text-align:center;color:{TEXT_MUTED};margin:12px 0">'
+            f'<div style="font-size:40px;margin-bottom:12px">✅</div>'
+            f'<div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:6px">No Closed Positions Yet</div>'
+            f'<div style="font-size:12px">Options will auto-close on expiry. Stocks close via the Exit button.</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    # ── Realized P&L KPIs ─────────────────────────────────────────
+    realized   = closed_df["PL_Dollar"].fillna(0).sum()
+    winners    = int((closed_df["PL_Dollar"].fillna(0) > 0).sum())
+    total_pos  = len(closed_df)
+    win_rate   = winners / total_pos * 100 if total_pos else 0
+    income_opt = closed_df.loc[
+        closed_df["Strategy"].str.upper().isin(_SELL_STRATS), "Income"
+    ].fillna(0).sum()
+    r_color    = ACCENT_GREEN if realized >= 0 else ACCENT_RED
+    wr_color   = ACCENT_GREEN if win_rate >= 60 else (GOLD if win_rate >= 40 else ACCENT_RED)
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1: _kpi("Closed",         str(total_pos),           color="#60A5FA")
+    with c2: _kpi("Realized P&L",   f"${realized:+,.2f}",     color=r_color)
+    with c3: _kpi("Winners",        str(winners),              color=ACCENT_GREEN)
+    with c4: _kpi("Win Rate",       f"{win_rate:.0f}%",        color=wr_color)
+    with c5: _kpi("Options Income", f"${income_opt:+,.2f}",   color=ACCENT_GREEN if income_opt >= 0 else ACCENT_RED)
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+    # ── Positions by strategy ─────────────────────────────────────
+    for strat, label_text, color in _STRATEGY_ORDER:
+        sub = closed_df[closed_df["Strategy"] == strat].copy()
+        if sub.empty:
+            continue
+        is_stock  = strat.upper() in _STOCK_STRATS
+        show_cols = _STOCK_COLS if is_stock else [c for c in _OPT_COLS if c in sub.columns]
+        show_cols = [c for c in show_cols if c in sub.columns]
+        if "Expiry_Date" in sub.columns:
+            sub["Expiry_Date"] = (pd.to_datetime(sub["Expiry_Date"], errors="coerce")
+                                  .dt.strftime("%Y-%m-%d"))
+        with st.expander(f"**{label_text}** — {len(sub)} closed", expanded=True):
+            _positions_table_html(
+                sub.sort_values("Entry_Date", ascending=False, na_position="last"),
+                show_cols, show_close_signal=False,
+                context=f"closed_{strat}",
+            )
+
+
+# ══════════════════════════════════════════════════════════════════
 # 9. MAIN RENDER
 # ══════════════════════════════════════════════════════════════════
 
@@ -1718,7 +1839,7 @@ def render():
     _render_progress_strip(df)
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-    # ── Tab styling ──────────────────────────────────────────────
+    # ── Tab styling — blue/teal, not gold ────────────────────────
     st.markdown(f"""<style>
     .stTabs [data-baseweb="tab-list"] {{
         background:linear-gradient(180deg,{BG_PANEL},{BG_DARK}) !important;
@@ -1731,16 +1852,17 @@ def render():
         background:linear-gradient(180deg,{BG_CARD},#0c0c12) !important;
         border:1px solid {BORDER_COLOR} !important;border-radius:8px !important;}}
     .stTabs [aria-selected="true"] {{
-        color:{BG_DARK} !important;
-        background:linear-gradient(180deg,#FFE07A,{GOLD} 45%,{GOLD_DARK}) !important;
-        border-color:{GOLD_DARK} !important;font-weight:800 !important;
-        box-shadow:0 6px 18px rgba(245,200,66,.45) !important;}}
+        color:#E2E8F0 !important;
+        background:linear-gradient(180deg,#3B82F6,#1D4ED8) !important;
+        border-color:#1D4ED8 !important;font-weight:800 !important;
+        box-shadow:0 6px 18px rgba(59,130,246,0.40) !important;top:-2px !important;}}
     .stTabs [data-baseweb="tab-highlight"],
     .stTabs [data-baseweb="tab-border"] {{display:none !important;}}
     </style>""", unsafe_allow_html=True)
 
-    tab_d, tab_m, tab_a = st.tabs(["📅  DAILY", "📆  MONTHLY", "📊  ANALYTICS"])
-    with tab_d: _render_daily_tab(df)
+    tab_o, tab_c, tab_m, tab_a = st.tabs(["📂  OPEN", "✅  CLOSED", "📆  MONTHLY", "📊  ANALYTICS"])
+    with tab_o: _render_open_tab(df)
+    with tab_c: _render_closed_tab(df)
     with tab_m: _render_monthly_tab(df)
     with tab_a: _render_analytics_tab(df)
 
