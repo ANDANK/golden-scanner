@@ -318,9 +318,50 @@ def _render_top_picks(df: pd.DataFrame):
 
 # ── Results table ───────────────────────────────────────────────
 
+# ── Indicator signal helper ──────────────────────────────────────
+# Shows which of the top-ranked indicators from the Indicator Importance
+# Ranking are "firing" for each ticker, derived from already-computed
+# scanner data (no extra API calls needed).
+#
+#  #1 MACDw  — Weekly MACD cross   → ticker in TC or TA scanner
+#  #2 MAStk  — MA Trend Stack      → ticker in TS scanner
+#  #3 RSIz   — RSI Zone (45–70)    → RSI column
+#  #4 MACDd  — Daily MACD cross    → ticker in TA or MF scanner
+#  #5 Vol×   — Volume Spike ≥1.5×  → Vol Ratio column
+#  (#10 BBsq requires extra price compute — deferred)
+
+def _signals_text(row) -> str:
+    """Return comma-separated signal abbreviations that are firing."""
+    fired = []
+    sc = [s.strip() for s in str(row.get("Scanners", "")).split("+")]
+    if "TC" in sc or "TA" in sc:
+        fired.append("MACDw")   # #1 Weekly MACD cross
+    if "TS" in sc:
+        fired.append("MAStk")   # #2 MA Trend Stack full alignment
+    try:
+        rsi = float(row.get("RSI", 0) or 0)
+        if 45 <= rsi <= 70:
+            fired.append("RSIz")  # #3 RSI bullish zone
+    except Exception:
+        pass
+    if "TA" in sc or "MF" in sc:
+        fired.append("MACDd")   # #4 Daily MACD cross / confirmation
+    try:
+        vr = float(row.get("Vol Ratio", 0) or 0)
+        if vr >= 1.5:
+            fired.append("Vol×")  # #5 Volume spike ≥ 1.5×
+    except Exception:
+        pass
+    return ", ".join(fired) if fired else "—"
+
+
 def _render_combined_table(df: pd.DataFrame):
+    # Compute Signals column before slicing display cols
+    df = df.copy()
+    df["Signals"] = df.apply(_signals_text, axis=1)
+
     display_cols = [
-        "Ticker", "Price", "Change %", "Scanners", "Style", "Hold",
+        "Ticker", "Price", "Change %", "Scanners", "Signals", "Style", "Hold",
         "Est. Upside %", "RSI", "Vol Ratio", "RS vs SPY", "Score", "Scanner Count",
     ]
     cols_present = [c for c in display_cols if c in df.columns]
@@ -364,6 +405,25 @@ def _render_combined_table(df: pd.DataFrame):
                 count = str(val).count("+") + 1
                 color = ACCENT_GREEN if count >= 2 else TEXT_PRIMARY
                 content = f'<span style="color:{color};font-size:11px">{val}</span>'
+            elif col == "Signals":
+                val_str = str(val).strip()
+                if val_str == "—" or not val_str:
+                    content = f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>'
+                else:
+                    sig_parts = []
+                    for sig in [s.strip() for s in val_str.split(",")]:
+                        if not sig or sig == "—":
+                            continue
+                        sig_parts.append(
+                            f'<span style="background:{ACCENT_GREEN}1A;color:{ACCENT_GREEN};'
+                            f'border:1px solid {ACCENT_GREEN}44;padding:1px 6px;'
+                            f'border-radius:3px;font-size:10px;font-weight:600;'
+                            f'white-space:nowrap">{sig}</span>'
+                        )
+                    content = (
+                        '<div style="display:flex;flex-wrap:wrap;gap:3px;min-width:80px">'
+                        + "".join(sig_parts) + "</div>"
+                    )
             elif col == "Hold":
                 content = f'<span style="color:{GOLD};font-size:12px">{val}</span>'
             elif col == "Style":
