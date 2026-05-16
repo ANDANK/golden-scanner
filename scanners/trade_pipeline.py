@@ -158,16 +158,19 @@ def _render_pipeline_diagram():
 
 _LAZY_TAB_CSS = f"""
 <style>
-/* ── Pipeline lazy-tab bar — inactive buttons ─────────────────
-   A <span class="gs-pipeline-tab-bar"> marker is emitted just
-   before the st.columns() call. The ~ sibling selector then
-   targets every button inside the following stHorizontalBlock.
-   This overrides the global gold-gradient button from app.py.   ─────────────────────────────────────────────────────────── */
-.element-container:has(.gs-pipeline-tab-bar) ~ [data-testid="stHorizontalBlock"] .stButton > button,
-[data-testid="element-container"]:has(.gs-pipeline-tab-bar) ~ [data-testid="stHorizontalBlock"] .stButton > button {{
-    background: rgba(251,146,60,0.10) !important;
+/* ── Pipeline lazy-tab bar — inactive buttons (orange) ────────
+   The marker span is emitted immediately before st.columns().
+   Using + (adjacent sibling) — more reliable than ~ across
+   Streamlit versions; both .element-container class and
+   data-testid attribute are listed for version compatibility.
+   Targets button directly (no .stButton chain needed).
+   Specificity 0-3-1 beats app.py .stButton>button (0-1-1).
+   ─────────────────────────────────────────────────────────── */
+.element-container:has(.gs-pipeline-tab-bar) + [data-testid="stHorizontalBlock"] button,
+[data-testid="element-container"]:has(.gs-pipeline-tab-bar) + [data-testid="stHorizontalBlock"] button {{
+    background: rgba(251,146,60,0.12) !important;
     color: #FB923C !important;
-    border: 1px solid rgba(251,146,60,0.28) !important;
+    border: 1px solid rgba(251,146,60,0.35) !important;
     border-radius: 8px !important;
     box-shadow: none !important;
     font-size: 14px !important;
@@ -176,10 +179,10 @@ _LAZY_TAB_CSS = f"""
     letter-spacing: 0.4px !important;
     transition: background 0.15s, border-color 0.15s !important;
 }}
-.element-container:has(.gs-pipeline-tab-bar) ~ [data-testid="stHorizontalBlock"] .stButton > button:hover,
-[data-testid="element-container"]:has(.gs-pipeline-tab-bar) ~ [data-testid="stHorizontalBlock"] .stButton > button:hover {{
-    background: rgba(251,146,60,0.20) !important;
-    border-color: rgba(251,146,60,0.50) !important;
+.element-container:has(.gs-pipeline-tab-bar) + [data-testid="stHorizontalBlock"] button:hover,
+[data-testid="element-container"]:has(.gs-pipeline-tab-bar) + [data-testid="stHorizontalBlock"] button:hover {{
+    background: rgba(251,146,60,0.24) !important;
+    border-color: rgba(251,146,60,0.60) !important;
     color: #FB923C !important;
     transform: none !important;
     box-shadow: none !important;
