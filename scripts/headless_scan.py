@@ -112,12 +112,6 @@ def _scan_csp(tickers):
                      batch_size=BATCH_SIZE, batch_pause=BATCH_PAUSE_S)
     return df
 
-def _scan_cc(tickers):
-    from scanners.cc_scanner import scan_cc
-    df, _ = scan_cc(tickers, 0.15, 0.25, 0.70, 1, 20,
-                    batch_size=BATCH_SIZE, batch_pause=BATCH_PAUSE_S)
-    return df
-
 def _scan_leaps(tickers):
     from scanners.leaps_scanner import scan_leaps
     df, _ = scan_leaps(tickers, 300, 0.60, 0.75, 40, 5.0, 5000.0,
@@ -154,8 +148,6 @@ def run_all_scans() -> pd.DataFrame:
         ("Golden Scan", "Stock",  _scan_golden, golden_tickers),
         ("CSP",         "Stocks", _scan_csp,    stocks),
         ("CSP",         "ETFs",   _scan_csp,    etfs),
-        ("CC",          "Stocks", _scan_cc,     stocks),
-        ("CC",          "ETFs",   _scan_cc,     etfs),
         ("LEAPS",       "Stocks", _scan_leaps,  stocks),
         ("LEAPS",       "ETFs",   _scan_leaps,  etfs),
     ]
@@ -234,7 +226,7 @@ def auto_track_to_sheets(df_new: pd.DataFrame, slot: str = "AM"):
     # Must match gsheet_helper.TRACKING_HEADERS exactly
     HEADERS = ["Ticker", "Strategy", "Action", "Qty", "Entry_Price",
                "Added_Date", "Source", "Score", "HOLD", "Est_Upside", "Notes"]
-    _SELL = {"CSP", "CC", "DIVIDEND+CC", "ETF OPTIONS", "3X ETF OPTIONS"}
+    _SELL = {"CSP", "DIVIDEND+CC", "ETF OPTIONS", "3X ETF OPTIONS"}
 
     try:
         import gspread
@@ -281,7 +273,7 @@ def auto_track_to_sheets(df_new: pd.DataFrame, slot: str = "AM"):
                 continue
 
             action = "Sell" if strat.upper() in _SELL else "Buy"
-            qty    = "1 contract" if strat.upper() in {"CSP","CC","LEAPS","ETF OPTIONS","3X ETF OPTIONS"} else "100 shares"
+            qty    = "1 contract" if strat.upper() in {"CSP","LEAPS","ETF OPTIONS","3X ETF OPTIONS"} else "100 shares"
             price  = str(row.get("Stock Price", row.get("Price", "")))
             source = f"{slot}·{strat}"          # "AM·CC", "PM·CSP", etc.
             hold   = str(row.get("Hold", row.get("HOLD", "")))

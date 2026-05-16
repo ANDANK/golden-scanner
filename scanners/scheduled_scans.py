@@ -29,7 +29,7 @@ SLOTS                = {"am": (9, 0), "pm": (13, 0)}
 SLOT_LABELS          = {"am": "Morning 10:30 AM CST", "pm": "Afternoon  1:00 PM CST"}
 SLOT_ICONS           = {"am": "🌅", "pm": "🌇"}
 AUTO_TRACK_THRESHOLD = 60          # min score to auto-add diff tickers
-STRAT_DISPLAY_ORDER  = ["CSP", "LEAPS", "CC"]   # fixed display order; unknowns appended last
+STRAT_DISPLAY_ORDER  = ["CSP", "LEAPS"]   # fixed display order; unknowns appended last
 
 
 # ── Helpers ────────────────────────────────────────────────────
