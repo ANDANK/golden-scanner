@@ -627,7 +627,8 @@ def _strategy_cols(df: pd.DataFrame, strategy: str) -> list[str]:
 
 
 def render_results_table(df: pd.DataFrame, score_col: str = "Score",
-                         strategy: str = "Stock", source: str = ""):
+                         strategy: str = "Stock", source: str = "",
+                         default_sort_col: str = "", default_sort_asc: bool = False):
     """Render results as columns-based rows with inline Track/Watch buttons."""
     if df.empty:
         empty_state()
@@ -688,13 +689,18 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
     _COUNT_SCORE = "Count + Score ↓"   # synthetic compound-sort option
     _has_count   = "Scanner Count" in df.columns
 
-    # Build option list: "Count + Score" first (and default) when the column exists
+    # Build option list: "Count + Score" first (and default) when the column exists.
+    # Caller may override with default_sort_col / default_sort_asc.
     if _has_count:
-        _sort_opts    = [_COUNT_SCORE] + _sortable
+        _sort_opts = [_COUNT_SCORE] + _sortable
         _sort_def_idx = 0
     else:
-        _sort_opts    = _sortable
+        _sort_opts = _sortable
         _sort_def_idx = next((i for i, c in enumerate(_sortable) if c == "Score"), 0)
+
+    # Apply caller-supplied default sort column (overrides the heuristic above)
+    if default_sort_col and default_sort_col in _sort_opts:
+        _sort_def_idx = _sort_opts.index(default_sort_col)
 
     _s1, _s2, _s3 = st.columns([0.6, 2.8, 0.7])
     with _s1:
@@ -710,8 +716,10 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
             label_visibility="collapsed",
         )
     with _s3:
-        # Asc toggle hidden for compound sort (always desc)
-        _sort_asc = False if _sort_by == _COUNT_SCORE else st.toggle("↑ Asc", value=False, key=f"sort_asc_{key_base}")
+        # Asc toggle hidden for compound sort (always desc).
+        # default_sort_asc sets the initial direction when the caller specifies a default column.
+        _toggle_default = default_sort_asc if (default_sort_col and _sort_by == default_sort_col) else False
+        _sort_asc = False if _sort_by == _COUNT_SCORE else st.toggle("↑ Asc", value=_toggle_default, key=f"sort_asc_{key_base}")
 
     # Apply sort
     if _sort_by == _COUNT_SCORE:

@@ -156,7 +156,8 @@ def render():
                 {''.join([f'<div style="padding:6px 0;border-bottom:1px solid {BORDER_COLOR};color:{TEXT_PRIMARY};font-size:13px">📰 {n.get("title","")}</div>' for n in news[:3]]) if news else f'<div style="color:{TEXT_MUTED};font-size:13px">No headlines available via API.</div>'}
             </div>""", unsafe_allow_html=True)
 
-            render_results_table(df, strategy="Stock", source="Headlines & Catalysts")
+            render_results_table(df, strategy="Stock", source="Headlines & Catalysts",
+                                 default_sort_col="Catalysts", default_sort_asc=True)
     else:
         st.markdown(f"""
         <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">
