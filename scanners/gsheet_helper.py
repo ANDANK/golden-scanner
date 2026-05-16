@@ -22,25 +22,41 @@ WATCHLIST_CSV = os.path.join(DATA_DIR, "watchlist.csv")
 # ── Google Sheets helpers ──────────────────────────────────────
 
 def _gs_client():
-    """Return authorised gspread client, or None if not configured."""
+    """Return authorised gspread client, or None if not configured.
+
+    Credential priority:
+      1. st.secrets["gsheets"]  — Streamlit Cloud
+      2. GOOGLE_CREDS_JSON env var — GitHub Actions / headless mode
+    """
     try:
-        import gspread
+        import gspread, json as _json
         from google.oauth2.service_account import Credentials
         scopes = [
             "https://spreadsheets.google.com/feeds",
             "https://www.googleapis.com/auth/drive",
         ]
-        sec = st.secrets["gsheets"]
-        info = {
-            "type": sec["type"],
-            "project_id": sec["project_id"],
-            "private_key_id": sec["private_key_id"],
-            "private_key": sec["private_key"].replace("\\n", "\n"),
-            "client_email": sec["client_email"],
-            "client_id": sec["client_id"],
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-        }
+        info = None
+        # ── 1. Streamlit secrets ──────────────────────────────
+        try:
+            sec = st.secrets["gsheets"]
+            info = {
+                "type":              sec["type"],
+                "project_id":        sec["project_id"],
+                "private_key_id":    sec["private_key_id"],
+                "private_key":       sec["private_key"].replace("\\n", "\n"),
+                "client_email":      sec["client_email"],
+                "client_id":         sec["client_id"],
+                "auth_uri":          "https://accounts.google.com/o/oauth2/auth",
+                "token_uri":         "https://oauth2.googleapis.com/token",
+            }
+        except Exception:
+            pass
+        # ── 2. Env-var fallback (headless / GitHub Actions) ───
+        if info is None:
+            creds_raw = os.environ.get("GOOGLE_CREDS_JSON", "")
+            if not creds_raw:
+                return None
+            info = _json.loads(creds_raw)
         creds = Credentials.from_service_account_info(info, scopes=scopes)
         return gspread.authorize(creds)
     except Exception:
@@ -48,12 +64,23 @@ def _gs_client():
 
 
 def _gs_sheet(tab: str):
-    """Return a worksheet, creating the tab if it doesn't exist."""
+    """Return a worksheet, creating the tab if it doesn't exist.
+
+    Sheet-ID priority:
+      1. st.secrets["gsheets"]["sheet_id"]  — Streamlit Cloud
+      2. GOOGLE_SHEET_ID env var             — GitHub Actions / headless
+    """
     try:
         client = _gs_client()
         if not client:
             return None
-        sh = client.open_by_key(st.secrets["gsheets"]["sheet_id"])
+        try:
+            sheet_id = st.secrets["gsheets"]["sheet_id"]
+        except Exception:
+            sheet_id = os.environ.get("GOOGLE_SHEET_ID", "")
+        if not sheet_id:
+            return None
+        sh = client.open_by_key(sheet_id)
         try:
             return sh.worksheet(tab)
         except Exception:
@@ -281,12 +308,12 @@ def using_google_sheets() -> bool:
 
 
 def gsheets_configured() -> bool:
-    """Return True if the [gsheets] secret block exists at all (even if auth fails)."""
+    """Return True if GSheets credentials are present (Streamlit secrets or env vars)."""
     try:
         _ = st.secrets["gsheets"]["sheet_id"]
         return True
     except Exception:
-        return False
+        return bool(os.environ.get("GOOGLE_SHEET_ID") and os.environ.get("GOOGLE_CREDS_JSON"))
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -446,3 +473,123 @@ def show_storage_banner() -> None:
             "in **Streamlit Cloud → Settings → Secrets**.",
             icon="⚠️",
         )
+
+
+# ══════════════════════════════════════════════════════════════════
+# TRACKING → PERFORMANCE SYNC
+# ══════════════════════════════════════════════════════════════════
+
+# Minimum score to copy a Tracking row into Performance.
+PERF_SYNC_SCORE_MIN = 70
+
+# Strategies treated as options for dedup purposes.
+_OPT_STRATS_SYNC = {"CSP", "CC", "LEAPS"}
+
+
+def _is_sched_source(src: str) -> bool:
+    """True when source tag comes from an AM or PM scheduled scan."""
+    s = src.strip().upper()
+    return s.startswith("AM·") or s.startswith("PM·")
+
+
+def _perf_dedup_key(r: dict, use_tracking_fields: bool = False) -> tuple:
+    """
+    Build a dedup key for a Performance row.
+    Stocks:  (ticker, strategy_upper, date)
+    Options: (ticker, strategy_upper, date, strike, expiry[:10])
+    use_tracking_fields=True reads Entry_Price/HOLD instead of Strike/Expiry
+    (used when building key from a Tracking row, which lacks those fields).
+    """
+    tk   = str(r.get("Ticker", "")).upper().strip()
+    st_  = str(r.get("Strategy", "")).upper().strip()
+    dt   = str(r.get("Entry_Date" if not use_tracking_fields else "Added_Date", ""))[:10]
+    if st_ in _OPT_STRATS_SYNC:
+        strike = str(r.get("Strike", "")).strip()
+        expiry = str(r.get("Expiry_Date" if not use_tracking_fields else "Expiry_Date", ""))[:10]
+        return (tk, st_, dt, strike, expiry)
+    return (tk, st_, dt, "", "")
+
+
+def sync_tracking_to_performance() -> tuple:
+    """
+    Permanently copy qualifying Tracking rows into the Performance tab.
+
+    Rules
+    ─────
+    • Source must start with "AM·" or "PM·"  (scheduled scan only — not
+      manual scanner runs or individual page Track buttons)
+    • Score must be > PERF_SYNC_SCORE_MIN  (default 70)
+    • No duplicates:
+        Stocks:  (ticker, strategy, entry_date)
+        Options: (ticker, strategy, entry_date, strike, expiry)
+      Note: Tracking does not store Strike/Expiry, so options dedup
+      uses (ticker, strategy, date) — the same tuple with empty
+      strike/expiry — which is sufficient to prevent same-day re-adds.
+
+    Works in both Streamlit Cloud (st.secrets) and headless / GitHub
+    Actions (GOOGLE_CREDS_JSON + GOOGLE_SHEET_ID env vars) because
+    _gs_client() / _gs_sheet() now support both credential paths.
+
+    Returns (added: int, skipped: int).
+    """
+    tracking = get_tracking()
+    if not tracking:
+        return 0, 0
+
+    perf_raw = get_performance() or []
+
+    # Build dedup set from rows already in Performance
+    existing_keys: set = set()
+    for r in perf_raw:
+        existing_keys.add(_perf_dedup_key(r))
+        # Also add the base (ticker, strategy, date) so tracking rows
+        # (which have no strike/expiry) are caught too
+        tk  = str(r.get("Ticker", "")).upper().strip()
+        st_ = str(r.get("Strategy", "")).upper().strip()
+        dt  = str(r.get("Entry_Date", ""))[:10]
+        existing_keys.add((tk, st_, dt, "", ""))
+
+    added = skipped = 0
+    for t in tracking:
+        src = str(t.get("Source", "")).strip()
+
+        # ── Filter 1: must be from a scheduled AM/PM scan ────
+        if not _is_sched_source(src):
+            skipped += 1
+            continue
+
+        # ── Filter 2: score > threshold ──────────────────────
+        try:
+            score = float(str(t.get("Score", "0") or "0"))
+        except Exception:
+            score = 0.0
+        if score <= PERF_SYNC_SCORE_MIN:
+            skipped += 1
+            continue
+
+        tk    = str(t.get("Ticker", "")).upper().strip()
+        strat = str(t.get("Strategy", "")).strip()
+        dt    = str(t.get("Added_Date", ""))[:10]
+        key   = (tk, strat.upper(), dt, "", "")   # tracking has no strike/expiry
+
+        # ── Filter 3: dedup check ────────────────────────────
+        if key in existing_keys:
+            skipped += 1
+            continue
+
+        ok, _ = add_to_performance(
+            tk, strat, src,
+            entry_price=str(t.get("Entry_Price", "")),
+            row_data={
+                "Score":  str(t.get("Score", "")),
+                "Notes":  str(t.get("Notes", "")),
+                # Strike/Premium/Expiry/DTE not in Tracking — left blank
+            },
+        )
+        if ok:
+            existing_keys.add(key)
+            added += 1
+        else:
+            skipped += 1
+
+    return added, skipped

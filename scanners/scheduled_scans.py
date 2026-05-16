@@ -396,6 +396,16 @@ def render():
 
         _save_results(slot, df_new)
         st.success(f"✅ {SLOT_LABELS[slot]} scan complete at {run_start} — {len(df_new)} total setup(s) found.")
+
+        # ── Sync score > 70 AM/PM items to Performance tab ────
+        try:
+            from scanners.gsheet_helper import sync_tracking_to_performance as _sync_perf
+            _p_added, _ = _sync_perf()
+            if _p_added:
+                st.info(f"📊 {_p_added} high-score setup(s) (score > 70) copied to Performance.")
+        except Exception:
+            pass
+
         from data_loader import show_api_warnings
         show_api_warnings()
         # Reload

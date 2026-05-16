@@ -361,4 +361,15 @@ if __name__ == "__main__":
         else:
             log("No AM results to compare against — skipping diff.")
 
+    # ── Sync score > 70 AM/PM Tracking rows → Performance tab ─────
+    # gsheet_helper now supports env-var credentials, so this works
+    # from GitHub Actions without any extra gspread setup.
+    log("Syncing high-score setups to Performance tab …")
+    try:
+        from scanners.gsheet_helper import sync_tracking_to_performance as _sync_perf
+        _p_added, _p_skipped = _sync_perf()
+        log(f"Performance sync: {_p_added} added, {_p_skipped} skipped (dedup / low-score / non-sched).")
+    except Exception as e:
+        log(f"Performance sync error (non-fatal): {e}")
+
     log("=== Scan complete ===")

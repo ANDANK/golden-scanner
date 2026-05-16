@@ -286,25 +286,56 @@ def _auto_close_row(r: dict, row_i: int) -> dict:
 def _load_and_process() -> pd.DataFrame:
     raw = list(get_performance() or [])
 
-    # ── Also pull Tracking entries as open positions ─────────────
-    # This ensures every position tracked via 📌 appears in the dashboard.
+    # ── Also pull qualifying Tracking entries as open positions ─────
+    # Only AM·/PM· scheduled-scan rows with score > 70 are shown here.
+    # Manual scanner runs and low-score items are excluded to keep the
+    # Performance dashboard clean.  The sync_tracking_to_performance()
+    # function permanently writes these to the Performance GSheet tab;
+    # this merge is a display-only fallback for the current session.
     try:
-        from scanners.gsheet_helper import get_tracking as _get_tracking
+        from scanners.gsheet_helper import get_tracking as _get_tracking, PERF_SYNC_SCORE_MIN
         tracking_raw = _get_tracking() or []
-        # Build a set of (Ticker, Strategy, date) already in Performance so we don't double-count
-        perf_keys = {
-            (str(r.get("Ticker","")).upper(),
-             str(r.get("Strategy","")).upper(),
-             str(r.get("Entry_Date",""))[:10])
-            for r in raw
-        }
+        # Dedup set: for options use (ticker, strategy, date, strike, expiry);
+        # for stocks use (ticker, strategy, date).
+        _OPT = {"CSP","CC","LEAPS"}
+        def _pk(r: dict) -> tuple:
+            tk_ = str(r.get("Ticker","")).upper()
+            st_ = str(r.get("Strategy","")).upper()
+            dt_ = str(r.get("Entry_Date",""))[:10]
+            if st_ in _OPT:
+                return (tk_, st_, dt_,
+                        str(r.get("Strike","")).strip(),
+                        str(r.get("Expiry_Date",""))[:10])
+            return (tk_, st_, dt_, "", "")
+        perf_keys = {_pk(r) for r in raw}
+        # Also add base (ticker, strategy, date) keys so tracking rows
+        # (no strike/expiry) are caught by the dedup check
+        for r in raw:
+            tk_ = str(r.get("Ticker","")).upper()
+            st_ = str(r.get("Strategy","")).upper()
+            dt_ = str(r.get("Entry_Date",""))[:10]
+            perf_keys.add((tk_, st_, dt_, "", ""))
+
         for t in tracking_raw:
             tk  = str(t.get("Ticker","")).upper().strip()
             st_ = str(t.get("Strategy","")).strip()
             dt  = str(t.get("Added_Date",""))[:10]
+            src = str(t.get("Source","")).strip()
+
             if not tk:
                 continue
-            if (tk, st_.upper(), dt) in perf_keys:
+
+            # ── Only AM·/PM· scheduled scans with score > threshold ──
+            _is_sched = src.upper().startswith("AM·") or src.upper().startswith("PM·")
+            try:
+                _score_val = float(str(t.get("Score","0") or "0"))
+            except Exception:
+                _score_val = 0.0
+            if not (_is_sched and _score_val > PERF_SYNC_SCORE_MIN):
+                continue
+
+            base_key = (tk, st_.upper(), dt, "", "")
+            if base_key in perf_keys:
                 continue   # already in Performance — skip
             # Convert tracking row → performance-compatible dict
             qty_raw = str(t.get("Qty","1"))
@@ -330,10 +361,11 @@ def _load_and_process() -> pd.DataFrame:
                 "PL_Dollar":         "",
                 "PL_Pct":            "",
                 "Ann_Return":        "",
-                "Source":            t.get("Source","Tracking"),
+                "Source":            src,
                 "Score":             t.get("Score",""),
                 "Notes":             t.get("Notes",""),
             })
+            perf_keys.add(base_key)   # prevent double-add within this loop
     except Exception:
         pass   # Tracking unavailable — continue with Performance only
 
