@@ -30,8 +30,8 @@ ALL_PAGES = [
      "label": "Market Overview",        "required": True},
     {"group": "Dashboard", "key": "📱  Social Trends",
      "label": "Social Trends"},
-    {"group": "Dashboard", "key": "🔄  Trade Pipeline",
-     "label": "Trade Pipeline"},
+    {"group": "Dashboard", "key": "🔄  Auto Scan & Track",
+     "label": "Auto Scan & Track"},
     {"group": "Dashboard", "key": "👁  WatchList",
      "label": "WatchList"},
     # ── Stocks ─────────────────────────────────────────────────

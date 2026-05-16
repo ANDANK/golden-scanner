@@ -634,7 +634,7 @@ NAV_GROUPS = [
         "items": [
             {"key": "🏠  Market Overview"},
             {"key": "📱  Social Trends"},
-            {"key": "🔄  Trade Pipeline"},
+            {"key": "🔄  Auto Scan & Track"},
             {"key": "👁  WatchList"},
         ],
     },
@@ -1006,11 +1006,11 @@ elif page == "🏠  Market Overview":
 elif page == "📱  Social Trends":
     from scanners.social_trends import render
     render()
-elif page == "🔄  Trade Pipeline":
+elif page == "🔄  Auto Scan & Track":
     from scanners.trade_pipeline import render
     render()
-# ── Legacy keys (session state from before the merge) ──────────
-elif page in ("📅  Scheduled Scans", "📌  Tracking", "Performance"):
+# ── Legacy keys (old session state / pre-merge nav keys) ───────
+elif page in ("🔄  Trade Pipeline", "📅  Scheduled Scans", "📌  Tracking", "Performance"):
     from scanners.trade_pipeline import render
     render()
 elif page == "👁  WatchList":
