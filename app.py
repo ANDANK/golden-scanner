@@ -863,16 +863,46 @@ if not _in_maintenance:
 
                 # Body — only render when this is the open group
                 if is_open:
-                    if not grp["items"]:
+                    # ── Admin group: show sidebar password gate if not unlocked ──
+                    if grp.get("dim") and not st.session_state.get("_admin_auth", False):
                         st.markdown(
-                            f'<div style="padding:6px 12px;color:{TEXT_MUTED};font-size:11px;font-style:italic">No admin tools yet</div>',
+                            f'<div style="padding:10px 4px 6px">'
+                            f'<div style="color:{TEXT_MUTED};font-size:11px;text-align:center;'
+                            f'margin-bottom:8px;letter-spacing:0.5px">'
+                            f'🔒 Admin access required</div>'
+                            f'</div>',
                             unsafe_allow_html=True,
                         )
-                    for it in grp["items"]:
-                        if it.get("children"):
-                            _render_item_with_children(it)
-                        else:
-                            _render_nav_item(it)
+                        _sb_pwd = st.text_input(
+                            "", type="password",
+                            placeholder="Admin password…",
+                            label_visibility="collapsed",
+                            key="_sidebar_admin_pwd",
+                        )
+                        if st.button("🔓  Unlock", use_container_width=True,
+                                     key="_sidebar_admin_unlock"):
+                            try:
+                                _sb_correct = st.secrets["ADMIN_PASSWORD"]
+                            except Exception:
+                                _sb_correct = os.environ.get("ADMIN_PASSWORD", "admin!")
+                            if _sb_pwd == _sb_correct:
+                                st.session_state["_admin_auth"] = True
+                                # Navigate to Admin Panel as default landing page
+                                st.session_state["nav_page"] = "⚙️  Admin Panel"
+                                st.rerun()
+                            else:
+                                st.error("❌ Incorrect password")
+                    else:
+                        if not grp["items"]:
+                            st.markdown(
+                                f'<div style="padding:6px 12px;color:{TEXT_MUTED};font-size:11px;font-style:italic">No admin tools yet</div>',
+                                unsafe_allow_html=True,
+                            )
+                        for it in grp["items"]:
+                            if it.get("children"):
+                                _render_item_with_children(it)
+                            else:
+                                _render_nav_item(it)
 
         # ── ⚙️ Settings block — same gold-header treatment ───────
         st.markdown('<div class="gs-global-row">⚙️ Settings</div>', unsafe_allow_html=True)
@@ -1023,53 +1053,15 @@ elif page == "ℹ️  About & Guide":
     from scanners.about import render
     render()
 elif page in ("⚙️  Admin Panel", "🔧  Tech Details"):
-    # ── Shared Admin gate — one password unlocks the entire Admin menu ──
+    # Gate lives in the sidebar (Admin accordion). This is only reached when
+    # nav_page is set to an Admin page without going through the sidebar
+    # (e.g. leftover session state after a page reload).
     if not st.session_state.get("_admin_auth", False):
-        st.markdown("<br>", unsafe_allow_html=True)
-        _, _gc, _ = st.columns([1, 2, 1])
-        with _gc:
-            st.markdown(
-                f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
-                f'border-top:3px solid {GOLD};border-radius:12px;padding:40px 36px;'
-                f'text-align:center;margin-top:48px">'
-                f'<div style="font-size:48px;margin-bottom:14px">🔐</div>'
-                f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;color:{GOLD};'
-                f'font-weight:700;letter-spacing:2px;margin-bottom:6px">Admin Area</div>'
-                f'<div style="color:{TEXT_MUTED};font-size:11px;letter-spacing:2px;'
-                f'text-transform:uppercase;margin-bottom:28px">'
-                f'Restricted Access · Enter Password</div>'
-                f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:20px">'
-                f'One password unlocks all Admin pages for this session.</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-            _pwd = st.text_input(
-                "Admin password", type="password",
-                placeholder="Admin password…",
-                label_visibility="collapsed",
-                key="_admin_gate_pwd",
-            )
-            if st.button("🔓  Unlock Admin Area", use_container_width=True,
-                         key="_admin_gate_btn"):
-                try:
-                    _correct = st.secrets["ADMIN_PASSWORD"]
-                except Exception:
-                    _correct = os.environ.get("ADMIN_PASSWORD", "admin!")
-                if _pwd == _correct:
-                    st.session_state["_admin_auth"] = True
-                    st.rerun()
-                else:
-                    st.error("❌ Incorrect admin password. Please try again.")
-            st.markdown(
-                f'<div style="color:{TEXT_MUTED};font-size:10px;'
-                f'text-align:center;margin-top:14px">'
-                f'🔒 Admin access is logged for security purposes.</div>',
-                unsafe_allow_html=True,
-            )
-    else:
-        if page == "⚙️  Admin Panel":
-            from scanners.admin_page import render
-            render()
-        elif page == "🔧  Tech Details":
-            from scanners.tech_details import render
-            render()
+        st.session_state["nav_page"] = "🏠  Market Overview"
+        st.rerun()
+    elif page == "⚙️  Admin Panel":
+        from scanners.admin_page import render
+        render()
+    elif page == "🔧  Tech Details":
+        from scanners.tech_details import render
+        render()
