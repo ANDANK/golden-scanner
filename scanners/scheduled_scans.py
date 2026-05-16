@@ -246,7 +246,7 @@ def _slot_card(slot: str, df: pd.DataFrame, run_at: str):
 def render():
     section_header(
         "📅", "Scheduled Scans",
-        "Auto-runs at 9 AM & 1 PM CST · Diffs new vs morning setups · Score ≥ 60 auto-tracked",
+        "Auto-runs at 10:30 AM & 1 PM CST · Diffs new vs morning setups · Score ≥ 60 auto-tracked",
     )
 
     _is_admin = st.session_state.get("_is_admin", False)
@@ -296,7 +296,7 @@ def render():
             f'border-left:3px solid {BORDER_COLOR};border-radius:6px;'
             f'padding:10px 16px;font-size:12px;color:{TEXT_MUTED};margin-bottom:8px">'
             f'🔒 <strong style="color:{TEXT_PRIMARY}">Manual scan triggers are restricted to admins.</strong>'
-            f' Scans run automatically at 9 AM &amp; 1 PM CST — results appear here once complete.'
+            f' Scans run automatically at 10:30 AM &amp; 1 PM CST — results appear here once complete.'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -346,7 +346,7 @@ def render():
         if _is_admin:
             empty_state("No scans run today yet. Click ▶ Run AM Scan to start.")
         else:
-            empty_state("No scans have run today yet — check back after 9 AM CST.")
+            empty_state("No scans have run today yet — check back after 10:30 AM CST.")
         return
 
     tabs = st.tabs(tab_labels)
