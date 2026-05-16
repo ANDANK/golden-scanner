@@ -53,11 +53,31 @@ ETF_KEYWORDS = ["etf","fund","trust","index","shares","ishares","vanguard",
 
 # ── Core fetcher — fixed ex-div date logic ─────────────────────
 
-@st.cache_data(ttl=1800, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def fetch_dividend_info(ticker: str) -> dict:
+    """
+    Fetch dividend info with a 5-source waterfall for ex-div date.
+    TTL=300s (5 min) so failed/stale results don't persist long.
+    Falls back from YF_SESSION → bare yfinance → yf.download if needed.
+    """
     try:
-        t    = yf.Ticker(ticker, session=YF_SESSION)
-        info = t.info or {}
+        today = date.today()
+
+        # ── Ticker object — try with session, fall back to bare ──
+        t = None
+        info = {}
+        for _sess in [YF_SESSION, None]:
+            try:
+                t    = yf.Ticker(ticker, session=_sess) if _sess is not None else yf.Ticker(ticker)
+                info = t.info or {}
+                if info:
+                    break
+            except Exception:
+                t = None
+                info = {}
+
+        if t is None:
+            return {}
 
         name       = info.get("shortName") or info.get("longName") or ticker
         sector     = info.get("sector")    or "N/A"
@@ -67,17 +87,25 @@ def fetch_dividend_info(ticker: str) -> dict:
         asset_type = info.get("quoteType", "").upper()
         div_rate   = info.get("dividendRate") or 0
 
+        # fast_info fallback when t.info is sparse (cloud rate-limit)
+        if not price or not mcap:
+            try:
+                fi    = t.fast_info
+                price = price or getattr(fi, "last_price", 0) or 0
+                mcap  = mcap  or getattr(fi, "market_cap",  0) or 0
+            except Exception:
+                pass
+
         # ── Yield normalization ────────────────────────────────
-        # yfinance returns dividendYield as decimal (0.035) OR percent (3.5)
         raw_yield = info.get("dividendYield") or 0
         if raw_yield > 1.0:
-            div_yield = round(float(raw_yield), 2)   # already percent
+            div_yield = round(float(raw_yield), 2)
         else:
-            div_yield = round(float(raw_yield) * 100, 2)  # convert decimal
+            div_yield = round(float(raw_yield) * 100, 2)
         if div_yield > 80:
-            div_yield = 0.0  # sanity cap
+            div_yield = 0.0
 
-        # 5yr avg yield — same normalization
+        # 5yr avg yield
         five_yr = float(info.get("fiveYearAvgDividendYield") or 0)
         if 0 < five_yr < 1.0:
             five_yr = round(five_yr * 100, 2)
@@ -89,18 +117,14 @@ def fetch_dividend_info(ticker: str) -> dict:
         freq_map   = {1: "Annual", 2: "Semi-Annual", 4: "Quarterly", 12: "Monthly"}
         freq_label = freq_map.get(freq_raw, "Quarterly")
 
-        # ── Ex-div date: 3-source waterfall ───────────────────
-        # BUG FIX: yfinance .info["exDividendDate"] is the LAST ex-div (past),
-        # not the next one. We must try multiple sources and only accept FUTURE dates.
-        today       = date.today()
+        # ── Ex-div date: 5-source waterfall ───────────────────
         ex_div_date = None
         pay_date    = None
 
-        # Source 1: t.calendar — most likely to have next upcoming date
+        # Source 1: t.calendar (most likely to carry next upcoming date)
         try:
             cal = t.calendar
             if cal is not None:
-                # calendar can be dict or DataFrame depending on yfinance version
                 if isinstance(cal, dict):
                     v = cal.get("Ex-Dividend Date")
                     if v and str(v) not in ("NaT", "nan", "None", ""):
@@ -108,7 +132,6 @@ def fetch_dividend_info(ticker: str) -> dict:
                         if candidate >= today:
                             ex_div_date = candidate
                 elif isinstance(cal, pd.DataFrame) and not cal.empty:
-                    # Try index-based access
                     for key in ["Ex-Dividend Date", "exDividendDate"]:
                         if key in cal.index:
                             try:
@@ -120,7 +143,6 @@ def fetch_dividend_info(ticker: str) -> dict:
                                         break
                             except Exception:
                                 pass
-                    # Try column-based access
                     if ex_div_date is None:
                         for key in ["Ex-Dividend Date", "exDividendDate"]:
                             if key in cal.columns:
@@ -141,22 +163,22 @@ def fetch_dividend_info(ticker: str) -> dict:
             if raw:
                 try:
                     candidate = datetime.utcfromtimestamp(int(raw)).date()
-                    if today <= candidate <= today + timedelta(days=120):
+                    if today <= candidate <= today + timedelta(days=180):
                         ex_div_date = candidate
                 except Exception:
                     pass
 
-        # Source 3: project from dividend history — always run if history available
-        # (div_rate can be 0 on cloud when t.info is restricted, but dividends still accessible)
+        # Source 3: project from t.dividends history (works even when t.info is sparse)
+        _divs_cache = None
         if ex_div_date is None:
             try:
                 divs = t.dividends
+                _divs_cache = divs   # reuse below in history section
                 if divs is not None and not divs.empty:
                     divs_pos = divs[divs > 0]
                     if not divs_pos.empty:
                         last_ts = divs_pos.index[-1]
                         last_d  = last_ts.date() if hasattr(last_ts, "date") else date.fromisoformat(str(last_ts)[:10])
-                        # Infer frequency from gap between last payments
                         if len(divs_pos) >= 2:
                             gaps = [(divs_pos.index[i] - divs_pos.index[i-1]).days
                                     for i in range(1, min(len(divs_pos), 6))]
@@ -165,12 +187,54 @@ def fetch_dividend_info(ticker: str) -> dict:
                             avg_gap = {"Annual":365,"Semi-Annual":182,"Quarterly":91,"Monthly":30}.get(freq_label, 91)
                         freq_days = max(25, min(avg_gap, 370))
                         projected = last_d + timedelta(days=freq_days)
-                        # Advance until we find a future date
                         while projected < today:
                             projected += timedelta(days=freq_days)
                         ex_div_date = projected
+                        # Backfill freq_label from actual gap
+                        if avg_gap <= 35:     freq_label = "Monthly"
+                        elif avg_gap <= 100:  freq_label = "Quarterly"
+                        elif avg_gap <= 200:  freq_label = "Semi-Annual"
+                        else:                 freq_label = "Annual"
             except Exception:
                 pass
+
+        # Source 4: yf.download with actions=True — different endpoint, less rate-limited
+        if ex_div_date is None:
+            try:
+                dl = yf.download(ticker, period="2y", actions=True,
+                                 progress=False, auto_adjust=True)
+                if "Dividends" in dl.columns:
+                    ddivs = dl["Dividends"]
+                    ddivs = ddivs[ddivs > 0]
+                    if not ddivs.empty:
+                        last_ts = ddivs.index[-1]
+                        last_d  = last_ts.date() if hasattr(last_ts, "date") else date.fromisoformat(str(last_ts)[:10])
+                        if len(ddivs) >= 2:
+                            gaps = [(ddivs.index[i] - ddivs.index[i-1]).days
+                                    for i in range(1, min(len(ddivs), 6))]
+                            avg_gap = int(sum(gaps) / len(gaps))
+                        else:
+                            avg_gap = 91
+                        freq_days = max(25, min(avg_gap, 370))
+                        projected = last_d + timedelta(days=freq_days)
+                        while projected < today:
+                            projected += timedelta(days=freq_days)
+                        ex_div_date = projected
+                        if not div_yield and len(ddivs) >= 1 and price > 0:
+                            annual = float(ddivs.tail(4).sum()) if freq_days <= 100 else float(ddivs.iloc[-1])
+                            div_yield = round(annual / price * 100, 2)
+                        if _divs_cache is None:
+                            _divs_cache = ddivs
+            except Exception:
+                pass
+
+        # Source 5: last resort — div_rate > 0 from info means dividends exist;
+        # project using frequency assumption from today. Marked as estimate.
+        _is_estimated = False
+        if ex_div_date is None and div_rate > 0:
+            freq_days_est = {"Annual":365,"Semi-Annual":182,"Quarterly":91,"Monthly":30}.get(freq_label, 91)
+            ex_div_date   = today + timedelta(days=freq_days_est // 2)
+            _is_estimated = True
 
         # Payment date (usually ~3 weeks after ex-div)
         if ex_div_date:
@@ -182,35 +246,36 @@ def fetch_dividend_info(ticker: str) -> dict:
                         pay_date = pd_cand
                 except Exception:
                     pass
-            # Estimate if not found
             if pay_date is None:
                 pay_date = ex_div_date + timedelta(days=21)
 
         # ── Dividend history ───────────────────────────────────
         hist = []
         try:
-            divs = t.dividends
+            divs = _divs_cache if _divs_cache is not None else t.dividends
             if divs is not None and not divs.empty:
                 recent = divs[divs > 0].tail(12)
-                hist   = [(str(d.date()), round(float(v), 4)) for d, v in recent.items()]
+                hist   = [(str(d.date() if hasattr(d, "date") else str(d)[:10]),
+                           round(float(v), 4)) for d, v in recent.items()]
         except Exception:
             pass
 
         return {
-            "ticker":      ticker,
-            "name":        name,
-            "sector":      sector,
-            "asset_type":  asset_type,
-            "mcap":        mcap,
-            "price":       price,
-            "avg_vol":     avg_vol,
-            "div_rate":    div_rate,
-            "div_yield":   div_yield,
-            "ex_div":      ex_div_date,
-            "pay_date":    pay_date,
-            "frequency":   freq_label,
-            "five_yr_avg": five_yr,
-            "history":     hist,
+            "ticker":        ticker,
+            "name":          name,
+            "sector":        sector,
+            "asset_type":    asset_type,
+            "mcap":          mcap,
+            "price":         price,
+            "avg_vol":       avg_vol,
+            "div_rate":      div_rate,
+            "div_yield":     div_yield,
+            "ex_div":        ex_div_date,
+            "pay_date":      pay_date,
+            "frequency":     freq_label,
+            "five_yr_avg":   five_yr,
+            "history":       hist,
+            "is_estimated":  _is_estimated,
         }
     except Exception:
         return {}
@@ -545,11 +610,11 @@ def render():
 
     with st.sidebar:
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">📅 Date Range</div>', unsafe_allow_html=True)
-        weeks_ahead = st.slider("Ex-Div window (weeks)", 1, 16, 6, key="div_weeks_slider")
+        weeks_ahead = st.slider("Ex-Div window (weeks)", 1, 16, 12, key="div_weeks_slider")
         date_to = today + timedelta(weeks=weeks_ahead)
 
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:12px 0 8px">💰 Dividend Yield</div>', unsafe_allow_html=True)
-        yield_min, yield_max = st.slider("Yield range (%)", 0.0, 20.0, (1.0, 20.0), 0.5, key="div_yield_slider")
+        yield_min, yield_max = st.slider("Yield range (%)", 0.0, 20.0, (0.0, 20.0), 0.5, key="div_yield_slider")
 
         st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:12px 0 8px">🔧 Filters</div>', unsafe_allow_html=True)
         exclude_etf  = st.checkbox("Exclude ETFs & Funds", value=False)
@@ -561,13 +626,13 @@ def render():
             "Consumer Staples","Consumer Discretionary","Industrials",
             "Materials","Real Estate","Communication Services"
         ])
-        min_vol_m = st.slider("Min Avg Volume (M)", 0.0, 5.0, 0.1, 0.1)
+        min_vol_m = st.slider("Min Avg Volume (M)", 0.0, 5.0, 0.0, 0.1)
         min_vol   = int(min_vol_m * 1_000_000)
         sort_by   = st.selectbox("Sort By", [
             "Soonest Ex-Div","Highest Yield","Largest Market Cap","Most Consistent"
         ])
         universe_size = st.slider("Universe size", 20, len(DIVIDEND_UNIVERSE),
-                                  min(80, len(DIVIDEND_UNIVERSE)), 10)
+                                  min(150, len(DIVIDEND_UNIVERSE)), 10)
 
     tickers = DIVIDEND_UNIVERSE[:universe_size]
 
