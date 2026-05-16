@@ -1137,37 +1137,6 @@ def _render_top_cards(df: pd.DataFrame, today: date):
     </div>""", unsafe_allow_html=True)
 
 
-def _render_progress_strip(df: pd.DataFrame):
-    closed       = df[df["Status"].str.lower().isin(["expired","closed","assigned","called"])]
-    # Options income: only CSP + CC sell strategies that expired/closed
-    opt_closed   = closed[closed["Strategy"].str.upper().isin({"CSP", "CC"})]
-    income_ytd   = opt_closed["Income"].sum()
-    # Open unrealized P&L across all open positions
-    open_pnl     = df[df["Status"].str.lower() == "open"]["PL_Dollar"].fillna(0).sum()
-    # Stock P&L: closed stock/GS positions
-    stock_closed = closed[closed["Strategy"].str.upper().isin(_STOCK_STRATS)]
-    stock_pnl    = stock_closed["PL_Dollar"].fillna(0).sum()
-    total        = len(df)
-    # Avg premium/day: options sold (CSP+CC) income ÷ days since first such trade
-    opt_dates    = opt_closed["Entry_Date"].dropna()
-    if not opt_dates.empty:
-        days_active  = max(1, (date.today() - opt_dates.min().date()).days)
-        avg_prem_day = income_ytd / days_active
-    else:
-        avg_prem_day = 0.0
-
-    _section_label("🎯 Wheel Strategy Progress", GOLD)
-    c1, c2, c3, c4, c5 = st.columns(5)
-    with c1: _kpi("Options Income YTD", f"${income_ytd:,.2f}",
-                  color=ACCENT_GREEN if income_ytd >= 0 else ACCENT_RED)
-    with c2: _kpi("Positions",          str(total),              color=GOLD)
-    with c3: _kpi("Open P&L",           f"${open_pnl:+,.2f}",
-                  color=ACCENT_GREEN if open_pnl >= 0 else ACCENT_RED)
-    with c4: _kpi("Stock P&L (Closed)", f"${stock_pnl:+,.2f}",
-                  color=ACCENT_GREEN if stock_pnl >= 0 else ACCENT_RED)
-    with c5: _kpi("Opt. Premium/Day",   f"${avg_prem_day:,.2f}", color=GOLD)
-
-
 def _render_ticker_snapshot(df: pd.DataFrame):
     _section_label("📋 Ticker Performance Snapshot", GOLD)
     by_tkr = (df.groupby("Ticker").agg(
@@ -1834,10 +1803,6 @@ def render():
     if df.empty:
         st.info(f"No positions for strategy: {sel}")
         return
-
-    # ── Progress KPIs (always visible) ──────────────────────────
-    _render_progress_strip(df)
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
     # ── Tab styling — blue/teal, not gold ────────────────────────
     st.markdown(f"""<style>
