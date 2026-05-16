@@ -8,12 +8,124 @@ import yfinance as yf
 import plotly.graph_objects as go
 from datetime import datetime, timedelta, date
 import pytz
+import requests
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import *
 from utils import section_header, empty_state, metric_card
 from data_loader import YF_SESSION
+
+# ── Nasdaq public API headers (different IP profile than Yahoo) ─
+_NASDAQ_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept":          "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Origin":          "https://www.nasdaq.com",
+    "Referer":         "https://www.nasdaq.com/",
+}
+
+
+def _fetch_nasdaq_dividends(ticker: str):
+    """
+    Pull dividend rows from Nasdaq's public API.
+    Returns (next_ex_div_date | None, history_list).
+    Works reliably on Streamlit Cloud where Yahoo blocks cloud IPs.
+    """
+    try:
+        url = (
+            f"https://api.nasdaq.com/api/quote/{ticker}/dividends"
+            f"?assetclass=stocks"
+        )
+        r = requests.get(url, headers=_NASDAQ_HEADERS, timeout=8)
+        if r.status_code != 200:
+            return None, []
+
+        rows = (
+            (r.json().get("data") or {})
+            .get("dividends") or {}
+        ).get("rows") or []
+
+        today     = date.today()
+        ex_div    = None
+        history   = []          # [(date_str, amount), ...]
+        past_dates = []
+
+        for row in rows:
+            ex_str  = (row.get("exOrEffDate") or "").strip()
+            amt_str = (row.get("amount") or "").replace("$", "").strip()
+            try:
+                ex_d = datetime.strptime(ex_str, "%m/%d/%Y").date()
+                amt  = float(amt_str) if amt_str else 0.0
+                if amt > 0:
+                    history.append((str(ex_d), round(amt, 4)))
+                # Nasdaq returns rows newest-first
+                if ex_d >= today and ex_div is None:
+                    ex_div = ex_d
+                elif ex_d < today:
+                    past_dates.append(ex_d)
+            except Exception:
+                pass
+
+        # All rows are in the past — project forward from gap pattern
+        if ex_div is None and len(past_dates) >= 2:
+            gaps = [(past_dates[i] - past_dates[i + 1]).days
+                    for i in range(min(len(past_dates) - 1, 4))]
+            avg_gap = int(sum(gaps) / len(gaps))
+            avg_gap = max(25, min(avg_gap, 370))
+            projected = past_dates[0] + timedelta(days=avg_gap)
+            while projected < today:
+                projected += timedelta(days=avg_gap)
+            ex_div = projected
+
+        return ex_div, history
+
+    except Exception:
+        return None, []
+
+
+def _fetch_nasdaq_price(ticker: str):
+    """Best-effort price from Nasdaq's quote API (fallback when Yahoo blocked)."""
+    try:
+        url = (
+            f"https://api.nasdaq.com/api/quote/{ticker}/info"
+            f"?assetClass=stocks"
+        )
+        r = requests.get(url, headers=_NASDAQ_HEADERS, timeout=6)
+        if r.status_code != 200:
+            return 0.0, 0
+
+        data  = (r.json().get("data") or {})
+        price_str = (
+            (data.get("primaryData") or {})
+            .get("lastSalePrice", "")
+            .replace("$", "").replace(",", "").strip()
+        )
+        price = float(price_str) if price_str else 0.0
+
+        mcap_str_val = (
+            (data.get("summaryData") or {})
+            .get("MarketCap", {})
+            .get("value", "")
+            .replace("$", "").replace(",", "").strip()
+        )
+        mcap = 0
+        if mcap_str_val:
+            if mcap_str_val.endswith("T"):
+                mcap = float(mcap_str_val[:-1]) * 1e12
+            elif mcap_str_val.endswith("B"):
+                mcap = float(mcap_str_val[:-1]) * 1e9
+            elif mcap_str_val.endswith("M"):
+                mcap = float(mcap_str_val[:-1]) * 1e6
+
+        return price, mcap
+
+    except Exception:
+        return 0.0, 0
 
 
 DIVIDEND_UNIVERSE = [
@@ -51,59 +163,88 @@ ETF_KEYWORDS = ["etf","fund","trust","index","shares","ishares","vanguard",
                 "global x","amplify","neos","roundhill","defiance","kurv"]
 
 
-# ── Core fetcher — fixed ex-div date logic ─────────────────────
+# ── Core fetcher — 6-source ex-div waterfall ───────────────────
 
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_dividend_info(ticker: str) -> dict:
     """
-    Fetch dividend info with a 5-source waterfall for ex-div date.
-    TTL=300s (5 min) so failed/stale results don't persist long.
-    Falls back from YF_SESSION → bare yfinance → yf.download if needed.
+    Fetch dividend info with a 6-source ex-div waterfall.
+    Source 0 (Nasdaq API) runs first — independent of Yahoo/yfinance,
+    so it works reliably on Streamlit Cloud where Yahoo blocks cloud IPs.
+    TTL=300s so stale/failed results don't persist more than 5 minutes.
     """
     try:
         today = date.today()
 
-        # ── Ticker object — try with session, fall back to bare ──
-        t = None
+        # ── Source 0: Nasdaq public dividend API ─────────────────────
+        # Completely independent of Yahoo; works on cloud IPs.
+        nasdaq_ex_div, nasdaq_hist = _fetch_nasdaq_dividends(ticker)
+
+        # ── Ticker object (yfinance) — best-effort ────────────────────
+        t    = None
         info = {}
         for _sess in [YF_SESSION, None]:
             try:
-                t    = yf.Ticker(ticker, session=_sess) if _sess is not None else yf.Ticker(ticker)
-                info = t.info or {}
-                if info:
+                _t   = yf.Ticker(ticker, session=_sess) if _sess is not None else yf.Ticker(ticker)
+                _inf = _t.info or {}
+                if _inf:
+                    t = _t; info = _inf
                     break
-            except Exception:
-                t = None
-                info = {}
-
-        if t is None:
-            return {}
-
-        name       = info.get("shortName") or info.get("longName") or ticker
-        sector     = info.get("sector")    or "N/A"
-        mcap       = info.get("marketCap") or 0
-        price      = info.get("currentPrice") or info.get("regularMarketPrice") or 0
-        avg_vol    = info.get("averageVolume") or 0
-        asset_type = info.get("quoteType", "").upper()
-        div_rate   = info.get("dividendRate") or 0
-
-        # fast_info fallback when t.info is sparse (cloud rate-limit)
-        if not price or not mcap:
-            try:
-                fi    = t.fast_info
-                price = price or getattr(fi, "last_price", 0) or 0
-                mcap  = mcap  or getattr(fi, "market_cap",  0) or 0
+                elif t is None:        # keep object even if info empty
+                    t = _t
             except Exception:
                 pass
 
-        # ── Yield normalization ────────────────────────────────
-        raw_yield = info.get("dividendYield") or 0
+        # ── Metadata from info (may be empty on cloud) ───────────────
+        name       = info.get("shortName") or info.get("longName") or ticker
+        sector     = info.get("sector")    or "N/A"
+        mcap       = float(info.get("marketCap")       or 0)
+        price      = float(info.get("currentPrice")    or info.get("regularMarketPrice") or 0)
+        avg_vol    = float(info.get("averageVolume")   or 0)
+        asset_type = info.get("quoteType", "").upper()
+        div_rate   = float(info.get("dividendRate")    or 0)
+
+        # fast_info fallback when t.info is sparse (cloud rate-limit)
+        if t is not None and (not price or not mcap):
+            try:
+                fi      = t.fast_info
+                price   = price   or float(getattr(fi, "last_price",             0) or 0)
+                mcap    = mcap    or float(getattr(fi, "market_cap",              0) or 0)
+                avg_vol = avg_vol or float(getattr(fi, "three_month_average_volume", 0) or 0)
+            except Exception:
+                pass
+
+        # Nasdaq price/mcap fallback if still zero
+        if not price or not mcap:
+            _np, _nm = _fetch_nasdaq_price(ticker)
+            price = price or _np
+            mcap  = mcap  or _nm
+
+        # ── Yield normalization ────────────────────────────────────────
+        raw_yield = float(info.get("dividendYield") or 0)
         if raw_yield > 1.0:
-            div_yield = round(float(raw_yield), 2)
+            div_yield = round(raw_yield, 2)
         else:
-            div_yield = round(float(raw_yield) * 100, 2)
+            div_yield = round(raw_yield * 100, 2)
         if div_yield > 80:
             div_yield = 0.0
+
+        # Derive yield from Nasdaq history if still zero
+        if not div_yield and nasdaq_hist and price > 0:
+            recent_amts = [h[1] for h in nasdaq_hist[:4]]
+            if recent_amts:
+                # Detect frequency from gap between first two entries
+                if len(nasdaq_hist) >= 2:
+                    try:
+                        d0 = datetime.strptime(nasdaq_hist[0][0], "%Y-%m-%d").date()
+                        d1 = datetime.strptime(nasdaq_hist[1][0], "%Y-%m-%d").date()
+                        gap = abs((d0 - d1).days)
+                        periods = 12 if gap <= 35 else (4 if gap <= 100 else (2 if gap <= 200 else 1))
+                    except Exception:
+                        periods = 4
+                else:
+                    periods = 4
+                div_yield = round(recent_amts[0] * periods / price * 100, 2)
 
         # 5yr avg yield
         five_yr = float(info.get("fiveYearAvgDividendYield") or 0)
@@ -112,52 +253,67 @@ def fetch_dividend_info(ticker: str) -> dict:
         else:
             five_yr = round(five_yr, 2)
 
-        # ── Frequency ─────────────────────────────────────────
+        # ── Frequency ──────────────────────────────────────────────────
         freq_raw   = info.get("dividendFrequency")
         freq_map   = {1: "Annual", 2: "Semi-Annual", 4: "Quarterly", 12: "Monthly"}
         freq_label = freq_map.get(freq_raw, "Quarterly")
 
-        # ── Ex-div date: 5-source waterfall ───────────────────
-        ex_div_date = None
-        pay_date    = None
+        # Backfill freq from Nasdaq history gap if yfinance freq unknown
+        if not freq_raw and len(nasdaq_hist) >= 2:
+            try:
+                d0  = datetime.strptime(nasdaq_hist[0][0], "%Y-%m-%d").date()
+                d1  = datetime.strptime(nasdaq_hist[1][0], "%Y-%m-%d").date()
+                gap = abs((d0 - d1).days)
+                freq_label = ("Monthly" if gap <= 35 else
+                              "Quarterly" if gap <= 100 else
+                              "Semi-Annual" if gap <= 200 else "Annual")
+            except Exception:
+                pass
 
-        # Source 1: t.calendar (most likely to carry next upcoming date)
-        try:
-            cal = t.calendar
-            if cal is not None:
-                if isinstance(cal, dict):
-                    v = cal.get("Ex-Dividend Date")
-                    if v and str(v) not in ("NaT", "nan", "None", ""):
-                        candidate = pd.Timestamp(v).date()
-                        if candidate >= today:
-                            ex_div_date = candidate
-                elif isinstance(cal, pd.DataFrame) and not cal.empty:
-                    for key in ["Ex-Dividend Date", "exDividendDate"]:
-                        if key in cal.index:
-                            try:
-                                v = cal.loc[key].iloc[0]
-                                if pd.notna(v):
-                                    candidate = pd.Timestamp(v).date()
-                                    if candidate >= today:
-                                        ex_div_date = candidate
-                                        break
-                            except Exception:
-                                pass
-                    if ex_div_date is None:
+        # ── Ex-div date waterfall ──────────────────────────────────────
+        ex_div_date  = nasdaq_ex_div     # Source 0 already resolved above
+        pay_date     = None
+        _divs_cache  = None
+        _is_estimated = False
+
+        # Source 1: t.calendar
+        if ex_div_date is None and t is not None:
+            try:
+                cal = t.calendar
+                if cal is not None:
+                    if isinstance(cal, dict):
+                        v = cal.get("Ex-Dividend Date")
+                        if v and str(v) not in ("NaT", "nan", "None", ""):
+                            candidate = pd.Timestamp(v).date()
+                            if candidate >= today:
+                                ex_div_date = candidate
+                    elif isinstance(cal, pd.DataFrame) and not cal.empty:
                         for key in ["Ex-Dividend Date", "exDividendDate"]:
-                            if key in cal.columns:
+                            if key in cal.index:
                                 try:
-                                    v = cal[key].dropna().iloc[0]
-                                    candidate = pd.Timestamp(v).date()
-                                    if candidate >= today:
-                                        ex_div_date = candidate
-                                        break
+                                    v = cal.loc[key].iloc[0]
+                                    if pd.notna(v):
+                                        candidate = pd.Timestamp(v).date()
+                                        if candidate >= today:
+                                            ex_div_date = candidate
+                                            break
                                 except Exception:
                                     pass
-        except Exception:
-            pass
+                        if ex_div_date is None:
+                            for key in ["Ex-Dividend Date", "exDividendDate"]:
+                                if key in cal.columns:
+                                    try:
+                                        v = cal[key].dropna().iloc[0]
+                                        candidate = pd.Timestamp(v).date()
+                                        if candidate >= today:
+                                            ex_div_date = candidate
+                                            break
+                                    except Exception:
+                                        pass
+            except Exception:
+                pass
 
-        # Source 2: info["exDividendDate"] unix timestamp — accept only if future
+        # Source 2: info["exDividendDate"] unix timestamp
         if ex_div_date is None:
             raw = info.get("exDividendDate")
             if raw:
@@ -168,47 +324,53 @@ def fetch_dividend_info(ticker: str) -> dict:
                 except Exception:
                     pass
 
-        # Source 3: project from t.dividends history (works even when t.info is sparse)
-        _divs_cache = None
-        if ex_div_date is None:
+        # Source 3: project from t.dividends history
+        if ex_div_date is None and t is not None:
             try:
                 divs = t.dividends
-                _divs_cache = divs   # reuse below in history section
+                _divs_cache = divs
                 if divs is not None and not divs.empty:
                     divs_pos = divs[divs > 0]
                     if not divs_pos.empty:
                         last_ts = divs_pos.index[-1]
-                        last_d  = last_ts.date() if hasattr(last_ts, "date") else date.fromisoformat(str(last_ts)[:10])
+                        last_d  = (last_ts.date() if hasattr(last_ts, "date")
+                                   else date.fromisoformat(str(last_ts)[:10]))
                         if len(divs_pos) >= 2:
                             gaps = [(divs_pos.index[i] - divs_pos.index[i-1]).days
                                     for i in range(1, min(len(divs_pos), 6))]
                             avg_gap = int(sum(gaps) / len(gaps))
                         else:
-                            avg_gap = {"Annual":365,"Semi-Annual":182,"Quarterly":91,"Monthly":30}.get(freq_label, 91)
+                            avg_gap = {"Annual":365,"Semi-Annual":182,
+                                       "Quarterly":91,"Monthly":30}.get(freq_label, 91)
                         freq_days = max(25, min(avg_gap, 370))
                         projected = last_d + timedelta(days=freq_days)
                         while projected < today:
                             projected += timedelta(days=freq_days)
                         ex_div_date = projected
-                        # Backfill freq_label from actual gap
-                        if avg_gap <= 35:     freq_label = "Monthly"
-                        elif avg_gap <= 100:  freq_label = "Quarterly"
-                        elif avg_gap <= 200:  freq_label = "Semi-Annual"
-                        else:                 freq_label = "Annual"
+                        if avg_gap <= 35:    freq_label = "Monthly"
+                        elif avg_gap <= 100: freq_label = "Quarterly"
+                        elif avg_gap <= 200: freq_label = "Semi-Annual"
+                        else:               freq_label = "Annual"
             except Exception:
                 pass
 
-        # Source 4: yf.download with actions=True — different endpoint, less rate-limited
-        if ex_div_date is None:
+        # Source 4: yf.download(actions=True) — different Yahoo endpoint.
+        # Fix: newer yfinance returns MultiIndex columns even for single tickers;
+        # must flatten before checking for "Dividends".
+        if ex_div_date is None and t is not None:
             try:
                 dl = yf.download(ticker, period="2y", actions=True,
                                  progress=False, auto_adjust=True)
+                # Flatten MultiIndex (yfinance >= 0.2.38 breaking change)
+                if isinstance(dl.columns, pd.MultiIndex):
+                    dl.columns = [col[0] for col in dl.columns]
                 if "Dividends" in dl.columns:
                     ddivs = dl["Dividends"]
                     ddivs = ddivs[ddivs > 0]
                     if not ddivs.empty:
                         last_ts = ddivs.index[-1]
-                        last_d  = last_ts.date() if hasattr(last_ts, "date") else date.fromisoformat(str(last_ts)[:10])
+                        last_d  = (last_ts.date() if hasattr(last_ts, "date")
+                                   else date.fromisoformat(str(last_ts)[:10]))
                         if len(ddivs) >= 2:
                             gaps = [(ddivs.index[i] - ddivs.index[i-1]).days
                                     for i in range(1, min(len(ddivs), 6))]
@@ -220,62 +382,72 @@ def fetch_dividend_info(ticker: str) -> dict:
                         while projected < today:
                             projected += timedelta(days=freq_days)
                         ex_div_date = projected
-                        if not div_yield and len(ddivs) >= 1 and price > 0:
-                            annual = float(ddivs.tail(4).sum()) if freq_days <= 100 else float(ddivs.iloc[-1])
+                        if not div_yield and price > 0:
+                            annual = (float(ddivs.tail(4).sum()) if freq_days <= 100
+                                      else float(ddivs.iloc[-1]))
                             div_yield = round(annual / price * 100, 2)
                         if _divs_cache is None:
                             _divs_cache = ddivs
             except Exception:
                 pass
 
-        # Source 5: last resort — div_rate > 0 from info means dividends exist;
-        # project using frequency assumption from today. Marked as estimate.
-        _is_estimated = False
+        # Source 5: div_rate from info → estimate next date
         if ex_div_date is None and div_rate > 0:
-            freq_days_est = {"Annual":365,"Semi-Annual":182,"Quarterly":91,"Monthly":30}.get(freq_label, 91)
+            freq_days_est = {"Annual":365,"Semi-Annual":182,
+                             "Quarterly":91,"Monthly":30}.get(freq_label, 91)
             ex_div_date   = today + timedelta(days=freq_days_est // 2)
             _is_estimated = True
 
-        # Payment date (usually ~3 weeks after ex-div)
-        if ex_div_date:
-            raw_pay = info.get("lastDividendDate")
-            if raw_pay:
-                try:
-                    pd_cand = datetime.utcfromtimestamp(int(raw_pay)).date()
-                    if pd_cand > ex_div_date:
-                        pay_date = pd_cand
-                except Exception:
-                    pass
-            if pay_date is None:
-                pay_date = ex_div_date + timedelta(days=21)
+        # No date found at all — nothing useful to show
+        if ex_div_date is None:
+            return {}
 
-        # ── Dividend history ───────────────────────────────────
-        hist = []
-        try:
-            divs = _divs_cache if _divs_cache is not None else t.dividends
-            if divs is not None and not divs.empty:
-                recent = divs[divs > 0].tail(12)
-                hist   = [(str(d.date() if hasattr(d, "date") else str(d)[:10]),
-                           round(float(v), 4)) for d, v in recent.items()]
-        except Exception:
-            pass
+        # Payment date (~21 days after ex-div as fallback)
+        raw_pay = info.get("lastDividendDate")
+        if raw_pay:
+            try:
+                pd_cand = datetime.utcfromtimestamp(int(raw_pay)).date()
+                if pd_cand > ex_div_date:
+                    pay_date = pd_cand
+            except Exception:
+                pass
+        if pay_date is None:
+            pay_date = ex_div_date + timedelta(days=21)
+
+        # ── Dividend history (prefer Nasdaq, fall back to yfinance) ────
+        hist = nasdaq_hist or []
+        if not hist:
+            try:
+                divs = _divs_cache if _divs_cache is not None else (
+                    t.dividends if t is not None else None
+                )
+                if divs is not None and not divs.empty:
+                    recent = divs[divs > 0].tail(12)
+                    hist   = [(str(d.date() if hasattr(d, "date") else str(d)[:10]),
+                               round(float(v), 4)) for d, v in recent.items()]
+            except Exception:
+                pass
+
+        # Final guard: skip if still no yield and no history
+        if div_yield <= 0 and not hist:
+            return {}
 
         return {
-            "ticker":        ticker,
-            "name":          name,
-            "sector":        sector,
-            "asset_type":    asset_type,
-            "mcap":          mcap,
-            "price":         price,
-            "avg_vol":       avg_vol,
-            "div_rate":      div_rate,
-            "div_yield":     div_yield,
-            "ex_div":        ex_div_date,
-            "pay_date":      pay_date,
-            "frequency":     freq_label,
-            "five_yr_avg":   five_yr,
-            "history":       hist,
-            "is_estimated":  _is_estimated,
+            "ticker":       ticker,
+            "name":         name,
+            "sector":       sector,
+            "asset_type":   asset_type,
+            "mcap":         mcap,
+            "price":        price,
+            "avg_vol":      avg_vol,
+            "div_rate":     div_rate,
+            "div_yield":    div_yield,
+            "ex_div":       ex_div_date,
+            "pay_date":     pay_date,
+            "frequency":    freq_label,
+            "five_yr_avg":  five_yr,
+            "history":      hist,
+            "is_estimated": _is_estimated,
         }
     except Exception:
         return {}
