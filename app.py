@@ -726,33 +726,23 @@ from scanners.page_manager import is_page_enabled as _page_enabled
 
 def _group_all_disabled(grp: dict) -> bool:
     """
-    True when every page in this nav group is disabled for the current user.
-    Admins always see everything → always returns False for admin sessions.
-    Always-on pages (Market Overview, Admin Panel) can never be disabled →
-    their groups are never fully locked.
+    True when every navigable page in this group is disabled for the current user.
+    Uses is_page_enabled() — the exact same function the individual nav items use
+    to decide whether to show 🔒 — so the two are guaranteed to agree.
+    Admins always see everything → always returns False.
     """
     if st.session_state.get("_is_admin", False):
         return False
     items = grp.get("items", [])
     if not items:
-        return False  # empty group — don't lock
-
-    # Load settings ONCE for the whole group check (avoids re-reading cache)
-    from scanners.page_manager import load_page_settings as _lps, _ALWAYS_ON as _AO
-    _settings = _lps()
-
+        return False
+    # Re-use is_page_enabled: if an item shows 🔒, this must agree.
+    from scanners.page_manager import is_page_enabled as _ipe
     for it in items:
-        key = it["key"]
-        # Always-on pages are never disabled
-        if key in _AO:
+        if _ipe(it["key"]):          # page is still enabled → group NOT fully locked
             return False
-        # If this page is enabled (True is the default), group is NOT fully locked
-        if _settings.get(key, True):
-            return False
-        # Check children too
         for child in it.get("children", []):
-            ck = child["key"]
-            if ck in _AO or _settings.get(ck, True):
+            if _ipe(child["key"]):
                 return False
     return True
 
@@ -849,18 +839,21 @@ if not _in_maintenance:
             st.markdown(f'<span class="{marker}"></span>', unsafe_allow_html=True)
 
             if _locked:
-                # ── Locked group: all pages disabled — show a non-interactive header ──
+                # ── Locked group: all pages disabled — non-interactive red header ──
                 st.markdown(
                     f'<div style="display:flex;align-items:center;gap:8px;'
                     f'padding:7px 14px;border-radius:6px;'
-                    f'background:rgba(255,255,255,0.02);'
-                    f'border:1px solid {BORDER_COLOR}44;'
-                    f'color:{TEXT_MUTED};font-size:11px;font-weight:600;'
-                    f'letter-spacing:1.5px;text-transform:uppercase;'
-                    f'cursor:not-allowed;opacity:0.45;user-select:none;'
-                    f'margin-bottom:2px">'
-                    f'<span>🔒</span>'
-                    f'<span>{grp["sep"].upper()}</span>'
+                    f'background:rgba(239,68,68,0.07);'
+                    f'border:1px solid rgba(239,68,68,0.28);'
+                    f'cursor:not-allowed;user-select:none;margin-bottom:2px">'
+                    f'<span style="font-size:13px">🔒</span>'
+                    f'<span style="color:{TEXT_MUTED};font-size:11px;font-weight:600;'
+                    f'letter-spacing:1.5px;text-transform:uppercase;opacity:0.6">'
+                    f'{grp["icon"]}  {grp["sep"].upper()}</span>'
+                    f'<span style="margin-left:auto;color:#EF4444;font-size:9px;'
+                    f'font-weight:700;letter-spacing:1px;'
+                    f'background:rgba(239,68,68,0.15);padding:2px 7px;'
+                    f'border-radius:4px;border:1px solid rgba(239,68,68,0.3)">LOCKED</span>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
