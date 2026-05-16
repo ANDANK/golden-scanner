@@ -634,13 +634,7 @@ NAV_GROUPS = [
         "items": [
             {"key": "🏠  Market Overview"},
             {"key": "📱  Social Trends"},
-            {"key": "📅  Scheduled Scans"},
-            {
-                "key": "📌  Tracking",
-                "children": [
-                    {"key": "Performance"},
-                ],
-            },
+            {"key": "🔄  Trade Pipeline"},
             {"key": "👁  WatchList"},
         ],
     },
@@ -982,21 +976,12 @@ elif page == "🏠  Market Overview":
 elif page == "📱  Social Trends":
     from scanners.social_trends import render
     render()
-elif page == "📅  Scheduled Scans":
-    from scanners.scheduled_scans import render
+elif page == "🔄  Trade Pipeline":
+    from scanners.trade_pipeline import render
     render()
-elif page == "📌  Tracking":
-    from scanners.tracking_page import render
-    render()
-elif page == "Performance":
-    # Performance sub-page under Tracking.
-    # Falls back to tracking_page render if the dedicated module isn't present yet.
-    try:
-        from scanners.performance_summary import render
-    except ImportError:
-        from scanners.tracking_page import render
-        st.info("ℹ️  Add `scanners/performance_summary.py` to customize this view. "
-                "Showing the Tracking page as a placeholder.")
+# ── Legacy keys (session state from before the merge) ──────────
+elif page in ("📅  Scheduled Scans", "📌  Tracking", "Performance"):
+    from scanners.trade_pipeline import render
     render()
 elif page == "👁  WatchList":
     from scanners.watchlist_page import render
