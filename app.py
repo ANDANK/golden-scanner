@@ -658,6 +658,7 @@ NAV_GROUPS = [
     },
     {
         "sep": "Dividend", "icon": "💵", "expanded": False,
+        "hidden_for_users": True,          # completely hidden from non-admin users
         "items": [
             {"key": "💵  Upcoming Dividends"},
             {"key": "📅  Dividend + CC Capture"},
@@ -821,6 +822,10 @@ if not _in_maintenance:
                     _render_nav_item(child, indent=True)
 
         for grp in NAV_GROUPS:
+            # Groups flagged hidden_for_users are invisible to non-admins.
+            if grp.get("hidden_for_users") and not st.session_state.get("_is_admin", False):
+                continue
+
             is_open = st.session_state.get("_nav_open_group") == grp["sep"]
             marker = "gs-admin-marker" if grp.get("dim") else "gs-group-marker"
             # Admin group (dim=True): locked for regular users, always open for admin.
@@ -1018,12 +1023,17 @@ elif page == "🧨  LEAPS — Stocks":
 elif page == "🧨  LEAPS — ETFs":
     from scanners.leaps_scanner import render
     render(universe_mode="etfs")
-elif page == "💵  Upcoming Dividends":
-    from scanners.dividend_hacker import render
-    render()
-elif page == "📅  Dividend + CC Capture":
-    from scanners.dividend_cc_scanner import render
-    render()
+elif page in ("💵  Upcoming Dividends", "📅  Dividend + CC Capture"):
+    # Dividend pages are admin-only (hidden from nav for regular users).
+    if not st.session_state.get("_is_admin", False):
+        st.session_state["nav_page"] = "🏠  Market Overview"
+        st.rerun()
+    elif page == "💵  Upcoming Dividends":
+        from scanners.dividend_hacker import render
+        render()
+    else:
+        from scanners.dividend_cc_scanner import render
+        render()
 elif page == "ℹ️  About & Guide":
     from scanners.about import render
     render()
