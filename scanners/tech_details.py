@@ -1140,6 +1140,16 @@ def _render_stock_analysis_methodology():
         unsafe_allow_html=True,
     )
 
+    # badge · how it fires in Golden Scan (None = not surfaced as a badge)
+    _BADGE_INFO = {
+        1:  ("MACDw",  "Ticker in Trend Cont. (TC) or Trend Align (TA) scanner — both require weekly MACD cross"),
+        2:  ("MAStk",  "Ticker in Trend Stack (TS) scanner — passes only when Price > EMA20 > SMA50 > SMA200"),
+        3:  ("RSIz",   "RSI column value between 45 and 70 — the bullish momentum zone"),
+        4:  ("MACDd",  "Ticker in Trend Align (TA) or Multi-Factor (MF) scanner — both confirm daily MACD cross"),
+        5:  ("Vol×",   "Vol Ratio column ≥ 1.5 — price move backed by ≥ 1.5× average 20-day volume"),
+        10: ("BBsq",   "Not yet auto-detected — requires separate BB bandwidth computation (planned)"),
+    }
+
     _INDICATORS = [
         (1,  "MACD Weekly Cross + Histogram",    "Weekly",       "Best leading signal for swing trades. Weekly confirmation eliminates daily noise. A fresh weekly MACD cross after a pullback = highest-conviction entry.", ACCENT_GREEN),
         (2,  "MA Trend Stack (Full Alignment)",  "Daily",        "Price > EMA20 > SMA50 > SMA200. When all 4 levels of institutional money are aligned, continuation probability is highest. Partial stacks are significant discounts.", ACCENT_GREEN),
@@ -1165,6 +1175,20 @@ def _render_stock_analysis_methodology():
     for rank, name, tf, why, color in _INDICATORS:
         bar_w  = max(4, int((16 - rank) / 15 * 120))
         td     = f"padding:9px 12px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:top"
+        badge_info = _BADGE_INFO.get(rank)
+        if badge_info:
+            badge_label, badge_how = badge_info
+            badge_color = ACCENT_GREEN if badge_label != "BBsq" else TEXT_MUTED
+            badge_cell = (
+                f'<span style="background:{badge_color}1A;color:{badge_color};'
+                f'border:1px solid {badge_color}44;padding:2px 7px;border-radius:3px;'
+                f'font-size:11px;font-weight:700;font-family:\'DM Mono\',monospace;'
+                f'white-space:nowrap">{badge_label}</span>'
+                f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:5px;'
+                f'line-height:1.5;max-width:220px">{badge_how}</div>'
+            )
+        else:
+            badge_cell = f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>'
         ind_rows += (
             f'<tr>'
             f'<td style="{td};text-align:center;width:36px">'
@@ -1182,20 +1206,85 @@ def _render_stock_analysis_methodology():
             f'padding:2px 8px;border-radius:3px;font-size:10px">{tf}</span>'
             f'</td>'
             f'<td style="{td};color:{TEXT_MUTED};font-size:11px;line-height:1.6">{why}</td>'
+            f'<td style="{td}">{badge_cell}</td>'
             f'</tr>'
         )
 
     st.markdown(
-        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}44;margin-bottom:20px">'
+        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}44;margin-bottom:16px">'
         f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
         f'<thead><tr>'
         f'<th style="{th}">#</th>'
         f'<th style="{th}">Indicator</th>'
         f'<th style="{th}">Timeframe</th>'
         f'<th style="{th}">Why It Matters (Highest → Lowest)</th>'
+        f'<th style="{th}">Golden Scan Badge</th>'
         f'</tr></thead>'
         f'<tbody>{ind_rows}</tbody>'
         f'</table></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Signals column reference card ──────────────────────────────
+    _SIGNAL_BADGES = [
+        ("MACDw", "#1", "Weekly MACD cross",       "TC or TA scanner fired",         ACCENT_GREEN),
+        ("MAStk", "#2", "MA Trend Stack aligned",   "TS scanner fired",               ACCENT_GREEN),
+        ("RSIz",  "#3", "RSI in zone 45–70",        "RSI column value",               ACCENT_GREEN),
+        ("MACDd", "#4", "Daily MACD cross/confirm", "TA or MF scanner fired",         ACCENT_GREEN),
+        ("Vol×",  "#5", "Volume spike ≥ 1.5×",      "Vol Ratio column ≥ 1.5",         ACCENT_GREEN),
+        ("BBsq",  "#10","BB squeeze setup",          "Planned — not yet auto-detected", TEXT_MUTED),
+    ]
+    badge_pills = "".join(
+        f'<span style="background:{bc}1A;color:{bc};border:1px solid {bc}44;'
+        f'padding:3px 10px;border-radius:4px;font-size:12px;font-weight:700;'
+        f'font-family:\'DM Mono\',monospace;white-space:nowrap">{bl}</span>'
+        for bl, _, _, _, bc in _SIGNAL_BADGES
+    )
+    sb_th = (f"padding:7px 12px;color:{TEXT_MUTED};font-size:10px;font-weight:700;"
+             f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
+             f"border-bottom:1px solid {GOLD}33")
+    sb_rows = ""
+    for badge, rank, meaning, source, bc in _SIGNAL_BADGES:
+        sb_td = f"padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:middle"
+        sb_rows += (
+            f'<tr>'
+            f'<td style="{sb_td}">'
+            f'<span style="background:{bc}1A;color:{bc};border:1px solid {bc}44;'
+            f'padding:2px 8px;border-radius:3px;font-size:11px;font-weight:700;'
+            f'font-family:\'DM Mono\',monospace">{badge}</span></td>'
+            f'<td style="{sb_td};text-align:center">'
+            f'<span style="background:{bc}22;color:{bc};border:1px solid {bc}44;'
+            f'padding:1px 7px;border-radius:3px;font-weight:800;font-size:11px;'
+            f'font-family:\'DM Mono\',monospace">{rank}</span></td>'
+            f'<td style="{sb_td};color:{TEXT_PRIMARY};font-size:12px">{meaning}</td>'
+            f'<td style="{sb_td};color:{TEXT_MUTED};font-size:11px">{source}</td>'
+            f'</tr>'
+        )
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {ACCENT_GREEN}33;'
+        f'border-radius:10px;padding:18px 20px;margin-bottom:20px">'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
+        f'<div style="color:{ACCENT_GREEN};font-size:13px;font-weight:700;'
+        f'text-transform:uppercase;letter-spacing:1px">&#9889; Signals Column — Golden Scan Reference</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px">Appears between Scanners and Scanner Count in every Golden Scan result row</div>'
+        f'</div>'
+        f'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">{badge_pills}</div>'
+        f'<div style="overflow-x:auto;border-radius:6px;border:1px solid {BORDER_COLOR}33">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>'
+        f'<th style="{sb_th}">Badge</th>'
+        f'<th style="{sb_th}">Rank</th>'
+        f'<th style="{sb_th}">Meaning</th>'
+        f'<th style="{sb_th}">Derived From</th>'
+        f'</tr></thead>'
+        f'<tbody>{sb_rows}</tbody>'
+        f'</table></div>'
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:10px;line-height:1.6">'
+        f'&#9432; Multiple badges can appear simultaneously. '
+        f'A ticker showing <b style="color:{ACCENT_GREEN}">MACDw + MAStk + RSIz</b> has the three highest-ranked indicators '
+        f'aligned — highest conviction setup. No badge = scanner passed its own filter but none of the top-5 indicators fired independently.'
+        f'</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
