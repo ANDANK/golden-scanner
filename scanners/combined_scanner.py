@@ -594,6 +594,10 @@ def render():
         empty_state("No setups found across any scanner. Try increasing universe size or loosening filters.")
         return
 
+    # Compute Signals column from scanner membership + RSI + Vol Ratio
+    df = df.copy()
+    df["Signals"] = df.apply(_signals_text, axis=1)
+
     # Summary metrics
     multi_count   = int((df.get("Scanner Count", pd.Series([1])) >= 2).sum())
     avg_upside    = float(df.get("Est. Upside %", pd.Series([0])).mean())

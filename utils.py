@@ -546,7 +546,7 @@ _SCANNER_ABBREV = {
 # Columns not present in the DataFrame are skipped automatically.
 _STOCK_COLS = [
     "Ticker", "Price", "Pre/Post", "Change %", "RSI", "Vol Ratio",
-    "RS vs SPY", "Score", "Scanners", "Scanner Count", "Style", "Hold",
+    "RS vs SPY", "Score", "Scanners", "Signals", "Scanner Count", "Style", "Hold",
     "Est. Upside %", "Rev Growth %", "EPS Growth %", "P/E",
     "Sector", "Signal", "Direction", "Catalysts",
 ]
@@ -565,7 +565,7 @@ _OPTIONS_STRATS = {"CSP", "CC", "LEAPS", "ETF Options", "3x ETF Options",
 
 # Columns that belong ONLY to stock strategies — never shown for options
 _STOCK_ONLY_COLS = {
-    "RSI", "Vol Ratio", "RS vs SPY", "Scanners", "Scanner Count",
+    "RSI", "Vol Ratio", "RS vs SPY", "Scanners", "Signals", "Scanner Count",
     "Style", "Hold", "Est. Upside %", "Rev Growth %", "EPS Growth %",
     "P/E", "Sector", "Signal", "Direction", "Catalysts",
 }
@@ -738,7 +738,7 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
             df = df.sort_values(_sort_by, ascending=_sort_asc, na_position="last")
 
     # Column width hints — wider for text-heavy columns, narrower for numbers
-    _wide = {"Ticker", "Sector", "Catalysts", "Momentum", "Trap Risk", "Mkt Cap", "Signal"}
+    _wide = {"Ticker", "Sector", "Catalysts", "Momentum", "Trap Risk", "Mkt Cap", "Signal", "Signals"}
     _med  = {"Score", "Strategy", "Direction", "MACD Bull", "FCF", ">200 SMA"}
     col_widths = []
     for c in data_cols:
@@ -830,6 +830,28 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                         f'<div style="background:{bg};padding:6px 4px">'
                         f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
                         f'font-weight:700;font-size:13px">{val}</span></div>',
+                        unsafe_allow_html=True,
+                    )
+                elif col_name == "Signals":
+                    val_str = str(val).strip()
+                    if val_str in ("—", "", "nan", "None"):
+                        sig_html = f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>'
+                    else:
+                        parts = []
+                        for sig in [s.strip() for s in val_str.split(",")]:
+                            if sig and sig != "—":
+                                parts.append(
+                                    f'<span style="background:{ACCENT_GREEN}1A;color:{ACCENT_GREEN};'
+                                    f'border:1px solid {ACCENT_GREEN}44;padding:1px 5px;'
+                                    f'border-radius:3px;font-size:10px;font-weight:600;'
+                                    f'white-space:nowrap">{sig}</span>'
+                                )
+                        sig_html = (
+                            '<div style="display:flex;flex-wrap:wrap;gap:3px">'
+                            + "".join(parts) + "</div>"
+                        ) if parts else f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>'
+                    st.markdown(
+                        f'<div style="background:{bg};padding:6px 4px">{sig_html}</div>',
                         unsafe_allow_html=True,
                     )
                 else:
