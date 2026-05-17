@@ -588,7 +588,7 @@ if not st.session_state["authenticated"]:
 # ── Deep-link query param handler ─────────────────────────────
 # Usage:  https://your-app.streamlit.app/?goto=gold_standard
 # Supported values → nav destinations:
-#   gold_standard   → Stock Analysis  (auto-selects Gold Standard tab)
+#   gold_standard   → Stock Analysis  (auto-selects Watchlist Analysis tab)
 #   stock_analysis  → Stock Analysis  (Deep Analysis tab)
 #   tracking        → Tracking
 #   watchlist       → WatchList
