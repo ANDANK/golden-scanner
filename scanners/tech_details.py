@@ -386,40 +386,149 @@ def _render_guide():
             )
 
 
+# ── Name / Sector fetch (yfinance, cached 24h, on-demand) ─────
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def _fetch_universe_meta(tickers: tuple) -> dict:
+    """Batch-fetch shortName + sector for each ticker via yfinance.
+    Falls back gracefully to '—' if a ticker fails or is blocked.
+    """
+    import yfinance as yf
+    meta = {}
+    for t in tickers:
+        try:
+            info = yf.Ticker(t).info
+            meta[t] = {
+                "Name":   (info.get("shortName") or info.get("longName") or t)[:45],
+                "Sector": info.get("sector") or info.get("quoteType") or "—",
+            }
+        except Exception:
+            meta[t] = {"Name": "—", "Sector": "—"}
+    return meta
+
+
 # ── Render: Universe Browser ──────────────────────────────────
 
 def _render_universe():
+    from scanners.gsheet_helper import save_universe, get_universe, using_google_sheets
+
     df = _build_universe_df()
     total_unique = len(df)
     multi_list   = int((df["# Lists"] >= 2).sum())
     etf_count    = int(df["Ticker"].isin(ETF_UNIVERSE + OPTIONS_ETF_UNIVERSE + ETF_3X_UNIVERSE).sum())
 
     m1, m2, m3, m4 = st.columns(4)
-    with m1: st.metric("Unique Tickers",     f"{total_unique:,}")
-    with m2: st.metric("In Multiple Lists",  f"{multi_list}")
-    with m3: st.metric("ETF / Fund Count",   f"{etf_count}")
-    with m4: st.metric("Stock-Only",         f"{total_unique - etf_count:,}")
+    with m1: st.metric("Unique Tickers",    f"{total_unique:,}")
+    with m2: st.metric("In Multiple Lists", f"{multi_list}")
+    with m3: st.metric("ETF / Fund Count",  f"{etf_count}")
+    with m4: st.metric("Stock-Only",        f"{total_unique - etf_count:,}")
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
-    c1, c2 = st.columns([4, 1])
+    # ── Extract unique universe labels for filter ──────────────
+    all_labels = sorted({
+        lbl.strip()
+        for row_labels in df["Used In"]
+        for lbl in row_labels.split(",")
+        if lbl.strip()
+    })
+
+    # ── Controls row ───────────────────────────────────────────
+    c1, c2, c3 = st.columns([2.5, 2.5, 1])
     with c1:
-        search = st.text_input("", placeholder="🔍 Search ticker or universe name…",
-                               label_visibility="collapsed")
+        search = st.text_input("", placeholder="🔍 Search ticker, name or sector…",
+                               key="uni_search", label_visibility="collapsed")
     with c2:
+        list_filter = st.multiselect(
+            "Universe", all_labels, default=[],
+            placeholder="Filter by universe list…",
+            key="uni_list_filter", label_visibility="collapsed",
+        )
+    with c3:
         filter_multi = st.checkbox("Multi-list only", value=False,
-                                   help="Show only tickers appearing in 2+ universe lists")
+                                   key="uni_multi", help="2+ universe lists")
 
+    # ── Load name/sector from GSheet or yfinance ──────────────
+    # Priority: GSheet cache → yfinance fetch → blank
+    meta: dict = {}
+
+    # Check if GSheet has pre-saved universe data
+    gs_rows = get_universe() if using_google_sheets() else []
+    if gs_rows:
+        meta = {r["Ticker"]: {"Name": r.get("Name","—"), "Sector": r.get("Sector","—")}
+                for r in gs_rows if r.get("Ticker")}
+
+    b1, b2, b3 = st.columns([1.4, 1.4, 4])
+    with b1:
+        load_btn = st.button("📥 Load Names & Sectors",
+                             help="Fetch from yfinance (may take 1–2 min for full list)",
+                             use_container_width=True)
+    with b2:
+        save_btn = st.button("💾 Save to GSheet",
+                             disabled=not using_google_sheets(),
+                             help="Save current Name/Sector data to 'Universe' sheet for faster future loads",
+                             use_container_width=True)
+
+    if load_btn:
+        with st.spinner(f"Fetching name & sector for {total_unique} tickers…"):
+            meta = _fetch_universe_meta(tuple(df["Ticker"].tolist()))
+        st.session_state["_uni_meta"] = meta
+        st.success(f"Loaded {len(meta)} tickers.", icon="✅")
+    elif "_uni_meta" in st.session_state and not meta:
+        meta = st.session_state["_uni_meta"]
+
+    # ── Apply filters ─────────────────────────────────────────
     filtered = df.copy()
+    if meta:
+        filtered["Name"]   = filtered["Ticker"].map(lambda t: meta.get(t, {}).get("Name",   "—"))
+        filtered["Sector"] = filtered["Ticker"].map(lambda t: meta.get(t, {}).get("Sector", "—"))
+    else:
+        filtered["Name"]   = "—"
+        filtered["Sector"] = "—"
+
     if search:
-        mask = (filtered["Ticker"].str.contains(search.upper(), na=False) |
-                filtered["Used In"].str.contains(search, case=False, na=False))
+        s = search.upper()
+        mask = (
+            filtered["Ticker"].str.contains(s, na=False) |
+            filtered["Used In"].str.contains(search, case=False, na=False) |
+            filtered["Name"].str.contains(search, case=False, na=False) |
+            filtered["Sector"].str.contains(search, case=False, na=False)
+        )
         filtered = filtered[mask]
+    if list_filter:
+        def _in_filter(used_in):
+            return any(lbl.strip() in list_filter for lbl in used_in.split(","))
+        filtered = filtered[filtered["Used In"].apply(_in_filter)]
     if filter_multi:
         filtered = filtered[filtered["# Lists"] >= 2]
 
+    # ── Save to GSheet ────────────────────────────────────────
+    if save_btn:
+        if not meta:
+            st.warning("Load Names & Sectors first, then save.")
+        else:
+            rows_to_save = [
+                {
+                    "Ticker":    row["Ticker"],
+                    "Name":      row.get("Name", "—"),
+                    "Sector":    row.get("Sector", "—"),
+                    "Used_In":   row["Used In"],
+                    "Num_Lists": str(int(row["# Lists"])),
+                }
+                for _, row in filtered.iterrows()
+            ]
+            ok, msg = save_universe(rows_to_save)
+            (st.success if ok else st.error)(msg)
+            if ok:
+                get_universe.clear()
+
+    # ── Count + export row ────────────────────────────────────
+    has_meta = meta != {} and filtered["Name"].ne("—").any()
+    export_cols = ["Ticker","Name","Sector","Used In","# Lists"] if has_meta else ["Ticker","Used In","# Lists"]
+    export_df = filtered[[c for c in export_cols if c in filtered.columns]]
+
     st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:8px">'
+        f'<div style="color:{TEXT_MUTED};font-size:12px;margin:8px 0">'
         f'Showing <b style="color:{GOLD}">{len(filtered)}</b> of {total_unique} tickers &nbsp;·&nbsp; '
         f'<span style="color:{GOLD};font-weight:600">■</span> Gold = 3+ lists &nbsp;·&nbsp; '
         f'<span style="color:{ACCENT_GREEN};font-weight:600">■</span> Green = 2 lists &nbsp;·&nbsp; '
@@ -427,29 +536,39 @@ def _render_universe():
         unsafe_allow_html=True,
     )
 
+    exp_col, _ = st.columns([1, 5])
+    with exp_col:
+        st.download_button(
+            "⬇ Export CSV", export_df.to_csv(index=False),
+            "stock_universe.csv", "text/csv",
+            use_container_width=True, key="uni_export",
+        )
+
+    # ── HTML table ────────────────────────────────────────────
     th = (f"padding:7px 14px;color:{TEXT_MUTED};font-size:10px;font-weight:700;"
           f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
           f"border-bottom:2px solid {GOLD}44;white-space:nowrap")
+
     uni_rows = ""
     for _, row in filtered.iterrows():
         n = int(row["# Lists"])
         if n >= 3:
-            bg    = f"{GOLD}18"
-            tc    = GOLD
-            nc    = GOLD
+            bg, tc, nc = f"{GOLD}18", GOLD, GOLD
         elif n == 2:
-            bg    = f"{ACCENT_GREEN}0F"
-            tc    = ACCENT_GREEN
-            nc    = ACCENT_GREEN
+            bg, tc, nc = f"{ACCENT_GREEN}0F", ACCENT_GREEN, ACCENT_GREEN
         else:
-            bg    = BG_CARD
-            tc    = TEXT_PRIMARY
-            nc    = TEXT_MUTED
+            bg, tc, nc = BG_CARD, TEXT_PRIMARY, TEXT_MUTED
         td = f"padding:7px 14px;border-bottom:1px solid {BORDER_COLOR}22;background:{bg}"
+        name_val   = str(row.get("Name",   "—"))
+        sector_val = str(row.get("Sector", "—"))
         uni_rows += (
             f'<tr>'
             f'<td style="{td};font-family:\'DM Mono\',monospace;font-weight:700;'
             f'font-size:12px;color:{tc};white-space:nowrap">{row["Ticker"]}</td>'
+            f'<td style="{td};font-size:11px;color:{TEXT_PRIMARY}">'
+            f'{"—" if name_val in ("—","nan","None","") else name_val}</td>'
+            f'<td style="{td};font-size:11px;color:{ACCENT_BLUE}">'
+            f'{"—" if sector_val in ("—","nan","None","") else sector_val}</td>'
             f'<td style="{td};font-size:11px;color:{TEXT_MUTED}">{row["Used In"]}</td>'
             f'<td style="{td};text-align:center;font-weight:700;font-size:12px;'
             f'color:{nc};white-space:nowrap">{n}</td>'
@@ -462,6 +581,8 @@ def _render_universe():
         f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
         f'<thead><tr>'
         f'<th style="{th}">Ticker</th>'
+        f'<th style="{th}">Name</th>'
+        f'<th style="{th}">Sector</th>'
         f'<th style="{th}">Universe Lists</th>'
         f'<th style="{th}"># Lists</th>'
         f'</tr></thead>'

@@ -10,6 +10,7 @@ from datetime import datetime
 # ── Constants ──────────────────────────────────────────────────
 TRACKING_HEADERS  = ["Ticker","Strategy","Action","Qty","Entry_Price","Added_Date","Source","Score","HOLD","Est_Upside","Notes"]
 WATCHLIST_HEADERS = ["Ticker","Added_Date","Source","Price_At_Add","Notes"]
+UNIVERSE_HEADERS  = ["Ticker","Name","Sector","Used_In","Num_Lists"]
 
 _SELL_STRATEGIES   = {"CSP","CC","Dividend+CC","ETF Options"}
 _OPTION_STRATEGIES = {"CSP","CC","LEAPS","ETF Options","3x ETF Options"}
@@ -692,3 +693,39 @@ def sync_tracking_to_performance() -> tuple:
             skipped += 1
 
     return added, skipped
+
+
+# ── Universe sheet helpers ─────────────────────────────────────
+
+def save_universe(rows: list) -> tuple[bool, str]:
+    """Write universe rows (Ticker, Name, Sector, Used_In, Num_Lists) to GSheet.
+    Clears the sheet first, then writes headers + all rows.
+    Returns (success, message).
+    """
+    ws = _gs_sheet("Universe")
+    if ws is None:
+        return False, "Google Sheets not connected."
+    try:
+        ws.clear()
+        ws.append_row(UNIVERSE_HEADERS)
+        if rows:
+            ws.append_rows(
+                [[str(r.get(h, "")) for h in UNIVERSE_HEADERS] for r in rows],
+                value_input_option="RAW",
+            )
+        return True, f"Saved {len(rows)} rows to 'Universe' sheet."
+    except Exception as e:
+        return False, f"Save failed: {e}"
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def get_universe() -> list:
+    """Read universe data (with Name/Sector) from GSheet Universe tab.
+    Returns list of dicts or [] if not available.
+    """
+    ws = _gs_sheet("Universe")
+    if ws:
+        rows = _ws_get_all_records(ws)
+        if rows:
+            return rows
+    return []
