@@ -2,7 +2,7 @@
 
 import streamlit as st
 import pandas as pd
-import json, os
+import json, os, time as _time
 from datetime import datetime, date
 from typing import Optional, Tuple
 import sys
@@ -62,14 +62,19 @@ def _save_results(slot: str, df: pd.DataFrame):
         json.dump(data, f, default=str)
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=1800, show_spinner=False)
 def _load_results(slot: str) -> Tuple[pd.DataFrame, str]:
     """
     Load scan results for the given slot (am/pm).
-    Cached for 5 minutes — the GitHub HTTP call (1–2 s) only fires once
-    per TTL window instead of on every Streamlit rerun.
+    Cached for 30 minutes — the GitHub HTTP call only fires once per TTL
+    window.  Cache is busted manually after a fresh scan completes.
 
-    Priority:
+    Fast-path: if the local file is < 60 minutes old, return it immediately
+    without making any network call.  This is the common case — the UI scan
+    or GitHub Actions writes a local copy, so the HTTP round-trip to GitHub
+    is only needed when the file is stale or missing.
+
+    Priority (when fast-path is skipped):
       1. Local disk  — written by UI-triggered scan (fast, immediate)
       2. GitHub raw  — committed by GitHub Actions (survives Streamlit restarts)
     If both exist, return whichever has the later run_at timestamp so the
@@ -87,12 +92,22 @@ def _load_results(slot: str) -> Tuple[pd.DataFrame, str]:
         except Exception:
             local_d = None
 
+    # ── Fast-path: fresh local file → skip GitHub entirely ────
+    # If the file is < 60 min old we already have the best data.
+    if local_d:
+        try:
+            if (_time.time() - os.path.getmtime(path)) < 3600:
+                return pd.DataFrame(local_d.get("results", [])), local_d.get("run_at", "")
+        except Exception:
+            pass   # mtime unavailable — fall through to GitHub check
+
     # ── 2. GitHub raw URL (GitHub Actions-committed results) ──
+    # Timeout reduced to 2 s — fast fail when GitHub is slow.
     try:
         import urllib.request as _ur
         today   = date.today().isoformat()
         gh_url  = f"{_GH_RAW_BASE}/sched_{slot}_{today}.json"
-        with _ur.urlopen(gh_url, timeout=5) as resp:
+        with _ur.urlopen(gh_url, timeout=2) as resp:
             gh_d = json.loads(resp.read())
     except Exception:
         gh_d = None

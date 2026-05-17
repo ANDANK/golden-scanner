@@ -282,7 +282,7 @@ def _auto_close_row(r: dict, row_i: int) -> dict:
     return {**r, **fields}
 
 
-@st.cache_data(ttl=180, show_spinner=False)
+@st.cache_data(ttl=600, show_spinner=False)
 def _load_and_process() -> pd.DataFrame:
     raw = list(get_performance() or [])
 
@@ -458,6 +458,22 @@ def _load_and_process() -> pd.DataFrame:
         df["Entry_Day"] = pd.to_datetime(df["Entry_Date"], errors="coerce").dt.date
     if "Month" not in df.columns:
         df["Month"] = pd.to_datetime(df["Entry_Date"], errors="coerce").dt.to_period("M").astype(str)
+
+    # ── Pre-warm _tech_signals for all open stock positions ──────
+    # _tech_signals has its own @st.cache_data(ttl=300).  Calling it here
+    # (inside _load_and_process which is cached for 600 s) means the
+    # yfinance fetches happen once per 10-minute window, not on every
+    # page render.  This eliminates the "13 sequential yfinance calls"
+    # slowdown that occurred every time the positions table was rendered.
+    _open_stock_mask = (
+        (df["Status"].str.lower() == "open") &
+        (df["Strategy"].str.upper().isin(_STOCK_STRATS))
+    )
+    for _tk in df.loc[_open_stock_mask, "Ticker"].dropna().unique():
+        try:
+            _tech_signals(str(_tk).upper())
+        except Exception:
+            pass
 
     return df
 
@@ -939,98 +955,112 @@ def _chart_cumulative_pnl(df: pd.DataFrame) -> go.Figure | None:
 # ══════════════════════════════════════════════════════════════════
 
 def _render_daily_summary_boxes(df: pd.DataFrame):
-    """Two collapsible summary boxes: GS / Stock positions + Options positions."""
+    """Two donut pie charts side-by-side: GS/Stock positions + Options positions."""
     # ── Classify rows ──────────────────────────────────────────────
     gs_df  = df[df["Strategy"].str.upper().isin(_STOCK_STRATS)].copy()
     opt_df = df[df["Strategy"].str.upper().isin({"CSP","CC","LEAPS"})].copy()
 
-    total_pl  = gs_df["PL_Dollar"].fillna(0).sum()
-    pl_color  = ACCENT_GREEN if total_pl >= 0 else ACCENT_RED
-    pl_sign   = "+" if total_pl >= 0 else ""
+    total_pl = gs_df["PL_Dollar"].fillna(0).sum()
+    pl_color = ACCENT_GREEN if total_pl >= 0 else ACCENT_RED
+    pl_sign  = "+" if total_pl >= 0 else ""
 
     expired_opts = opt_df[opt_df["Status"].str.lower().isin(["expired","closed","assigned","called"])]
     realized     = expired_opts["Income"].fillna(0).sum()
     rc           = ACCENT_GREEN if realized >= 0 else ACCENT_RED
     r_sign       = "+" if realized >= 0 else ""
 
-    # ── BOX 1: GS / Stock Positions ───────────────────────────────
-    with st.expander(
-        f"📊 GS / Stock Positions ({len(gs_df)})  ·  "
-        f"Total P&L: {pl_sign}${total_pl:,.2f}",
-        expanded=False,
-    ):
-        if gs_df.empty:
-            st.markdown(f'<div style="color:{TEXT_MUTED};font-size:12px;font-style:italic;'
-                        f'padding:8px 0">No stock positions yet.</div>', unsafe_allow_html=True)
-        else:
-            gs_df2 = gs_df.copy()
-            gs_df2["_src"] = gs_df2["Source"].fillna("—").astype(str)
-            rows_html = ""
-            for src, grp in gs_df2.groupby("_src"):
-                grp_pl  = grp["PL_Dollar"].fillna(0).sum()
-                gc      = ACCENT_GREEN if grp_pl >= 0 else ACCENT_RED
-                tickers = " · ".join(grp["Ticker"].astype(str).tolist()[:8])
-                rows_html += (
-                    f'<div style="border-bottom:1px solid {BORDER_COLOR}22;padding:6px 0">'
-                    f'<div style="color:{TEXT_MUTED};font-size:10px;font-weight:600;'
-                    f'letter-spacing:.5px;margin-bottom:2px">{src[:80]}</div>'
-                    f'<div style="display:flex;justify-content:space-between;align-items:center">'
-                    f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;font-size:11px">{tickers}</span>'
-                    f'<span style="color:{gc};font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700">'
-                    f'{"+" if grp_pl>=0 else ""}${grp_pl:,.0f}</span>'
-                    f'</div></div>'
-                )
-            st.markdown(
-                f'<div style="background:{BG_CARD};border:1px solid {ACCENT_GREEN}33;'
-                f'border-radius:8px;padding:12px 16px">{rows_html}'
-                f'<div style="margin-top:8px;padding-top:6px;border-top:1px solid {BORDER_COLOR}">'
-                f'<span style="color:{TEXT_MUTED};font-size:10px">TOTAL STOCK P&L  </span>'
-                f'<span style="color:{pl_color};font-family:\'DM Mono\',monospace;'
-                f'font-weight:800;font-size:16px">{pl_sign}${total_pl:,.2f}</span>'
-                f'</div></div>',
-                unsafe_allow_html=True,
-            )
+    col1, col2 = st.columns(2)
 
-    # ── BOX 2: Options Positions ───────────────────────────────────
-    with st.expander(
-        f"⚙️ Options Positions ({len(opt_df)})  ·  "
-        f"Realized Income: {r_sign}${realized:,.2f}",
-        expanded=False,
-    ):
-        if opt_df.empty:
-            st.markdown(f'<div style="color:{TEXT_MUTED};font-size:12px;font-style:italic;'
-                        f'padding:8px 0">No options positions yet.</div>', unsafe_allow_html=True)
-        else:
-            rows_html = ""
-            for strat, strat_color in [("CSP", "#86EFAC"), ("CC", GOLD), ("LEAPS", "#60A5FA")]:
-                grp = opt_df[opt_df["Strategy"].str.upper() == strat]
-                if grp.empty:
-                    continue
-                exp_g    = grp[grp["Status"].str.lower().isin(["expired","closed","assigned","called"])]
-                inc_g    = exp_g["Income"].fillna(0).sum()
-                expiring = grp[grp["Status"].str.lower() == "open"]
-                tickers  = " · ".join(expiring["Ticker"].astype(str).tolist()[:6])
-                ic       = ACCENT_GREEN if inc_g >= 0 else ACCENT_RED
-                rows_html += (
-                    f'<div style="border-bottom:1px solid {BORDER_COLOR}22;padding:6px 0">'
-                    f'<div style="display:flex;justify-content:space-between;align-items:center">'
-                    f'<span style="color:{strat_color};font-size:11px;font-weight:700">'
-                    f'{strat} ({len(grp)})</span>'
-                    f'<span style="color:{ic};font-family:\'DM Mono\',monospace;font-size:11px">'
-                    f'{"+" if inc_g>=0 else ""}${inc_g:,.0f} realized</span></div>'
-                    f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:2px">{tickers}</div>'
-                    f'</div>'
-                )
+    # ── PIE 1: GS / Stock Positions by Status ─────────────────────
+    with col1:
+        if gs_df.empty:
             st.markdown(
-                f'<div style="background:{BG_CARD};border:1px solid {GOLD}33;'
-                f'border-radius:8px;padding:12px 16px">{rows_html}'
-                f'<div style="margin-top:8px;padding-top:6px;border-top:1px solid {BORDER_COLOR}">'
-                f'<span style="color:{TEXT_MUTED};font-size:10px">REALIZED INCOME  </span>'
-                f'<span style="color:{rc};font-family:\'DM Mono\',monospace;font-weight:800;'
-                f'font-size:16px">{r_sign}${realized:,.2f}</span>'
-                f'</div></div>',
+                f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
+                f'border-radius:8px;padding:36px;text-align:center">'
+                f'<div style="font-size:28px;margin-bottom:8px">📊</div>'
+                f'<div style="color:{GOLD};font-size:13px;font-weight:700">GS / Stock Positions</div>'
+                f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:6px">No positions yet</div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
+        else:
+            status_counts = gs_df.groupby("Status").size().reset_index(name="Count")
+            s_colors = [_STATUS_COLORS.get(s, TEXT_MUTED) for s in status_counts["Status"]]
+            fig1 = go.Figure(go.Pie(
+                labels=status_counts["Status"],
+                values=status_counts["Count"],
+                hole=0.62,
+                marker=dict(colors=s_colors, line=dict(color=BG_DARK, width=2)),
+                textfont=dict(color=TEXT_PRIMARY, size=10),
+                hovertemplate="<b>%{label}</b><br>%{value} positions (%{percent})<extra></extra>",
+            ))
+            fig1.update_layout(
+                title=dict(
+                    text=f"📊 GS / Stock Positions ({len(gs_df)})",
+                    font=dict(color=GOLD, size=13, family="Cormorant Garamond"),
+                    x=0.01, y=0.97,
+                ),
+                annotations=[dict(
+                    text=f"<b>{pl_sign}${total_pl:,.0f}</b><br>Total P&L",
+                    x=0.5, y=0.5,
+                    font=dict(color=pl_color, size=15, family="DM Mono"),
+                    showarrow=False, align="center",
+                )],
+                paper_bgcolor=BG_CARD, plot_bgcolor=BG_CARD, height=270,
+                margin=dict(l=8, r=8, t=42, b=8),
+                legend=dict(
+                    font=dict(color=TEXT_MUTED, size=10), bgcolor=BG_CARD,
+                    orientation="h", y=-0.06, x=0.5, xanchor="center",
+                ),
+            )
+            st.plotly_chart(fig1, use_container_width=True)
+
+    # ── PIE 2: Options Positions by Strategy ──────────────────────
+    with col2:
+        if opt_df.empty:
+            st.markdown(
+                f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
+                f'border-radius:8px;padding:36px;text-align:center">'
+                f'<div style="font-size:28px;margin-bottom:8px">⚙️</div>'
+                f'<div style="color:{GOLD};font-size:13px;font-weight:700">Options Positions</div>'
+                f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:6px">No positions yet</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            strat_counts = opt_df.groupby("Strategy").size().reset_index(name="Count")
+            o_colors = [
+                {"CSP": "#86EFAC", "CC": GOLD, "LEAPS": "#60A5FA"}.get(s, TEXT_MUTED)
+                for s in strat_counts["Strategy"]
+            ]
+            fig2 = go.Figure(go.Pie(
+                labels=strat_counts["Strategy"],
+                values=strat_counts["Count"],
+                hole=0.62,
+                marker=dict(colors=o_colors, line=dict(color=BG_DARK, width=2)),
+                textfont=dict(color=TEXT_PRIMARY, size=10),
+                hovertemplate="<b>%{label}</b><br>%{value} positions (%{percent})<extra></extra>",
+            ))
+            fig2.update_layout(
+                title=dict(
+                    text=f"⚙️ Options Positions ({len(opt_df)})",
+                    font=dict(color=GOLD, size=13, family="Cormorant Garamond"),
+                    x=0.01, y=0.97,
+                ),
+                annotations=[dict(
+                    text=f"<b>{r_sign}${realized:,.0f}</b><br>Realized",
+                    x=0.5, y=0.5,
+                    font=dict(color=rc, size=15, family="DM Mono"),
+                    showarrow=False, align="center",
+                )],
+                paper_bgcolor=BG_CARD, plot_bgcolor=BG_CARD, height=270,
+                margin=dict(l=8, r=8, t=42, b=8),
+                legend=dict(
+                    font=dict(color=TEXT_MUTED, size=10), bgcolor=BG_CARD,
+                    orientation="h", y=-0.06, x=0.5, xanchor="center",
+                ),
+            )
+            st.plotly_chart(fig2, use_container_width=True)
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
