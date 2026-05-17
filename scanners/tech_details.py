@@ -143,6 +143,7 @@ SCANNERS = [
 # ── Universe builder ───────────────────────────────────────────
 
 def _build_universe_df() -> pd.DataFrame:
+    from scanners.deep_analysis import STANDARD_TICKERS
     ticker_map: dict[str, list] = {}
 
     def _add(tickers, label):
@@ -151,8 +152,9 @@ def _build_universe_df() -> pd.DataFrame:
             if label not in ticker_map[t]:
                 ticker_map[t].append(label)
 
-    _add(SP500_SAMPLE[:200],   "Stock Universe (top 200)")
-    _add(SP500_SAMPLE[200:],   "Stock Universe (extended)")
+    _add(SP500_SAMPLE[:200],   "Golden Scan (top 200)")
+    _add(SP500_SAMPLE[200:],   "Golden Scan (extended)")
+    _add(STANDARD_TICKERS,     "Stock Analysis Watchlist")
     _add(ETF_UNIVERSE,         "ETF Universe")
     _add(ETF_3X_UNIVERSE,      "3× ETF Scanner")
     _add(OPTIONS_ETF_UNIVERSE, "Options ETF")
@@ -417,35 +419,54 @@ def _render_universe():
         filtered = filtered[filtered["# Lists"] >= 2]
 
     st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:6px">'
-        f'Showing <b style="color:{GOLD}">{len(filtered)}</b> of {total_unique} tickers</div>',
+        f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:8px">'
+        f'Showing <b style="color:{GOLD}">{len(filtered)}</b> of {total_unique} tickers &nbsp;·&nbsp; '
+        f'<span style="color:{GOLD};font-weight:600">■</span> Gold = 3+ lists &nbsp;·&nbsp; '
+        f'<span style="color:{ACCENT_GREEN};font-weight:600">■</span> Green = 2 lists &nbsp;·&nbsp; '
+        f'Plain = single list</div>',
         unsafe_allow_html=True,
     )
 
-    def _style_rows(row):
-        if row["# Lists"] >= 3:
-            return [f"background-color: {GOLD}22; color: {GOLD};"] * len(row)
-        elif row["# Lists"] == 2:
-            return [f"background-color: {ACCENT_GREEN}11; color: {ACCENT_GREEN};"] * len(row)
-        return [""] * len(row)
+    th = (f"padding:7px 14px;color:{TEXT_MUTED};font-size:10px;font-weight:700;"
+          f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
+          f"border-bottom:2px solid {GOLD}44;white-space:nowrap")
+    uni_rows = ""
+    for _, row in filtered.iterrows():
+        n = int(row["# Lists"])
+        if n >= 3:
+            bg    = f"{GOLD}18"
+            tc    = GOLD
+            nc    = GOLD
+        elif n == 2:
+            bg    = f"{ACCENT_GREEN}0F"
+            tc    = ACCENT_GREEN
+            nc    = ACCENT_GREEN
+        else:
+            bg    = BG_CARD
+            tc    = TEXT_PRIMARY
+            nc    = TEXT_MUTED
+        td = f"padding:7px 14px;border-bottom:1px solid {BORDER_COLOR}22;background:{bg}"
+        uni_rows += (
+            f'<tr>'
+            f'<td style="{td};font-family:\'DM Mono\',monospace;font-weight:700;'
+            f'font-size:12px;color:{tc};white-space:nowrap">{row["Ticker"]}</td>'
+            f'<td style="{td};font-size:11px;color:{TEXT_MUTED}">{row["Used In"]}</td>'
+            f'<td style="{td};text-align:center;font-weight:700;font-size:12px;'
+            f'color:{nc};white-space:nowrap">{n}</td>'
+            f'</tr>'
+        )
 
-    styled = filtered.style.apply(_style_rows, axis=1)
-    st.dataframe(
-        styled,
-        use_container_width=True,
-        height=min(620, max(220, len(filtered) * 35 + 45)),
-        hide_index=True,
-        column_config={
-            "Ticker":   st.column_config.TextColumn("Ticker", width="small"),
-            "Used In":  st.column_config.TextColumn("Universe Lists", width="large"),
-            "# Lists":  st.column_config.NumberColumn("# Lists", width="small", format="%d"),
-        },
-    )
     st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:8px">'
-        f'<span style="color:{GOLD};font-weight:600">■</span> Gold row = appears in 3+ lists &nbsp;·&nbsp; '
-        f'<span style="color:{ACCENT_GREEN};font-weight:600">■</span> Green = 2 lists &nbsp;·&nbsp; '
-        f'Plain = single list only</div>',
+        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}44;'
+        f'max-height:560px;overflow-y:auto">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>'
+        f'<th style="{th}">Ticker</th>'
+        f'<th style="{th}">Universe Lists</th>'
+        f'<th style="{th}"># Lists</th>'
+        f'</tr></thead>'
+        f'<tbody>{uni_rows}</tbody>'
+        f'</table></div>',
         unsafe_allow_html=True,
     )
 

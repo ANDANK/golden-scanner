@@ -335,6 +335,11 @@ def render():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # ── How Auto Scan & Track Works ────────────────────────────
+    with st.expander("⚡ How Auto Scan & Track Works", expanded=False):
+        from scanners.trade_pipeline import _render_pipeline_diagram
+        _render_pipeline_diagram()
+
     # ── Analytics Dashboard ────────────────────────────────────
     with st.expander("📊 Analytics Dashboard", expanded=False):
         tab1, tab2, tab3, tab4 = st.tabs([
