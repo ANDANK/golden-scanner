@@ -336,7 +336,7 @@ def render():
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ── Analytics Dashboard ────────────────────────────────────
-    with st.expander("📊 Analytics Dashboard", expanded=True):
+    with st.expander("📊 Analytics Dashboard", expanded=False):
         tab1, tab2, tab3, tab4 = st.tabs([
             "📈 P&L Over Time", "🥧 By Source", "🏆 Best & Worst", "🔍 Trade Analysis"
         ])
