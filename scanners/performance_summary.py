@@ -955,7 +955,7 @@ def _chart_cumulative_pnl(df: pd.DataFrame) -> go.Figure | None:
 # ══════════════════════════════════════════════════════════════════
 
 def _render_daily_summary_boxes(df: pd.DataFrame):
-    """Two donut pie charts side-by-side: GS/Stock positions + Options positions."""
+    """Two compact donut pies: GS/Stock by Strategy + Options by Strategy."""
     # ── Classify rows ──────────────────────────────────────────────
     gs_df  = df[df["Strategy"].str.upper().isin(_STOCK_STRATS)].copy()
     opt_df = df[df["Strategy"].str.upper().isin({"CSP","CC","LEAPS"})].copy()
@@ -969,98 +969,143 @@ def _render_daily_summary_boxes(df: pd.DataFrame):
     rc           = ACCENT_GREEN if realized >= 0 else ACCENT_RED
     r_sign       = "+" if realized >= 0 else ""
 
-    col1, col2 = st.columns(2)
+    _PIE_H       = 160   # px — compact donut height
+    _PIE_COLORS  = ["#86EFAC", "#60A5FA", GOLD, "#A78BFA", "#F472B6", "#FB923C"]
+    _OPT_COLORS  = {"CSP": "#86EFAC", "CC": GOLD, "LEAPS": "#60A5FA"}
 
-    # ── PIE 1: GS / Stock Positions by Status ─────────────────────
-    with col1:
+    # 4-col layout: [pie1 | stats1 | pie2 | stats2]
+    pc1, sc1, pc2, sc2 = st.columns([1, 1.4, 1, 1.4])
+
+    # ── PIE 1: GS / Stock by Strategy ─────────────────────────────
+    with pc1:
         if gs_df.empty:
             st.markdown(
                 f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
-                f'border-radius:8px;padding:36px;text-align:center">'
-                f'<div style="font-size:28px;margin-bottom:8px">📊</div>'
-                f'<div style="color:{GOLD};font-size:13px;font-weight:700">GS / Stock Positions</div>'
-                f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:6px">No positions yet</div>'
+                f'border-radius:8px;padding:24px 12px;text-align:center">'
+                f'<div style="font-size:22px">📊</div>'
+                f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px">No GS positions</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
         else:
-            status_counts = gs_df.groupby("Status").size().reset_index(name="Count")
-            s_colors = [_STATUS_COLORS.get(s, TEXT_MUTED) for s in status_counts["Status"]]
+            grp1   = gs_df.groupby("Strategy").size().reset_index(name="Count")
+            c1_map = {r["Strategy"]: _PIE_COLORS[i % len(_PIE_COLORS)]
+                      for i, r in grp1.iterrows()}
             fig1 = go.Figure(go.Pie(
-                labels=status_counts["Status"],
-                values=status_counts["Count"],
-                hole=0.62,
-                marker=dict(colors=s_colors, line=dict(color=BG_DARK, width=2)),
-                textfont=dict(color=TEXT_PRIMARY, size=10),
-                hovertemplate="<b>%{label}</b><br>%{value} positions (%{percent})<extra></extra>",
+                labels=grp1["Strategy"], values=grp1["Count"],
+                hole=0.65,
+                marker=dict(
+                    colors=[_PIE_COLORS[i % len(_PIE_COLORS)] for i in range(len(grp1))],
+                    line=dict(color=BG_DARK, width=1),
+                ),
+                textinfo="none",
+                hovertemplate="<b>%{label}</b><br>%{value} · %{percent}<extra></extra>",
             ))
             fig1.update_layout(
-                title=dict(
-                    text=f"📊 GS / Stock Positions ({len(gs_df)})",
-                    font=dict(color=GOLD, size=13, family="Cormorant Garamond"),
-                    x=0.01, y=0.97,
-                ),
+                showlegend=False,
                 annotations=[dict(
-                    text=f"<b>{pl_sign}${total_pl:,.0f}</b><br>Total P&L",
+                    text=f"<b>{pl_sign}${total_pl:,.0f}</b>",
                     x=0.5, y=0.5,
-                    font=dict(color=pl_color, size=15, family="DM Mono"),
+                    font=dict(color=pl_color, size=11, family="DM Mono"),
                     showarrow=False, align="center",
                 )],
-                paper_bgcolor=BG_CARD, plot_bgcolor=BG_CARD, height=270,
-                margin=dict(l=8, r=8, t=42, b=8),
-                legend=dict(
-                    font=dict(color=TEXT_MUTED, size=10), bgcolor=BG_CARD,
-                    orientation="h", y=-0.06, x=0.5, xanchor="center",
-                ),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                height=_PIE_H,
+                margin=dict(l=0, r=0, t=0, b=0),
             )
-            st.plotly_chart(fig1, use_container_width=True)
+            st.plotly_chart(fig1, use_container_width=True,
+                            config={"displayModeBar": False}, key="pie_gs")
 
-    # ── PIE 2: Options Positions by Strategy ──────────────────────
-    with col2:
+    with sc1:
+        # Title + legend lines for GS pie
+        st.markdown(
+            f'<div style="padding:6px 0 0">'
+            f'<div style="color:{GOLD};font-size:11px;font-weight:700;'
+            f'margin-bottom:8px">📊 GS / Stocks ({len(gs_df)})</div>',
+            unsafe_allow_html=True,
+        )
+        if not gs_df.empty:
+            grp1 = gs_df.groupby("Strategy").size().reset_index(name="Count")
+            lines = []
+            for i, row in grp1.iterrows():
+                dot_c = _PIE_COLORS[i % len(_PIE_COLORS)]
+                lines.append(
+                    f'<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">'
+                    f'<span style="width:8px;height:8px;border-radius:50%;'
+                    f'background:{dot_c};flex-shrink:0;display:inline-block"></span>'
+                    f'<span style="color:{TEXT_MUTED};font-size:10px">'
+                    f'{row["Strategy"]}</span>'
+                    f'<span style="color:{TEXT_PRIMARY};font-size:10px;font-weight:600;'
+                    f'margin-left:auto">{int(row["Count"])}</span>'
+                    f'</div>'
+                )
+            st.markdown("".join(lines) + "</div>", unsafe_allow_html=True)
+        else:
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    # ── PIE 2: Options by Strategy ─────────────────────────────────
+    with pc2:
         if opt_df.empty:
             st.markdown(
                 f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
-                f'border-radius:8px;padding:36px;text-align:center">'
-                f'<div style="font-size:28px;margin-bottom:8px">⚙️</div>'
-                f'<div style="color:{GOLD};font-size:13px;font-weight:700">Options Positions</div>'
-                f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:6px">No positions yet</div>'
+                f'border-radius:8px;padding:24px 12px;text-align:center">'
+                f'<div style="font-size:22px">⚙️</div>'
+                f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:4px">No options positions</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
         else:
-            strat_counts = opt_df.groupby("Strategy").size().reset_index(name="Count")
-            o_colors = [
-                {"CSP": "#86EFAC", "CC": GOLD, "LEAPS": "#60A5FA"}.get(s, TEXT_MUTED)
-                for s in strat_counts["Strategy"]
-            ]
+            grp2   = opt_df.groupby("Strategy").size().reset_index(name="Count")
             fig2 = go.Figure(go.Pie(
-                labels=strat_counts["Strategy"],
-                values=strat_counts["Count"],
-                hole=0.62,
-                marker=dict(colors=o_colors, line=dict(color=BG_DARK, width=2)),
-                textfont=dict(color=TEXT_PRIMARY, size=10),
-                hovertemplate="<b>%{label}</b><br>%{value} positions (%{percent})<extra></extra>",
+                labels=grp2["Strategy"], values=grp2["Count"],
+                hole=0.65,
+                marker=dict(
+                    colors=[_OPT_COLORS.get(s, TEXT_MUTED) for s in grp2["Strategy"]],
+                    line=dict(color=BG_DARK, width=1),
+                ),
+                textinfo="none",
+                hovertemplate="<b>%{label}</b><br>%{value} · %{percent}<extra></extra>",
             ))
             fig2.update_layout(
-                title=dict(
-                    text=f"⚙️ Options Positions ({len(opt_df)})",
-                    font=dict(color=GOLD, size=13, family="Cormorant Garamond"),
-                    x=0.01, y=0.97,
-                ),
+                showlegend=False,
                 annotations=[dict(
-                    text=f"<b>{r_sign}${realized:,.0f}</b><br>Realized",
+                    text=f"<b>{r_sign}${realized:,.0f}</b>",
                     x=0.5, y=0.5,
-                    font=dict(color=rc, size=15, family="DM Mono"),
+                    font=dict(color=rc, size=11, family="DM Mono"),
                     showarrow=False, align="center",
                 )],
-                paper_bgcolor=BG_CARD, plot_bgcolor=BG_CARD, height=270,
-                margin=dict(l=8, r=8, t=42, b=8),
-                legend=dict(
-                    font=dict(color=TEXT_MUTED, size=10), bgcolor=BG_CARD,
-                    orientation="h", y=-0.06, x=0.5, xanchor="center",
-                ),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                height=_PIE_H,
+                margin=dict(l=0, r=0, t=0, b=0),
             )
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, use_container_width=True,
+                            config={"displayModeBar": False}, key="pie_opts")
+
+    with sc2:
+        st.markdown(
+            f'<div style="padding:6px 0 0">'
+            f'<div style="color:{GOLD};font-size:11px;font-weight:700;'
+            f'margin-bottom:8px">⚙️ Options ({len(opt_df)})</div>',
+            unsafe_allow_html=True,
+        )
+        if not opt_df.empty:
+            grp2 = opt_df.groupby("Strategy").size().reset_index(name="Count")
+            lines2 = []
+            for _, row in grp2.iterrows():
+                dot_c = _OPT_COLORS.get(row["Strategy"], TEXT_MUTED)
+                lines2.append(
+                    f'<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">'
+                    f'<span style="width:8px;height:8px;border-radius:50%;'
+                    f'background:{dot_c};flex-shrink:0;display:inline-block"></span>'
+                    f'<span style="color:{TEXT_MUTED};font-size:10px">'
+                    f'{row["Strategy"]}</span>'
+                    f'<span style="color:{TEXT_PRIMARY};font-size:10px;font-weight:600;'
+                    f'margin-left:auto">{int(row["Count"])}</span>'
+                    f'</div>'
+                )
+            st.markdown("".join(lines2) + "</div>", unsafe_allow_html=True)
+        else:
+            st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
@@ -1343,7 +1388,7 @@ def _render_daily_tab(df: pd.DataFrame):
         is_stock = strat.upper() in _STOCK_STRATS
         show_cols = _STOCK_COLS if is_stock else [c for c in _OPT_COLS if c in sub.columns]
         show_cols = [c for c in show_cols if c in sub.columns]
-        with st.expander(f"**{label_text}** — {len(sub)} position(s)", expanded=False):
+        with st.expander(f"**{label_text}** — {len(sub)} position(s)", expanded=True):
             sub_sorted = sub.sort_values("PL_Dollar", ascending=False, na_position="last")
             _positions_table_html(sub_sorted, show_cols, show_close_signal=is_stock,
                                   context=f"daily_{strat}")
@@ -1723,7 +1768,7 @@ def _render_open_tab(df: pd.DataFrame):
         if "Expiry_Date" in sub.columns:
             sub["Expiry_Date"] = (pd.to_datetime(sub["Expiry_Date"], errors="coerce")
                                   .dt.strftime("%Y-%m-%d"))
-        with st.expander(f"**{label_text}** — {len(sub)} open", expanded=False):
+        with st.expander(f"**{label_text}** — {len(sub)} open", expanded=True):
             _positions_table_html(
                 sub.sort_values("Entry_Date", ascending=False, na_position="last"),
                 show_cols, show_close_signal=is_stock,
