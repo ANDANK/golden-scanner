@@ -1467,6 +1467,85 @@ def _render_stock_analysis_methodology():
         unsafe_allow_html=True,
     )
 
+    # ── Signal circle legend ───────────────────────────────────────
+    st.markdown(
+        f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
+        f'margin:24px 0 20px"></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin-bottom:14px">&#11044; Signal Circle Legend — Gold Standard &amp; Deep Analysis</div>',
+        unsafe_allow_html=True,
+    )
+
+    _CIRCLES = [
+        ("🟢", "BUY",      ACCENT_GREEN, "≥ 70",   "sig == \"BUY\"",
+         "Composite score ≥ 70. MA stack aligned, MACD bull on daily + weekly, RSI in momentum zone. "
+         "Highest-conviction automated pick — full position sizing appropriate."),
+        ("🔵", "SETUP",    "#2DD4BF",    "40–69",  "\"SETUP\" in sig",
+         "Weekly MACD just turned positive while MA stack is still broken / recovering. "
+         "Early-entry signal. Start with 25–33% position and scale in as price confirms. "
+         "Fails ~35–40% of the time — always use a stop."),
+        ("🟡", "NEUTRAL",  "#FACC15",    "40–69",  "else (default)",
+         "Mixed signals — some indicators positive, others flat or negative. No clear directional edge. "
+         "Watch only. Re-check in 1–2 weeks or wait for a BUY or SETUP trigger."),
+        ("🟠", "EXTENDED", "#FB923C",    "any",    "\"EXTENDED\" in sig",
+         "Stock is overbought or has run far above its moving averages. RSI typically > 75 or price "
+         "well above Bollinger upper band. Avoid new entries — existing positions: tighten stops / take partial profits."),
+        ("🔴", "SELL",     ACCENT_RED,   "< 40",   "sig == \"SELL\"",
+         "Composite score < 40. MA stack broken, MACD bearish, RSI below 45. Downtrend confirmed. "
+         "Exit longs, do not buy. Short setups only for experienced traders."),
+    ]
+
+    sc_th = (f"padding:7px 14px;color:{TEXT_MUTED};font-size:10px;font-weight:700;"
+             f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
+             f"border-bottom:2px solid {GOLD}44;white-space:nowrap")
+    sc_rows = ""
+    for circle, label, color, score_range, code, meaning in _CIRCLES:
+        sc_td = f"padding:10px 14px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:top"
+        sc_rows += (
+            f'<tr>'
+            f'<td style="{sc_td};text-align:center;font-size:20px;white-space:nowrap">{circle}</td>'
+            f'<td style="{sc_td};white-space:nowrap">'
+            f'<span style="background:{color}22;color:{color};border:1px solid {color}44;'
+            f'padding:3px 10px;border-radius:4px;font-weight:700;font-size:12px">{label}</span>'
+            f'</td>'
+            f'<td style="{sc_td};white-space:nowrap">'
+            f'<span style="background:{BG_CARD};color:{TEXT_MUTED};border:1px solid {BORDER_COLOR}44;'
+            f'padding:2px 8px;border-radius:3px;font-size:11px;font-family:\'DM Mono\',monospace">'
+            f'{score_range}</span>'
+            f'</td>'
+            f'<td style="{sc_td}">'
+            f'<code style="background:{BG_CARD};color:{ACCENT_BLUE};border:1px solid {BORDER_COLOR}44;'
+            f'padding:2px 8px;border-radius:3px;font-size:10px;white-space:nowrap">{code}</code>'
+            f'</td>'
+            f'<td style="{sc_td};color:{TEXT_MUTED};font-size:11px;line-height:1.6">{meaning}</td>'
+            f'</tr>'
+        )
+
+    st.markdown(
+        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}44;margin-bottom:8px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>'
+        f'<th style="{sc_th}">Circle</th>'
+        f'<th style="{sc_th}">Signal</th>'
+        f'<th style="{sc_th}">Score Range</th>'
+        f'<th style="{sc_th}">Code Logic</th>'
+        f'<th style="{sc_th}">What It Means / How to Act</th>'
+        f'</tr></thead>'
+        f'<tbody>{sc_rows}</tbody>'
+        f'</table></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:10px;line-height:1.6;margin-bottom:4px">'
+        f'&#9432; Priority order in code: BUY → EXTENDED → SETUP → SELL → NEUTRAL (default). '
+        f'A ticker can only have one circle at a time. The circle appears in the leftmost column of '
+        f'every row in the Gold Standard table and the Deep Analysis summary table.</div>',
+        unsafe_allow_html=True,
+    )
+
 
 # ── Main render ────────────────────────────────────────────────
 
