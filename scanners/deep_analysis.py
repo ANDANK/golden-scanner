@@ -434,6 +434,17 @@ def compute_analysis(ticker: str) -> dict | None:
             cross_w    = m_w > s_w
             hist_pos_w = h_w > 0
 
+        # ── Weekly EMA20 (for ticker icon conditions A / B) ──────
+        # Computed on already-fetched weekly data — zero extra API calls.
+        ema20_w_v         = None
+        above_ema20_w     = False
+        pct_above_ema20_w = 0.0
+        if len(close_w) >= 20:
+            _ema20_wk         = calc_ema(close_w, 20)
+            ema20_w_v         = float(_ema20_wk.iloc[-1])
+            above_ema20_w     = price > ema20_w_v
+            pct_above_ema20_w = (price - ema20_w_v) / ema20_w_v * 100 if ema20_w_v > 0 else 0.0
+
         # ── RSI ──────────────────────────────────────────────────
         rsi_d = calc_rsi(close_d)
         rsi_w = calc_rsi(close_w) if len(close_w) >= 15 else 50.0
@@ -651,6 +662,7 @@ def compute_analysis(ticker: str) -> dict | None:
             momentum_score=momentum_score, trend_score=trend_score, buy_pressure_score=buy_pressure_score,
             composite=composite, reset_setup=reset_setup,
             over_extended=over_extended, pct_above_ema20=pct_above_ema20,
+            ema20_w_v=ema20_w_v, above_ema20_w=above_ema20_w, pct_above_ema20_w=pct_above_ema20_w,
             signal=signal, signal_pct=signal_pct, signal_color=signal_color,
             df_d=df_d, df_w=df_w,
         )
@@ -1122,6 +1134,90 @@ def render_ticker_panel(a: dict):
 
 
 # ══════════════════════════════════════════════════════════════
+# TICKER ICON BADGES  (stacked in the Ticker cell of every table)
+# ══════════════════════════════════════════════════════════════
+
+def _ticker_icons(a: dict) -> str:
+    """
+    Return stacked icon HTML for one ticker based on multi-condition
+    technical signals.  Rendered inside the Ticker cell of the summary
+    and standard watchlist tables.
+
+      💚  Weekly Green Heart   — all 3 weekly bullish conditions:
+                                 MACD line>Signal AND MACD>0 AND hist>0
+                                 + weekly RSI 50–70
+                                 + price above weekly EMA20, ≤10% stretched
+
+      💜  Daily Purple Heart   — same 3 conditions on the daily timeframe
+
+      💔  Broken Red Heart     — all 3 bearish conditions together:
+                                 MACD fully negative (daily OR weekly)
+                                 + weekly RSI <45 or >70
+                                 + price below EMA20 (daily OR weekly)
+
+      ▲   Green Triangle       — full MA stack: Price>EMA20>SMA50>SMA200
+                                 AND daily RSI 50–70
+
+      ○   Hollow Green Circle  — Bollinger Squeeze (bandwidth ≤ 15th-pct)
+                                 + %B > 80% + daily volume spike ≥1.5×
+                                 (high-probability breakout imminent)
+
+    Icons stack horizontally when multiple conditions fire simultaneously.
+    """
+    parts = []
+
+    # ── A: 💚 Weekly Green Heart ─────────────────────────────────
+    # All 3 weekly conditions must be true
+    w_macd_bull = a["cross_w"] and a["m_w"] > 0 and a["hist_pos_w"]
+    w_rsi_ok    = 50 <= a["rsi_w"] <= 70
+    w_ema_ok    = a.get("above_ema20_w", False) and 0 <= a.get("pct_above_ema20_w", 99) < 10
+    if w_macd_bull and w_rsi_ok and w_ema_ok:
+        parts.append("💚")
+
+    # ── A: 💜 Daily Purple Heart ──────────────────────────────────
+    # All 3 daily conditions must be true
+    d_macd_bull = a["cross_d"] and a["m_d"] > 0 and a["hist_pos_d"]
+    d_rsi_ok    = 50 <= a["rsi_d"] <= 70
+    d_ema_ok    = a["above_ema20"] and 0 <= a["pct_above_ema20"] < 10
+    if d_macd_bull and d_rsi_ok and d_ema_ok:
+        parts.append("💜")
+
+    # ── B: 💔 Broken Red Heart ────────────────────────────────────
+    # All 3 bearish conditions must be true
+    bear_macd = (
+        (not a["cross_d"] and a["m_d"] < 0 and not a["hist_pos_d"]) or
+        (not a["cross_w"] and a["m_w"] < 0 and not a["hist_pos_w"])
+    )
+    bear_rsi  = a["rsi_w"] < 45 or a["rsi_w"] > 70
+    bear_ema  = (not a["above_ema20"]) or (not a.get("above_ema20_w", True))
+    if bear_macd and bear_rsi and bear_ema:
+        parts.append("💔")
+
+    # ── C: ▲ Green Triangle ───────────────────────────────────────
+    # Full MA stack + RSI in momentum zone (daily)
+    if a["full_stack"] and 50 <= a["rsi_d"] <= 70:
+        parts.append(
+            '<span style="color:#22C55E;font-size:12px;font-weight:700;line-height:1">▲</span>'
+        )
+
+    # ── D: ○ Hollow Green Circle ──────────────────────────────────
+    # Bollinger Squeeze + price at upper band + volume spike
+    if a["bb_squeeze"] and a["pct_b"] > 80 and a["vol_spike"]:
+        parts.append(
+            '<span style="color:#22C55E;font-size:14px;font-weight:300;line-height:1">○</span>'
+        )
+
+    if not parts:
+        return ""
+    return (
+        '<span style="display:inline-flex;align-items:center;gap:2px;'
+        'font-size:13px;line-height:1">'
+        + "".join(parts)
+        + "</span>"
+    )
+
+
+# ══════════════════════════════════════════════════════════════
 # SUMMARY TABLE — all tickers at a glance
 # ══════════════════════════════════════════════════════════════
 
@@ -1189,6 +1285,8 @@ def _render_summary_table(analyses: list):
         td          = f"padding:9px 10px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:middle"
 
         # Build each row as a single-line join — NO embedded newlines (they break st.markdown HTML parsing)
+        _icons    = _ticker_icons(a)
+        _icon_div = f'<div style="margin-top:3px">{_icons}</div>' if _icons else ""
         row = (
             f'<tr>'
             f'<td style="{td};font-size:18px;text-align:center;width:32px">{circle}</td>'
@@ -1196,6 +1294,7 @@ def _render_summary_table(analyses: list):
             f'<div style="color:{GOLD};font-size:14px;font-weight:800;font-family:\'DM Mono\',monospace;letter-spacing:1px">{a["ticker"]}</div>'
             f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:1px">'
             f'${a["price"]:.2f}&nbsp;<span style="color:{chg_c}">{a["chg_pct"]:+.1f}%</span></div>'
+            f'{_icon_div}'
             f'</td>'
             f'<td style="{td}">'
             f'<div style="background:{sig_color}22;border:1px solid {sig_color}55;border-radius:6px;padding:5px 10px;text-align:center;min-width:72px">'
@@ -1323,12 +1422,15 @@ def _render_standard_table(analyses: list):
         cf_tag   = f'<span style="color:{TEAL};font-size:8px">&#9889;conflict</span>' if conflict else ""
         td       = f"padding:7px 8px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:middle"
 
+        _icons2    = _ticker_icons(a)
+        _icon_div2 = f'<div style="margin-top:2px">{_icons2}</div>' if _icons2 else ""
         row = (
             f'<tr>'
             f'<td style="{td};text-align:center;width:24px;font-size:16px">{circle}</td>'
             f'<td style="{td}">'
             f'<div style="color:{GOLD};font-size:13px;font-weight:800;font-family:\'DM Mono\',monospace">{a["ticker"]}</div>'
             f'<div style="color:{TEXT_MUTED};font-size:10px">${a["price"]:.2f}&nbsp;<span style="color:{chg_c}">{a["chg_pct"]:+.1f}%</span></div>'
+            f'{_icon_div2}'
             f'</td>'
             f'<td style="{td}">'
             f'<div style="background:{sig_color}22;border:1px solid {sig_color}44;border-radius:5px;padding:3px 8px;text-align:center">'

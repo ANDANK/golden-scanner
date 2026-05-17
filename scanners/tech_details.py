@@ -1688,6 +1688,112 @@ def _render_stock_analysis_methodology():
         unsafe_allow_html=True,
     )
 
+    # ── Watchlist Analysis Ticker Icons ──────────────────────────
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin-bottom:14px">&#127381; Watchlist Analysis — Ticker Icons</div>',
+        unsafe_allow_html=True,
+    )
+
+    _ICONS = [
+        # (icon_html, name, timeframe, condition_a, condition_b, condition_c, notes)
+        (
+            "💚", "Weekly Green Heart", "Weekly",
+            "MACD line &gt; Signal <b>AND</b> MACD line &gt; 0 <b>AND</b> histogram &gt; 0",
+            "Weekly RSI between 50 and 70",
+            "Price &gt; weekly EMA20 <b>AND</b> price ≤ 10% above it (not over-extended)",
+            "ALL 3 conditions required. Zero extra API calls — weekly data already fetched. "
+            "Strongest bullish confirmation available on the weekly chart.",
+        ),
+        (
+            "💜", "Daily Purple Heart", "Daily",
+            "MACD line &gt; Signal <b>AND</b> MACD line &gt; 0 <b>AND</b> histogram &gt; 0",
+            "Daily RSI between 50 and 70",
+            "Price &gt; daily EMA20 <b>AND</b> price ≤ 10% above it (not over-extended)",
+            "ALL 3 conditions required. Same logic as 💚 but on the daily timeframe. "
+            "When both 💚 and 💜 appear together, both timeframes are aligned bullish.",
+        ),
+        (
+            "💔", "Broken Red Heart", "Daily + Weekly",
+            "MACD fully bearish: line &lt; Signal, MACD line &lt; 0, histogram &lt; 0 — on daily <i>OR</i> weekly",
+            "Weekly RSI &lt; 45 <i>OR</i> &gt; 70 (oversold or overbought extremes)",
+            "Price below daily EMA20 <i>OR</i> below weekly EMA20",
+            "ALL 3 conditions required simultaneously. A single broken condition is not enough. "
+            "Bearish MACD on either timeframe qualifies for condition (a). "
+            "Price below EMA20 on either timeframe qualifies for condition (c).",
+        ),
+        (
+            "▲", "Green Triangle", "Daily",
+            "Full MA stack intact: Price &gt; EMA20 &gt; SMA50 &gt; SMA200 (all 4 levels)",
+            "Daily RSI between 50 and 70",
+            "— (only 2 conditions)",
+            "Uses the pre-computed <code>full_stack</code> boolean — no extra math. "
+            "The triangle indicates a structurally healthy uptrend in its ideal momentum zone. "
+            "Often stacks with 💜 when the daily is fully aligned.",
+        ),
+        (
+            "○", "Hollow Green Circle", "Daily",
+            "Bollinger Band width ≤ 15th percentile of the last 20 bars (squeeze condition)",
+            "%B position &gt; 80% (price near the upper Bollinger Band inside the squeeze)",
+            "Daily volume ≥ 1.5× the 20-day average (institutional participation)",
+            "The classic 'BB Squeeze into upper band with volume' breakout setup. "
+            "All 3 daily fields (<code>bb_squeeze</code>, <code>pct_b</code>, <code>vol_spike</code>) "
+            "are pre-computed in <code>compute_analysis()</code>. Zero extra API calls.",
+        ),
+    ]
+
+    ic_th = (f"padding:7px 12px;color:{TEXT_MUTED};font-size:10px;font-weight:700;"
+             f"text-transform:uppercase;letter-spacing:.7px;background:{BG_PANEL};"
+             f"border-bottom:2px solid {GOLD}44;white-space:nowrap")
+    ic_rows = ""
+    for icon, name, tf, ca, cb, cc, notes in _ICONS:
+        ic_td = f"padding:9px 12px;border-bottom:1px solid {BORDER_COLOR}22;vertical-align:top"
+        ic_rows += (
+            f'<tr>'
+            f'<td style="{ic_td};text-align:center;font-size:22px;white-space:nowrap">{icon}</td>'
+            f'<td style="{ic_td};white-space:nowrap">'
+            f'<span style="color:{TEXT_PRIMARY};font-size:12px;font-weight:700">{name}</span><br>'
+            f'<span style="color:{TEXT_MUTED};font-size:10px">{tf}</span>'
+            f'</td>'
+            f'<td style="{ic_td}">'
+            f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
+            f'<b style="color:{TEXT_PRIMARY}">a.</b> {ca}<br>'
+            f'<b style="color:{TEXT_PRIMARY}">b.</b> {cb}<br>'
+            f'<b style="color:{TEXT_PRIMARY}">c.</b> {cc}'
+            f'</div>'
+            f'</td>'
+            f'<td style="{ic_td};color:{TEXT_MUTED};font-size:11px;line-height:1.6">{notes}</td>'
+            f'</tr>'
+        )
+
+    st.markdown(
+        f'<div style="overflow-x:auto;border-radius:8px;border:1px solid {BORDER_COLOR}44;margin-bottom:8px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>'
+        f'<th style="{ic_th}">Icon</th>'
+        f'<th style="{ic_th}">Name</th>'
+        f'<th style="{ic_th}">Trigger Conditions (ALL must be true unless noted)</th>'
+        f'<th style="{ic_th}">Implementation Notes</th>'
+        f'</tr></thead>'
+        f'<tbody>{ic_rows}</tbody>'
+        f'</table></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:10px;line-height:1.7;margin-bottom:4px">'
+        f'&#9432; <b style="color:{TEXT_PRIMARY}">Stacking:</b> icons accumulate horizontally in the Ticker cell when '
+        f'multiple conditions fire simultaneously for the same ticker — e.g. 💚💜▲ means weekly bullish, '
+        f'daily bullish, and full MA stack all align at once. &nbsp;'
+        f'&#9432; <b style="color:{TEXT_PRIMARY}">API cost:</b> zero additional yfinance calls — daily (6mo) and weekly (2y) '
+        f'bars are already fetched by <code>compute_analysis()</code>. Weekly EMA20 is a single in-memory '
+        f'<code>calc_ema(close_w, 20)</code> on the cached weekly series. &nbsp;'
+        f'&#9432; <b style="color:{TEXT_PRIMARY}">Where rendered:</b> both the Summary table '
+        f'(<code>_render_summary_table</code>) and the Watchlist Analysis table '
+        f'(<code>_render_standard_table</code>) in <code>deep_analysis.py</code>.</div>',
+        unsafe_allow_html=True,
+    )
+
 
 # ── Main render ────────────────────────────────────────────────
 
