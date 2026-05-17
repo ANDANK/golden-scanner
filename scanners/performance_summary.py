@@ -1310,7 +1310,7 @@ def _render_daily_tab(df: pd.DataFrame):
         is_stock = strat.upper() in _STOCK_STRATS
         show_cols = _STOCK_COLS if is_stock else [c for c in _OPT_COLS if c in sub.columns]
         show_cols = [c for c in show_cols if c in sub.columns]
-        with st.expander(f"**{label_text}** — {len(sub)} position(s)", expanded=True):
+        with st.expander(f"**{label_text}** — {len(sub)} position(s)", expanded=False):
             sub_sorted = sub.sort_values("PL_Dollar", ascending=False, na_position="last")
             _positions_table_html(sub_sorted, show_cols, show_close_signal=is_stock,
                                   context=f"daily_{strat}")
@@ -1426,13 +1426,13 @@ def _render_monthly_tab(df: pd.DataFrame):
                                     .dt.strftime("%Y-%m-%d"))
 
     if not opt_m.empty:
-        with st.expander(f"**⚙️ Options Positions — {selected}** — {len(opt_m)} position(s)", expanded=True):
+        with st.expander(f"**⚙️ Options Positions — {selected}** — {len(opt_m)} position(s)", expanded=False):
             _positions_table_html(
                 month_df2[opt_mask].sort_values("Entry_Date", ascending=False),
                 opt_show, context=f"monthly_opt_{selected}")
 
     if not stock_m.empty:
-        with st.expander(f"**📊 Stock / GS Positions — {selected}** — {len(stock_m)} position(s)", expanded=True):
+        with st.expander(f"**📊 Stock / GS Positions — {selected}** — {len(stock_m)} position(s)", expanded=False):
             _positions_table_html(
                 month_df2[~opt_mask].sort_values("Entry_Date", ascending=False),
                 stk_show, show_close_signal=True, context=f"monthly_stk_{selected}")
@@ -1690,7 +1690,7 @@ def _render_open_tab(df: pd.DataFrame):
         if "Expiry_Date" in sub.columns:
             sub["Expiry_Date"] = (pd.to_datetime(sub["Expiry_Date"], errors="coerce")
                                   .dt.strftime("%Y-%m-%d"))
-        with st.expander(f"**{label_text}** — {len(sub)} open", expanded=True):
+        with st.expander(f"**{label_text}** — {len(sub)} open", expanded=False):
             _positions_table_html(
                 sub.sort_values("Entry_Date", ascending=False, na_position="last"),
                 show_cols, show_close_signal=is_stock,
@@ -1745,7 +1745,7 @@ def _render_closed_tab(df: pd.DataFrame):
         if "Expiry_Date" in sub.columns:
             sub["Expiry_Date"] = (pd.to_datetime(sub["Expiry_Date"], errors="coerce")
                                   .dt.strftime("%Y-%m-%d"))
-        with st.expander(f"**{label_text}** — {len(sub)} closed", expanded=True):
+        with st.expander(f"**{label_text}** — {len(sub)} closed", expanded=False):
             _positions_table_html(
                 sub.sort_values("Entry_Date", ascending=False, na_position="last"),
                 show_cols, show_close_signal=False,
