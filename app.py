@@ -648,6 +648,7 @@ NAV_GROUPS = [
     },
     {
         "sep": "Options", "icon": "🎯", "expanded": False,
+        "hidden_for_users": True,          # completely hidden from non-admin users
         "items": [
             {"key": "💰  CSP — Stocks"},
             {"key": "💰  CSP — ETFs"},
@@ -672,6 +673,7 @@ NAV_GROUPS = [
     },
     {
         "sep": "Admin", "icon": "🔐", "expanded": False, "dim": True,
+        "hidden_for_users": True,          # completely hidden from non-admin users
         "items": [
             {"key": "⚙️  Admin Panel", "label": "Admin Panel", "icon": "⚙️"},
             {"key": "🔧  Tech Details", "label": "Tech Details", "icon": "🔧"},
@@ -1008,21 +1010,27 @@ elif page == "📰  Headlines & Catalysts":
 elif page == "⚡  3× Leveraged ETFs":
     from scanners.etf_3x_scanner import render
     render()
-elif page == "⚡  3× ETF Options":
-    from scanners.etf_3x_options_scanner import render
-    render()
-elif page == "💰  CSP — Stocks":
-    from scanners.csp_scanner import render
-    render(universe_mode="stocks")
-elif page == "💰  CSP — ETFs":
-    from scanners.csp_scanner import render
-    render(universe_mode="etfs")
-elif page == "🧨  LEAPS — Stocks":
-    from scanners.leaps_scanner import render
-    render(universe_mode="stocks")
-elif page == "🧨  LEAPS — ETFs":
-    from scanners.leaps_scanner import render
-    render(universe_mode="etfs")
+elif page in ("⚡  3× ETF Options", "💰  CSP — Stocks", "💰  CSP — ETFs",
+              "🧨  LEAPS — Stocks", "🧨  LEAPS — ETFs"):
+    # Options pages are admin-only (hidden from nav for regular users).
+    if not st.session_state.get("_is_admin", False):
+        st.session_state["nav_page"] = "🏠  Market Overview"
+        st.rerun()
+    elif page == "⚡  3× ETF Options":
+        from scanners.etf_3x_options_scanner import render
+        render()
+    elif page == "💰  CSP — Stocks":
+        from scanners.csp_scanner import render
+        render(universe_mode="stocks")
+    elif page == "💰  CSP — ETFs":
+        from scanners.csp_scanner import render
+        render(universe_mode="etfs")
+    elif page == "🧨  LEAPS — Stocks":
+        from scanners.leaps_scanner import render
+        render(universe_mode="stocks")
+    elif page == "🧨  LEAPS — ETFs":
+        from scanners.leaps_scanner import render
+        render(universe_mode="etfs")
 elif page in ("💵  Upcoming Dividends", "📅  Dividend + CC Capture"):
     # Dividend pages are admin-only (hidden from nav for regular users).
     if not st.session_state.get("_is_admin", False):
