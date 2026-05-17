@@ -583,6 +583,7 @@ _NEVER_SHOW_COLS = {
     "Read %", "Upside Cap %", "P(Assign) %", "Near Resist.", "Leverage",
     "Spread %", "Yield %",
     "Universe",   # used internally for source-tag building; not a user-facing column
+    "Icons",      # rendered inline inside the Ticker cell; never shown as a standalone column
 }
 
 
@@ -826,10 +827,16 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                         unsafe_allow_html=True,
                     )
                 elif col_name == "Ticker":
+                    _icons_html = str(row.get("Icons", "")).strip()
+                    _icons_div  = (
+                        f'<div style="margin-top:2px">{_icons_html}</div>'
+                        if _icons_html else ""
+                    )
                     st.markdown(
                         f'<div style="background:{bg};padding:6px 4px">'
                         f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
-                        f'font-weight:700;font-size:13px">{val}</span></div>',
+                        f'font-weight:700;font-size:13px">{val}</span>'
+                        f'{_icons_div}</div>',
                         unsafe_allow_html=True,
                     )
                 elif col_name == "Signals":

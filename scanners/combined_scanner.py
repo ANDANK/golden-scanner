@@ -355,6 +355,99 @@ def _signals_text(row) -> str:
     return ", ".join(fired) if fired else "—"
 
 
+def _compute_gs_icons(ticker: str, price: float) -> str:
+    """Compute ticker icon HTML using only data already cached during run_combined().
+    Daily data: get_price_history(6mo) cached in data_loader.
+    Weekly data: _WK_CACHE populated by prefetch_weekly(tickers, years=3).
+    Zero additional API calls — all data is pre-fetched before this is called."""
+    try:
+        from utils import calc_ema, calc_sma, calc_rsi
+        from scanners.weekly_scanners import _WK_CACHE
+        from scanners.deep_analysis import _ticker_icons
+
+        df_d = get_price_history(ticker, period="6mo")
+        if df_d is None or df_d.empty or len(df_d) < 30:
+            return ""
+        if isinstance(df_d.columns, pd.MultiIndex):
+            df_d.columns = df_d.columns.get_level_values(0)
+        close_d = df_d["Close"].squeeze()
+        vol_d   = df_d["Volume"].squeeze()
+
+        # Daily MACD
+        ema12_d = calc_ema(close_d, 12); ema26_d = calc_ema(close_d, 26)
+        macd_d  = ema12_d - ema26_d;    sig_d   = calc_ema(macd_d, 9)
+        hist_d  = macd_d - sig_d
+        m_d  = float(macd_d.iloc[-1])
+        cross_d    = m_d > float(sig_d.iloc[-1])
+        hist_pos_d = float(hist_d.iloc[-1]) > 0
+
+        rsi_d = float(calc_rsi(close_d))
+
+        ema20   = calc_ema(close_d, 20); ema20_v = float(ema20.iloc[-1])
+        sma50   = calc_sma(close_d, 50); sma50_v = float(sma50.iloc[-1])
+        above_ema20     = price > ema20_v
+        pct_above_ema20 = (price - ema20_v) / ema20_v * 100 if ema20_v > 0 else 0.0
+        ema20_above_50  = ema20_v > sma50_v
+        above_sma50     = price > sma50_v
+        if len(close_d) >= 200:
+            sma200   = calc_sma(close_d, 200); sma200_v = float(sma200.iloc[-1])
+            above_sma200    = price > sma200_v
+            sma50_above_200 = sma50_v > sma200_v
+        else:
+            above_sma200 = sma50_above_200 = False
+        full_stack = (above_ema20 and ema20_above_50 and above_sma50
+                      and above_sma200 and sma50_above_200)
+
+        # Bollinger Bands + volume spike
+        sma20  = calc_sma(close_d, 20)
+        sigma  = close_d.rolling(20, min_periods=1).std()
+        bb_up  = sma20 + 2 * sigma
+        bb_lo  = sma20 - 2 * sigma
+        bb_wid = ((bb_up - bb_lo) / sma20.replace(0, np.nan) * 100).fillna(0)
+        bb_up_v = float(bb_up.iloc[-1]); bb_lo_v = float(bb_lo.iloc[-1])
+        bb_w_v  = float(bb_wid.iloc[-1])
+        ww = bb_wid.dropna()
+        bb_squeeze = len(ww) >= 20 and bb_w_v <= float(ww.iloc[-20:].quantile(0.15))
+        pct_b = ((price - bb_lo_v) / (bb_up_v - bb_lo_v) * 100
+                 if (bb_up_v != bb_lo_v) else 50.0)
+        avg_vol   = float(vol_d.iloc[:-1].rolling(20).mean().dropna().iloc[-1]) if len(vol_d) > 20 else float(vol_d.mean())
+        vol_spike = (float(vol_d.iloc[-1]) / avg_vol >= 1.5) if avg_vol > 0 else False
+
+        # Weekly data from _WK_CACHE (pre-populated by run_combined → prefetch_weekly)
+        m_w = s_w = 0.0; cross_w = hist_pos_w = False
+        rsi_w = 50.0; above_ema20_w = False; pct_above_ema20_w = 0.0
+        df_wk = _WK_CACHE.get(f"{ticker}_3") or _WK_CACHE.get(f"{ticker}_2") or pd.DataFrame()
+        if not df_wk.empty and len(df_wk) >= 26:
+            if isinstance(df_wk.columns, pd.MultiIndex):
+                df_wk.columns = df_wk.columns.get_level_values(0)
+            close_w = df_wk["Close"].squeeze()
+            ema12_w = calc_ema(close_w, 12); ema26_w = calc_ema(close_w, 26)
+            macd_w  = ema12_w - ema26_w;    sig_w   = calc_ema(macd_w, 9)
+            hist_w  = macd_w - sig_w
+            m_w = float(macd_w.iloc[-1]); s_w = float(sig_w.iloc[-1])
+            cross_w    = m_w > s_w
+            hist_pos_w = float(hist_w.iloc[-1]) > 0
+            rsi_w = float(calc_rsi(close_w))
+            if len(close_w) >= 20:
+                ema20_wk      = calc_ema(close_w, 20)
+                ema20_w_v     = float(ema20_wk.iloc[-1])
+                above_ema20_w = price > ema20_w_v
+                pct_above_ema20_w = (
+                    (price - ema20_w_v) / ema20_w_v * 100 if ema20_w_v > 0 else 0.0
+                )
+
+        return _ticker_icons(dict(
+            cross_d=cross_d, m_d=m_d, hist_pos_d=hist_pos_d,
+            rsi_d=rsi_d, above_ema20=above_ema20, pct_above_ema20=pct_above_ema20,
+            full_stack=full_stack,
+            bb_squeeze=bb_squeeze, pct_b=pct_b, vol_spike=vol_spike,
+            cross_w=cross_w, m_w=m_w, hist_pos_w=hist_pos_w,
+            rsi_w=rsi_w, above_ema20_w=above_ema20_w, pct_above_ema20_w=pct_above_ema20_w,
+        ))
+    except Exception:
+        return ""
+
+
 def _render_combined_table(df: pd.DataFrame):
     # Compute Signals column before slicing display cols
     df = df.copy()
@@ -394,9 +487,14 @@ def _render_combined_table(df: pd.DataFrame):
         for col in cols_present:
             val = row[col]
             if col == "Ticker":
+                _icon_html = str(row.get("Icons", "")).strip()
+                _icon_div  = (
+                    f'<div style="margin-top:2px">{_icon_html}</div>'
+                    if _icon_html else ""
+                )
                 content = (
                     f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
-                    f'font-weight:700;font-size:13px">{val}</span>'
+                    f'font-weight:700;font-size:13px">{val}</span>{_icon_div}'
                 )
             elif col == "Scanner Count":
                 color = ACCENT_GREEN if int(val) >= 2 else TEXT_MUTED
@@ -597,6 +695,12 @@ def render():
     # Compute Signals column from scanner membership + RSI + Vol Ratio
     df = df.copy()
     df["Signals"] = df.apply(_signals_text, axis=1)
+
+    # Compute Icons column — uses only pre-cached daily + weekly data (zero extra API calls)
+    df["Icons"] = df.apply(
+        lambda r: _compute_gs_icons(str(r["Ticker"]), float(r.get("Price", 0) or 0)),
+        axis=1,
+    )
 
     # Summary metrics
     multi_count   = int((df.get("Scanner Count", pd.Series([1])) >= 2).sum())
