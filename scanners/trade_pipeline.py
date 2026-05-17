@@ -196,7 +196,8 @@ def render():
     st.markdown(_TAB_CSS, unsafe_allow_html=True)
     st.markdown(_LAZY_TAB_CSS, unsafe_allow_html=True)
 
-    _render_pipeline_diagram()
+    with st.expander("⚡ How Auto Scan & Track Works", expanded=False):
+        _render_pipeline_diagram()
     st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
     # ── Lazy tab switching — only render the ACTIVE tab ────────
