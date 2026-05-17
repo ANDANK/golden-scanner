@@ -939,95 +939,98 @@ def _chart_cumulative_pnl(df: pd.DataFrame) -> go.Figure | None:
 # ══════════════════════════════════════════════════════════════════
 
 def _render_daily_summary_boxes(df: pd.DataFrame):
-    """Two summary boxes: Golden Scan positions (by source) + Options positions."""
-    box_style = (f'background:{BG_CARD};border:1px solid {BORDER_COLOR};'
-                 f'border-radius:8px;padding:14px;height:100%')
-
+    """Two collapsible summary boxes: GS / Stock positions + Options positions."""
     # ── Classify rows ──────────────────────────────────────────────
     gs_df  = df[df["Strategy"].str.upper().isin(_STOCK_STRATS)].copy()
     opt_df = df[df["Strategy"].str.upper().isin({"CSP","CC","LEAPS"})].copy()
 
-    c1, c2 = st.columns(2)
+    total_pl  = gs_df["PL_Dollar"].fillna(0).sum()
+    pl_color  = ACCENT_GREEN if total_pl >= 0 else ACCENT_RED
+    pl_sign   = "+" if total_pl >= 0 else ""
 
-    # ── BOX 1: Golden Scan / Stocks (grouped by Source) ───────────
-    with c1:
-        open_gs  = gs_df[gs_df["Status"].str.lower() == "open"]
-        total_pl = gs_df["PL_Dollar"].fillna(0).sum()
-        pl_color = ACCENT_GREEN if total_pl >= 0 else ACCENT_RED
-        st.markdown(f'<div style="{box_style};border-top:3px solid {ACCENT_GREEN}">'
-                    f'<div style="color:{ACCENT_GREEN};font-size:12px;font-weight:700;'
-                    f'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'
-                    f'📊 GS / Stock Positions ({len(gs_df)})</div>', unsafe_allow_html=True)
+    expired_opts = opt_df[opt_df["Status"].str.lower().isin(["expired","closed","assigned","called"])]
+    realized     = expired_opts["Income"].fillna(0).sum()
+    rc           = ACCENT_GREEN if realized >= 0 else ACCENT_RED
+    r_sign       = "+" if realized >= 0 else ""
+
+    # ── BOX 1: GS / Stock Positions ───────────────────────────────
+    with st.expander(
+        f"📊 GS / Stock Positions ({len(gs_df)})  ·  "
+        f"Total P&L: {pl_sign}${total_pl:,.2f}",
+        expanded=False,
+    ):
         if gs_df.empty:
             st.markdown(f'<div style="color:{TEXT_MUTED};font-size:12px;font-style:italic;'
                         f'padding:8px 0">No stock positions yet.</div>', unsafe_allow_html=True)
         else:
-            # Group by source
             gs_df2 = gs_df.copy()
             gs_df2["_src"] = gs_df2["Source"].fillna("—").astype(str)
+            rows_html = ""
             for src, grp in gs_df2.groupby("_src"):
-                grp_pl = grp["PL_Dollar"].fillna(0).sum()
-                gc = ACCENT_GREEN if grp_pl >= 0 else ACCENT_RED
-                tickers = " · ".join(grp["Ticker"].astype(str).tolist()[:6])
-                st.markdown(
-                    f'<div style="border-bottom:1px solid {BORDER_COLOR}22;'
-                    f'padding:5px 0">'
+                grp_pl  = grp["PL_Dollar"].fillna(0).sum()
+                gc      = ACCENT_GREEN if grp_pl >= 0 else ACCENT_RED
+                tickers = " · ".join(grp["Ticker"].astype(str).tolist()[:8])
+                rows_html += (
+                    f'<div style="border-bottom:1px solid {BORDER_COLOR}22;padding:6px 0">'
                     f'<div style="color:{TEXT_MUTED};font-size:10px;font-weight:600;'
-                    f'letter-spacing:.5px">{src[:60]}</div>'
-                    f'<div style="display:flex;justify-content:space-between">'
-                    f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
-                    f'font-size:11px">{tickers}</span>'
-                    f'<span style="color:{gc};font-family:\'DM Mono\',monospace;'
-                    f'font-size:11px;font-weight:700">{"+" if grp_pl>=0 else ""}${grp_pl:,.0f}</span>'
-                    f'</div></div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div style="margin-top:8px;padding-top:6px;border-top:1px solid {BORDER_COLOR}">'
-            f'<span style="color:{TEXT_MUTED};font-size:10px">TOTAL STOCK P&L  </span>'
-            f'<span style="color:{pl_color};font-family:\'DM Mono\',monospace;'
-            f'font-weight:800;font-size:16px">{"+" if total_pl>=0 else ""}${total_pl:,.2f}'
-            f'</span></div></div>', unsafe_allow_html=True)
+                    f'letter-spacing:.5px;margin-bottom:2px">{src[:80]}</div>'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center">'
+                    f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;font-size:11px">{tickers}</span>'
+                    f'<span style="color:{gc};font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700">'
+                    f'{"+" if grp_pl>=0 else ""}${grp_pl:,.0f}</span>'
+                    f'</div></div>'
+                )
+            st.markdown(
+                f'<div style="background:{BG_CARD};border:1px solid {ACCENT_GREEN}33;'
+                f'border-radius:8px;padding:12px 16px">{rows_html}'
+                f'<div style="margin-top:8px;padding-top:6px;border-top:1px solid {BORDER_COLOR}">'
+                f'<span style="color:{TEXT_MUTED};font-size:10px">TOTAL STOCK P&L  </span>'
+                f'<span style="color:{pl_color};font-family:\'DM Mono\',monospace;'
+                f'font-weight:800;font-size:16px">{pl_sign}${total_pl:,.2f}</span>'
+                f'</div></div>',
+                unsafe_allow_html=True,
+            )
 
-    # ── BOX 2: Options (CSP / CC / LEAPS) ─────────────────────────
-    with c2:
-        open_opts    = opt_df[opt_df["Status"].str.lower() == "open"]
-        expired_opts = opt_df[opt_df["Status"].str.lower().isin(["expired","closed","assigned","called"])]
-        realized     = expired_opts["Income"].fillna(0).sum()
-        _qty_mean    = open_opts["Qty"].fillna(1).mean() if not open_opts.empty else 1
-        open_prem    = (_nf(open_opts["Premium"].mean()) *
-                        100 * max(1, int(_qty_mean) if _qty_mean == _qty_mean else 1))
-        rc           = ACCENT_GREEN if realized >= 0 else ACCENT_RED
-        st.markdown(f'<div style="{box_style};border-top:3px solid {GOLD}">'
-                    f'<div style="color:{GOLD};font-size:12px;font-weight:700;'
-                    f'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'
-                    f'⚙️ Options Positions ({len(opt_df)})</div>', unsafe_allow_html=True)
+    # ── BOX 2: Options Positions ───────────────────────────────────
+    with st.expander(
+        f"⚙️ Options Positions ({len(opt_df)})  ·  "
+        f"Realized Income: {r_sign}${realized:,.2f}",
+        expanded=False,
+    ):
         if opt_df.empty:
             st.markdown(f'<div style="color:{TEXT_MUTED};font-size:12px;font-style:italic;'
                         f'padding:8px 0">No options positions yet.</div>', unsafe_allow_html=True)
         else:
+            rows_html = ""
             for strat, strat_color in [("CSP", "#86EFAC"), ("CC", GOLD), ("LEAPS", "#60A5FA")]:
-                grp  = opt_df[opt_df["Strategy"].str.upper() == strat]
+                grp = opt_df[opt_df["Strategy"].str.upper() == strat]
                 if grp.empty:
                     continue
-                exp_g   = grp[grp["Status"].str.lower().isin(["expired","closed","assigned","called"])]
-                inc_g   = exp_g["Income"].fillna(0).sum()
+                exp_g    = grp[grp["Status"].str.lower().isin(["expired","closed","assigned","called"])]
+                inc_g    = exp_g["Income"].fillna(0).sum()
                 expiring = grp[grp["Status"].str.lower() == "open"]
-                tickers  = " · ".join(expiring["Ticker"].astype(str).tolist()[:4])
-                ic = ACCENT_GREEN if inc_g >= 0 else ACCENT_RED
-                st.markdown(
-                    f'<div style="border-bottom:1px solid {BORDER_COLOR}22;padding:5px 0">'
-                    f'<div style="display:flex;justify-content:space-between">'
+                tickers  = " · ".join(expiring["Ticker"].astype(str).tolist()[:6])
+                ic       = ACCENT_GREEN if inc_g >= 0 else ACCENT_RED
+                rows_html += (
+                    f'<div style="border-bottom:1px solid {BORDER_COLOR}22;padding:6px 0">'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center">'
                     f'<span style="color:{strat_color};font-size:11px;font-weight:700">'
                     f'{strat} ({len(grp)})</span>'
                     f'<span style="color:{ic};font-family:\'DM Mono\',monospace;font-size:11px">'
                     f'{"+" if inc_g>=0 else ""}${inc_g:,.0f} realized</span></div>'
-                    f'<div style="color:{TEXT_MUTED};font-size:10px">{tickers}</div>'
-                    f'</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div style="margin-top:8px;padding-top:6px;border-top:1px solid {BORDER_COLOR}">'
-            f'<span style="color:{TEXT_MUTED};font-size:10px">REALIZED INCOME  </span>'
-            f'<span style="color:{rc};font-family:\'DM Mono\',monospace;font-weight:800;'
-            f'font-size:16px">{"+" if realized>=0 else ""}${realized:,.2f}</span>'
-            f'</div></div>', unsafe_allow_html=True)
+                    f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:2px">{tickers}</div>'
+                    f'</div>'
+                )
+            st.markdown(
+                f'<div style="background:{BG_CARD};border:1px solid {GOLD}33;'
+                f'border-radius:8px;padding:12px 16px">{rows_html}'
+                f'<div style="margin-top:8px;padding-top:6px;border-top:1px solid {BORDER_COLOR}">'
+                f'<span style="color:{TEXT_MUTED};font-size:10px">REALIZED INCOME  </span>'
+                f'<span style="color:{rc};font-family:\'DM Mono\',monospace;font-weight:800;'
+                f'font-size:16px">{r_sign}${realized:,.2f}</span>'
+                f'</div></div>',
+                unsafe_allow_html=True,
+            )
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
