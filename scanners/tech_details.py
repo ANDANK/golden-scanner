@@ -1795,17 +1795,307 @@ def _render_stock_analysis_methodology():
     )
 
 
+# ── Trading View reference ─────────────────────────────────────
+
+def _tv_section(title: str, icon: str, border_color: str, rows: list[tuple],
+                col_heads: tuple = ("What you see", "What it is", "What to look for"),
+                note: str = ""):
+    """Render one Trading View indicator section as a styled card + table."""
+    G = border_color
+    # Section header card
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,{G}18,{G}08);'
+        f'border-left:4px solid {G};border-radius:0 8px 8px 0;'
+        f'padding:10px 16px;margin:18px 0 0">'
+        f'<span style="font-size:18px">{icon}</span>'
+        f'<span style="color:{G};font-size:14px;font-weight:700;'
+        f'margin-left:8px;letter-spacing:0.3px">{title}</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    # Column header row
+    h1, h2, h3 = col_heads
+    hdr_style = (f'background:{G}22;color:{G};font-size:10px;font-weight:700;'
+                 f'text-transform:uppercase;letter-spacing:1px;padding:8px 14px;'
+                 f'border-bottom:2px solid {G}55')
+    cell_style_base = ('font-size:12px;padding:9px 14px;vertical-align:top;'
+                       'border-bottom:1px solid #ffffff0d')
+
+    row_html = ""
+    for i, row in enumerate(rows):
+        bg = f"background:{'#ffffff06' if i % 2 == 0 else 'transparent'};"
+        # col 0: badge-style "what you see" with dot color
+        dot_color, see_text, is_text, look_text = row
+        badge = (
+            f'<span style="display:inline-flex;align-items:center;gap:6px">'
+            f'<span style="width:9px;height:9px;border-radius:50%;'
+            f'background:{dot_color};flex-shrink:0;display:inline-block;'
+            f'box-shadow:0 0 4px {dot_color}88"></span>'
+            f'<span style="color:{TEXT_PRIMARY};font-weight:600;font-size:12px;'
+            f'font-family:\'DM Mono\',monospace">{see_text}</span>'
+            f'</span>'
+        )
+        row_html += (
+            f'<tr style="{bg}">'
+            f'<td style="{cell_style_base};width:24%;white-space:nowrap">{badge}</td>'
+            f'<td style="{cell_style_base};width:26%;color:{TEXT_MUTED}">{is_text}</td>'
+            f'<td style="{cell_style_base};width:50%;color:{TEXT_PRIMARY};line-height:1.6">'
+            f'{look_text}</td>'
+            f'</tr>'
+        )
+
+    table = (
+        f'<div style="overflow-x:auto;border:1px solid {G}33;border-radius:0 0 8px 8px;'
+        f'margin-bottom:4px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'Inter\',sans-serif">'
+        f'<thead><tr>'
+        f'<th style="{hdr_style};width:24%;text-align:left">{h1}</th>'
+        f'<th style="{hdr_style};width:26%;text-align:left">{h2}</th>'
+        f'<th style="{hdr_style};width:50%;text-align:left">{h3}</th>'
+        f'</tr></thead>'
+        f'<tbody>{row_html}</tbody>'
+        f'</table></div>'
+    )
+    if note:
+        table += (
+            f'<div style="color:{TEXT_MUTED};font-size:10px;font-style:italic;'
+            f'padding:4px 6px 0;margin-bottom:2px">{note}</div>'
+        )
+    st.markdown(table, unsafe_allow_html=True)
+
+
+def _render_trading_view():
+    """Full TradingView indicator reference guide."""
+
+    # ── Intro banner ───────────────────────────────────────────────
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,{BG_CARD},{BG_PANEL});'
+        f'border:1px solid {GOLD}44;border-radius:12px;padding:20px 24px;margin-bottom:4px">'
+        f'<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
+        f'<span style="font-size:28px">📺</span>'
+        f'<div>'
+        f'<div style="color:{GOLD};font-size:16px;font-weight:700;'
+        f'font-family:\'Cormorant Garamond\',serif;letter-spacing:0.4px">'
+        f'TradingView Chart Indicator Reference</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:2px">'
+        f'A complete visual guide to every indicator, label, and signal on the custom chart setup.</div>'
+        f'</div></div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">'
+        + "".join([
+            f'<span style="background:{c}18;border:1px solid {c}44;color:{c};'
+            f'font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px">{t}</span>'
+            for t, c in [
+                ("Moving Averages", "#22D3EE"), ("Bollinger Bands", "#60A5FA"),
+                ("CPR Pivots", "#818CF8"), ("Order Blocks", "#86EFAC"),
+                ("Candlestick Patterns", GOLD), ("Chart Patterns", "#F472B6"),
+                ("MACD Signals", "#34D399"), ("Composite BUY/SELL", "#22C55E"),
+                ("Setup Alerts", "#A78BFA"),
+            ]
+        ])
+        + f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── 1. Moving Averages ─────────────────────────────────────────
+    _tv_section("Moving Averages", "〰️", "#22D3EE", [
+        ("#22D3EE", "Aqua line",            "20 EMA",
+         "Short-term trend. Price above = bullish momentum. Acts as <b>first support</b> in uptrends."),
+        ("#22C55E", "Green line",           "50 SMA",
+         'Medium-term trend. The key <b>"are we in a swing trade?"</b> line.'),
+        ("#EF4444", "Red line",             "100 SMA",
+         "Intermediate support/resistance. Strong bounce off this = <b>high-conviction entry</b>."),
+        ("#7f1d1d", "Faint dark maroon",    "200 SMA",
+         "Long-term trend. Above = <b>bull market</b>. Below = <b>bear market</b>."),
+    ])
+
+    # ── 2. Bollinger Bands ─────────────────────────────────────────
+    _tv_section("Bollinger Bands", "📐", "#60A5FA", [
+        ("#60A5FA", "Navy lines + light blue fill", "BB (20, 2)",
+         "Price touching <b>lower band + reversal candle</b> = buy setup. "
+         "<b>Narrow bands (squeeze)</b> = big move coming."),
+    ])
+
+    # ── 3. CPR — Pivot Levels ──────────────────────────────────────
+    _tv_section("CPR — Central Pivot Range", "⊕", "#818CF8", [
+        ("#3B82F6", "Solid blue line",       "Daily Pivot (CP)",
+         "Bias line for the day. <b>Above CP = bullish day bias</b>."),
+        ("#EC4899", "Fuchsia lines",         "Daily BC / TC",
+         "<b>Narrow CPR</b> = trending day. <b>Wide CPR</b> = choppy/range-bound."),
+        ("#22C55E", "Solid green line",      "Daily S1 / R1",
+         "First <b>support and resistance targets</b> for the day."),
+        ("#EF4444", "Solid red line",        "Daily S1 / R1 (resistance)",
+         "Price above R1 = extended; price below S1 = weak."),
+        ("#F97316", "Orange circles",        "Weekly Pivot",
+         "Bias line for the week. <b>Major magnet</b> for price."),
+        ("#86EFAC", "Green circles",         "Weekly S1",
+         "Weekly support level. Strong, high-timeframe level."),
+        ("#FCA5A5", "Red circles",           "Weekly R1",
+         "Weekly resistance level. Strong, high-timeframe level."),
+        ("#2DD4BF", "Teal crosses",          "Monthly Pivot",
+         "Big-picture anchor. Rarely hit but <b>very significant</b> when it is."),
+    ])
+
+    # ── 4. Golden / Death Cross ────────────────────────────────────
+    _tv_section("Golden / Death Cross", "✦", GOLD, [
+        ("#22C55E", '🔷 Green diamond "GOLDEN"', "50 SMA crossed above 200 SMA",
+         "<b>Long-term bull signal.</b> Look for pullback buys after this. Institutions reload on dips."),
+        ("#EF4444", '🔻 Red diamond "DEATH"',   "50 SMA crossed below 200 SMA",
+         "<b>Long-term bear signal.</b> Rallies are sell opportunities. Risk-off posture."),
+    ])
+
+    # ── 5. Dynamic Support & Resistance ───────────────────────────
+    _tv_section("Dynamic Support & Resistance", "⟷", "#86EFAC", [
+        ("#22C55E", "Green dashed lines",  "Support (price above it)",
+         "Buy near these if other signals agree. <b>More lines = stronger zone.</b>"),
+        ("#EF4444", "Red dashed lines",    "Resistance (price below it)",
+         "Sell / take profit near these. Cluster of red lines = wall."),
+        ("#F97316", 'Orange dot "R!"',     "Price within 0.5% of resistance",
+         "<b>Warning</b> — don't chase longs. Watch for rejection candle or reversal."),
+    ])
+
+    # ── 6. Order Blocks ────────────────────────────────────────────
+    _tv_section("Order Blocks — Demand & Supply Zones", "⬜", "#4ADE80", [
+        ("#bbf7d0", 'Light green "OB 45m Demand"',  "45-min demand zone",
+         "Price re-entering = potential <b>quick bounce trade</b>. Shorter time frame — faster reaction."),
+        ("#fecaca", 'Light red "OB 45m Supply"',    "45-min supply zone",
+         "Price re-entering = potential <b>short or exit longs</b>."),
+        ("#16a34a", 'Green "Daily Demand OB"',      "Daily demand zone",
+         "<b>Stronger zone.</b> High-conviction buy area if RSI not overbought."),
+        ("#dc2626", 'Red "Daily Supply OB"',        "Daily supply zone",
+         "<b>Stronger resistance.</b> Good profit-taking area. Watch for exhaustion candles."),
+        ("#84cc16", 'Lime green "Weekly Demand OB"', "Weekly demand zone",
+         "<b>Highest conviction.</b> Major institutional buy zone. Scale-in entries."),
+        ("#7f1d1d", 'Maroon "Weekly Supply OB"',    "Weekly supply zone",
+         "<b>Major institutional sell zone.</b> Strong ceiling. Reduce risk near here."),
+    ], note="⚠️ Box disappears automatically when price closes through it — the zone is invalidated.")
+
+    # ── 7. Candlestick Patterns ────────────────────────────────────
+    _tv_section("Candlestick Patterns", "🕯️", GOLD, [
+        ("#22C55E", '▲ Green "H"',   "Hammer",              "Long lower wick near support. <b>Buyers rejected the selloff.</b> Confirm with next green candle."),
+        ("#22C55E", '▲ Green "BE"',  "Bullish Engulfing",   "Big green candle swallows prior red one. <b>Strong reversal.</b> Best at key support / demand zone."),
+        ("#22C55E", '▲ Green "3W"',  "Three White Soldiers","Three consecutive strong green candles. <b>Sustained buying pressure.</b>"),
+        ("#EF4444", '▼ Red "SS"',    "Shooting Star",       "Long upper wick near resistance. <b>Sellers rejected the rally.</b> Confirm with next red candle."),
+        ("#EF4444", '▼ Red "BE"',    "Bearish Engulfing",   "Big red candle swallows prior green one. <b>Strong reversal.</b> Best at key resistance / supply zone."),
+        ("#EF4444", '▼ Red "3C"',    "Three Black Crows",   "Three consecutive strong red candles. <b>Sustained selling pressure.</b>"),
+    ])
+
+    # ── 8. Chart Patterns ─────────────────────────────────────────
+    _tv_section("Chart Patterns", "📈", "#F472B6", [
+        ("#22C55E", 'Green "DB"',    "Double Bottom",
+         "Two lows at same level, price breaks up. Classic reversal. <b>Enter on breakout candle.</b>"),
+        ("#EF4444", 'Red "DT"',      "Double Top",
+         "Two highs at same level, price breaks down. Classic reversal. <b>Exit or short.</b>"),
+        ("#22C55E", 'Green "IH&amp;S"', "Inverse Head &amp; Shoulders",
+         "Three lows (middle lowest). Price breaking neckline = <b>strong buy</b>."),
+        ("#EF4444", 'Red "H&amp;S"', "Head &amp; Shoulders Top",
+         "Three highs (middle highest). Price breaking neckline = <b>strong sell.</b>"),
+        ("#22C55E", 'Green "FLAG"',  "Bull Flag",
+         "Strong rally → tight consolidation → breakout on volume. <b>Momentum continuation.</b>"),
+        ("#EF4444", 'Red "BF"',      "Bear Flag",
+         "Sharp drop → tight bounce → break lower on volume. <b>Momentum continuation down.</b>"),
+    ])
+
+    # ── 9. MACD Signals ───────────────────────────────────────────
+    _tv_section("MACD Signals", "〜", "#34D399", [
+        ("#22C55E", '▲ Green "M+0"', "MACD bullish cross near zero",
+         "<b>High-quality buy signal</b> — cross happening right at the zero line means low-risk entry; "
+         "downside is limited if wrong."),
+        ("#EF4444", '▼ Red "M-0"',   "MACD bearish cross near zero",
+         "<b>High-quality sell signal</b> — same logic in reverse. Cross at zero = late shorts are trapped."),
+    ])
+
+    # ── 10. MTF Breakout ──────────────────────────────────────────
+    _tv_section("Multi-Timeframe (MTF) Breakout", "⚡", "#FBBF24", [
+        ("#22C55E", 'Green "D+BO"', "Daily breakout on volume",
+         "Price broke above <b>yesterday's high</b> with above-average volume. Momentum entry."),
+        ("#EF4444", 'Red "D-BD"',   "Daily breakdown on volume",
+         "Price broke below <b>yesterday's low</b> with volume. Exit longs / short entry."),
+        ("#22C55E", 'Green "W+BO"', "Weekly breakout on volume",
+         "<b>Bigger signal</b> — broke last week's high. Strong multi-day momentum. Add size."),
+        ("#EF4444", 'Red "W-BD"',   "Weekly breakdown on volume",
+         "<b>Major warning.</b> Trend likely turning. Reduce exposure, re-assess thesis."),
+    ])
+
+    # ── 11. Composite Signals ─────────────────────────────────────
+    _tv_section("Composite Signals — Main BUY / SELL Labels", "🎯", "#22C55E", [
+        ("#22C55E", 'Green "BUY 2/5"',  "2 or more buy conditions met",
+         "Moderate buy. Look for <b>confirmation before entering</b>. Good for alerts."),
+        ("#22C55E", 'Green "BUY 4/5"',  "4 buy conditions met",
+         "<b>Strong buy.</b> Multiple independent systems agreeing — highest conviction setup."),
+        ("#EF4444", 'Red "SELL 2/5"',   "2 or more sell conditions met",
+         "Moderate sell / take-profit signal. Tighten stops or reduce size."),
+        ("#EF4444", 'Red "SELL 4/5"',   "4 sell conditions met",
+         "<b>Strong sell.</b> Exit or short with confidence. All systems pointing down."),
+    ], note=(
+        "Score components (each worth 1 pt): "
+        "BB touch · RSI in zone · MACD cross · Order Block location · Classic candlestick/chart pattern."
+    ))
+
+    # ── 12. Setup Building — Purple Alerts ────────────────────────
+    _tv_section("Setup Building Alerts (Purple — Watch This Bar)", "🔮", "#A78BFA", [
+        ("#A78BFA", 'Purple "A1 MACD"',       "Step 1: MACD histogram building near zero",
+         "<b>Early alert.</b> Not a trade yet — just awareness. Start watching the ticker."),
+        ("#A78BFA", 'Purple "A2 MACD+EMA"',   "Step 2: Also above 20 EMA",
+         "Getting interesting. Start watching closely. Risk/reward improving."),
+        ("#A78BFA", 'Purple "A3 MACD+Vol"',   "Step 3: Volume confirmed",
+         "<b>Setup complete.</b> Wait for the BUY label to confirm and pull the trigger."),
+        ("#A78BFA", 'Purple "B1 / B2 / B3"',  "Order Block setup building",
+         "Price approaching/entering a demand zone. B3 = high-conviction OB entry setup."),
+        ("#A78BFA", 'Purple "C1 / C2 / C3"',  "BB Squeeze setup building",
+         "Squeeze detected, momentum building. <b>C3 = breakout confirmed.</b> Size up."),
+        ("#A78BFA", 'Purple "D1 / D2 / D3"',  "Bearish MACD setup",
+         "Mirror of A-series — watch for selling opportunity developing."),
+        ("#A78BFA", 'Purple "E1 / E2 / E3"',  "Bearish OB setup",
+         "Price approaching supply zone — potential exit or short building."),
+    ])
+
+    # ── General rules footer ───────────────────────────────────────
+    st.markdown(
+        f'<div style="background:{BG_CARD};border:1px solid #A78BFA44;border-radius:10px;'
+        f'padding:16px 20px;margin-top:20px">'
+        f'<div style="color:#A78BFA;font-size:11px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1px;margin-bottom:10px">&#9998; General Rules of Thumb</div>'
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        f'<div style="background:#A78BFA12;border-radius:8px;padding:12px 14px">'
+        f'<div style="color:#A78BFA;font-size:11px;font-weight:700;margin-bottom:4px">'
+        f'🟣 Purple Label = Something is Building</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
+        f'A setup alert tells you <b style="color:{TEXT_PRIMARY}">something is developing</b>. '
+        f'Not a trade yet — add to watchlist and monitor. The higher the step number, '
+        f'the closer the trade.</div></div>'
+        f'<div style="background:#22C55E12;border-radius:8px;padding:12px 14px">'
+        f'<div style="color:#22C55E;font-size:11px;font-weight:700;margin-bottom:4px">'
+        f'🟢 Green / 🔴 Red Label = Act Now</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
+        f'A BUY or SELL label says <b style="color:{TEXT_PRIMARY}">conditions are met right now</b>. '
+        f'The <b>/5 score</b> tells you how many systems agree — '
+        f'<b style="color:#22C55E">4/5 or 5/5 = highest conviction</b>. '
+        f'Lower scores warrant smaller size or waiting for confirmation.</div></div>'
+        f'</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:10px;line-height:1.7;'
+        f'border-top:1px solid {BORDER_COLOR}33;padding-top:10px">'
+        f'&#9432; <b style="color:{TEXT_PRIMARY}">Confluence is everything.</b> '
+        f'A BUY label at a Weekly Demand OB, above the 20 EMA, with RSI in the 50–65 zone, '
+        f'and a MACD cross near zero = maximum conviction entry. '
+        f'Any single signal alone carries more noise than signal — always look for 2–3 agreeing indicators '
+        f'before sizing up a position.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
 # ── Main render ────────────────────────────────────────────────
 
 def render():
     section_header("🔧", "Tech Details",
                    "Scanner guide · Universe browser · Scanner rankings & action playbook · Stock Analysis methodology")
 
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📊 Scanner Tech & Rankings",
         "📖 Scanner Guide",
         "🗃️ Stock Universe",
         "🔬 Stock Analysis",
+        "📺 Trading View",
     ])
 
     with tab1:
@@ -1819,3 +2109,6 @@ def render():
 
     with tab4:
         _render_stock_analysis_methodology()
+
+    with tab5:
+        _render_trading_view()
