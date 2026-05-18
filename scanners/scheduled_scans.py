@@ -62,7 +62,7 @@ def _save_results(slot: str, df: pd.DataFrame):
         json.dump(data, f, default=str)
 
 
-@st.cache_data(ttl=1800, show_spinner=False)
+@st.cache_data(ttl=600, show_spinner=False)
 def _load_results(slot: str) -> Tuple[pd.DataFrame, str]:
     """
     Load scan results for the given slot (am/pm).
@@ -349,6 +349,16 @@ def render():
     with st.spinner("Loading today's scan results…"):
         df_am, am_at = _load_results("am")
         df_pm, pm_at = _load_results("pm")
+
+    # ── Refresh button (all users) ────────────────────────────
+    # Clears the cache so GitHub Actions results are picked up immediately
+    # after a workflow run — without waiting for the TTL to expire.
+    _hdr_col, _ref_col = st.columns([6, 1])
+    with _ref_col:
+        if st.button("🔄 Refresh", use_container_width=True, key="sched_refresh",
+                     help="Re-fetch latest results from GitHub — use after a scan workflow completes"):
+            _load_results.clear()
+            st.rerun()
 
     # ── Auto-run banner (admin only) ──────────────────────────
     if _is_admin and auto_slot:
