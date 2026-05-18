@@ -1896,6 +1896,95 @@ def _render_trading_view():
         unsafe_allow_html=True,
     )
 
+    # ── Confluence highlight card ──────────────────────────────────
+    _GA = "#A78BFA"   # purple  — Group A (MACD)
+    _GB = "#86EFAC"   # green   — Group B (Order Blocks)
+    _GC = "#60A5FA"   # blue    — Group C (BB Squeeze)
+    _GS = "#22C55E"   # bright green — composite score
+
+    st.markdown(
+        # ── Outer card ────────────────────────────────────────────
+        f'<div style="background:linear-gradient(135deg,#1a1a2e,#12122a);'
+        f'border:1px solid {_GA}55;border-radius:12px;padding:22px 24px 20px;margin:20px 0 4px">'
+
+        # ── Headline ───────────────────────────────────────────────
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+        f'<span style="font-size:22px">⚡</span>'
+        f'<div style="color:#ffffff;font-size:15px;font-weight:700;letter-spacing:0.2px;'
+        f'font-family:\'Cormorant Garamond\',serif">'
+        f'When the Groups Align — That\'s the Trade</div>'
+        f'</div>'
+
+        # ── Sub-headline ───────────────────────────────────────────
+        f'<div style="color:#a0aec0;font-size:12px;line-height:1.7;margin-bottom:18px;'
+        f'max-width:780px">'
+        f'The highest-probability setups occur when two or three Setup Groups fire '
+        f'<b style="color:#ffffff">simultaneously</b>. '
+        f'That\'s exactly what the <b style="color:{_GS}">composite BUY n/5 score</b> measures — '
+        f'when A, B, and C all point the same direction at once, it\'s far stronger than '
+        f'any single group reaching step 3 on its own.'
+        f'</div>'
+
+        # ── Three group cards ──────────────────────────────────────
+        f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px">'
+
+        # A
+        f'<div style="background:{_GA}12;border:1px solid {_GA}44;border-radius:9px;padding:14px 16px">'
+        f'<div style="color:{_GA};font-size:10px;font-weight:800;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin-bottom:6px">Group A · MACD Momentum</div>'
+        f'<div style="color:#ffffff;font-size:13px;font-weight:700;margin-bottom:6px">'
+        f'Momentum is turning.</div>'
+        f'<div style="color:#a0aec0;font-size:11px;line-height:1.65">'
+        f'<b style="color:#e2e8f0">A alone</b> — momentum is shifting, but is price at a '
+        f'<em>meaningful level</em>? Could be triggering in the middle of nowhere.</div>'
+        f'</div>'
+
+        # B
+        f'<div style="background:{_GB}10;border:1px solid {_GB}44;border-radius:9px;padding:14px 16px">'
+        f'<div style="color:{_GB};font-size:10px;font-weight:800;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin-bottom:6px">Group B · Order Block Zones</div>'
+        f'<div style="color:#ffffff;font-size:13px;font-weight:700;margin-bottom:6px">'
+        f'Price is at a key level.</div>'
+        f'<div style="color:#a0aec0;font-size:11px;line-height:1.65">'
+        f'<b style="color:#e2e8f0">B alone</b> — price is at a strong institutional zone, '
+        f'but is momentum actually <em>turning</em> here? The level matters; the turn matters more.</div>'
+        f'</div>'
+
+        # C
+        f'<div style="background:{_GC}10;border:1px solid {_GC}44;border-radius:9px;padding:14px 16px">'
+        f'<div style="color:{_GC};font-size:10px;font-weight:800;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin-bottom:6px">Group C · BB Squeeze</div>'
+        f'<div style="color:#ffffff;font-size:13px;font-weight:700;margin-bottom:6px">'
+        f'A big move is loading.</div>'
+        f'<div style="color:#a0aec0;font-size:11px;line-height:1.65">'
+        f'<b style="color:#e2e8f0">C is a standalone trade type.</b> Squeeze breakouts rarely '
+        f'coincide with OB or MACD conditions — and that\'s fine. When C3 fires on volume, '
+        f'it\'s its own high-conviction signal.</div>'
+        f'</div>'
+
+        f'</div>'  # end grid
+
+        # ── A + B confluence highlight ─────────────────────────────
+        f'<div style="background:linear-gradient(135deg,{_GA}18,{_GB}14);'
+        f'border:1px solid {_GA}55;border-radius:9px;padding:14px 18px;'
+        f'display:flex;align-items:center;gap:16px">'
+        f'<div style="font-size:28px;flex-shrink:0">🎯</div>'
+        f'<div>'
+        f'<div style="color:#ffffff;font-size:13px;font-weight:700;margin-bottom:4px">'
+        f'A + B Together = Highest-Conviction Entry</div>'
+        f'<div style="color:#a0aec0;font-size:11px;line-height:1.7">'
+        f'Momentum turning <b style="color:{_GA}">(A)</b> at an institutional demand zone '
+        f'<b style="color:{_GB}">(B)</b> is the cleanest setup on the chart. '
+        f'Institutions pre-place orders at OBs — when MACD confirms the turn right there, '
+        f'you\'re entering alongside smart money. Add a BUY 3–4/5 label and you have '
+        f'<b style="color:{_GS}">maximum confluence</b>.'
+        f'</div></div>'
+        f'</div>'  # end A+B bar
+
+        f'</div>',  # end outer card
+        unsafe_allow_html=True,
+    )
+
     # ── 1. Moving Averages ─────────────────────────────────────────
     _tv_section("Moving Averages", "〰️", "#22D3EE", [
         ("#22D3EE", "Aqua line",            "20 EMA",
