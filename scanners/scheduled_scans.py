@@ -271,10 +271,20 @@ def _compute_diff(df_am: pd.DataFrame, df_pm: pd.DataFrame) -> pd.DataFrame:
         auto_tracked = False
         if score >= AUTO_TRACK_THRESHOLD:
             try:
-                from scanners.gsheet_helper import add_to_tracking
+                from scanners.gsheet_helper import add_to_tracking, add_to_performance
                 price_str = str(r.get("Stock Price", r.get("Price", "")))
                 ok, _ = add_to_tracking(tk, strat, "Sched-PM", price_str, r)
                 auto_tracked = ok
+
+                # ── Also write directly to Performance for options with score > 70 ──
+                # Tracking never saves Strike/Premium/Expiry/DTE, so write Performance
+                # directly from the scanner row while the full data is still available.
+                _OPT_STRATS = {"CSP", "LEAPS", "CC"}
+                if strat.upper() in _OPT_STRATS and score > 70:
+                    try:
+                        add_to_performance(tk, strat, "Sched-PM", price_str, r)
+                    except Exception:
+                        pass
             except Exception:
                 pass
         rows.append({**r, "Change": "🆕 New in PM", "Auto-Tracked": "✅ Yes" if auto_tracked else "—"})
@@ -427,14 +437,42 @@ def render():
         _load_results.clear()   # bust cache so next render picks up new results immediately
         st.success(f"✅ {SLOT_LABELS[slot]} scan complete at {run_start} — {len(df_new)} total setup(s) found.")
 
-        # ── Sync score > 70 AM/PM items to Performance tab ────
+        # ── Write options directly to Performance with full row data ──────
+        # sync_tracking_to_performance() reads from Tracking which never stores
+        # Strike/Premium/Expiry/DTE.  Writing directly here while df_new still
+        # has all scanner fields ensures those columns are never blank.
+        _OPT_STRATS_PERF = {"CSP", "LEAPS", "CC"}
+        _perf_written = 0
+        if not df_new.empty:
+            try:
+                from scanners.gsheet_helper import add_to_performance as _add_perf
+                for _, _r in df_new.iterrows():
+                    _strat = str(_r.get("Strategy", "")).upper()
+                    _score = int(float(str(_r.get("Score", 0) or 0)))
+                    if _strat in _OPT_STRATS_PERF and _score > 70:
+                        _px = str(_r.get("Stock Price", _r.get("Price", "")))
+                        _ok, _ = _add_perf(
+                            str(_r["Ticker"]).upper(),
+                            str(_r.get("Strategy", "")),
+                            f"Sched-{slot.upper()}",
+                            _px, _r.to_dict(),
+                        )
+                        if _ok:
+                            _perf_written += 1
+            except Exception:
+                pass
+
+        # Fallback: also run the Tracking → Performance sync for any manually-
+        # tracked items or items added before this fix was deployed.
         try:
             from scanners.gsheet_helper import sync_tracking_to_performance as _sync_perf
             _p_added, _ = _sync_perf()
-            if _p_added:
-                st.info(f"📊 {_p_added} high-score setup(s) (score > 70) copied to Performance.")
+            _perf_written += _p_added
         except Exception:
             pass
+
+        if _perf_written:
+            st.info(f"📊 {_perf_written} high-score setup(s) (score > 70) copied to Performance.")
 
         from data_loader import show_api_warnings
         show_api_warnings()

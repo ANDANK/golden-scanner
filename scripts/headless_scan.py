@@ -292,6 +292,23 @@ def auto_track_to_sheets(df_new: pd.DataFrame, slot: str = "AM"):
             added += 1
             log(f"  ✅ Tracked {tk} ({strat}, score {score}) [{source}]")
 
+            # ── Also write directly to Performance for options with score > 70 ──
+            # Tracking sheet never stores Strike/Premium/Expiry/DTE, so
+            # sync_tracking_to_performance() would promote blank options fields.
+            # Writing directly here preserves all scanner-row fields.
+            _OPT_STRATS = {"CSP", "LEAPS", "CC", "ETF OPTIONS", "3X ETF OPTIONS"}
+            if strat.upper() in _OPT_STRATS and score > 70:
+                try:
+                    from scanners.gsheet_helper import add_to_performance as _add_perf
+                    _add_perf(
+                        tk, strat, source,
+                        entry_price=price,
+                        row_data=row.to_dict(),
+                    )
+                    log(f"  📊 Performance: {tk} ({strat}) written with Strike/Premium")
+                except Exception as _pe:
+                    log(f"  Performance write skipped for {tk}: {_pe}")
+
         log(f"Google Sheets: {added} ticker(s) added to Tracking [{slot}].")
     except Exception as e:
         log(f"Google Sheets error: {e}")
