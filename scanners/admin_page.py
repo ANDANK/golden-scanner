@@ -1251,7 +1251,7 @@ def _render_stock_analysis_methodology():
         unsafe_allow_html=True,
     )
 
-    # ══ Section 5: Watchlist Analysis reference ════════════════════════
+    # ══ Section 5: Core Stocks Analysis reference ══════════════════════
     st.markdown(
         f'<div style="height:1px;background:linear-gradient(90deg,transparent,{GOLD}44,transparent);'
         f'margin:24px 0 20px"></div>',
@@ -1259,7 +1259,7 @@ def _render_stock_analysis_methodology():
     )
     st.markdown(
         f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:1.2px;margin-bottom:14px">&#10022; Watchlist Analysis — How It Works</div>',
+        f'letter-spacing:1.2px;margin-bottom:14px">&#10022; Core Stocks Analysis — How It Works</div>',
         unsafe_allow_html=True,
     )
 
@@ -1267,7 +1267,7 @@ def _render_stock_analysis_methodology():
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;'
         f'padding:16px 20px;margin-bottom:16px">'
         f'<div style="color:{TEXT_PRIMARY};font-size:13px;line-height:1.8;margin-bottom:12px">'
-        f'The <b style="color:{GOLD}">✦ Watchlist Analysis</b> tab (inside Stock Analysis) runs the full '
+        f'The <b style="color:{GOLD}">✦ Core Stocks Analysis</b> tab (inside Stock Analysis) runs the full '
         f'9-indicator engine on a fixed list of 117 pre-loaded tickers with a single button press. '
         f'No typing required. Results are cached for 4 hours — pressing the button again within '
         f'4 hours returns the cached table instantly without re-fetching data.'
@@ -1304,7 +1304,7 @@ def _render_stock_analysis_methodology():
 
     col_rows = [
         ("🟢/🔵/🟡/🔴", "Signal circle",    "Green=Buy · Blue=Setup · Yellow=Neutral · Red=Sell at a glance"),
-        ("Ticker",        "Symbol + price",   "Current price and day change %. Click ticker in Deep Analysis for full report."),
+        ("Ticker",        "Symbol + price",   "Current price and day change %. Click ticker in Custom Stock Analysis for full report."),
         ("Signal %",      "Confidence badge", "BUY: raw composite (higher=more bullish). SELL: 100−composite (higher=more bearish). SETUP: raw composite shown in teal."),
         ("W-MACD",        "Weekly MACD",      "Bull/Bear cross on weekly chart + raw MACD/Signal values. Weekly confirmation is highest-weight signal. ⚡ conflict badge when weekly bullish but overall SELL."),
         ("D-MACD ★",      "Daily MACD",       "NEW COLUMN. Bull=cross up + histogram positive. Cross~=crossed but histogram still negative (weak signal). Bear=below signal. Shows short-term momentum direction."),
@@ -1350,10 +1350,10 @@ def _render_stock_analysis_methodology():
         f'<div style="background:{BG_PANEL};border:1px solid {GOLD}33;border-left:3px solid {GOLD};'
         f'border-radius:0 6px 6px 0;padding:12px 16px;color:{TEXT_MUTED};font-size:12px;line-height:1.8">'
         f'<b style="color:{GOLD}">&#128161; Recommended workflow:</b> '
-        f'Run Watchlist Analysis each morning → filter by <b style="color:{TEXT_PRIMARY}">BUY + SETUP</b> → '
+        f'Run Core Stocks Analysis each morning → filter by <b style="color:{TEXT_PRIMARY}">BUY + SETUP</b> → '
         f'sort by <b style="color:{TEXT_PRIMARY}">Confidence ↓</b> → '
         f'for any SETUP tickers with D-MACD also turning Bull, open the '
-        f'<b style="color:{GOLD}">Deep Analysis</b> tab and type the ticker for a full report including '
+        f'<b style="color:{GOLD}">Custom Stock Analysis</b> tab and type the ticker for a full report including '
         f'RSI gauge, Bollinger Bands, breakout chart, short squeeze data, and ATR for stop placement.'
         f'</div>',
         unsafe_allow_html=True,
