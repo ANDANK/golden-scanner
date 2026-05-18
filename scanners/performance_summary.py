@@ -756,9 +756,12 @@ def _positions_table_html(df: pd.DataFrame, cols: list, show_close_signal: bool 
                                 unsafe_allow_html=True)
                 elif c == "Premium":
                     try:
+                        v = float(val)
+                        if v != v:   # NaN guard — float("nan") succeeds but v!=v is True for nan
+                            raise ValueError
                         st.markdown(
                             f'<div style="{td};color:{ACCENT_GREEN};'
-                            f'font-family:\'DM Mono\',monospace">${float(val):.2f}</div>',
+                            f'font-family:\'DM Mono\',monospace">${v:.2f}</div>',
                             unsafe_allow_html=True)
                     except Exception:
                         st.markdown(f'<div style="{td};color:{TEXT_MUTED}">—</div>',
@@ -1179,7 +1182,8 @@ def _render_top_cards(df: pd.DataFrame, today: date):
         else:
             for _, r in new_today.head(4).iterrows():
                 exp = str(r.get("Expiry_Date",""))[:10] if pd.notna(r.get("Expiry_Date")) else "—"
-                prem = f'${float(r.get("Premium",0) or 0):.2f}'
+                _pv  = _nf(r.get("Premium"))
+                prem = f'${_pv:.2f}' if _pv else "—"
                 st.markdown(f'<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid {BORDER_COLOR}22">'
                             f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700">{r["Ticker"]}</span>'
                             f'<span style="color:{TEXT_MUTED};font-size:10px">{r.get("Strategy","")} {exp}</span>'
