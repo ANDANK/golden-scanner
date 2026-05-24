@@ -95,6 +95,20 @@ def _get_standard_results(force: bool = False):
     if has_valid:
         return st.session_state[_STD_CACHE_KEY], st.session_state[_STD_TS_KEY]
 
+    # ── Fresh scan: purge all stale price caches first ────────────
+    # _WK_CACHE is a process-level dict in weekly_scanners — it never
+    # expires on its own, so weekly RSI/MACD stays stale across runs.
+    # st.cache_data covers get_price_history (daily bars).
+    try:
+        from scanners.weekly_scanners import clear_weekly_cache
+        clear_weekly_cache()
+    except Exception:
+        pass
+    try:
+        st.cache_data.clear()
+    except Exception:
+        pass
+
     _SKIP = {"df_d", "df_w", "_arrow"}
     results = []
     n = len(STANDARD_TICKERS)
@@ -1498,11 +1512,23 @@ def _render_standard_watchlist():
             st.session_state.pop(_STD_CACHE_KEY, None)
             st.session_state.pop(_STD_TS_KEY, None)
             st.session_state.pop("_std_show", None)
+            st.cache_data.clear()
+            try:
+                from scanners.weekly_scanners import clear_weekly_cache
+                clear_weekly_cache()
+            except Exception:
+                pass
             st.rerun()
 
     if clear_btn:
         st.session_state.pop(_STD_CACHE_KEY, None)
         st.session_state.pop(_STD_TS_KEY, None)
+        st.cache_data.clear()
+        try:
+            from scanners.weekly_scanners import clear_weekly_cache
+            clear_weekly_cache()
+        except Exception:
+            pass
         st.session_state["_std_show"] = True
         st.rerun()
 
@@ -1642,7 +1668,13 @@ def _render_deep_analysis():
         run = st.button("▶ Analyze", use_container_width=True)
     with col_clr:
         if st.button("🔄 Clear Cache", use_container_width=True):
+            # Clear both st.cache_data AND the process-level weekly cache
             st.cache_data.clear()
+            try:
+                from scanners.weekly_scanners import clear_weekly_cache
+                clear_weekly_cache()
+            except Exception:
+                pass
             st.rerun()
 
     import re
