@@ -675,8 +675,9 @@ NAV_GROUPS = [
         "sep": "Admin", "icon": "🔐", "expanded": False, "dim": True,
         "hidden_for_users": True,          # completely hidden from non-admin users
         "items": [
-            {"key": "⚙️  Admin Panel", "label": "Admin Panel", "icon": "⚙️"},
-            {"key": "🔧  Tech Details", "label": "Tech Details", "icon": "🔧"},
+            {"key": "⚙️  Admin Panel",   "label": "Admin Panel",   "icon": "⚙️"},
+            {"key": "🔧  Tech Details",  "label": "Tech Details",  "icon": "🔧"},
+            {"key": "📊  MTPA Scanner",  "label": "MTPA Scanner",  "icon": "📊"},
         ],
     },
 ]
@@ -1045,7 +1046,7 @@ elif page in ("💵  Upcoming Dividends", "📅  Dividend + CC Capture"):
 elif page == "ℹ️  About & Guide":
     from scanners.about import render
     render()
-elif page in ("⚙️  Admin Panel", "🔧  Tech Details"):
+elif page in ("⚙️  Admin Panel", "🔧  Tech Details", "📊  MTPA Scanner"):
     # Admin pages are only reachable when logged in as admin (_is_admin=True).
     # If a non-admin somehow has an admin nav_page in session state, bounce home.
     if not st.session_state.get("_is_admin", False):
@@ -1056,4 +1057,7 @@ elif page in ("⚙️  Admin Panel", "🔧  Tech Details"):
         render()
     elif page == "🔧  Tech Details":
         from scanners.tech_details import render
+        render()
+    elif page == "📊  MTPA Scanner":
+        from scanners.mtpa_page import render
         render()
