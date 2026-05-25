@@ -2173,18 +2173,398 @@ def _render_trading_view():
     )
 
 
+# ── ToS-Chart reference ────────────────────────────────────────
+
+def _tos_part_header(num: str, title: str, subtitle: str, color: str):
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,{color}18,{color}08);'
+        f'border-left:4px solid {color};border-radius:0 10px 10px 0;'
+        f'padding:12px 18px;margin:24px 0 2px">'
+        f'<div style="color:{color};font-size:10px;font-weight:800;text-transform:uppercase;'
+        f'letter-spacing:1.4px;margin-bottom:3px">Part {num}</div>'
+        f'<div style="color:#ffffff;font-size:15px;font-weight:700;margin-bottom:2px">{title}</div>'
+        f'<div style="color:#a0aec0;font-size:11px">{subtitle}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_tos_chart():
+    """ThinkorSwim MTF indicator complete field guide."""
+
+    # ── Hero banner ────────────────────────────────────────────────
+    G = "#22C55E"; B = "#60A5FA"; GL = GOLD; P = "#A78BFA"
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,#0f172a,#1e1b4b);'
+        f'border:1px solid {GL}44;border-radius:14px;padding:24px 28px 20px;margin-bottom:6px">'
+        f'<div style="display:flex;align-items:flex-start;gap:16px">'
+        f'<div style="font-size:36px;line-height:1">📊</div>'
+        f'<div>'
+        f'<div style="color:{GL};font-size:18px;font-weight:700;'
+        f'font-family:\'Cormorant Garamond\',serif;letter-spacing:0.3px;margin-bottom:4px">'
+        f'ThinkorSwim MTF Score Indicator — Complete Field Guide</div>'
+        f'<div style="color:#a0aec0;font-size:12px;line-height:1.7;max-width:720px">'
+        f'A Multi-TimeFrame (MTF) scoring system that evaluates weekly and daily technical '
+        f'alignment simultaneously. The score is not a trigger — it is a <b style="color:#ffffff">probability filter</b>. '
+        f'High scores mean the odds are in your favour; low scores mean they are not.</div>'
+        f'</div></div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px">'
+        + "".join(
+            f'<span style="background:{c}18;border:1px solid {c}44;color:{c};'
+            f'font-size:10px;font-weight:600;padding:3px 12px;border-radius:20px">{t}</span>'
+            for t, c in [
+                ("Score Hierarchy", GL), ("Step-by-Step", B),
+                ("Daily vs Weekly", G), ("7 Scenarios", P),
+                ("Entry Checklist", "#F472B6"), ("MTF Quick-Ref", "#FBBF24"),
+            ]
+        )
+        + f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ══════════════════════════════════════════════════════════════
+    # PART 1 — SCORE HIERARCHY
+    # ══════════════════════════════════════════════════════════════
+    _tos_part_header("1", "The Score Hierarchy", "What to focus on — not all components are equal", GL)
+
+    _P1_ROWS = [
+        ("1", "#22C55E", "EMA20 > EMA50",  "20",
+         "Structural trend.",
+         "If this is <b>OFF</b>, everything else is noise. A stock can look bullish on MACD and RSI "
+         "during a dead-cat bounce — EMA alignment filters that out."),
+        ("2", "#86EFAC", "Price > EMA50",  "18",
+         "Most-watched institutional level.",
+         "Funds buy pullbacks to the 50 EMA. Price above it = market has accepted the uptrend."),
+        ("3", "#60A5FA", "MACD > Signal",  "18",
+         "Momentum confirmation.",
+         "Confirms buyers are controlling momentum. Without this, structure exists but momentum does not."),
+        ("4", "#FBBF24", "RSI 50–70",      "16",
+         "Momentum health check.",
+         "Below 50 = not confirmed. Above 70 = overheated."),
+        ("5", "#A78BFA", "Price > EMA20",  "12",
+         "Short-term trend intact.",
+         "Lower weight because if the top two pass, this almost always passes too."),
+        ("6", "#F472B6", "Not Extended",   "8",
+         "Risk filter.",
+         "Prevents buying parabolic moves."),
+        ("7", "#94A3B8", "MACD Near Zero", "8",
+         "Entry timing refinement.",
+         "Nice to have, not a requirement."),
+    ]
+
+    hdr = (f'<th style="background:#1e293b;color:{GL};font-size:10px;font-weight:700;'
+           f'text-transform:uppercase;letter-spacing:0.8px;padding:10px 14px;'
+           f'border-bottom:2px solid {GL}44;text-align:left">')
+    rows_html = ""
+    for pri, col, comp, wt, why_short, why_long in _P1_ROWS:
+        rows_html += (
+            f'<tr>'
+            f'<td style="padding:10px 14px;border-bottom:1px solid #ffffff0d;vertical-align:middle;'
+            f'background:{"#ffffff06" if int(pri)%2==0 else "transparent"}">'
+            f'<span style="background:{col}22;color:{col};border:1px solid {col}44;'
+            f'font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px">{pri}</span></td>'
+            f'<td style="padding:10px 14px;border-bottom:1px solid #ffffff0d;vertical-align:middle;'
+            f'background:{"#ffffff06" if int(pri)%2==0 else "transparent"}">'
+            f'<span style="color:{col};font-family:\'DM Mono\',monospace;font-weight:700;font-size:12px">'
+            f'{comp}</span></td>'
+            f'<td style="padding:10px 14px;border-bottom:1px solid #ffffff0d;vertical-align:middle;'
+            f'background:{"#ffffff06" if int(pri)%2==0 else "transparent"}">'
+            f'<span style="background:{col}22;color:{col};border:1px solid {col}55;'
+            f'font-size:11px;font-weight:800;padding:2px 10px;border-radius:6px">{wt}</span></td>'
+            f'<td style="padding:10px 14px;border-bottom:1px solid #ffffff0d;vertical-align:top;'
+            f'background:{"#ffffff06" if int(pri)%2==0 else "transparent"}">'
+            f'<div style="color:#ffffff;font-size:11px;font-weight:600;margin-bottom:2px">{why_short}</div>'
+            f'<div style="color:#94a3b8;font-size:11px;line-height:1.6">{why_long}</div></td>'
+            f'</tr>'
+        )
+
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid {GL}33;border-radius:0 0 10px 10px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'Inter\',sans-serif">'
+        f'<thead><tr>'
+        f'{hdr}Priority</th>{hdr}Component</th>{hdr}Weight</th>{hdr}Why It Matters Most</th>'
+        f'</tr></thead><tbody>{rows_html}</tbody></table></div>'
+        f'<div style="background:#EF444418;border:1px solid #EF444444;border-radius:8px;'
+        f'padding:10px 16px;margin-top:8px;font-size:11px;color:#FCA5A5;line-height:1.7">'
+        f'⚠️ <b>Rule of Thumb:</b> If the top three components (EMA20>EMA50, Price>EMA50, MACD>Signal) '
+        f'are all <b>OFF</b> — walk away regardless of the total score.</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ══════════════════════════════════════════════════════════════
+    # PART 2 — STEP BY STEP
+    # ══════════════════════════════════════════════════════════════
+    _tos_part_header("2", "Step by Step: Finding High-Probability Setups", "Follow this sequence every time", B)
+
+    _STEPS = [
+        ("1", "#60A5FA", "Filter by MTF Score",
+         f'Start in the TOS Scanner. Set <b style="color:#60A5FA">MTF Score ≥ 75</b> as a minimum filter. '
+         f'This immediately narrows to stocks where weekly <em>and</em> daily are both reasonably aligned.'),
+        ("2", "#22C55E", "Check Weekly Score First",
+         f'Open the chart. Look at <b>WKLY Score</b> before anything else.<br>'
+         f'<span style="color:#22C55E">&#9679; ≥ 80</span> — weekly trend is strong. Proceed.<br>'
+         f'<span style="color:#FBBF24">&#9679; 60–79</span> — weekly is mixed. Raise your standard for the daily score.<br>'
+         f'<span style="color:#EF4444">&#9679; &lt; 60</span> — weekly is broken or bearish. <b>Stop here regardless of daily.</b><br>'
+         f'<span style="color:#94a3b8;font-size:10px">Weekly carries 70% of the MTF score. A weak weekly cannot be saved by a strong daily.</span>'),
+        ("3", "#A78BFA", "Check the Two Non-Negotiables on Weekly",
+         f'Manually verify on the weekly chart:<br>'
+         f'<b style="color:#A78BFA">EMA20 > EMA50: ON</b> — the intermediate uptrend is structurally intact<br>'
+         f'<b style="color:#A78BFA">P&gt;EMA50: ON</b> — price is above the institutional support level<br>'
+         f'If either is <b>OFF</b> on the weekly, the setup is not ready. Put it on a watchlist and come back.'),
+        ("4", GOLD, "Drop to Daily Chart",
+         f'Now check <b>DLY Score</b>:<br>'
+         f'<span style="color:#22C55E">&#9679; ≥ 80</span> — daily is fully aligned. Strong entry candidate.<br>'
+         f'<span style="color:#FBBF24">&#9679; 60–79</span> — daily is building. Check RSI and MACD specifically.<br>'
+         f'<span style="color:#EF4444">&#9679; &lt; 60</span> — daily is lagging. Wait or pass.'),
+        ("5", "#34D399", "Check Entry Timing on Daily",
+         f'<b>RSI</b> — ideally 50–65. GREEN = confirmed. YELLOW (45–50) = potential early entry — valid if weekly is strong.<br>'
+         f'<b>|MACD| near zero: ON</b> — MACD has not run too far from zero, meaning the momentum move is early or resetting.'),
+        ("6", "#F472B6", "Check Earnings",
+         f'<span style="color:#EF4444"><b>Earnings ≤ 7d</b> — pass entirely.</span> Binary risk invalidates the technical setup.<br>'
+         f'<span style="color:#FBBF24"><b>7–14d</b></span> — proceed with smaller size or tighter stop.'),
+        ("7", "#FBBF24", "Volume Confirmation",
+         f'<b>Vol: ON</b> confirms institutional participation. A setup where everything else is green but '
+         f'volume is OFF is a lower-conviction entry — not disqualifying, but <b>size down</b>.'),
+    ]
+
+    for step_num, col, title, body in _STEPS:
+        st.markdown(
+            f'<div style="display:flex;gap:14px;align-items:flex-start;'
+            f'background:{col}0A;border:1px solid {col}33;border-radius:10px;'
+            f'padding:14px 16px;margin-bottom:8px">'
+            f'<div style="background:{col};color:#000;font-size:12px;font-weight:900;'
+            f'width:26px;height:26px;border-radius:50%;display:flex;align-items:center;'
+            f'justify-content:center;flex-shrink:0;margin-top:1px">{step_num}</div>'
+            f'<div style="flex:1">'
+            f'<div style="color:{col};font-size:13px;font-weight:700;margin-bottom:5px">{title}</div>'
+            f'<div style="color:#cbd5e1;font-size:11px;line-height:1.75">{body}</div>'
+            f'</div></div>',
+            unsafe_allow_html=True,
+        )
+
+    # ══════════════════════════════════════════════════════════════
+    # PART 3 — DAILY vs WEEKLY
+    # ══════════════════════════════════════════════════════════════
+    _tos_part_header("3", "Daily vs Weekly: When to Use Each", "The right timeframe for the right decision", G)
+
+    _wk_items = [
+        ("Stock selection", "deciding whether a stock deserves attention at all"),
+        ("Trend direction", "the authoritative view of where the stock is going"),
+        ("Hold decisions", "whether to stay in a position or exit"),
+        ("Major S/R", "weekly EMAs and MACD tell you where the real levels are"),
+        ("Thesis check", "before entering any swing trade, the weekly should agree"),
+    ]
+    _d_items = [
+        ("Entry timing", "pinpointing when to buy, not just whether to buy"),
+        ("Stop placement", "daily structure gives logical stop levels"),
+        ("Position monitoring", "tracking whether the setup is developing or breaking down"),
+        ("Pullback entries", "RSI dipping to 45–50 on daily within a weekly uptrend = buy signal, not a warning"),
+    ]
+
+    def _tf_card(title, icon, col, items):
+        rows = "".join(
+            f'<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">'
+            f'<span style="color:{col};font-size:12px;margin-top:1px">&#9679;</span>'
+            f'<div><span style="color:#ffffff;font-size:11px;font-weight:600">{label}</span>'
+            f'<span style="color:#94a3b8;font-size:11px"> — {desc}</span></div>'
+            f'</div>'
+            for label, desc in items
+        )
+        return (
+            f'<div style="background:{col}0E;border:1px solid {col}44;border-radius:10px;padding:16px 18px">'
+            f'<div style="color:{col};font-size:13px;font-weight:700;margin-bottom:12px">'
+            f'{icon} {title}</div>{rows}</div>'
+        )
+
+    col_w, col_d = st.columns(2)
+    with col_w:
+        st.markdown(_tf_card("Weekly Chart", "📅", "#60A5FA", _wk_items), unsafe_allow_html=True)
+    with col_d:
+        st.markdown(_tf_card("Daily Chart", "📈", "#22C55E", _d_items), unsafe_allow_html=True)
+
+    # ══════════════════════════════════════════════════════════════
+    # PART 4 — ALL SCENARIOS
+    # ══════════════════════════════════════════════════════════════
+    _tos_part_header("4", "All Scenarios: What Each Combination Means", "7 complete setups with action guidance", P)
+
+    _SCENARIOS = [
+        ("1", "#22C55E", "✅", "Weekly HIGH + Daily HIGH",   "MTF ≥ 80",
+         "The ideal setup. Highest probability. All timeframes aligned.",
+         [("Enter with full intended position size", G),
+          ("Stop below daily EMA20 or EMA50 depending on volatility", G),
+          ("Expect follow-through — weekly trend is confirming daily momentum", G),
+          ("The only scenario where you act with full conviction", G)]),
+        ("2", "#86EFAC", "🟡", "Weekly HIGH + Daily MEDIUM", "MTF 65–79",
+         "Weekly trend intact, daily is building. Most common setup you will encounter.",
+         [("RSI YELLOW (45–50 on daily) = pullback-to-support buy. Enter 50–75% size", "#86EFAC"),
+          ("RSI RED + MACD &lt; Signal = daily still correcting. Wait — do not force entry", "#EF4444"),
+          ("MACD near zero ON = good entry timing, momentum is resetting", "#86EFAC"),
+          ("Add to full size once daily score crosses 80", "#86EFAC")]),
+        ("3", "#FBBF24", "⏳", "Weekly HIGH + Daily LOW",    "MTF 55–70",
+         "Stock in longer-term uptrend but daily is in active correction or consolidation.",
+         [("Do NOT enter — daily weakness is real even if weekly is strong", "#EF4444"),
+          ("Add to watchlist — these often become the best Scenario 1 setups within 1–3 weeks", "#FBBF24"),
+          ("Watch for EMA20>EMA50 to turn ON on daily — that is the re-evaluate signal", "#FBBF24"),
+          ("Exception: price on weekly EMA50 + high weekly score = small speculative entry with tight stop", "#94a3b8")]),
+        ("4", "#60A5FA", "🔵", "Weekly MEDIUM + Daily HIGH", "MTF 60–74",
+         "Daily is fully bullish but weekly has not confirmed. Daily is leading, not following.",
+         [("Weekly EMA alignment just turned ON = beginning of new trend. Valid with smaller size", "#60A5FA"),
+          ("Weekly EMA alignment still OFF = daily move may not sustain. High risk", "#EF4444"),
+          ("Take partial profit quickly if weekly does not catch up within 2–3 weeks", "#60A5FA"),
+          ("Tighter stops required", "#FBBF24")]),
+        ("5", "#F97316", "⚠️", "Daily HIGH + Weekly LOW",    "MTF &lt; 60 despite high daily",
+         "The most dangerous scenario. Daily bullish but weekly is broken.",
+         [("Counter-trend or dead-cat bounce in a downtrend — do NOT enter for swing", "#EF4444"),
+          ("The 70% weekly weight keeps MTF low despite high daily — system is correctly warning you", "#F97316"),
+          ("Only valid for intraday or 1–2 day traders with strict stops", "#F97316"),
+          ("The daily will almost certainly fail to follow through", "#EF4444")]),
+        ("6", "#EF4444", "🔴", "Both LOW",                   "MTF &lt; 55",
+         "Stock is in a downtrend on both timeframes.",
+         [("No action. Do not look for reasons to buy", "#EF4444"),
+          ("Remove from active watchlist", "#EF4444"),
+          ("Re-evaluate only if weekly EMA alignment turns ON and weekly score crosses 60", "#94a3b8")]),
+        ("7", "#A78BFA", "📈", "Both IMPROVING",             "MTF 55–65, rising",
+         "Score is moderate but direction of change matters — a rising score is more interesting than a falling one.",
+         [("Watch for weekly EMA alignment turning ON — that is the inflection point", "#A78BFA"),
+          ("Build in stages: partial at first confirmation, add when weekly crosses 70", "#A78BFA"),
+          ("A score rising from 40→60 is more interesting than a score falling from 80→65", "#A78BFA")]),
+    ]
+
+    for num, col, icon, title, range_lbl, summary, actions in _SCENARIOS:
+        acts_html = "".join(
+            f'<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:5px">'
+            f'<span style="color:{ac};font-size:10px;margin-top:2px;flex-shrink:0">&#9654;</span>'
+            f'<span style="color:{ac};font-size:11px;line-height:1.5">{at}</span></div>'
+            for at, ac in actions
+        )
+        st.markdown(
+            f'<div style="background:{col}0C;border:1px solid {col}44;border-radius:10px;'
+            f'padding:14px 18px;margin-bottom:8px">'
+            f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+            f'<span style="font-size:18px">{icon}</span>'
+            f'<div style="flex:1">'
+            f'<span style="color:{col};font-size:13px;font-weight:700">Scenario {num}: {title}</span>'
+            f'<span style="background:{col}22;color:{col};border:1px solid {col}44;'
+            f'font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;'
+            f'margin-left:10px">{range_lbl}</span>'
+            f'</div></div>'
+            f'<div style="color:#cbd5e1;font-size:11px;margin-bottom:10px;'
+            f'padding-bottom:8px;border-bottom:1px solid {col}22">{summary}</div>'
+            f'{acts_html}</div>',
+            unsafe_allow_html=True,
+        )
+
+    # ══════════════════════════════════════════════════════════════
+    # PART 5 — VALIDATION CHECKLIST
+    # ══════════════════════════════════════════════════════════════
+    _tos_part_header("5", "Validation Checklist Before Entry", "Run through this mentally for every trade", "#F472B6")
+
+    _CHECKS = [
+        ("Weekly Score ≥ 70",           "#22C55E", True),
+        ("EMA20 > EMA50 ON (weekly)",   "#22C55E", True),
+        ("P>EMA50 ON (weekly)",         "#22C55E", True),
+        ("Daily Score ≥ 65",            "#60A5FA", True),
+        ("MACD>Sig ON (daily)",         "#60A5FA", True),
+        ("RSI GREEN or YELLOW — not RED", "#FBBF24", False),
+        ("Extended: OFF",               "#F472B6", False),
+        ("Earnings > 14d (preferred) / > 7d minimum", "#F97316", False),
+        ("Vol: ON (confirms participation)", "#A78BFA", False),
+        ("MTF Score ≥ 72",              GOLD,      True),
+    ]
+
+    items_html = "".join(
+        f'<div style="display:flex;align-items:center;gap:10px;'
+        f'background:{col}0E;border:1px solid {col}33;border-radius:8px;'
+        f'padding:10px 14px">'
+        f'<span style="width:18px;height:18px;border:2px solid {col};border-radius:4px;'
+        f'display:inline-flex;align-items:center;justify-content:center;'
+        f'flex-shrink:0;font-size:10px;color:{col}">{"★" if must else "○"}</span>'
+        f'<span style="color:#e2e8f0;font-size:11px;font-weight:{"700" if must else "400"}">{label}</span>'
+        f'</div>'
+        for label, col, must in _CHECKS
+    )
+
+    st.markdown(
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+        f'{items_html}</div>'
+        f'<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;'
+        f'padding:12px 16px;font-size:11px;color:#94a3b8;line-height:1.7">'
+        f'<b style="color:#ffffff">★ = Non-negotiable &nbsp;|&nbsp; ○ = Important but flexible</b><br>'
+        f'<b style="color:#22C55E">Six or more boxes checked</b> = proceed with entry. &nbsp;'
+        f'<b style="color:#EF4444">Fewer than five</b> = wait or pass.</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ══════════════════════════════════════════════════════════════
+    # PART 6 — MTF QUICK REFERENCE
+    # ══════════════════════════════════════════════════════════════
+    _tos_part_header("6", "The One-Sentence Summary for Each Score Level", "MTF Score quick-reference", "#FBBF24")
+
+    _MTF_ROWS = [
+        ("85–100", "#22C55E", "Full alignment, both timeframes bullish",      "Buy with conviction",              "full"),
+        ("72–84",  "#86EFAC", "Strong setup, minor gaps",                     "Buy with standard size",           "standard"),
+        ("60–71",  "#FBBF24", "Building, one timeframe lagging",              "Watch — partial entry possible",   "partial"),
+        ("45–59",  "#F97316", "Mixed signals, no clear trend",                "Watchlist only",                   "watch"),
+        ("< 45",   "#EF4444", "Downtrend or broken structure",                "Avoid",                            "avoid"),
+    ]
+
+    size_badge = {
+        "full":     ("#22C55E", "Full Size"),
+        "standard": ("#86EFAC", "Standard Size"),
+        "partial":  ("#FBBF24", "Partial Entry"),
+        "watch":    ("#F97316", "Watch Only"),
+        "avoid":    ("#EF4444", "Avoid"),
+    }
+
+    rows2 = ""
+    for score, col, meaning, action, sz in _MTF_ROWS:
+        bc, bl = size_badge[sz]
+        bg = "#ffffff08" if _MTF_ROWS.index((score, col, meaning, action, sz)) % 2 == 0 else "transparent"
+        rows2 += (
+            f'<tr style="background:{bg}">'
+            f'<td style="padding:11px 16px;border-bottom:1px solid #ffffff0d">'
+            f'<span style="background:{col}22;color:{col};border:1px solid {col}44;'
+            f'font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;'
+            f'padding:3px 12px;border-radius:20px">{score}</span></td>'
+            f'<td style="padding:11px 16px;border-bottom:1px solid #ffffff0d;'
+            f'color:#cbd5e1;font-size:11px">{meaning}</td>'
+            f'<td style="padding:11px 16px;border-bottom:1px solid #ffffff0d;'
+            f'color:#e2e8f0;font-size:11px;font-weight:600">{action}</td>'
+            f'<td style="padding:11px 16px;border-bottom:1px solid #ffffff0d">'
+            f'<span style="background:{bc}22;color:{bc};border:1px solid {bc}44;'
+            f'font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px">{bl}</span></td>'
+            f'</tr>'
+        )
+
+    h2 = (f'background:#1e293b;color:#FBBF24;font-size:10px;font-weight:700;'
+          f'text-transform:uppercase;letter-spacing:0.8px;padding:10px 16px;'
+          f'border-bottom:2px solid #FBBF2444;text-align:left')
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid #FBBF2433;border-radius:10px;margin-bottom:6px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'Inter\',sans-serif">'
+        f'<thead><tr>'
+        f'<th style="{h2};width:14%">MTF Score</th>'
+        f'<th style="{h2};width:42%">What It Means</th>'
+        f'<th style="{h2};width:28%">Action</th>'
+        f'<th style="{h2};width:16%">Size</th>'
+        f'</tr></thead><tbody>{rows2}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
+
+
 # ── Main render ────────────────────────────────────────────────
 
 def render():
     section_header("🔧", "Tech Details",
                    "Scanner guide · Universe browser · Scanner rankings & action playbook · Stock Analysis methodology")
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📊 Scanner Tech & Rankings",
         "📖 Scanner Guide",
         "🗃️ Stock Universe",
         "🔬 Stock Analysis",
         "📺 Trading View",
+        "📊 ToS-Chart",
     ])
 
     with tab1:
@@ -2201,3 +2581,6 @@ def render():
 
     with tab5:
         _render_trading_view()
+
+    with tab6:
+        _render_tos_chart()
