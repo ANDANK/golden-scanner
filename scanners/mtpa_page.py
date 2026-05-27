@@ -126,6 +126,59 @@ def _render_sector(etf: str, trending: bool) -> str:
     return f'<span style="color:{GOLD};font-weight:600">{etf}</span> {trend_icon}'
 
 
+def _render_wk_macd_t4(line: float, hist: float, rising: bool) -> str:
+    """Weekly MACD cell for Table 4: Line value + Hist value + rising arrow."""
+    lc = ACCENT_GREEN if line > 0 else ACCENT_RED
+    hc = ACCENT_GREEN if hist > 0 else ACCENT_RED
+    arrow = (
+        f'<span style="color:{ACCENT_GREEN};font-size:13px;font-weight:700"> ↑</span>'
+        if rising else
+        f'<span style="color:{TEXT_MUTED};font-size:12px"> →</span>'
+    )
+    return (
+        f'<span style="color:{TEXT_MUTED};font-size:10px">L:</span>'
+        f'<span style="color:{lc};font-family:\'DM Mono\',monospace;font-size:11px;'
+        f'margin:0 5px 0 2px">{line:+.2f}</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:10px">H:</span>'
+        f'<span style="color:{hc};font-family:\'DM Mono\',monospace;font-size:11px;'
+        f'margin-left:2px">{hist:+.2f}</span>'
+        f'{arrow}'
+    )
+
+
+def _render_dly_macd_t4(line: float, hist: float) -> str:
+    """Daily MACD cell for Table 4: Line value + Hist value."""
+    lc = ACCENT_GREEN if line > 0 else ACCENT_RED
+    hc = ACCENT_GREEN if hist > 0 else ACCENT_RED
+    return (
+        f'<span style="color:{TEXT_MUTED};font-size:10px">L:</span>'
+        f'<span style="color:{lc};font-family:\'DM Mono\',monospace;font-size:11px;'
+        f'margin:0 5px 0 2px">{line:+.2f}</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:10px">H:</span>'
+        f'<span style="color:{hc};font-family:\'DM Mono\',monospace;font-size:11px;'
+        f'margin-left:2px">{hist:+.2f}</span>'
+    )
+
+
+def _render_rsi_combined(wk_rsi: float, dly_rsi: float) -> str:
+    """Combined W/D RSI cell — each value color-coded by range."""
+    def _c(v: float) -> str:
+        if 50 <= v <= 70:
+            return ACCENT_GREEN
+        if 40 <= v < 50:
+            return "#FBBF24"
+        return TEXT_MUTED
+
+    return (
+        f'<span style="color:{TEXT_MUTED};font-size:10px">W:</span>'
+        f'<span style="color:{_c(wk_rsi)};font-weight:600;margin:0 8px 0 3px">'
+        f'{wk_rsi:.1f}</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:10px">D:</span>'
+        f'<span style="color:{_c(dly_rsi)};font-weight:600;margin-left:3px">'
+        f'{dly_rsi:.1f}</span>'
+    )
+
+
 def _render_flags(flags: list) -> str:
     if not flags:
         return f'<span style="color:{TEXT_MUTED}">—</span>'
@@ -234,14 +287,109 @@ def _build_table_html(rows: list[dict]) -> str:
     )
 
 
+# ── Table 4 columns, row builder, and table builder ──────────────────────────
+
+_COLUMNS_T4 = [
+    ("Ticker",      "130px"),
+    ("Price",       "70px"),
+    ("Wk MACD",     "170px"),
+    ("Dly MACD",    "150px"),
+    ("RSI  W / D",  "155px"),
+    ("Vol Ratio",   "90px"),
+    ("Candles",     "185px"),
+    ("RS vs SPY",   "160px"),
+    ("Sector ETF",  "120px"),
+    ("Flags",       "210px"),
+]
+
+
+def _row_html_t4(r: dict, bg: str) -> str:
+    """Render a single Table 4 data row as an HTML <tr>."""
+    # Ticker cell — gold monospace + 💚 if also in Tables 1–3
+    ticker_html = (
+        f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
+        f'font-weight:700;font-size:13px">{r["ticker"]}</span>'
+    )
+    if r.get("in_main_tables"):
+        ticker_html += (
+            f' <span title="Also qualifies in Tables 1–3" '
+            f'style="font-size:13px">💚</span>'
+        )
+
+    cells = [
+        f'<td style="background:{bg};padding:7px 10px;white-space:nowrap">{ticker_html}</td>',
+        # Price
+        f'<td style="background:{bg};padding:7px 10px;color:{TEXT_PRIMARY};'
+        f'font-family:\'DM Mono\',monospace;font-size:12px">${r["price"]:.2f}</td>',
+        # Weekly MACD
+        f'<td style="background:{bg};padding:7px 10px">'
+        f'{_render_wk_macd_t4(r["wk_macd_line"], r["wk_macd_hist"], r["wk_macd_hist_rising"])}</td>',
+        # Daily MACD
+        f'<td style="background:{bg};padding:7px 10px">'
+        f'{_render_dly_macd_t4(r["macd_value"], r["macd_hist"])}</td>',
+        # RSI W / D
+        f'<td style="background:{bg};padding:7px 10px">'
+        f'{_render_rsi_combined(r["wk_rsi_value"], r["rsi_value"])}</td>',
+        # Vol Ratio
+        f'<td style="background:{bg};padding:7px 10px">'
+        f'{_render_volume(r["volume_ratio"], r["volume_ok"])}</td>',
+        # Candles
+        f'<td style="background:{bg};padding:7px 10px">'
+        f'{_render_candles(r["candle_patterns"])}</td>',
+        # RS vs SPY
+        f'<td style="background:{bg};padding:7px 10px">'
+        f'{_render_rs(r["rs_status"], r["rs_pct"])}</td>',
+        # Sector ETF
+        f'<td style="background:{bg};padding:7px 10px">'
+        f'{_render_sector(r["sector_etf"], r["sector_trending"])}</td>',
+        # Flags
+        f'<td style="background:{bg};padding:7px 10px">'
+        f'{_render_flags(r["flags"])}</td>',
+    ]
+    return "<tr>" + "".join(cells) + "</tr>"
+
+
+def _build_table_html_t4(rows: list[dict]) -> str:
+    """Build a complete scrollable HTML table for Table 4 rows."""
+    th_style = (
+        f'style="background:{BG_PANEL};color:{GOLD};font-size:10px;'
+        f'font-weight:700;text-transform:uppercase;letter-spacing:0.8px;'
+        f'padding:8px 10px;white-space:nowrap;'
+        f'border-bottom:2px solid {GOLD}55;position:sticky;top:0;z-index:5"'
+    )
+    header_cells = "".join(
+        f'<th {th_style} width="{w}">{col}</th>'
+        for col, w in _COLUMNS_T4
+    )
+    header = f"<thead><tr>{header_cells}</tr></thead>"
+
+    body_rows = "".join(
+        _row_html_t4(r, BG_CARD if i % 2 == 0 else BG_PANEL)
+        for i, r in enumerate(rows)
+    )
+    body = f"<tbody>{body_rows}</tbody>"
+
+    return (
+        f'<div style="overflow-x:auto;max-height:520px;overflow-y:auto;'
+        f'border:1px solid {BORDER_COLOR};border-radius:8px">'
+        f'<table style="border-collapse:collapse;width:100%;font-size:12px">'
+        f'{header}{body}'
+        f'</table></div>'
+    )
+
+
 # ── Summary bar ───────────────────────────────────────────────────────────────
 
 def _summary_bar(results: dict) -> None:
     n1 = len(results["table1"])
     n2 = len(results["table2"])
     n3 = len(results["table3"])
+    n4 = len(results.get("table4", []))
     elapsed = results["scan_time"]
     total   = results["total_scanned"]
+
+    # Count Table 4 tickers that are also in Tables 1–3
+    n4_cross = sum(1 for r in results.get("table4", []) if r.get("in_main_tables"))
 
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
@@ -256,6 +404,10 @@ def _summary_bar(results: dict) -> None:
         f'🟡 Table 2: {n2}</span>'
         f'<span style="color:{ACCENT_BLUE};font-size:13px;font-weight:700">'
         f'🔵 Table 3: {n3}</span>'
+        f'<span style="color:#A78BFA;font-size:13px;font-weight:700">'
+        f'💜 Table 4: {n4}'
+        + (f' <span style="font-size:11px;color:{TEXT_MUTED}">(💚 {n4_cross} cross)</span>' if n4_cross else '')
+        + f'</span>'
         f'<span style="color:{TEXT_MUTED};font-size:12px">'
         f'⏱ Time: {elapsed:.1f}s</span>'
         f'</div>',
@@ -350,6 +502,17 @@ Three White Soldiers · Dragonfly Doji · Inverted Hammer · Tweezer Bottom
 <li><b>🔵 BUILDING (Table 3)</b> — RSI GREEN/YELLOW · MACD &gt; Signal</li>
 </ul>
 Each ticker appears in at most one table (highest priority wins).
+
+<b style="color:#A78BFA">💜 MACD MOMENTUM (Table 4) — Independent, no dedup</b>
+<ul>
+<li><b>Weekly</b>: MACD Line &gt; 0 (EMA12 &gt; EMA26 on weekly) · Histogram &gt; 0 (MACD &gt; Signal) ·
+  Histogram ↑ rising (accelerating momentum, not peaking)</li>
+<li><b>Daily</b>: MACD Line &gt; 0 · Histogram &gt; 0</li>
+<li>Appears independently of Tables 1–3. A ticker may appear in both Table 4 and Table 1/2/3.</li>
+<li><b>💚 Green heart</b> — ticker also qualifies in one of Tables 1–3 (highest-conviction overlap).</li>
+<li>RSI column shows <b>W: weekly RSI</b> and <b>D: daily RSI</b> side-by-side, color-coded:
+  <span style="color:#22C55E">■ GREEN</span> = 50–70 · <span style="color:#FBBF24">■ YELLOW</span> = 40–50 · grey = outside range.</li>
+</ul>
 </div>""", unsafe_allow_html=True)
 
 
@@ -469,6 +632,38 @@ def render() -> None:
         ),
         expanded=False,
     )
+
+    # ── Table 4 — MACD MOMENTUM ────────────────────────────────────
+    t4_rows = results.get("table4", [])
+    n4      = len(t4_rows)
+    n4_cross = sum(1 for r in t4_rows if r.get("in_main_tables"))
+    cross_note = (
+        f' · <b style="color:{ACCENT_GREEN}">💚 = {n4_cross} also in Tables 1–3</b>'
+        if n4_cross else ""
+    )
+    with st.expander(
+        f"💜 MACD MOMENTUM — Both Timeframes Confirmed ({n4} stocks)",
+        expanded=False,
+    ):
+        if not t4_rows:
+            st.markdown(
+                f'<div style="text-align:center;padding:32px;color:{TEXT_MUTED};font-size:14px">'
+                f'No tickers met the MACD Momentum criteria for the current universe.</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(_build_table_html_t4(t4_rows), unsafe_allow_html=True)
+
+        st.markdown(
+            f'<div style="background:{BG_CARD};border-left:3px solid #A78BFA55;'
+            f'border-radius:0 6px 6px 0;padding:10px 16px;margin-top:12px;'
+            f'color:{TEXT_MUTED};font-size:12px;line-height:1.6">'
+            f'<b style="color:#A78BFA">Qualifier:</b> '
+            f'Weekly MACD Line &gt; 0 · Weekly Hist &gt; 0 · Weekly Hist ↑ rising · '
+            f'Daily MACD Line &gt; 0 · Daily Hist &gt; 0 · '
+            f'Independent — no dedup vs Tables 1–3{cross_note}</div>',
+            unsafe_allow_html=True,
+        )
 
     # ── Tech reference (always at bottom) ─────────────────────────
     _render_tech_details()

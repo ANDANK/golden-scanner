@@ -406,6 +406,7 @@ def run_mtpa_scan(
     table1: list[dict] = []
     table2: list[dict] = []
     table3: list[dict] = []
+    table4: list[dict] = []   # MACD Momentum — independent, no dedup
     failed: list[str]  = []
 
     n = len(tickers)
@@ -448,12 +449,27 @@ def run_mtpa_scan(
             weekly_pattern  = _calc_weekly_pattern(wk_df)
             weekly_extended = _calc_weekly_extended(wk_df) if not wk_df.empty else False
 
+            # ── Weekly MACD & RSI (used by Table 4) ──────────────
+            # calc_macd needs ≥26 bars; weekly 2y gives ~104 bars.
+            if not wk_df.empty and len(wk_df) >= 26:
+                wk_close_s = wk_df["Close"].squeeze()
+                wk_macd_line_val, _, wk_hist_val, wk_prev_hist_val = calc_macd(wk_close_s)
+                wk_rsi_val  = calc_rsi(wk_close_s)
+            else:
+                wk_macd_line_val = wk_hist_val = wk_prev_hist_val = 0.0
+                wk_rsi_val = 50.0
+
+            wk_macd_line_pos  = bool(wk_macd_line_val > 0)
+            wk_hist_pos       = bool(wk_hist_val > 0)
+            wk_hist_rising    = bool(wk_hist_val > wk_prev_hist_val)
+
             # ── RSI ───────────────────────────────────────────────
             rsi_value, rsi_status = _rsi_status(close)
 
             # ── MACD ─────────────────────────────────────────────
-            macd_line, signal_line, _, _ = calc_macd(close)
-            macd_above_signal = bool(macd_line > signal_line)
+            macd_line, signal_line, macd_hist_val, _ = calc_macd(close)
+            macd_above_signal = bool(macd_line > signal_line)   # = hist > 0
+            dly_macd_line_pos = bool(macd_line > 0)
             if macd_line > 3:
                 macd_zone = "POSITIVE"
             elif macd_line < -3:
@@ -509,8 +525,14 @@ def run_mtpa_scan(
                 # Daily — MACD
                 "macd_value":        round(macd_line, 3),
                 "macd_signal":       round(signal_line, 3),
+                "macd_hist":         round(macd_hist_val, 3),
                 "macd_above_signal": macd_above_signal,
                 "macd_zone":         macd_zone,
+                # Weekly MACD (Table 4)
+                "wk_macd_line":      round(wk_macd_line_val, 3),
+                "wk_macd_hist":      round(wk_hist_val, 3),
+                "wk_macd_hist_rising": wk_hist_rising,
+                "wk_rsi_value":      round(wk_rsi_val, 1),
                 # Daily — Volume
                 "volume_ratio":      round(volume_ratio, 2),
                 "volume_ok":         volume_ok,
@@ -533,7 +555,7 @@ def run_mtpa_scan(
                 "flags":             flags,
             }
 
-            # ── Table assignment ──────────────────────────────────
+            # ── Table 1/2/3 assignment (dedup) ───────────────────
             table_num = _assign_table(result)
             if table_num == 1:
                 table1.append(result)
@@ -542,12 +564,25 @@ def run_mtpa_scan(
             elif table_num == 3:
                 table3.append(result)
 
+            # ── Table 4 (MACD Momentum) — independent, no dedup ──
+            # Weekly: Line>0 + Hist>0 + Hist rising
+            # Daily:  Line>0 + Hist>0
+            if (wk_macd_line_pos and wk_hist_pos and wk_hist_rising
+                    and dly_macd_line_pos and macd_above_signal):
+                table4.append(result)
+
         except Exception as exc:
             failed.append(f"{ticker}: {type(exc).__name__}")
             continue
 
     elapsed = (datetime.now() - t_start).total_seconds()
     total_matched = len(table1) + len(table2) + len(table3)
+
+    # ── Mark Table 4 rows that also appear in Tables 1–3 ─────────
+    # Used to render the 💚 indicator in the page.
+    main_tickers = {r["ticker"] for r in table1 + table2 + table3}
+    for r in table4:
+        r["in_main_tables"] = r["ticker"] in main_tickers
 
     # Clear progress UI elements
     if progress_label is not None:
@@ -559,6 +594,7 @@ def run_mtpa_scan(
         "table1":        table1,
         "table2":        table2,
         "table3":        table3,
+        "table4":        table4,
         "scan_time":     elapsed,
         "total_scanned": len(tickers),
         "total_matched": total_matched,
