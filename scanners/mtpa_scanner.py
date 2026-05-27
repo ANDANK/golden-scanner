@@ -585,10 +585,17 @@ def run_mtpa_scan(
     total_matched = len(table1) + len(table2) + len(table3)
 
     # ── Mark Table 4 rows that also appear in Tables 1–3 ─────────
-    # Used to render the 💚 indicator in the page.
-    main_tickers = {r["ticker"] for r in table1 + table2 + table3}
+    # Stores the table number (1/2/3) so the page can show the correct
+    # coloured circle (🟢/🟡/🔵).  0 means not in any of the main tables.
+    main_table_map: dict[str, int] = {}
+    for r in table1:
+        main_table_map[r["ticker"]] = 1
+    for r in table2:
+        main_table_map[r["ticker"]] = 2
+    for r in table3:
+        main_table_map[r["ticker"]] = 3
     for r in table4:
-        r["in_main_tables"] = r["ticker"] in main_tickers
+        r["in_main_tables"] = main_table_map.get(r["ticker"], 0)
 
     # Clear progress UI elements
     if progress_label is not None:

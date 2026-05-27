@@ -305,15 +305,20 @@ _COLUMNS_T4 = [
 
 def _row_html_t4(r: dict, bg: str) -> str:
     """Render a single Table 4 data row as an HTML <tr>."""
-    # Ticker cell — gold monospace + 💚 if also in Tables 1–3
+    # Ticker cell — gold monospace + coloured circle if also in Tables 1–3
+    _table_circle = {1: ("🟢", "PRIME"),
+                     2: ("🟡", "STRONG"),
+                     3: ("🔵", "BUILDING")}
+    _tbl = r.get("in_main_tables", 0)
     ticker_html = (
         f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
         f'font-weight:700;font-size:13px">{r["ticker"]}</span>'
     )
-    if r.get("in_main_tables"):
+    if _tbl in _table_circle:
+        _circle, _label = _table_circle[_tbl]
         ticker_html += (
-            f' <span title="Also qualifies in Tables 1–3" '
-            f'style="font-size:13px">💚</span>'
+            f' <span title="Also in Table {_tbl} — {_label}" '
+            f'style="font-size:12px">{_circle}</span>'
         )
 
     cells = [
@@ -388,8 +393,8 @@ def _summary_bar(results: dict) -> None:
     elapsed = results["scan_time"]
     total   = results["total_scanned"]
 
-    # Count Table 4 tickers that are also in Tables 1–3
-    n4_cross = sum(1 for r in results.get("table4", []) if r.get("in_main_tables"))
+    # Count Table 4 tickers that are also in Tables 1–3 (by table)
+    n4_cross = sum(1 for r in results.get("table4", []) if r.get("in_main_tables", 0) > 0)
 
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
@@ -510,7 +515,7 @@ Each ticker appears in at most one table (highest priority wins).
   Histogram ↑ rising (accelerating momentum, not peaking)</li>
 <li><b>Daily</b>: MACD Line &gt; 0 · Histogram &gt; 0</li>
 <li>Appears independently of Tables 1–3. A ticker may appear in both Table 4 and Table 1/2/3.</li>
-<li><b>💚 Green heart</b> — ticker also qualifies in one of Tables 1–3 (highest-conviction overlap).</li>
+<li><b>🟢 🟡 🔵 Circle indicator</b> — ticker also qualifies in Table 1 (PRIME), Table 2 (STRONG), or Table 3 (BUILDING) respectively. Hover over the circle to see which table. No circle = MACD signal only, not yet confirmed by full structure.</li>
 <li>RSI column shows <b>W: weekly RSI</b> and <b>D: daily RSI</b> side-by-side, color-coded:
   <span style="color:#22C55E">■ GREEN</span> = 50–70 · <span style="color:#FBBF24">■ YELLOW</span> = 40–50 · grey = outside range.</li>
 </ul>
@@ -662,7 +667,7 @@ def render() -> None:
             f'<b style="color:#A78BFA">Qualifier:</b> '
             f'Weekly MACD Line &gt; 0 · Weekly Hist &gt; 0 · Weekly Hist ↑ rising · '
             f'Daily MACD Line &gt; 0 · Daily Hist &gt; 0 · '
-            f'Independent — no dedup vs Tables 1–3{cross_note}</div>',
+            f'Independent — no dedup vs Tables 1–3 · 🟢 also in PRIME · 🟡 also in STRONG · 🔵 also in BUILDING{cross_note}</div>',
             unsafe_allow_html=True,
         )
 
