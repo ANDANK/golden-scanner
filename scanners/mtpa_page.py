@@ -471,7 +471,8 @@ A pure-filter, no-score scanner that categorizes stocks by how many timeframes a
 <li><b>RSI YELLOW</b> — RSI(14) is 40–50 AND rising (recovering from weakness).</li>
 <li><b>RSI NEUTRAL</b> — All other cases (not rising or outside range).</li>
 <li><b>MACD &gt; Sig</b> — EMA(12) − EMA(26) &gt; Signal line (9-period EMA of MACD). Indicates bullish crossover.</li>
-<li><b>MACD Zone</b> — 🎯 Near Zero: MACD −3 to +3 (fresh setup). 📈 Positive: &gt;3 (momentum). 📉 Negative: &lt;−3 (weak).</li>
+<li><b>MACD Zone</b> — 🎯 Near Zero: |MACD| ≤ 3 (display label only). 📈 Positive: &gt;3. 📉 Negative: &lt;−3.
+  Table 1 uses price-normalised threshold (|MACD| ≤ 1% of price) rather than the fixed ±3 display zones.</li>
 <li><b>Vol Ratio</b> — Today's volume ÷ 20-day average. Volume OK = 1.0–1.8× (healthy interest, not a spike).</li>
 <li><b>&gt;SMA20 / &gt;SMA9</b> — Price above its 20-day or 9-day simple moving average.</li>
 </ul>
@@ -497,8 +498,8 @@ Three White Soldiers · Dragonfly Doji · Inverted Hammer · Tweezer Bottom
 <b style="color:{GOLD}">Table Assignment (dedup, Table 1 priority)</b>
 <ul>
 <li><b>🟢 PRIME (Table 1)</b> — Weekly HH/HL or Tight Base · Not extended · RSI GREEN/YELLOW ·
-  MACD &gt; Signal · Volume OK · Price &gt; SMA20 · MACD Near Zero · Earnings not SKIP</li>
-<li><b>🟡 STRONG (Table 2)</b> — Not extended · RSI GREEN/YELLOW · MACD &gt; Signal · Price &gt; SMA9</li>
+  MACD &gt; Signal · Volume OK · Price &gt; SMA20 · |MACD| ≤ 1% of price (fresh crossover) · Earnings not SKIP</li>
+<li><b>🟡 STRONG (Table 2)</b> — Not extended · RSI GREEN/YELLOW · MACD &gt; Signal · Price &gt; SMA20</li>
 <li><b>🔵 BUILDING (Table 3)</b> — RSI GREEN/YELLOW · MACD &gt; Signal</li>
 </ul>
 Each ticker appears in at most one table (highest priority wins).
@@ -604,7 +605,7 @@ def render() -> None:
         qualifier_note=(
             "Weekly HH/HL or Tight Base · Not Over-Extended · "
             "RSI GREEN or YELLOW · MACD &gt; Signal · Volume OK (1–1.8×) · "
-            "Price &gt; SMA20 · MACD Near Zero (−3 to +3) · Earnings &gt; 7 days"
+            "Price &gt; SMA20 · |MACD| ≤ 1% of price (fresh setup) · Earnings &gt; 7 days"
         ),
         expanded=True,
     )
@@ -616,7 +617,7 @@ def render() -> None:
         rows=results["table2"],
         qualifier_note=(
             "Not Over-Extended (weekly) · RSI GREEN or YELLOW · "
-            "MACD &gt; Signal · Price &gt; SMA9 · (Any MACD zone allowed)"
+            "MACD &gt; Signal · Price &gt; SMA20 · (Any MACD zone allowed)"
         ),
         expanded=False,
     )

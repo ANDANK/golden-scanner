@@ -336,21 +336,27 @@ def _assign_table(r: dict) -> Optional[int]:
     Priority: Table 1 > Table 2 > Table 3 (first match wins).
     """
     # Table 1 (PRIME): full alignment
+    # MACD "near zero" is price-normalised: |MACD line| ≤ 1% of price.
+    # 1% on a $200 stock = ±$2 — roughly a 1-2 week window post-crossover
+    # before momentum has run too far.  Works for any price tier.
+    macd_near_zero = abs(r["macd_value"]) <= r["price"] * 0.01
     if (r["weekly_pattern"] in ("HH/HL", "Tight Base")
             and not r["weekly_extended"]
             and r["rsi_status"] in ("GREEN", "YELLOW")
             and r["macd_above_signal"]
             and r["volume_ok"]
             and r["price_above_sma20"]
-            and r["macd_zone"] == "NEAR_ZERO"
+            and macd_near_zero
             and r["earnings_flag"] != "SKIP"):
         return 1
 
     # Table 2 (STRONG): weekly clean + daily confirmed
+    # SMA20 (upgraded from SMA9) — requires confirmed medium-term trend, not
+    # just a short-term blip above the 9-day line.
     if (not r["weekly_extended"]
             and r["rsi_status"] in ("GREEN", "YELLOW")
             and r["macd_above_signal"]
-            and r["price_above_sma9"]):
+            and r["price_above_sma20"]):
         return 2
 
     # Table 3 (BUILDING): daily signal only
