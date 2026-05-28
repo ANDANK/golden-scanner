@@ -72,6 +72,53 @@ SP500_SAMPLE = [
     "ARKW","IYR","VNQ","XRT","KRE","IAT","XLB","XLRE",
 ]
 
+# ── MTPA Scanner universe — 200 curated tickers ───────────────
+# Criteria: growth-oriented, volatile enough for momentum setups,
+# quality companies you would not regret holding long-term.
+# Excluded: airlines, tobacco, legacy telecoms, bond ETFs,
+#   commodity futures ETFs, declining-AUM financials, regional banks.
+MTPA_200 = [
+    # ── Mega-cap (20) ────────────────────────────────────────────
+    "AAPL","MSFT","NVDA","AMZN","GOOGL","META","BRK-B","LLY","AVGO","TSLA",
+    "UNH","JPM","XOM","V","MA","PG","JNJ","HD","COST","MRK",
+    # ── Core ETFs — growth & sector momentum (22) ────────────────
+    "SPY","QQQ","IWM","DIA","VTI","VOO","GLD","SLV",
+    "XLK","XLF","XLE","XLV","XLI","XLU","XLP","XLY",
+    "SOXX","SMH","ARKK","IBB","GDX","VNQ",
+    # ── Technology / Software / Cloud / Cyber / Semis (30) ───────
+    "CRM","ADBE","AMD","ORCL","TXN","INTU","QCOM","AMAT","ADI","NOW",
+    "PANW","CRWD","FTNT","NET","ZS","WDAY","SNOW","PLTR","DDOG","MDB",
+    "CDNS","SNPS","ADSK","MCHP","MPWR","APP","ADP","FI","TEAM","UBER",
+    # ── Healthcare / Biotech / MedTech (22) ──────────────────────
+    "ABBV","TMO","ABT","ISRG","EW","REGN","VRTX","SYK","BSX","DHR",
+    "ZTS","AMGN","GILD","DXCM","IDXX","IQV","VEEV","HCA","MDT","MRNA",
+    "RMD","ALGN",
+    # ── Financials / Fintech / Exchanges (18) ────────────────────
+    "GS","MS","BAC","BX","KKR","SCHW","AXP","MCO","SPGI","ICE",
+    "CME","WFC","COF","BLK","NDAQ","PGR","AON","MMC",
+    # ── Consumer / Retail / Travel / Media (16) ──────────────────
+    "MCD","NFLX","NKE","SBUX","BKNG","LOW","TJX","ROST","ABNB","MAR",
+    "HLT","DIS","LULU","AZO","ORLY","WMT",
+    # ── Industrials / Aerospace / Defense (18) ───────────────────
+    "CAT","DE","HON","GE","BA","RTX","LMT","GD","NOC","ETN",
+    "ITW","UNP","CSX","URI","FAST","SHW","TT","ODFL",
+    # ── Energy / Clean Energy (10) ───────────────────────────────
+    "CVX","COP","EOG","OXY","SLB","NEE","CEG","VST","FANG","HAL",
+    # ── Real Estate / Infrastructure (8) ─────────────────────────
+    "AMT","EQIX","CCI","PSA","WELL","O","DLR","PLD",
+    # ── Consumer Brands / Staples / Services (8) ─────────────────
+    "KO","PEP","MNST","YUM","DPZ","TSCO","ACN","TMUS",
+    # ── More Tech / IT Services (12) ─────────────────────────────
+    "CSCO","PAYC","EFX","KEYS","TER","IT","CDW","AKAM","PAYX","BR",
+    "OKTA","VRSN",
+    # ── Materials / Specialty Chemicals (6) ──────────────────────
+    "LIN","ECL","FCX","NEM","ALB","APD",
+    # ── More Healthcare / Life Sciences (5) ──────────────────────
+    "A","ILMN","MTD","ELV","MCK",
+    # ── More Industrials / Automation / Defense (5) ──────────────
+    "PH","ROK","IR","GNRC","LHX",
+]
+
 # NAV-4: Liquid ETFs with active options chains — merged into CSP/CC/LEAPS universe
 OPTIONS_ETF_UNIVERSE = [
     "SPY","QQQ","IWM","DIA","GLD","SLV","TLT","HYG","LQD",

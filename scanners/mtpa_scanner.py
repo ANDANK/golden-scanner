@@ -17,7 +17,7 @@ import numpy as np
 from datetime import datetime
 from typing import Optional
 
-from config import SP500_SAMPLE
+from config import SP500_SAMPLE, MTPA_200
 from utils import calc_ema, calc_rsi, calc_macd, calc_sma
 from data_loader import get_price_history, get_info, prefetch_tickers
 
@@ -386,7 +386,7 @@ def run_mtpa_scan(
       failed        — list of tickers that raised exceptions
     """
     if tickers is None:
-        tickers = SP500_SAMPLE
+        tickers = MTPA_200
 
     t_start = datetime.now()
 

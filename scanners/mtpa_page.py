@@ -21,7 +21,7 @@ from config import (
     GOLD, GOLD_DARK, BG_CARD, BG_PANEL, BG_DARK,
     ACCENT_GREEN, ACCENT_RED, ACCENT_BLUE,
     TEXT_PRIMARY, TEXT_MUTED, BORDER_COLOR,
-    SP500_SAMPLE,
+    SP500_SAMPLE, MTPA_200,
 )
 from utils import section_header
 from scanners.mtpa_scanner import run_mtpa_scan
@@ -555,11 +555,11 @@ def render() -> None:
 
     # ── Run scan ───────────────────────────────────────────────────
     if run_btn:
-        with st.spinner("Running MTPA scan across S&P 500 sample…"):
+        with st.spinner("Running MTPA scan across MTPA 200 universe…"):
             _label_ph = st.empty()
             _prog_ph  = st.progress(0)
             results = run_mtpa_scan(
-                tickers=SP500_SAMPLE,
+                tickers=MTPA_200,
                 progress_label=_label_ph,
                 progress_bar=_prog_ph,
             )
