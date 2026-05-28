@@ -25,6 +25,7 @@ from config import (
 )
 from utils import section_header
 from scanners.mtpa_scanner import run_mtpa_scan
+from scanners.gsheet_helper import export_mtpa_scan
 
 
 # ── Session state key ──────────────────────────────────────────────────────────
@@ -534,7 +535,8 @@ def render() -> None:
     )
 
     # ── Scan controls ──────────────────────────────────────────────
-    c1, c2, c3 = st.columns([2, 1, 4])
+    _has_results = _SESSION_KEY in st.session_state
+    c1, c2, c3, _gap = st.columns([2, 1, 1.5, 3])
     with c1:
         run_btn = st.button("▶ Run MTPA Scan", use_container_width=True, key="_mtpa_run")
     with c2:
@@ -542,6 +544,14 @@ def render() -> None:
             st.session_state.pop(_SESSION_KEY, None)
             st.cache_data.clear()
             st.rerun()
+    with c3:
+        export_btn = st.button(
+            "📤 Export to Sheets",
+            use_container_width=True,
+            key="_mtpa_export",
+            disabled=not _has_results,
+            help="Export all tables to 'MTPA Tracker' Google Sheet (tab = today's date)",
+        )
 
     # Last scan time display
     if _SESSION_KEY in st.session_state:
@@ -587,6 +597,15 @@ def render() -> None:
         )
         _render_tech_details()
         return
+
+    # ── Handle Export ──────────────────────────────────────────────
+    if export_btn:
+        with st.spinner("Exporting to MTPA Tracker…"):
+            _ok, _msg = export_mtpa_scan(results)
+        if _ok:
+            st.toast(f"✅ {_msg}", icon="📊")
+        else:
+            st.toast(f"❌ {_msg}", icon="⚠️")
 
     # Summary bar
     _summary_bar(results)

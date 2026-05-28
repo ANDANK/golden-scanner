@@ -379,6 +379,197 @@ def move_to_tracking(ticker: str, strategy: str = "Stock", source: str = "") -> 
     return add_to_tracking(ticker, strategy, source)
 
 
+# ══════════════════════════════════════════════════════════════════
+# MTPA TRACKER EXPORT
+# ══════════════════════════════════════════════════════════════════
+
+_MTPA_TRACKER_NAME = "MTPA Tracker"
+
+# Column headers for Tables 1-3 and Table 4
+_MTPA_T123_HEADERS = [
+    "Ticker", "Price", "Weekly Pattern", "Weekly Extended",
+    "RSI", "RSI Status", "MACD>Signal", "MACD Zone", "MACD Value",
+    "Vol Ratio", "Vol OK", ">SMA20", ">SMA9",
+    "Days to Earnings", "Earnings Flag",
+    "Candle Patterns", "RS Status", "RS Pct",
+    "Sector ETF", "Sector Trending", "Flags",
+]
+
+_MTPA_T4_HEADERS = [
+    "Ticker", "Price",
+    "Wk MACD Line", "Wk MACD Hist", "Wk Hist Rising",
+    "Daily MACD Line", "Daily MACD Hist",
+    "Wk RSI", "Daily RSI",
+    "Vol Ratio", "Candle Patterns", "RS Status", "RS Pct",
+    "Sector ETF", "Sector Trending", "Flags", "Also In Table",
+]
+
+
+@st.cache_resource(show_spinner=False)
+def _gs_mtpa_spreadsheet():
+    """
+    Return the 'MTPA Tracker' Google Spreadsheet.
+    Searches by name in the service account's Drive;
+    creates it on first run if not found.
+    Cached for the process lifetime so we only open once.
+    """
+    client = _gs_client()
+    if not client:
+        return None
+    try:
+        return client.open(_MTPA_TRACKER_NAME)
+    except Exception:
+        pass
+    try:
+        return client.create(_MTPA_TRACKER_NAME)
+    except Exception:
+        return None
+
+
+def _row_to_t123(r: dict) -> list:
+    """Flatten a T1/T2/T3 result dict into a plain list for Sheets export."""
+    def _f(v, decimals=2):
+        try:
+            return round(float(v), decimals)
+        except Exception:
+            return v
+    return [
+        r.get("ticker", ""),
+        _f(r.get("price", "")),
+        r.get("weekly_pattern", ""),
+        "Yes" if r.get("weekly_extended") else "No",
+        _f(r.get("rsi_value", ""), 1),
+        r.get("rsi_status", ""),
+        "Yes" if r.get("macd_above_signal") else "No",
+        r.get("macd_zone", ""),
+        _f(r.get("macd_value", ""), 3),
+        _f(r.get("volume_ratio", ""), 2),
+        "Yes" if r.get("volume_ok") else "No",
+        "Yes" if r.get("price_above_sma20") else "No",
+        "Yes" if r.get("price_above_sma9") else "No",
+        r.get("days_to_earnings", ""),
+        r.get("earnings_flag", ""),
+        ", ".join(r.get("candle_patterns") or []),
+        r.get("rs_status", ""),
+        r.get("rs_pct", ""),
+        r.get("sector_etf", ""),
+        "Yes" if r.get("sector_trending") else "No",
+        ", ".join(r.get("flags") or []),
+    ]
+
+
+def _row_to_t4(r: dict) -> list:
+    """Flatten a T4 result dict into a plain list for Sheets export."""
+    def _f(v, decimals=3):
+        try:
+            return round(float(v), decimals)
+        except Exception:
+            return v
+    tbl_map = {1: "PRIME", 2: "STRONG", 3: "BUILDING", 0: ""}
+    return [
+        r.get("ticker", ""),
+        _f(r.get("price", ""), 2),
+        _f(r.get("wk_macd_line", ""), 3),
+        _f(r.get("wk_macd_hist", ""), 3),
+        "Yes" if r.get("wk_macd_hist_rising") else "No",
+        _f(r.get("macd_value", ""), 3),
+        _f(r.get("macd_hist", ""), 3),
+        _f(r.get("wk_rsi_value", ""), 1),
+        _f(r.get("rsi_value", ""), 1),
+        _f(r.get("volume_ratio", ""), 2),
+        ", ".join(r.get("candle_patterns") or []),
+        r.get("rs_status", ""),
+        r.get("rs_pct", ""),
+        r.get("sector_etf", ""),
+        "Yes" if r.get("sector_trending") else "No",
+        ", ".join(r.get("flags") or []),
+        tbl_map.get(r.get("in_main_tables", 0), ""),
+    ]
+
+
+def export_mtpa_scan(results: dict, date_str: str = "") -> tuple:
+    """
+    Export all four MTPA tables to the 'MTPA Tracker' Google Spreadsheet.
+    Tab name = date_str (default: today's date, YYYY-MM-DD).
+    If the tab already exists it is cleared and overwritten.
+    Returns (success: bool, message: str).
+    """
+    if not date_str:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+
+    sh = _gs_mtpa_spreadsheet()
+    if sh is None:
+        return False, "Google Sheets not connected — check credentials in Secrets."
+
+    # Get or create the date tab
+    try:
+        try:
+            ws = sh.worksheet(date_str)
+            ws.clear()
+        except Exception:
+            ws = sh.add_worksheet(title=date_str, rows=2000, cols=25)
+    except Exception as e:
+        return False, f"Could not open/create tab '{date_str}': {e}"
+
+    t1 = results.get("table1", [])
+    t2 = results.get("table2", [])
+    t3 = results.get("table3", [])
+    t4 = results.get("table4", [])
+    scan_ts = results.get("scan_time", "")
+    total   = results.get("total_scanned", 0)
+
+    # ── Build rows to write ────────────────────────────────────────
+    all_rows: list = []
+
+    # Meta info row
+    all_rows.append([
+        f"MTPA Scan  {date_str}",
+        f"Scanned: {total}",
+        f"T1: {len(t1)}",
+        f"T2: {len(t2)}",
+        f"T3: {len(t3)}",
+        f"T4: {len(t4)}",
+        f"Time: {scan_ts:.1f}s" if isinstance(scan_ts, (int, float)) else "",
+    ])
+    all_rows.append([])   # spacer
+
+    # Table 1 — PRIME
+    all_rows.append([f"TABLE 1 — PRIME  ({len(t1)} stocks)"])
+    all_rows.append(_MTPA_T123_HEADERS)
+    for r in t1:
+        all_rows.append(_row_to_t123(r))
+    all_rows.append([])
+
+    # Table 2 — STRONG
+    all_rows.append([f"TABLE 2 — STRONG  ({len(t2)} stocks)"])
+    all_rows.append(_MTPA_T123_HEADERS)
+    for r in t2:
+        all_rows.append(_row_to_t123(r))
+    all_rows.append([])
+
+    # Table 3 — BUILDING
+    all_rows.append([f"TABLE 3 — BUILDING  ({len(t3)} stocks)"])
+    all_rows.append(_MTPA_T123_HEADERS)
+    for r in t3:
+        all_rows.append(_row_to_t123(r))
+    all_rows.append([])
+
+    # Table 4 — MACD MOMENTUM
+    all_rows.append([f"TABLE 4 — MACD MOMENTUM  ({len(t4)} stocks)"])
+    all_rows.append(_MTPA_T4_HEADERS)
+    for r in t4:
+        all_rows.append(_row_to_t4(r))
+
+    # Write to sheet
+    try:
+        ws.update(all_rows, "A1")
+        total_rows = len(t1) + len(t2) + len(t3) + len(t4)
+        url = f"https://docs.google.com/spreadsheets/d/{sh.id}"
+        return True, f"Exported {total_rows} stocks → '{date_str}' tab  |  {url}"
+    except Exception as e:
+        return False, f"Write failed: {e}"
+
+
 def using_google_sheets() -> bool:
     """Return True if Google Sheets is configured and reachable."""
     return _gs_sheet("Tracking") is not None
