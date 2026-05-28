@@ -383,8 +383,6 @@ def move_to_tracking(ticker: str, strategy: str = "Stock", source: str = "") -> 
 # MTPA TRACKER EXPORT
 # ══════════════════════════════════════════════════════════════════
 
-_MTPA_TRACKER_NAME = "MTPA Tracker"
-
 # Column headers for Tables 1-3 and Table 4
 _MTPA_T123_HEADERS = [
     "Ticker", "Price", "Weekly Pattern", "Weekly Extended",
@@ -403,27 +401,6 @@ _MTPA_T4_HEADERS = [
     "Vol Ratio", "Candle Patterns", "RS Status", "RS Pct",
     "Sector ETF", "Sector Trending", "Flags", "Also In Table",
 ]
-
-
-@st.cache_resource(show_spinner=False)
-def _gs_mtpa_spreadsheet():
-    """
-    Return the 'MTPA Tracker' Google Spreadsheet.
-    Searches by name in the service account's Drive;
-    creates it on first run if not found.
-    Cached for the process lifetime so we only open once.
-    """
-    client = _gs_client()
-    if not client:
-        return None
-    try:
-        return client.open(_MTPA_TRACKER_NAME)
-    except Exception:
-        pass
-    try:
-        return client.create(_MTPA_TRACKER_NAME)
-    except Exception:
-        return None
 
 
 def _row_to_t123(r: dict) -> list:
@@ -489,27 +466,30 @@ def _row_to_t4(r: dict) -> list:
 
 def export_mtpa_scan(results: dict, date_str: str = "") -> tuple:
     """
-    Export all four MTPA tables to the 'MTPA Tracker' Google Spreadsheet.
-    Tab name = date_str (default: today's date, YYYY-MM-DD).
+    Export all four MTPA tables into the existing connected Google Spreadsheet.
+    Tab name = 'MTPA-YYYY-MM-DD' (prefixed to avoid colliding with other tabs).
     If the tab already exists it is cleared and overwritten.
     Returns (success: bool, message: str).
     """
     if not date_str:
         date_str = datetime.now().strftime("%Y-%m-%d")
 
-    sh = _gs_mtpa_spreadsheet()
+    tab_name = f"MTPA-{date_str}"
+
+    # Re-use the already-connected spreadsheet (same credentials, same sheet_id)
+    sh = _gs_spreadsheet()
     if sh is None:
         return False, "Google Sheets not connected — check credentials in Secrets."
 
-    # Get or create the date tab
+    # Get or create the tab
     try:
         try:
-            ws = sh.worksheet(date_str)
+            ws = sh.worksheet(tab_name)
             ws.clear()
         except Exception:
-            ws = sh.add_worksheet(title=date_str, rows=2000, cols=25)
+            ws = sh.add_worksheet(title=tab_name, rows=2000, cols=25)
     except Exception as e:
-        return False, f"Could not open/create tab '{date_str}': {e}"
+        return False, f"Could not open/create tab '{tab_name}': {e}"
 
     t1 = results.get("table1", [])
     t2 = results.get("table2", [])
@@ -518,10 +498,10 @@ def export_mtpa_scan(results: dict, date_str: str = "") -> tuple:
     scan_ts = results.get("scan_time", "")
     total   = results.get("total_scanned", 0)
 
-    # ── Build rows to write ────────────────────────────────────────
+    # ── Build rows ─────────────────────────────────────────────────
     all_rows: list = []
 
-    # Meta info row
+    # Meta info
     all_rows.append([
         f"MTPA Scan  {date_str}",
         f"Scanned: {total}",
@@ -531,7 +511,7 @@ def export_mtpa_scan(results: dict, date_str: str = "") -> tuple:
         f"T4: {len(t4)}",
         f"Time: {scan_ts:.1f}s" if isinstance(scan_ts, (int, float)) else "",
     ])
-    all_rows.append([])   # spacer
+    all_rows.append([])
 
     # Table 1 — PRIME
     all_rows.append([f"TABLE 1 — PRIME  ({len(t1)} stocks)"])
@@ -560,12 +540,12 @@ def export_mtpa_scan(results: dict, date_str: str = "") -> tuple:
     for r in t4:
         all_rows.append(_row_to_t4(r))
 
-    # Write to sheet
+    # Write
     try:
         ws.update(all_rows, "A1")
         total_rows = len(t1) + len(t2) + len(t3) + len(t4)
         url = f"https://docs.google.com/spreadsheets/d/{sh.id}"
-        return True, f"Exported {total_rows} stocks → '{date_str}' tab  |  {url}"
+        return True, f"Exported {total_rows} stocks → tab '{tab_name}'  |  {url}"
     except Exception as e:
         return False, f"Write failed: {e}"
 
