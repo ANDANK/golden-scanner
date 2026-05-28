@@ -34,7 +34,7 @@ SP500_SAMPLE = [
     # Tech & semi
     "SOXX","SMH","ARKK",
     # International & emerging
-    "EEM","EFA","FXI","EWZ","KWEB",
+    "EEM","FXI","EWZ","KWEB",
     # Real assets & thematic
     "GDX","GDXJ","VNQ","IBB",
     # ── Large-cap S&P 500 (56–215) ───────────────────────────
@@ -65,11 +65,11 @@ SP500_SAMPLE = [
     "MCHP","SWKS","KEYS","TER","MPWR","ZBRA","IT","CDW","VRSN","APP",
     "CTSH","AKAM","EFX","BR","UBER","APTV","BWA","GPC","LKQ","PAYC",
     "WAT","ALGN","RMD","DXCM","MTD","IEX","TFX","HOLX","BIO","VTRS",
-    "DAL","UAL","LUV","AAL","ODFL","JBHT","IR","GNRC","TT","EXPD",
+    "UAL","LUV","ODFL","JBHT","IR","GNRC","TT","EXPD",
     "ZION","CFG","FITB","KEY","HBAN","RF","WRB","CINF","FAF","FHN",
     # ── Remaining ETFs (331–350) ──────────────────────────────
-    "EEM","EFA","VEA","VWO","AGG","BND","LQD","MUB","VCIT","VCSH",
-    "ARKW","ARKG","IYR","VNQ","JETS","XRT","KRE","IAT","XLB","XLRE",
+    "EEM","VWO","AGG","BND","LQD","MUB","VCIT","VCSH",
+    "ARKW","IYR","VNQ","XRT","KRE","IAT","XLB","XLRE",
 ]
 
 # NAV-4: Liquid ETFs with active options chains — merged into CSP/CC/LEAPS universe
