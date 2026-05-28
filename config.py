@@ -117,6 +117,9 @@ MTPA_200 = [
     "A","ILMN","MTD","ELV","MCK",
     # ── More Industrials / Automation / Defense (5) ──────────────
     "PH","ROK","IR","GNRC","LHX",
+    # ── 3× Leveraged & Single-Stock ETFs (12) ────────────────────
+    "TQQQ","SOXL","TECL","NAIL","CURE","BULZ","WEBL","DPST",
+    "UPRO","SPXL","3TSL","NVDL",
 ]
 
 # NAV-4: Liquid ETFs with active options chains — merged into CSP/CC/LEAPS universe
