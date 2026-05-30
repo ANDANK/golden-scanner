@@ -17,7 +17,7 @@ import numpy as np
 from datetime import datetime
 from typing import Optional
 
-from config import SP500_SAMPLE, MTPA_200
+from config import SP500_SAMPLE, MTPA_200, INDIA_150
 from utils import calc_ema, calc_rsi, calc_macd, calc_sma
 from data_loader import get_price_history, get_info, prefetch_tickers
 
@@ -43,16 +43,37 @@ SECTOR_ETF_MAP = {
     "Communication Services": "XLC",
 }
 
+# India sector ETF mapping — NSE-listed ETFs, NIFTYBEES.NS as broad fallback
+INDIA_SECTOR_ETF_MAP = {
+    "Technology":             "ITBEES.NS",
+    "Information Technology": "ITBEES.NS",
+    "Financials":             "BANKBEES.NS",
+    "Financial Services":     "BANKBEES.NS",
+    "Healthcare":             "NIFTYBEES.NS",
+    "Health Care":            "NIFTYBEES.NS",
+    "Energy":                 "NIFTYBEES.NS",
+    "Consumer Discretionary": "NIFTYBEES.NS",
+    "Consumer Staples":       "NIFTYBEES.NS",
+    "Industrials":            "NIFTYBEES.NS",
+    "Materials":              "NIFTYBEES.NS",
+    "Utilities":              "NIFTYBEES.NS",
+    "Real Estate":            "NIFTYBEES.NS",
+    "Communication":          "NIFTYBEES.NS",
+    "Communication Services": "NIFTYBEES.NS",
+}
+
 # Pre-compute sector ETF MACD trend cache so we only fetch each sector ETF once.
 _SECTOR_TREND_CACHE: dict[str, bool] = {}
 
 
-def _get_sector_etf(sector: str) -> str:
-    """Return the sector ETF ticker for a given sector string, or 'SPY' fallback."""
-    for key, etf in SECTOR_ETF_MAP.items():
+def _get_sector_etf(sector: str, sector_map: dict = None, fallback: str = "SPY") -> str:
+    """Return the sector ETF ticker for a given sector string, or fallback."""
+    if sector_map is None:
+        sector_map = SECTOR_ETF_MAP
+    for key, etf in sector_map.items():
         if key.lower() in sector.lower():
             return etf
-    return "SPY"
+    return fallback
 
 
 def _sector_is_trending(etf_ticker: str) -> bool:
@@ -372,21 +393,41 @@ def run_mtpa_scan(
     tickers: Optional[list[str]] = None,
     progress_label=None,
     progress_bar=None,
+    market: str = "US",
 ) -> dict:
     """
-    Run the MTPA scan over `tickers` (defaults to SP500_SAMPLE).
+    Run the MTPA scan over `tickers`.
+
+    market: "US" (default — uses MTPA_200, SPY benchmark, SPDR sector ETFs)
+            "IN" (India    — uses INDIA_150, NIFTYBEES.NS benchmark, NSE sector ETFs)
 
     Returns a dict with keys:
-      table1       — list of result dicts (PRIME setups)
-      table2       — list of result dicts (STRONG setups)
-      table3       — list of result dicts (BUILDING setups)
-      scan_time    — float seconds elapsed
-      total_scanned — int
-      total_matched — int
-      failed        — list of tickers that raised exceptions
+      table1          — list of result dicts (PRIME setups)
+      table2          — list of result dicts (STRONG setups)
+      table3          — list of result dicts (BUILDING setups)
+      table4          — list of result dicts (MACD Momentum — independent)
+      scan_time       — float seconds elapsed
+      total_scanned   — int
+      total_matched   — int
+      failed          — list of tickers that raised exceptions
+      market          — "US" or "IN"
+      benchmark_label — "RS vs SPY" or "RS vs Nifty"
     """
-    if tickers is None:
-        tickers = MTPA_200
+    # ── Market-specific config ────────────────────────────────────
+    if market == "IN":
+        if tickers is None:
+            tickers = INDIA_150
+        active_sector_map = INDIA_SECTOR_ETF_MAP
+        benchmark         = "NIFTYBEES.NS"
+        benchmark_label   = "RS vs Nifty"
+        sector_fallback   = "NIFTYBEES.NS"
+    else:
+        if tickers is None:
+            tickers = MTPA_200
+        active_sector_map = SECTOR_ETF_MAP
+        benchmark         = "SPY"
+        benchmark_label   = "RS vs SPY"
+        sector_fallback   = "SPY"
 
     t_start = datetime.now()
 
@@ -394,17 +435,17 @@ def run_mtpa_scan(
     global _SECTOR_TREND_CACHE
     _SECTOR_TREND_CACHE = {}
 
-    # ── Batch-prefetch daily data: tickers + SPY + all sector ETFs ──
+    # ── Batch-prefetch daily data: tickers + benchmark + all sector ETFs ──
     # Sector ETFs are included here so _sector_is_trending() (which calls
     # get_price_history(etf, period="6mo", interval="1d")) hits the process
     # cache instead of making individual network requests per sector.
-    sector_etfs = list(set(SECTOR_ETF_MAP.values()))
-    all_daily   = list(dict.fromkeys(tickers + ["SPY"] + sector_etfs))
+    sector_etfs = list(set(active_sector_map.values()))
+    all_daily   = list(dict.fromkeys(tickers + [benchmark] + sector_etfs))
     prefetch_tickers(all_daily, period="6mo", interval="1d")
 
-    # ── Fetch SPY close for relative-strength calculation ─────────
-    spy_df = get_price_history("SPY", period="6mo")
-    spy_close = spy_df["Close"].squeeze() if not spy_df.empty else pd.Series(dtype=float)
+    # ── Fetch benchmark close for relative-strength calculation ───
+    bench_df  = get_price_history(benchmark, period="6mo")
+    spy_close = bench_df["Close"].squeeze() if not bench_df.empty else pd.Series(dtype=float)
 
     # ── Prefetch weekly bars for all tickers in one batch ─────────
     prefetch_tickers(tickers, period="2y", interval="1wk")
@@ -509,7 +550,7 @@ def run_mtpa_scan(
 
             # ── Sector ETF ────────────────────────────────────────
             sector_raw = str(info.get("sector") or info.get("industry") or "")
-            sector_etf     = _get_sector_etf(sector_raw)
+            sector_etf      = _get_sector_etf(sector_raw, active_sector_map, sector_fallback)
             sector_trending = _sector_is_trending(sector_etf)
 
             # ── Unusual flags ─────────────────────────────────────
@@ -604,12 +645,14 @@ def run_mtpa_scan(
         progress_bar.empty()
 
     return {
-        "table1":        table1,
-        "table2":        table2,
-        "table3":        table3,
-        "table4":        table4,
-        "scan_time":     elapsed,
-        "total_scanned": len(tickers),
-        "total_matched": total_matched,
-        "failed":        failed,
+        "table1":          table1,
+        "table2":          table2,
+        "table3":          table3,
+        "table4":          table4,
+        "scan_time":       elapsed,
+        "total_scanned":   len(tickers),
+        "total_matched":   total_matched,
+        "failed":          failed,
+        "market":          market,
+        "benchmark_label": benchmark_label,
     }

@@ -464,17 +464,19 @@ def _row_to_t4(r: dict) -> list:
     ]
 
 
-def export_mtpa_scan(results: dict, date_str: str = "") -> tuple:
+def export_mtpa_scan(results: dict, date_str: str = "", market: str = "") -> tuple:
     """
     Export all four MTPA tables into the existing connected Google Spreadsheet.
-    Tab name = 'MTPA-YYYY-MM-DD' (prefixed to avoid colliding with other tabs).
+    Tab name = 'MTPA-US-YYYY-MM-DD' or 'MTPA-IN-YYYY-MM-DD'.
     If the tab already exists it is cleared and overwritten.
     Returns (success: bool, message: str).
     """
     if not date_str:
         date_str = datetime.now().strftime("%Y-%m-%d")
+    if not market:
+        market = results.get("market", "US")
 
-    tab_name = f"MTPA-{date_str}"
+    tab_name = f"MTPA-{market}-{date_str}"
 
     # Re-use the already-connected spreadsheet (same credentials, same sheet_id)
     sh = _gs_spreadsheet()

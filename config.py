@@ -122,6 +122,52 @@ MTPA_200 = [
     "UPRO","SPXL","3TSL","NVDL",
 ]
 
+# ── India Top 150 — NSE tickers (.NS suffix) ──────────────────
+# Criteria: Nifty 50 backbone + Nifty Next 50 quality names +
+#           top growth/momentum stocks across all sectors.
+# Excluded: illiquid small-caps, weak-data tickers, pure PSU plays.
+# 150 chosen over 200 — NSE data on yfinance gets patchy past ~150 names.
+INDIA_150 = [
+    # ── Nifty 50 backbone (50) ────────────────────────────────────
+    "RELIANCE.NS","TCS.NS","HDFCBANK.NS","INFY.NS","ICICIBANK.NS",
+    "HINDUNILVR.NS","ITC.NS","SBIN.NS","BHARTIARTL.NS","KOTAKBANK.NS",
+    "LT.NS","AXISBANK.NS","BAJFINANCE.NS","HCLTECH.NS","ASIANPAINT.NS",
+    "MARUTI.NS","SUNPHARMA.NS","TITAN.NS","WIPRO.NS","ULTRACEMCO.NS",
+    "POWERGRID.NS","NTPC.NS","NESTLEIND.NS","BAJAJFINSV.NS","ONGC.NS",
+    "COALINDIA.NS","TATASTEEL.NS","TECHM.NS","CIPLA.NS","JSWSTEEL.NS",
+    "INDUSINDBK.NS","BRITANNIA.NS","BPCL.NS","M&M.NS","TATACONSUM.NS",
+    "EICHERMOT.NS","APOLLOHOSP.NS","HDFCLIFE.NS","SBILIFE.NS","ADANIPORTS.NS",
+    "DIVISLAB.NS","TATAMOTORS.NS","GRASIM.NS","HINDALCO.NS","HEROMOTOCO.NS",
+    "SHREECEM.NS","DRREDDY.NS","BAJAJ-AUTO.NS","ZOMATO.NS","TRENT.NS",
+    # ── IT / Tech / Digital / Fintech (15) ───────────────────────
+    "LTIM.NS","MPHASIS.NS","PERSISTENT.NS","COFORGE.NS","TATAELXSI.NS",
+    "KPIT.NS","LTTS.NS","PAYTM.NS","NYKAA.NS","CDSL.NS",
+    "BSE.NS","MCX.NS","ANGELONE.NS","MOTILALOFS.NS","DELHIVERY.NS",
+    # ── Healthcare / Pharma / Diagnostics (15) ───────────────────
+    "ZYDUSLIFE.NS","LUPIN.NS","AUROPHARMA.NS","TORNTPHARM.NS","ALKEM.NS",
+    "MANKIND.NS","SYNGENE.NS","LALPATHLAB.NS","METROPOLIS.NS","FORTIS.NS",
+    "MAXHEALTH.NS","IPCA.NS","GLENMARK.NS","PIIND.NS","ABBOTINDIA.NS",
+    # ── Consumer / FMCG / Retail / Hospitality (15) ──────────────
+    "MARICO.NS","DABUR.NS","GODREJCP.NS","COLPAL.NS","BERGEPAINT.NS",
+    "PIDILITIND.NS","VARUNBEV.NS","JUBLFOOD.NS","BATAINDIA.NS","PAGEIND.NS",
+    "IRCTC.NS","DMART.NS","NAUKRI.NS","INDIGO.NS","KAJARIACER.NS",
+    # ── Industrials / Capital Goods / Power / Infra (20) ─────────
+    "SIEMENS.NS","ABB.NS","HAL.NS","BEL.NS","BHEL.NS",
+    "HAVELLS.NS","POLYCAB.NS","VOLTAS.NS","CROMPTON.NS","DIXON.NS",
+    "CONCOR.NS","TATAPOWER.NS","ADANIENT.NS","ADANIGREEN.NS","NHPC.NS",
+    "IRFC.NS","RECLTD.NS","PFC.NS","TORNTPOWER.NS","BHARATFORG.NS",
+    # ── Additional Financials / NBFCs / Insurance (15) ───────────
+    "BANKBARODA.NS","CANBK.NS","CHOLAFIN.NS","MUTHOOTFIN.NS","MANAPPURAM.NS",
+    "ICICIGI.NS","HDFCAMC.NS","M&MFIN.NS","LICHSGFIN.NS","IDFCFIRSTB.NS",
+    "ABCAPITAL.NS","BANDHANBNK.NS","FEDERALBNK.NS","SBICARD.NS","PNBHOUSING.NS",
+    # ── Materials / Specialty Chemicals / Cement (10) ────────────
+    "AMBUJACEM.NS","ACC.NS","ASTRAL.NS","SUPREMEIND.NS","AMBER.NS",
+    "RAMCOCEM.NS","ATUL.NS","DEEPAKNTR.NS","BALKRISIND.NS","TATACHEMICALS.NS",
+    # ── Real Estate / Auto Components (10) ───────────────────────
+    "DLF.NS","LODHA.NS","OBEROIRLTY.NS","PHOENIXLTD.NS","PRESTIGE.NS",
+    "GODREJPROP.NS","TVSMOTOR.NS","ESCORTS.NS","MOTHERSON.NS","TIINDIA.NS",
+]
+
 # NAV-4: Liquid ETFs with active options chains — merged into CSP/CC/LEAPS universe
 OPTIONS_ETF_UNIVERSE = [
     "SPY","QQQ","IWM","DIA","GLD","SLV","TLT","HYG","LQD",

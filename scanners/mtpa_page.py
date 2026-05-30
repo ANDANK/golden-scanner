@@ -194,23 +194,24 @@ def _render_flags(flags: list) -> str:
 
 # ── Build the HTML table ───────────────────────────────────────────────────────
 
-_COLUMNS = [
-    ("Ticker",    "130px"),
-    ("Price",     "70px"),
-    ("Wk Pattern","110px"),
-    ("Wk Ext.",   "80px"),
-    ("RSI",       "130px"),
-    ("MACD>Sig",  "80px"),
-    ("MACD Zone", "110px"),
-    ("Vol Ratio", "90px"),
-    (">SMA20",    "70px"),
-    (">SMA9",     "70px"),
-    ("Earnings",  "80px"),
-    ("Candles",   "180px"),
-    ("RS vs SPY", "160px"),
-    ("Sector ETF","120px"),
-    ("Flags",     "220px"),
-]
+def _get_columns(benchmark_label: str = "RS vs SPY") -> list:
+    return [
+        ("Ticker",         "130px"),
+        ("Price",          "70px"),
+        ("Wk Pattern",     "110px"),
+        ("Wk Ext.",        "80px"),
+        ("RSI",            "130px"),
+        ("MACD>Sig",       "80px"),
+        ("MACD Zone",      "110px"),
+        ("Vol Ratio",      "90px"),
+        (">SMA20",         "70px"),
+        (">SMA9",          "70px"),
+        ("Earnings",       "80px"),
+        ("Candles",        "180px"),
+        (benchmark_label,  "160px"),
+        ("Sector ETF",     "120px"),
+        ("Flags",          "220px"),
+    ]
 
 
 def _row_html(r: dict, bg: str) -> str:
@@ -257,7 +258,7 @@ def _row_html(r: dict, bg: str) -> str:
     return "<tr>" + "".join(cells) + "</tr>"
 
 
-def _build_table_html(rows: list[dict]) -> str:
+def _build_table_html(rows: list[dict], benchmark_label: str = "RS vs SPY") -> str:
     """Build a complete scrollable HTML table for the given rows."""
     # Header
     th_style = (
@@ -268,7 +269,7 @@ def _build_table_html(rows: list[dict]) -> str:
     )
     header_cells = "".join(
         f'<th {th_style} width="{w}">{col}</th>'
-        for col, w in _COLUMNS
+        for col, w in _get_columns(benchmark_label)
     )
     header = f"<thead><tr>{header_cells}</tr></thead>"
 
@@ -290,18 +291,19 @@ def _build_table_html(rows: list[dict]) -> str:
 
 # ── Table 4 columns, row builder, and table builder ──────────────────────────
 
-_COLUMNS_T4 = [
-    ("Ticker",      "130px"),
-    ("Price",       "70px"),
-    ("Wk MACD",     "170px"),
-    ("Dly MACD",    "150px"),
-    ("RSI  W / D",  "155px"),
-    ("Vol Ratio",   "90px"),
-    ("Candles",     "185px"),
-    ("RS vs SPY",   "160px"),
-    ("Sector ETF",  "120px"),
-    ("Flags",       "210px"),
-]
+def _get_columns_t4(benchmark_label: str = "RS vs SPY") -> list:
+    return [
+        ("Ticker",        "130px"),
+        ("Price",         "70px"),
+        ("Wk MACD",       "170px"),
+        ("Dly MACD",      "150px"),
+        ("RSI  W / D",    "155px"),
+        ("Vol Ratio",     "90px"),
+        ("Candles",       "185px"),
+        (benchmark_label, "160px"),
+        ("Sector ETF",    "120px"),
+        ("Flags",         "210px"),
+    ]
 
 
 def _row_html_t4(r: dict, bg: str) -> str:
@@ -355,7 +357,7 @@ def _row_html_t4(r: dict, bg: str) -> str:
     return "<tr>" + "".join(cells) + "</tr>"
 
 
-def _build_table_html_t4(rows: list[dict]) -> str:
+def _build_table_html_t4(rows: list[dict], benchmark_label: str = "RS vs SPY") -> str:
     """Build a complete scrollable HTML table for Table 4 rows."""
     th_style = (
         f'style="background:{BG_PANEL};color:{GOLD};font-size:10px;'
@@ -365,7 +367,7 @@ def _build_table_html_t4(rows: list[dict]) -> str:
     )
     header_cells = "".join(
         f'<th {th_style} width="{w}">{col}</th>'
-        for col, w in _COLUMNS_T4
+        for col, w in _get_columns_t4(benchmark_label)
     )
     header = f"<thead><tr>{header_cells}</tr></thead>"
 
@@ -428,6 +430,7 @@ def _render_table_section(
     rows: list[dict],
     qualifier_note: str,
     expanded: bool,
+    benchmark_label: str = "RS vs SPY",
 ) -> None:
     with st.expander(title, expanded=expanded):
         if not rows:
@@ -437,7 +440,7 @@ def _render_table_section(
                 unsafe_allow_html=True,
             )
         else:
-            st.markdown(_build_table_html(rows), unsafe_allow_html=True)
+            st.markdown(_build_table_html(rows, benchmark_label), unsafe_allow_html=True)
 
         # Qualifier note
         st.markdown(
@@ -534,6 +537,17 @@ def render() -> None:
         "Admin Only · Multi-Timeframe Filter · No Scoring",
     )
 
+    # ── Market selector ────────────────────────────────────────────
+    market_choice = st.radio(
+        "Market",
+        options=["🇺🇸 US Stocks  (MTPA 200)", "🇮🇳 Indian Stocks  (Nifty 150)"],
+        index=0,
+        horizontal=True,
+        key="_mtpa_market",
+        label_visibility="collapsed",
+    )
+    market_code = "IN" if "Indian" in market_choice else "US"
+
     # ── Scan controls ──────────────────────────────────────────────
     _has_results = _SESSION_KEY in st.session_state
     c1, c2, c3, _gap = st.columns([2, 1, 1.5, 3])
@@ -565,13 +579,17 @@ def render() -> None:
 
     # ── Run scan ───────────────────────────────────────────────────
     if run_btn:
-        with st.spinner("Running MTPA scan across MTPA 200 universe…"):
+        _universe_label = (
+            "MTPA 200 universe" if market_code == "US" else "India 150 universe"
+        )
+        with st.spinner(f"Running MTPA scan across {_universe_label}…"):
             _label_ph = st.empty()
             _prog_ph  = st.progress(0)
             results = run_mtpa_scan(
-                tickers=MTPA_200,
+                tickers=None,            # scanner chooses list based on market
                 progress_label=_label_ph,
                 progress_bar=_prog_ph,
+                market=market_code,
             )
         st.session_state[_SESSION_KEY]     = results
         st.session_state["_mtpa_scan_ts"]  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -607,6 +625,20 @@ def render() -> None:
         else:
             st.toast(f"❌ {_msg}", icon="⚠️")
 
+    # ── Market mismatch notice ──────────────────────────────────────
+    _result_market = results.get("market", "US")
+    if _result_market != market_code:
+        _was = "🇺🇸 US" if _result_market == "US" else "🇮🇳 Indian"
+        _want = "🇮🇳 Indian" if market_code == "IN" else "🇺🇸 US"
+        st.info(
+            f"Results below are for **{_was} stocks**. "
+            f"Click ▶ Run to scan **{_want} stocks**.",
+            icon="ℹ️",
+        )
+
+    # ── Pull benchmark label from actual scan results ───────────────
+    _benchmark_label = results.get("benchmark_label", "RS vs SPY")
+
     # Summary bar
     _summary_bar(results)
 
@@ -632,6 +664,7 @@ def render() -> None:
             "Price &gt; SMA20 · |MACD| ≤ 1% of price (fresh setup) · Earnings &gt; 7 days"
         ),
         expanded=True,
+        benchmark_label=_benchmark_label,
     )
 
     # ── Table 2 — STRONG ───────────────────────────────────────────
@@ -644,6 +677,7 @@ def render() -> None:
             "MACD &gt; Signal · Price &gt; SMA20 · (Any MACD zone allowed)"
         ),
         expanded=False,
+        benchmark_label=_benchmark_label,
     )
 
     # ── Table 3 — BUILDING ─────────────────────────────────────────
@@ -656,6 +690,7 @@ def render() -> None:
             "(Weekly structure and volume not required)"
         ),
         expanded=False,
+        benchmark_label=_benchmark_label,
     )
 
     # ── Table 4 — MACD MOMENTUM ────────────────────────────────────
@@ -677,7 +712,7 @@ def render() -> None:
                 unsafe_allow_html=True,
             )
         else:
-            st.markdown(_build_table_html_t4(t4_rows), unsafe_allow_html=True)
+            st.markdown(_build_table_html_t4(t4_rows, _benchmark_label), unsafe_allow_html=True)
 
         st.markdown(
             f'<div style="background:{BG_CARD};border-left:3px solid #A78BFA55;'
