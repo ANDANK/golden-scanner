@@ -1047,7 +1047,7 @@ elif page in ("💵  Upcoming Dividends", "📅  Dividend + CC Capture"):
 elif page == "ℹ️  About & Guide":
     from scanners.about import render
     render()
-elif page in ("⚙️  Admin Panel", "🔧  Tech Details", "📊  MTPA Scanner"):
+elif page in ("⚙️  Admin Panel", "🔧  Tech Details", "📊  MTPA Scanner", "📈  Strategies"):
     # Admin pages are only reachable when logged in as admin (_is_admin=True).
     # If a non-admin somehow has an admin nav_page in session state, bounce home.
     if not st.session_state.get("_is_admin", False):
