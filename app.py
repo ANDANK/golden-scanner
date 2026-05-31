@@ -678,6 +678,7 @@ NAV_GROUPS = [
             {"key": "⚙️  Admin Panel",   "label": "Admin Panel",   "icon": "⚙️"},
             {"key": "🔧  Tech Details",  "label": "Tech Details",  "icon": "🔧"},
             {"key": "📊  MTPA Scanner",  "label": "MTPA Scanner",  "icon": "📊"},
+            {"key": "📈  Strategies",    "label": "Strategies",    "icon": "📈"},
         ],
     },
 ]
@@ -1060,4 +1061,7 @@ elif page in ("⚙️  Admin Panel", "🔧  Tech Details", "📊  MTPA Scanner")
         render()
     elif page == "📊  MTPA Scanner":
         from scanners.mtpa_page import render
+        render()
+    elif page == "📈  Strategies":
+        from scanners.qqq_strategy_page import render
         render()
