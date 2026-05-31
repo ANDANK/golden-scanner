@@ -458,6 +458,146 @@ def evaluate(ticker: str) -> dict:
     }
 
 
+# ── Pullback Entry Signal — 6-condition green heart check ─────────────────────
+
+_PULLBACK_ZONE_PCT = 3.0    # price within 3% above EMA20 or SMA50 = "at the MA"
+_MACD_SLOPE_W_DAYS = 2      # weekly MACD slope measured over 2 weekly bars
+
+def check_pullback_entry(ticker: str) -> dict:
+    """
+    Evaluate 6 conditions for the TQQQ pullback-entry setup:
+
+    Weekly (trend filter — must pass all 3 first):
+      W1  Price > 20-week EMA
+      W2  Weekly MACD slope rising (MACD line higher than 2 bars ago)
+      W3  Weekly RSI > 50
+
+    Daily (entry timing — all 3 must also pass):
+      D1  Price pulled back to 20-day EMA or 50-day SMA
+           (within PULLBACK_ZONE_PCT % above the MA — i.e. at/near the level)
+      D2  Daily MACD slope rising (MACD line higher than MACD_SLOPE_DAYS bars ago)
+      D3  Daily RSI > 50
+
+    Returns dict with:
+      signal   (bool)  — True if all 6 pass
+      w_pass   (bool)  — True if weekly block passes
+      d_pass   (bool)  — True if daily block passes
+      conditions (list of dicts)  — label, passed, detail for each condition
+    """
+    conditions = []
+
+    # ── Daily data (already fetched by evaluate(); re-fetch here for independence) ──
+    df_d = _fetch(ticker, period="1y")
+    if df_d.empty or len(df_d) < 60:
+        return {"signal": False, "w_pass": False, "d_pass": False,
+                "conditions": [], "error": "Insufficient daily data"}
+
+    close_d = df_d["close"]
+    px      = float(close_d.iloc[-1])
+
+    ema20_d  = _ema(close_d, 20)
+    sma50_d  = _sma(close_d, 50)
+    macd_d, _ = _macd(close_d)
+    rsi_d    = _rsi(close_d)
+
+    ema20_d_v = float(ema20_d.iloc[-1])
+    sma50_d_v = float(sma50_d.dropna().iloc[-1])
+    macd_d_now = float(macd_d.iloc[-1])
+    macd_d_prev= float(macd_d.iloc[-1 - MACD_SLOPE_DAYS])
+    rsi_d_v   = float(rsi_d.dropna().iloc[-1])
+
+    # D1 — Pullback to EMA20 or SMA50 (price within PULLBACK_ZONE_PCT % above)
+    near_ema20 = ema20_d_v > 0 and 0 <= (px - ema20_d_v) / ema20_d_v * 100 <= _PULLBACK_ZONE_PCT
+    near_sma50 = sma50_d_v > 0 and 0 <= (px - sma50_d_v) / sma50_d_v * 100 <= _PULLBACK_ZONE_PCT
+    d1 = near_ema20 or near_sma50
+    _d1_which  = ("EMA20" if near_ema20 else "") + (" & SMA50" if (near_ema20 and near_sma50) else ("SMA50" if near_sma50 else ""))
+    conditions.append({
+        "key": "D1", "label": "Daily: Pullback to EMA20 or SMA50",
+        "passed": d1,
+        "detail": (f"Price ${px:.2f} within {_PULLBACK_ZONE_PCT}% of {_d1_which}"
+                   if d1 else f"Price ${px:.2f} not near EMA20 ${ema20_d_v:.2f} or SMA50 ${sma50_d_v:.2f}"),
+    })
+
+    # D2 — Daily MACD slope rising
+    d2 = macd_d_now > macd_d_prev
+    conditions.append({
+        "key": "D2", "label": "Daily: MACD slope rising",
+        "passed": d2,
+        "detail": f"MACD {macd_d_prev:.4f} → {macd_d_now:.4f} {'↑' if d2 else '↓'}",
+    })
+
+    # D3 — Daily RSI > 50
+    d3 = rsi_d_v > 50
+    conditions.append({
+        "key": "D3", "label": "Daily: RSI > 50",
+        "passed": d3,
+        "detail": f"RSI {rsi_d_v:.1f}",
+    })
+
+    # ── Weekly data ──────────────────────────────────────────────────────────────
+    try:
+        raw_w = yf.download(ticker, period="3y", interval="1wk",
+                            progress=False, auto_adjust=True)
+        if raw_w.empty or len(raw_w) < 30:
+            raise ValueError("Not enough weekly bars")
+        if isinstance(raw_w.columns, pd.MultiIndex):
+            raw_w = raw_w.xs(ticker, axis=1, level=1) \
+                    if ticker in raw_w.columns.get_level_values(1) \
+                    else raw_w.droplevel(1, axis=1)
+        raw_w.columns = [c.lower() for c in raw_w.columns]
+        close_w = raw_w["close"].dropna()
+
+        ema20_w   = _ema(close_w, 20)
+        macd_w, _ = _macd(close_w)
+        rsi_w     = _rsi(close_w)
+
+        px_w        = float(close_w.iloc[-1])
+        ema20_w_v   = float(ema20_w.dropna().iloc[-1])
+        macd_w_now  = float(macd_w.dropna().iloc[-1])
+        macd_w_prev = float(macd_w.dropna().iloc[-1 - _MACD_SLOPE_W_DAYS])
+        rsi_w_v     = float(rsi_w.dropna().iloc[-1])
+        weekly_ok   = True
+    except Exception as exc:
+        weekly_ok   = False
+        ema20_w_v = macd_w_now = macd_w_prev = rsi_w_v = 0.0
+        px_w = px
+
+    # W1 — Price > 20-week EMA
+    w1 = weekly_ok and px_w > ema20_w_v
+    conditions.append({
+        "key": "W1", "label": "Weekly: Price > 20-week EMA",
+        "passed": w1,
+        "detail": (f"Price ${px_w:.2f} > EMA20w ${ema20_w_v:.2f}"
+                   if w1 else f"Price ${px_w:.2f} ≤ EMA20w ${ema20_w_v:.2f}"),
+    })
+
+    # W2 — Weekly MACD slope rising
+    w2 = weekly_ok and macd_w_now > macd_w_prev
+    conditions.append({
+        "key": "W2", "label": "Weekly: MACD slope rising",
+        "passed": w2,
+        "detail": (f"MACD {macd_w_prev:.4f} → {macd_w_now:.4f} ↑"
+                   if w2 else f"MACD {macd_w_prev:.4f} → {macd_w_now:.4f} ↓"),
+    })
+
+    # W3 — Weekly RSI > 50
+    w3 = weekly_ok and rsi_w_v > 50
+    conditions.append({
+        "key": "W3", "label": "Weekly: RSI > 50",
+        "passed": w3,
+        "detail": f"Weekly RSI {rsi_w_v:.1f}",
+    })
+
+    d_pass = d1 and d2 and d3
+    w_pass = w1 and w2 and w3
+    return {
+        "signal":     d_pass and w_pass,
+        "w_pass":     w_pass,
+        "d_pass":     d_pass,
+        "conditions": conditions,   # order: D1 D2 D3 W1 W2 W3
+    }
+
+
 # ── Indicator display labels ──────────────────────────────────────────────────
 
 INDICATOR_LABELS = {

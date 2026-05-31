@@ -13,6 +13,7 @@ from config import (
 )
 from scanners.qqq_strategy import (
     evaluate,
+    check_pullback_entry,
     INDICATOR_LABELS,
     THRESHOLD_IN_SEASON,
     THRESHOLD_OFF_SEASON,
@@ -43,6 +44,67 @@ _SIG_THEME = {
     "orange": ("#F59E0B",     "#451a03", "#fef3c7"),
     "red":    (ACCENT_RED,    "#450a0a", "#fee2e2"),
 }
+
+
+def _render_pullback_card(pb: dict):
+    """Render the 6-condition pullback entry checklist below the main panel."""
+    if not pb or "error" in pb:
+        return
+
+    G  = ACCENT_GREEN
+    all_pass = pb["signal"]
+    w_pass   = pb["w_pass"]
+    d_pass   = pb["d_pass"]
+
+    # Section label
+    heart = "💚" if all_pass else ("🟡" if (w_pass or d_pass) else "⬜")
+    st.markdown(
+        f'<div style="color:{ACCENT_BLUE};font-size:11px;font-weight:700;'
+        f'letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 6px">'
+        f'{heart} Pullback Entry Signal</div>',
+        unsafe_allow_html=True,
+    )
+
+    conds = pb.get("conditions", [])
+    # Show weekly (W1/W2/W3) then daily (D1/D2/D3) in readable order
+    ordered = (
+        [c for c in conds if c["key"].startswith("W")]
+        + [c for c in conds if c["key"].startswith("D")]
+    )
+
+    rows_html = ""
+    for c in ordered:
+        icon = "✅" if c["passed"] else "❌"
+        col  = G if c["passed"] else ACCENT_RED
+        rows_html += (
+            f'<div style="display:flex;align-items:flex-start;gap:8px;'
+            f'padding:5px 10px;border-radius:6px;margin-bottom:3px;'
+            f'background:{BG_PANEL};border:1px solid {BORDER_COLOR}">'
+            f'<span style="font-size:13px;min-width:18px">{icon}</span>'
+            f'<span style="flex:1;font-size:11px;color:{GOLD};font-weight:600">'
+            f'{c["label"]}</span>'
+            f'<span style="font-size:10px;color:{col};font-family:monospace;'
+            f'white-space:nowrap">{c["detail"]}</span>'
+            f'</div>'
+        )
+
+    verdict_bg  = f"{G}18" if all_pass else (f"#FBBF2418" if (w_pass or d_pass) else f"{ACCENT_RED}12")
+    verdict_bdr = G if all_pass else ("#FBBF24" if (w_pass or d_pass) else ACCENT_RED)
+    verdict_txt = (
+        "All 6 conditions met — pullback entry confirmed 💚" if all_pass else
+        ("Weekly confirmed ✅ — waiting for daily pullback" if w_pass else
+         ("Daily setup ready — waiting for weekly confirmation" if d_pass else
+          "Setup not ready — conditions not met"))
+    )
+    verdict_col = G if all_pass else ("#FBBF24" if (w_pass or d_pass) else ACCENT_RED)
+
+    st.markdown(
+        f'{rows_html}'
+        f'<div style="margin-top:6px;background:{verdict_bg};border:1px solid {verdict_bdr}44;'
+        f'border-left:3px solid {verdict_bdr};border-radius:6px;padding:8px 12px;'
+        f'font-size:11px;font-weight:600;color:{verdict_col}">{verdict_txt}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ── Panel renderer (one ticker) ───────────────────────────────────────────────
@@ -241,40 +303,50 @@ def render():
 
     if run_btn:
         with st.spinner("Fetching QQQ and TQQQ data from Yahoo Finance…"):
-            r_qqq  = evaluate("QQQ")
-            r_tqqq = evaluate("TQQQ")
+            r_qqq   = evaluate("QQQ")
+            r_tqqq  = evaluate("TQQQ")
+            pb_qqq  = check_pullback_entry("QQQ")
+            pb_tqqq = check_pullback_entry("TQQQ")
         st.session_state["gs_strat_qqq"]      = r_qqq
         st.session_state["gs_strat_tqqq"]     = r_tqqq
+        st.session_state["gs_strat_pb_qqq"]   = pb_qqq
+        st.session_state["gs_strat_pb_tqqq"]  = pb_tqqq
         st.session_state["gs_strat_last_run"] = _dt.datetime.now().strftime("%b %d %Y  %I:%M %p")
         st.rerun()
 
     # ── Results ───────────────────────────────────────────────────────────────
     if "gs_strat_qqq" in st.session_state:
-        r_qqq  = st.session_state["gs_strat_qqq"]
-        r_tqqq = st.session_state["gs_strat_tqqq"]
+        r_qqq   = st.session_state["gs_strat_qqq"]
+        r_tqqq  = st.session_state["gs_strat_tqqq"]
+        pb_qqq  = st.session_state.get("gs_strat_pb_qqq",  {})
+        pb_tqqq = st.session_state.get("gs_strat_pb_tqqq", {})
 
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
         col_qqq, col_tqqq = st.columns(2)
 
         with col_qqq:
+            _heart_qqq = " 💚" if pb_qqq.get("signal") else ""
             st.markdown(
                 f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;'
-                f'font-weight:700;color:{GOLD};margin-bottom:4px">QQQ</div>'
+                f'font-weight:700;color:{GOLD};margin-bottom:4px">QQQ{_heart_qqq}</div>'
                 f'<div style="color:{TEXT_MUTED};font-size:11px;margin-bottom:12px">'
                 f'Nasdaq 100 ETF · 1× leverage</div>',
                 unsafe_allow_html=True,
             )
             _render_panel(r_qqq)
+            _render_pullback_card(pb_qqq)
 
         with col_tqqq:
+            _heart_tqqq = " 💚" if pb_tqqq.get("signal") else ""
             st.markdown(
                 f'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;'
-                f'font-weight:700;color:{GOLD};margin-bottom:4px">TQQQ</div>'
+                f'font-weight:700;color:{GOLD};margin-bottom:4px">TQQQ{_heart_tqqq}</div>'
                 f'<div style="color:{TEXT_MUTED};font-size:11px;margin-bottom:12px">'
                 f'Nasdaq 100 ETF · 3× leverage · same rules</div>',
                 unsafe_allow_html=True,
             )
             _render_panel(r_tqqq)
+            _render_pullback_card(pb_tqqq)
 
     else:
         st.markdown(
