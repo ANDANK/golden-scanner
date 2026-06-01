@@ -256,7 +256,7 @@ def _render_csp_strategy():
     )
 
     # ── Filter legend ──────────────────────────────────────────────────────────
-    with st.expander("📋 Filter Logic", expanded=False):
+    with st.expander("📋 Filter Logic & Strategy Guide", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
             st.markdown("**Hard filters (stock excluded if fails)**")
@@ -264,27 +264,71 @@ def _render_csp_strategy():
                 "- Avg Volume > 300K\n"
                 "- Beta < 1.5\n"
                 "- Price > EMA9\n"
-                "- EMA9 slope flat or rising\n"
+                "- EMA9 slope flat or rising (≥ −0.05%)\n"
                 "- RSI 35–68\n"
-                "- ADX < 30\n"
                 "- No single-day move > 7% in last 20 sessions\n"
                 "- Price within 7% of 20-day high\n\n"
-                "**Scoring bonus (+1)**\n"
-                "- Pullback in uptrend: price 0–7% below 3-day peak, "
-                "≥2 of last 3 days down, on below-average volume\n"
-                "- Uptrend = Price > SMA50 OR recent HH+HL"
+                "**Score /10** — sum of 10 positive conditions:\n"
+                "1. SPY > EMA20 (market gate)\n"
+                "2. Vol Rank ≥ 40 (elevated premium)\n"
+                "3. Vol Pctile ≥ 45 (historically rich vol)\n"
+                "4. Price > EMA9\n"
+                "5. EMA9 slope ≥ 0\n"
+                "6. RSI 50–68\n"
+                "7. MACD line > signal\n"
+                "8. MACD histogram > 0\n"
+                "9. Pullback in uptrend (dip on low vol)\n"
+                "10. IV contracting **AND** ADX ≥ 25 (combined)"
             )
         with c2:
-            st.markdown("**Display-only (not filtered)**")
+            st.markdown("**Column guide**")
             st.markdown(
-                "- HV30% — 30-day annualised realized vol\n"
-                "- Vol Rank — where HV30 sits in 52-week range\n"
-                "- Vol Pctile — % of past year vol was lower\n"
-                "- IV Trend — HV30 vs HV60 (expanding/contracting)\n"
-                "- MACD Cross & Hist > 0\n\n"
-                "**Score /10** = sum of all 10 positive conditions met\n\n"
-                "**SPY Gate** — shown as warning only; scan still runs"
+                "- **HV30%** — 30-day realized vol annualized (IV proxy). Higher = richer premium available\n"
+                "- **Vol Rank** — where HV30 sits in its 52-week range (0–100). ≥ 40 = elevated\n"
+                "- **Vol Pctile** — % of past year where vol was *lower* than today. ≥ 45 = historically rich\n"
+                "- **IV Trend** — HV30 vs HV60. **Contracting ↓** = IV falling (ideal for put sellers — IV crush works for you). Expanding ↑ = IV rising\n"
+                "- **EMA9 Slope** — 3-day % rate of change. Near 0 = consolidating (good CSP entry). Steeply positive = chasing\n"
+                "- **RSI** — 45–60 sweet spot for CSP. > 62 flagged as elevated\n"
+                "- **ADX** — trend strength. ≥ 25 = strong confirmed uptrend. < 20 = flagged as weak\n"
+                "- **MACD Cross / Hist** — informational momentum confirmation. Both ✅ = clean trend\n"
+                "- **Pullback** — ↘ X% · low vol = quiet dip in uptrend (+1 bonus). 'Uptrend · flat/rising' = trend intact but no dip yet — wait\n"
+                "- **Flags** — passed all hard filters but worth noting (high beta, weak ADX, expanding vol, etc.)\n"
+                "- **Score** — ≥ 8 = high conviction, 6–7 = moderate, < 6 = speculative"
             )
+
+        st.markdown("---")
+        st.markdown("**When to sell a CSP vs buy a LEAP on stocks from this list**")
+        tip1, tip2 = st.columns(2)
+        with tip1:
+            st.markdown(
+                "**💰 Sell a CSP when:**\n"
+                "- IV Trend = **Contracting ↓** — IV falling after you sell means IV crush profits the seller\n"
+                "- Vol Rank ≥ 40 and Vol Pctile ≥ 45 — premium is rich relative to history\n"
+                "- ADX ≥ 25 — confirmed uptrend; direction is your friend\n"
+                "- Pullback column shows **↘ % · low vol** — quiet dip = better strike, lower breakeven\n"
+                "- RSI 45–62 — healthy momentum, not overbought\n"
+                "- Score ≥ 7/10, SPY gate ✅\n\n"
+                "*Sell an OTM put (delta 0.15–0.30), collect premium, let IV crush + time decay work. "
+                "Close at 50% profit or before earnings.*"
+            )
+        with tip2:
+            st.markdown(
+                "**🚀 Buy a LEAP instead when:**\n"
+                "- IV Trend = **Expanding ↑** OR Vol Rank < 30 — IV still low, buy before it rises\n"
+                "- Stock just broke out of consolidation or confirmed a new uptrend\n"
+                "- ADX ≥ 25 **and** MACD Cross ✅ **and** Hist > 0 ✅ — strong directional momentum\n"
+                "- RSI 55–68 — strong move underway, not yet extended\n"
+                "- Multi-month bullish thesis (earnings catalyst, sector rotation, breakout)\n"
+                "- Score ≥ 8/10 with all trend signals aligned\n\n"
+                "*Buy a deep ITM call (delta 0.70–0.85, 6–12 month expiry) for leveraged upside "
+                "with defined risk and no assignment obligation.*"
+            )
+        st.markdown(
+            "> **Key rule:** High IV + Falling → **Sell** (CSP). &nbsp; Low IV + Rising → **Buy** (LEAP). "
+            "A stock with Vol Rank ≥ 40 and IV Trend = Contracting ↓ is a CSP candidate. "
+            "The same stock a month earlier — Vol Rank < 30, IV Trend = Expanding ↑ — was a LEAP candidate.",
+            unsafe_allow_html=False,
+        )
 
     # ── Controls ───────────────────────────────────────────────────────────────
     ctrl_col, uni_col, run_col = st.columns([2, 2, 1])
@@ -361,9 +405,9 @@ def _render_csp_strategy():
         f'<span style="color:{TEXT_MUTED};font-size:11px">Found '
         f'<b style="color:{GOLD}">{len(df_out)}</b> stocks passing all filters</span>'
         f'<span style="color:{ACCENT_GREEN};font-size:11px;font-weight:600">'
-        f'⭐ {n_hi} high conviction (≥8/11)</span>'
+        f'⭐ {n_hi} high conviction (≥8/10)</span>'
         f'<span style="color:{GOLD};font-size:11px;font-weight:600">'
-        f'🟡 {n_md} moderate (6–7/11)</span>'
+        f'🟡 {n_md} moderate (6–7/10)</span>'
         f'<span style="color:{TEXT_MUTED};font-size:10px;margin-left:auto">'
         f'Scanned {ts}</span>'
         f'</div>',
@@ -375,7 +419,7 @@ def _render_csp_strategy():
         f'<div style="color:{TEXT_MUTED};font-size:10px;line-height:1.8;'
         f'margin-bottom:8px">'
         f'<b style="color:{ACCENT_BLUE}">IV Environment</b>: HV30% = 30-day realized vol (proxy for IV) · '
-        f'Vol Rank ≥ 30 = premium elevated · Vol Pctile ≥ 40 = historically rich &nbsp;|&nbsp; '
+        f'Vol Rank ≥ 40 = premium elevated · Vol Pctile ≥ 45 = historically rich &nbsp;|&nbsp; '
         f'<b style="color:{ACCENT_GREEN}">Trend</b>: EMA9 · Slope (3-day %) · RSI · ADX &nbsp;|&nbsp; '
         f'<b style="color:#A78BFA">MACD</b>: informational only — not a filter &nbsp;|&nbsp; '
         f'<b style="color:#34D399">Pullback</b>: ↘ % · low vol = +1 bonus (uptrend dip on quiet volume)</div>',
