@@ -294,7 +294,7 @@ def scan_csp_strategy(
             ema9_v = price; ema9_slope = 0.0
 
         try:
-            rsi_v = float(calc_rsi(close).dropna().iloc[-1])
+            rsi_v = float(calc_rsi(close))
         except Exception:
             rsi_v = 50.0
 
