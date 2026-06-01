@@ -385,29 +385,44 @@ def scan_csp_strategy(
         # ── Pullback-in-uptrend (scoring bonus) ───────────────────────────────
         pb = _pullback_in_uptrend(close, high, low, vol, sma50_v)
 
-        # ── Score /10 ─────────────────────────────────────────────────────────
-        # Combined point: IV contracting + ADX > 25 = ideal CSP entry
-        # (high-but-falling IV means richer premium + IV crush; strong ADX confirms uptrend)
+        # ── Strategy suggestion (before scoring so each uses relevant criteria) ──
+        suggest = _suggest_strategy(iv_m, adx_v, macd_cross, hist_pos,
+                                    rsi_v, price, sma200_v)
+
+        # ── CSP Score /10 — sell-put criteria ─────────────────────────────────
         iv_contracting_strong_trend = (
             (not iv_m["expanding"])
             and (not np.isnan(adx_v) and adx_v >= ADX_TREND_MIN)
         )
-        score = sum([
-            gate_ok,
-            (iv_m["vr"] >= IVR_GOOD) if not np.isnan(iv_m["vr"]) else False,
-            (iv_m["vp"] >= IVP_GOOD) if not np.isnan(iv_m["vp"]) else False,
-            price > ema9_v,
-            ema9_slope >= 0,
-            50 <= rsi_v <= RSI_HI,
-            macd_cross,
-            hist_pos,
-            pb["bonus"],           # +1 bonus: uptrend + slight dip + low vol
-            iv_contracting_strong_trend,   # +1: IV falling + ADX confirms trend
+        csp_score = sum([
+            gate_ok,                                                          # 1. market gate
+            (iv_m["vr"] >= IVR_GOOD) if not np.isnan(iv_m["vr"]) else False, # 2. vol rank elevated
+            (iv_m["vp"] >= IVP_GOOD) if not np.isnan(iv_m["vp"]) else False, # 3. vol pctile elevated
+            price > ema9_v,                                                   # 4. above EMA9
+            ema9_slope >= 0,                                                  # 5. slope positive
+            50 <= rsi_v <= RSI_HI,                                           # 6. RSI momentum zone
+            macd_cross,                                                       # 7. MACD bullish
+            hist_pos,                                                         # 8. histogram positive
+            pb["bonus"],                                                      # 9. pullback on low vol
+            iv_contracting_strong_trend,                                      # 10. IV falling + ADX ≥ 25
         ])
 
-        # ── Strategy suggestion (computed before flags so flags can adapt) ──────
-        suggest = _suggest_strategy(iv_m, adx_v, macd_cross, hist_pos,
-                                    rsi_v, price, sma200_v)
+        # ── LEAP Score /10 — buy-call criteria ────────────────────────────────
+        above_sma200 = price > sma200_v if sma200_v > 0 else False
+        leap_score = sum([
+            gate_ok,                                                          # 1. market gate
+            iv_m["expanding"],                                                # 2. IV rising — buy before expansion
+            (not np.isnan(iv_m["vr"]) and iv_m["vr"] < 30),                 # 3. IV still cheap
+            above_sma200,                                                     # 4. long-term trend intact
+            price > ema9_v,                                                   # 5. above EMA9
+            ema9_slope >= 0,                                                  # 6. slope positive
+            55 <= rsi_v <= RSI_HI,                                           # 7. strong momentum (higher bar)
+            not np.isnan(adx_v) and adx_v >= ADX_TREND_MIN,                 # 8. trend confirmed
+            macd_cross,                                                       # 9. MACD bullish
+            hist_pos,                                                         # 10. histogram positive
+        ])
+
+        score = leap_score if suggest == "LEAP" else csp_score
 
         # ── Flags — context-aware per strategy ────────────────────────────────
         flags = []

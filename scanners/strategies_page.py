@@ -285,17 +285,28 @@ def _render_options_strategy():
                 "- RSI 35–68\n"
                 "- No single-day move > 7% in last 20 sessions\n"
                 "- Price within 7% of 20-day high\n\n"
-                "**Score /10** — sum of 10 positive conditions:\n"
-                "1. SPY > EMA20 (market gate)\n"
-                "2. Vol Rank ≥ 40 (elevated premium)\n"
-                "3. Vol Pctile ≥ 45 (historically rich vol)\n"
+                "**💰 CSP Score /10** — scored when Suggest = CSP or Watch:\n"
+                "1. SPY > EMA20\n"
+                "2. Vol Rank ≥ 40\n"
+                "3. Vol Pctile ≥ 45\n"
                 "4. Price > EMA9\n"
                 "5. EMA9 slope ≥ 0\n"
                 "6. RSI 50–68\n"
-                "7. MACD line > signal\n"
-                "8. MACD histogram > 0\n"
-                "9. Pullback in uptrend (dip on low vol)\n"
-                "10. IV contracting **AND** ADX ≥ 25 (combined)"
+                "7. MACD cross\n"
+                "8. MACD hist > 0\n"
+                "9. Pullback on low vol (+1 bonus)\n"
+                "10. IV contracting AND ADX ≥ 25\n\n"
+                "**🚀 LEAP Score /10** — scored when Suggest = LEAP:\n"
+                "1. SPY > EMA20\n"
+                "2. IV Trend = Expanding ↑\n"
+                "3. Vol Rank < 30 (IV cheap)\n"
+                "4. Price > SMA200\n"
+                "5. Price > EMA9\n"
+                "6. EMA9 slope ≥ 0\n"
+                "7. RSI 55–68\n"
+                "8. ADX ≥ 25\n"
+                "9. MACD cross\n"
+                "10. MACD hist > 0"
             )
         with c2:
             st.markdown("**Column guide**")
@@ -412,14 +423,20 @@ def _render_options_strategy():
         return
 
     # Summary strip
-    n_hi = int((df_out["Score"] >= 8).sum())
-    n_md = int(((df_out["Score"] >= 6) & (df_out["Score"] < 8)).sum())
+    n_csp   = int((df_out.get("Suggest", "") == "CSP").sum())  if "Suggest" in df_out.columns else 0
+    n_leap  = int((df_out.get("Suggest", "") == "LEAP").sum()) if "Suggest" in df_out.columns else 0
+    n_watch = int((df_out.get("Suggest", "") == "Watch").sum())if "Suggest" in df_out.columns else 0
+    n_hi    = int((df_out["Score"] >= 8).sum())
+    n_md    = int(((df_out["Score"] >= 6) & (df_out["Score"] < 8)).sum())
     st.markdown(
         f'<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;'
         f'background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:8px;'
         f'padding:10px 16px;margin:10px 0">'
         f'<span style="color:{TEXT_MUTED};font-size:11px">Found '
-        f'<b style="color:{GOLD}">{len(df_out)}</b> stocks passing all filters</span>'
+        f'<b style="color:{GOLD}">{len(df_out)}</b> stocks</span>'
+        f'<span style="color:{GOLD};font-size:11px;font-weight:600">💰 {n_csp} CSP</span>'
+        f'<span style="color:{ACCENT_BLUE};font-size:11px;font-weight:600">🚀 {n_leap} LEAP</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:11px">👀 {n_watch} Watch</span>'
         f'<span style="color:{ACCENT_GREEN};font-size:11px;font-weight:600">'
         f'⭐ {n_hi} high conviction (≥8/10)</span>'
         f'<span style="color:{GOLD};font-size:11px;font-weight:600">'
@@ -438,7 +455,8 @@ def _render_options_strategy():
         f'<b style="color:{ACCENT_BLUE}">Expanding ↑</b> = IV rising (LEAP) &nbsp;|&nbsp; '
         f'<b style="color:{ACCENT_GREEN}">Trend</b>: ADX ≥ 25 = confirmed · SMA200 ✅ = long-term trend &nbsp;|&nbsp; '
         f'<b style="color:#34D399">Pullback</b>: ↘ % · low vol = ideal CSP entry (+1 bonus) &nbsp;|&nbsp; '
-        f'<b style="color:{GOLD}">Suggest</b>: 💰 CSP · 🚀 LEAP · 👀 Watch</div>',
+        f'<b style="color:{GOLD}">Suggest</b>: 💰 CSP · 🚀 LEAP · 👀 Watch &nbsp;|&nbsp; '
+        f'<b style="color:{GOLD}">Score /10</b>: CSP criteria for CSP/Watch rows · LEAP criteria for LEAP rows</div>',
         unsafe_allow_html=True,
     )
 
