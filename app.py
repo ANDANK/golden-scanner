@@ -1063,5 +1063,5 @@ elif page in ("⚙️  Admin Panel", "🔧  Tech Details", "📊  MTPA Scanner",
         from scanners.mtpa_page import render
         render()
     elif page == "📈  Strategies":
-        from scanners.qqq_strategy_page import render
+        from scanners.strategies_page import render
         render()

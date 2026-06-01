@@ -228,26 +228,26 @@ def _render_panel(r: dict):
 
 # ── Main render ───────────────────────────────────────────────────────────────
 
-def render():
+def render(_skip_header: bool = False):
     from config import GOLD, TEXT_MUTED, BG_CARD, BORDER_COLOR
 
-    # Page header
-    st.markdown(
-        f'<div style="margin-bottom:6px">'
-        f'<span style="font-family:\'Cormorant Garamond\',serif;font-size:28px;'
-        f'font-weight:700;color:{GOLD};letter-spacing:2px">♟️ QQQ / TQQQ Strategy</span>'
-        f'</div>'
-        f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:16px">'
-        f'Weight-of-Evidence · 7 Indicators · Threshold +{THRESHOLD_IN_SEASON} (in-season) '
-        f'/ +{THRESHOLD_OFF_SEASON} (off-season) · Data via yfinance (EOD)</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        f'<div style="height:1px;background:linear-gradient(90deg,{GOLD}44,transparent);'
-        f'margin-bottom:20px"></div>',
-        unsafe_allow_html=True,
-    )
+    if not _skip_header:
+        # Page header (shown when rendered standalone, not inside strategies_page tabs)
+        st.markdown(
+            f'<div style="margin-bottom:6px">'
+            f'<span style="font-family:\'Cormorant Garamond\',serif;font-size:28px;'
+            f'font-weight:700;color:{GOLD};letter-spacing:2px">♟️ QQQ / TQQQ Strategy</span>'
+            f'</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:16px">'
+            f'Weight-of-Evidence · 7 Indicators · Threshold +{THRESHOLD_IN_SEASON} (in-season) '
+            f'/ +{THRESHOLD_OFF_SEASON} (off-season) · Data via yfinance (EOD)</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div style="height:1px;background:linear-gradient(90deg,{GOLD}44,transparent);'
+            f'margin-bottom:20px"></div>',
+            unsafe_allow_html=True,
+        )
 
     # ── Strategy Rules Reference ──────────────────────────────────────────────
     with st.expander("📋 Strategy Rules Reference", expanded=False):
