@@ -281,7 +281,7 @@ def _render_csp_strategy():
     # ── Controls ───────────────────────────────────────────────────────────────
     ctrl_col, uni_col, run_col = st.columns([2, 2, 1])
     with ctrl_col:
-        max_tickers = st.slider("Universe size", 30, 150, 75, 5,
+        max_tickers = st.slider("Universe size", 30, 250, 100, 10,
                                 key="csp_strat_n",
                                 help="Number of top SP500 + ETF tickers to screen")
     with uni_col:
