@@ -405,22 +405,35 @@ def scan_csp_strategy(
             iv_contracting_strong_trend,   # +1: IV falling + ADX confirms trend
         ])
 
-        # ── Flags ─────────────────────────────────────────────────────────────
+        # ── Strategy suggestion (computed before flags so flags can adapt) ──────
+        suggest = _suggest_strategy(iv_m, adx_v, macd_cross, hist_pos,
+                                    rsi_v, price, sma200_v)
+
+        # ── Flags — context-aware per strategy ────────────────────────────────
         flags = []
-        if (iv_m["vr"] < IVR_GOOD) and not np.isnan(iv_m["vr"]):
-            flags.append(f"Low VR ({iv_m['vr']:.0f})")
-        if rsi_v > 62:
-            flags.append(f"RSI elevated ({rsi_v:.0f})")
+        if suggest == "CSP":
+            if not np.isnan(iv_m["vr"]) and iv_m["vr"] < IVR_GOOD:
+                flags.append(f"Low VR ({iv_m['vr']:.0f}) — premium thin")
+            if iv_m["expanding"]:
+                flags.append("Vol expanding ⚠️ — no IV crush on entry")
+            if rsi_v > 62:
+                flags.append(f"RSI elevated ({rsi_v:.0f}) — consider waiting for dip")
+            if pb["in_uptrend"] and pb["pulling_back"] and not pb["low_vol_dip"]:
+                flags.append("Pullback on high vol ⚠️ — possible distribution")
+        elif suggest == "LEAP":
+            if not np.isnan(iv_m["vr"]) and iv_m["vr"] >= IVR_GOOD and not iv_m["expanding"]:
+                flags.append(f"IV high+falling ({iv_m['vr']:.0f}) — IV crush risk for long call")
+            if rsi_v < 45:
+                flags.append(f"RSI weak ({rsi_v:.0f}) — momentum not confirmed")
+            if sma200_v > 0 and price <= sma200_v:
+                flags.append("Below SMA200 — long-term trend not intact")
+        # Common flags regardless of strategy
         if not np.isnan(beta_v) and beta_v > 1.2:
             flags.append(f"Beta {beta_v:.1f}")
-        if iv_m["expanding"]:
-            flags.append("Vol expanding ⚠️")   # expanding IV bad for put sellers (no IV crush)
         if not np.isnan(adx_v) and adx_v < ADX_TREND_MIN:
             flags.append(f"ADX weak ({adx_v:.0f}) — trend not confirmed")
         if not macd_cross:
             flags.append("MACD ↓ signal")
-        if pb["in_uptrend"] and pb["pulling_back"] and not pb["low_vol_dip"]:
-            flags.append("Pullback on high vol ⚠️")
 
         rows.append({
             "Ticker":     ticker,
@@ -445,8 +458,7 @@ def scan_csp_strategy(
             "Pullback":   pb["label"],
             # Strategy suggestion
             "SMA200":     round(sma200_v, 2) if sma200_v > 0 else None,
-            "Suggest":    _suggest_strategy(iv_m, adx_v, macd_cross, hist_pos,
-                                            rsi_v, price, sma200_v),
+            "Suggest":    suggest,
             # Score & notes
             "Score":      score,
             "Flags":      " · ".join(flags) if flags else "—",
