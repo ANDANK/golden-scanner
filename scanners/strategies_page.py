@@ -136,6 +136,7 @@ def _render_csp_table(df: pd.DataFrame):
             "HV30%", "Vol Rank", "Vol Pctile", "IV Trend",
             "EMA9", "Slope", "RSI", "ADX",
             "Cross", "Hist",
+            "Pullback",
             "Score", "Flags",
         ]
     )
@@ -206,11 +207,16 @@ def _render_csp_table(df: pd.DataFrame):
             f'{row["MACD Cross"]}</td>'
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
             f'font-size:14px;text-align:center">{row["Hist > 0"]}</td>'
+            # Pullback
+            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
+            f'border-left:1px solid #34D39933;white-space:nowrap">'
+            f'<span style="color:{"#34D399" if "↘" in str(row.get("Pullback","")) and "low vol" in str(row.get("Pullback","")) else (GOLD if "↘" in str(row.get("Pullback","")) else TEXT_MUTED)};'
+            f'font-size:11px">{row.get("Pullback", "—")}</span></td>'
             # Score
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
             f'border-left:1px solid {GL}33;text-align:center">'
             f'<span style="color:{sc_col};font-weight:800;font-size:13px">{sc}</span>'
-            f'<span style="color:{TEXT_MUTED};font-size:9px">/10</span></td>'
+            f'<span style="color:{TEXT_MUTED};font-size:9px">/11</span></td>'
             # Flags
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
             f'border-left:1px solid #F9731633;font-size:10px;color:{flag_col}">'
@@ -255,16 +261,18 @@ def _render_csp_strategy():
         with c1:
             st.markdown("**Hard filters (stock excluded if fails)**")
             st.markdown(
-                "- Price > $15\n"
                 "- Avg Volume > 300K\n"
                 "- Beta < 1.5\n"
-                "- No earnings within 14 days\n"
                 "- Price > EMA9\n"
                 "- EMA9 slope flat or rising\n"
                 "- RSI 35–68\n"
                 "- ADX < 30\n"
                 "- No single-day move > 7% in last 20 sessions\n"
-                "- Price within 7% of 20-day high"
+                "- Price within 7% of 20-day high\n\n"
+                "**Scoring bonus (+1)**\n"
+                "- Pullback in uptrend: price 0–7% below 3-day peak, "
+                "≥2 of last 3 days down, on below-average volume\n"
+                "- Uptrend = Price > SMA50 OR recent HH+HL"
             )
         with c2:
             st.markdown("**Display-only (not filtered)**")
@@ -344,8 +352,8 @@ def _render_csp_strategy():
         return
 
     # Summary strip
-    n_hi = int((df_out["Score"] >= 7).sum())
-    n_md = int(((df_out["Score"] >= 5) & (df_out["Score"] < 7)).sum())
+    n_hi = int((df_out["Score"] >= 8).sum())
+    n_md = int(((df_out["Score"] >= 6) & (df_out["Score"] < 8)).sum())
     st.markdown(
         f'<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;'
         f'background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:8px;'
@@ -353,9 +361,9 @@ def _render_csp_strategy():
         f'<span style="color:{TEXT_MUTED};font-size:11px">Found '
         f'<b style="color:{GOLD}">{len(df_out)}</b> stocks passing all filters</span>'
         f'<span style="color:{ACCENT_GREEN};font-size:11px;font-weight:600">'
-        f'⭐ {n_hi} high conviction (≥7/10)</span>'
+        f'⭐ {n_hi} high conviction (≥8/11)</span>'
         f'<span style="color:{GOLD};font-size:11px;font-weight:600">'
-        f'🟡 {n_md} moderate (5–6/10)</span>'
+        f'🟡 {n_md} moderate (6–7/11)</span>'
         f'<span style="color:{TEXT_MUTED};font-size:10px;margin-left:auto">'
         f'Scanned {ts}</span>'
         f'</div>',
@@ -369,7 +377,8 @@ def _render_csp_strategy():
         f'<b style="color:{ACCENT_BLUE}">IV Environment</b>: HV30% = 30-day realized vol (proxy for IV) · '
         f'Vol Rank ≥ 30 = premium elevated · Vol Pctile ≥ 40 = historically rich &nbsp;|&nbsp; '
         f'<b style="color:{ACCENT_GREEN}">Trend</b>: EMA9 · Slope (3-day %) · RSI · ADX &nbsp;|&nbsp; '
-        f'<b style="color:#A78BFA">MACD</b>: informational only — not a filter</div>',
+        f'<b style="color:#A78BFA">MACD</b>: informational only — not a filter &nbsp;|&nbsp; '
+        f'<b style="color:#34D399">Pullback</b>: ↘ % · low vol = +1 bonus (uptrend dip on quiet volume)</div>',
         unsafe_allow_html=True,
     )
 

@@ -108,6 +108,106 @@ def _beta(close: pd.Series, spy_close: pd.Series) -> float:
         return np.nan
 
 
+def _pullback_in_uptrend(
+    close: pd.Series,
+    high: pd.Series,
+    low: pd.Series,
+    vol: pd.Series,
+    sma50_v: float,
+) -> dict:
+    """
+    Detect a slight, low-volume pullback within an uptrend.
+
+    Uptrend (either qualifies):
+      A) Price > SMA50
+      B) HH+HL: last 5 bars' high AND low both above the prior 5 bars
+
+    Pullback conditions (all must hold for bonus=True):
+      1. Price is 0–7% below the 3-day peak (dipping, not crashed)
+      2. At least 2 of the last 3 days closed down
+      3. Average volume on those down days < 20-day average volume
+
+    Returns dict:
+      in_uptrend   bool   — A or B passes
+      pulling_back bool   — conditions 1+2 hold
+      pullback_pct float  — % below 3-day peak
+      low_vol_dip  bool   — condition 3 holds
+      bonus        bool   — all conditions met (uptrend + pullback + low vol)
+      label        str    — display string for the table column
+    """
+    result = {
+        "in_uptrend":   False,
+        "pulling_back": False,
+        "pullback_pct": 0.0,
+        "low_vol_dip":  False,
+        "bonus":        False,
+        "label":        "—",
+    }
+    try:
+        px = float(close.iloc[-1])
+
+        # ── Uptrend check ─────────────────────────────────────────────────────
+        above_sma50 = px > sma50_v
+
+        # HH+HL: compare last 5 bars vs prior 5 bars using high/low series
+        hh_hl = False
+        if high is not None and low is not None and len(high) >= 10:
+            recent_hi  = float(high.iloc[-5:].max())
+            prior_hi   = float(high.iloc[-10:-5].max())
+            recent_lo  = float(low.iloc[-5:].min())
+            prior_lo   = float(low.iloc[-10:-5].min())
+            hh_hl = (recent_hi > prior_hi) and (recent_lo > prior_lo)
+
+        in_uptrend = above_sma50 or hh_hl
+        result["in_uptrend"] = in_uptrend
+
+        if not in_uptrend:
+            result["label"] = "No uptrend"
+            return result
+
+        # ── Pullback magnitude ────────────────────────────────────────────────
+        # 3-day peak = max close of the 3 bars BEFORE today (yesterday, 2d, 3d ago)
+        if len(close) < 4:
+            return result
+        peak_3d      = float(close.iloc[-4:-1].max())
+        pullback_pct = (peak_3d - px) / peak_3d * 100 if peak_3d > 0 else 0.0
+        pulling_back = 0 < pullback_pct <= 7.0      # must be dipping, not at peak
+        result["pulling_back"] = pulling_back
+        result["pullback_pct"] = round(pullback_pct, 2)
+
+        if not pulling_back:
+            result["label"] = f"Uptrend · flat/rising"
+            return result
+
+        # ── At least 2 of last 3 days were down ──────────────────────────────
+        last3_chg  = close.pct_change().iloc[-3:]
+        down_mask  = last3_chg < 0
+        down_count = int(down_mask.sum())
+        two_down   = down_count >= 2
+
+        # ── Volume on down days < 20-day avg ─────────────────────────────────
+        low_vol_dip = False
+        if vol is not None and len(vol) >= 21:
+            avg_vol_20 = float(vol.iloc[-21:-1].mean())
+            down_vols  = vol.iloc[-3:][down_mask.values]
+            if len(down_vols) > 0 and avg_vol_20 > 0:
+                low_vol_dip = float(down_vols.mean()) < avg_vol_20
+
+        result["low_vol_dip"] = low_vol_dip
+
+        bonus = two_down and low_vol_dip
+        result["bonus"] = bonus
+        result["label"] = (
+            f"↘ {pullback_pct:.1f}% · low vol" if bonus else
+            f"↘ {pullback_pct:.1f}%" if pulling_back else "—"
+        )
+
+    except Exception:
+        pass
+
+    return result
+
+
 def _spy_gate(spy_close: pd.Series) -> tuple[bool, float, float]:
     """Return (gate_ok, spy_price, ema20_value)."""
     try:
@@ -170,11 +270,7 @@ def scan_csp_strategy(
         except Exception:
             high = low = vol = None
 
-        # ── 1. Price filter ───────────────────────────────────────────────────
-        if price < PRICE_MIN:
-            continue
-
-        # ── 2. Volume filter ──────────────────────────────────────────────────
+        # ── 1. Volume filter ──────────────────────────────────────────────────
         try:
             avg_vol = float(vol.iloc[-20:].mean()) if (vol is not None and len(vol) >= 20) \
                       else (float(vol.mean()) if vol is not None else 0.0)
@@ -201,6 +297,11 @@ def scan_csp_strategy(
             rsi_v = float(calc_rsi(close).dropna().iloc[-1])
         except Exception:
             rsi_v = 50.0
+
+        try:
+            sma50_v = float(calc_sma(close, 50).dropna().iloc[-1])
+        except Exception:
+            sma50_v = price * 0.95   # safe fallback — won't falsely pass
 
         try:
             sma20_v = float(calc_sma(close, 20).dropna().iloc[-1])
@@ -251,7 +352,10 @@ def scan_csp_strategy(
         except Exception:
             macd_cross = hist_pos = False
 
-        # ── Score /10 ─────────────────────────────────────────────────────────
+        # ── Pullback-in-uptrend (scoring bonus) ───────────────────────────────
+        pb = _pullback_in_uptrend(close, high, low, vol, sma50_v)
+
+        # ── Score /11 ─────────────────────────────────────────────────────────
         score = sum([
             gate_ok,
             (iv_m["vr"] >= IVR_GOOD) if not np.isnan(iv_m["vr"]) else False,
@@ -263,6 +367,7 @@ def scan_csp_strategy(
             (not np.isnan(adx_v) and adx_v < 20),
             macd_cross,
             hist_pos,
+            pb["bonus"],           # +1 bonus: uptrend + slight dip + low vol
         ])
 
         # ── Flags ─────────────────────────────────────────────────────────────
@@ -277,6 +382,8 @@ def scan_csp_strategy(
             flags.append("Vol contracting")
         if not macd_cross:
             flags.append("MACD ↓ signal")
+        if pb["in_uptrend"] and pb["pulling_back"] and not pb["low_vol_dip"]:
+            flags.append("Pullback on high vol ⚠️")
 
         rows.append({
             "Ticker":     ticker,
@@ -297,6 +404,8 @@ def scan_csp_strategy(
             # MACD (informational)
             "MACD Cross": "✅" if macd_cross else "❌",
             "Hist > 0":   "✅" if hist_pos else "❌",
+            # Pullback bonus
+            "Pullback":   pb["label"],
             # Score & notes
             "Score":      score,
             "Flags":      " · ".join(flags) if flags else "—",
