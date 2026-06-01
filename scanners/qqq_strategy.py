@@ -476,7 +476,7 @@ def check_pullback_entry(ticker: str) -> dict:
       D1  Price pulled back to 20-day EMA or 50-day SMA
            (within PULLBACK_ZONE_PCT % above the MA — i.e. at/near the level)
       D2  Daily MACD slope rising (MACD line higher than MACD_SLOPE_DAYS bars ago)
-      D3  Daily RSI > 50
+      D3  Daily RSI > 45
 
     Returns dict with:
       signal   (bool)  — True if all 6 pass
@@ -526,10 +526,10 @@ def check_pullback_entry(ticker: str) -> dict:
         "detail": f"MACD {macd_d_prev:.4f} → {macd_d_now:.4f} {'↑' if d2 else '↓'}",
     })
 
-    # D3 — Daily RSI > 50
-    d3 = rsi_d_v > 50
+    # D3 — Daily RSI > 45 (pullback-friendly: RSI 45–49 is a valid dip in an uptrend)
+    d3 = rsi_d_v > 45
     conditions.append({
-        "key": "D3", "label": "Daily: RSI > 50",
+        "key": "D3", "label": "Daily: RSI > 45",
         "passed": d3,
         "detail": f"RSI {rsi_d_v:.1f}",
     })
