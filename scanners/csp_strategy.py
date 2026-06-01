@@ -27,14 +27,14 @@ AVG_VOL_MIN     = 300_000
 BETA_MAX        = 1.5
 RSI_LO          = 35
 RSI_HI          = 68
-ADX_MAX         = 30
+ADX_TREND_MIN   = 25        # ADX > 25 confirms a strong uptrend (good for CSP entry)
 GAP_MAX_PCT     = 7.0       # max single-day move allowed in last 20 sessions
 NEAR_HIGH_PCT   = 7.0       # price must be within X% of 20-day high
 EMA9_SLOPE_MIN  = -0.05     # allow very slight negative slope (flat)
 
 # ── IV display thresholds (flag, not filter) ───────────────────────────────────
-IVR_GOOD  = 30
-IVP_GOOD  = 40
+IVR_GOOD  = 40              # elevated vol rank — enough premium to sell
+IVP_GOOD  = 45              # elevated vol percentile — above historical median
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -317,9 +317,7 @@ def scan_csp_strategy(
             continue
         if not (RSI_LO <= rsi_v <= RSI_HI):
             continue
-        # ADX: only filter if we have a valid reading
-        if not np.isnan(adx_v) and adx_v > ADX_MAX:
-            continue
+        # ADX is used as a scoring signal, not a hard filter
 
         # ── 5. Gap & consistency filters ─────────────────────────────────────
         try:
@@ -355,19 +353,24 @@ def scan_csp_strategy(
         # ── Pullback-in-uptrend (scoring bonus) ───────────────────────────────
         pb = _pullback_in_uptrend(close, high, low, vol, sma50_v)
 
-        # ── Score /11 ─────────────────────────────────────────────────────────
+        # ── Score /10 ─────────────────────────────────────────────────────────
+        # Combined point: IV contracting + ADX > 25 = ideal CSP entry
+        # (high-but-falling IV means richer premium + IV crush; strong ADX confirms uptrend)
+        iv_contracting_strong_trend = (
+            (not iv_m["expanding"])
+            and (not np.isnan(adx_v) and adx_v >= ADX_TREND_MIN)
+        )
         score = sum([
             gate_ok,
             (iv_m["vr"] >= IVR_GOOD) if not np.isnan(iv_m["vr"]) else False,
             (iv_m["vp"] >= IVP_GOOD) if not np.isnan(iv_m["vp"]) else False,
-            iv_m["expanding"],
             price > ema9_v,
             ema9_slope >= 0,
             50 <= rsi_v <= RSI_HI,
-            (not np.isnan(adx_v) and adx_v < 20),
             macd_cross,
             hist_pos,
             pb["bonus"],           # +1 bonus: uptrend + slight dip + low vol
+            iv_contracting_strong_trend,   # +1: IV falling + ADX confirms trend
         ])
 
         # ── Flags ─────────────────────────────────────────────────────────────
@@ -378,8 +381,10 @@ def scan_csp_strategy(
             flags.append(f"RSI elevated ({rsi_v:.0f})")
         if not np.isnan(beta_v) and beta_v > 1.2:
             flags.append(f"Beta {beta_v:.1f}")
-        if not iv_m["expanding"]:
-            flags.append("Vol contracting")
+        if iv_m["expanding"]:
+            flags.append("Vol expanding ⚠️")   # expanding IV bad for put sellers (no IV crush)
+        if not np.isnan(adx_v) and adx_v < ADX_TREND_MIN:
+            flags.append(f"ADX weak ({adx_v:.0f}) — trend not confirmed")
         if not macd_cross:
             flags.append("MACD ↓ signal")
         if pb["in_uptrend"] and pb["pulling_back"] and not pb["low_vol_dip"]:
