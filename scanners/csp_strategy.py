@@ -208,6 +208,33 @@ def _pullback_in_uptrend(
     return result
 
 
+def _suggest_strategy(iv_m: dict, adx_v: float, macd_cross: bool,
+                      hist_pos: bool, rsi_v: float, price: float,
+                      sma200_v: float) -> str:
+    """
+    Return 'CSP', 'LEAP', or 'Watch' based on IV environment + momentum signals.
+    CSP  = high + falling IV (sell into richness, pocket IV crush)
+    LEAP = low/rising IV + strong momentum (buy cheap before IV expands)
+    """
+    vr           = iv_m.get("vr", np.nan)
+    iv_contracting = not iv_m.get("expanding", True)
+    iv_high        = not np.isnan(vr) and vr >= 40
+
+    # CSP: elevated AND falling IV is the primary signal
+    if iv_high and iv_contracting:
+        return "CSP"
+
+    # LEAP: low/rising IV + at least 3 momentum confirmations
+    iv_low_rising = iv_m.get("expanding", False) or (not np.isnan(vr) and vr < 40)
+    adx_strong    = not np.isnan(adx_v) and adx_v >= ADX_TREND_MIN
+    above_sma200  = price > sma200_v if sma200_v > 0 else True
+    momentum      = sum([adx_strong, macd_cross, hist_pos, rsi_v >= 55, above_sma200])
+    if iv_low_rising and momentum >= 3:
+        return "LEAP"
+
+    return "Watch"
+
+
 def _spy_gate(spy_close: pd.Series) -> tuple[bool, float, float]:
     """Return (gate_ok, spy_price, ema20_value)."""
     try:
@@ -302,6 +329,11 @@ def scan_csp_strategy(
             sma50_v = float(calc_sma(close, 50).dropna().iloc[-1])
         except Exception:
             sma50_v = price * 0.95   # safe fallback — won't falsely pass
+
+        try:
+            sma200_v = float(calc_sma(close, 200).dropna().iloc[-1])
+        except Exception:
+            sma200_v = 0.0
 
         try:
             sma20_v = float(calc_sma(close, 20).dropna().iloc[-1])
@@ -411,6 +443,10 @@ def scan_csp_strategy(
             "Hist > 0":   "✅" if hist_pos else "❌",
             # Pullback bonus
             "Pullback":   pb["label"],
+            # Strategy suggestion
+            "SMA200":     round(sma200_v, 2) if sma200_v > 0 else None,
+            "Suggest":    _suggest_strategy(iv_m, adx_v, macd_cross, hist_pos,
+                                            rsi_v, price, sma200_v),
             # Score & notes
             "Score":      score,
             "Flags":      " · ".join(flags) if flags else "—",

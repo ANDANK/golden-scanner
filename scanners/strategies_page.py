@@ -41,7 +41,7 @@ div[data-testid="stTabs"] > div:first-child > button[aria-selected="true"] {{
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CSP STRATEGY TABLE RENDERER
+# OPTIONS STRATEGY TABLE RENDERER
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _iv_badge(val, threshold, label):
@@ -71,8 +71,8 @@ def _rsi_badge(rsi):
 def _adx_badge(adx):
     if adx is None:
         return f'<span style="color:{TEXT_MUTED}">—</span>'
-    col = (ACCENT_GREEN if adx < 20 else
-           GOLD if adx < 30 else ACCENT_RED)
+    col = (ACCENT_GREEN if adx >= 25 else
+           GOLD if adx >= 20 else TEXT_MUTED)
     return (
         f'<span style="color:{col};font-family:\'DM Mono\',monospace;'
         f'font-weight:700">{adx:.1f}</span>'
@@ -88,40 +88,44 @@ def _slope_badge(slope):
     )
 
 
-def _render_csp_table(df: pd.DataFrame):
+def _suggest_badge(suggest: str) -> str:
+    if suggest == "CSP":
+        col, bg = GOLD, f"{GOLD}18"
+        icon = "💰"
+    elif suggest == "LEAP":
+        col, bg = ACCENT_BLUE, f"{ACCENT_BLUE}18"
+        icon = "🚀"
+    else:
+        col, bg = TEXT_MUTED, f"{TEXT_MUTED}12"
+        icon = "👀"
+    return (
+        f'<span style="background:{bg};color:{col};border:1px solid {col}44;'
+        f'font-size:10px;font-weight:700;padding:2px 9px;border-radius:12px;'
+        f'white-space:nowrap">{icon} {suggest}</span>'
+    )
+
+
+def _render_options_table(df: pd.DataFrame):
     G  = ACCENT_GREEN
     GL = GOLD
     BL = ACCENT_BLUE
 
     # ── Column header groups ───────────────────────────────────────────────────
+    _GH = "padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px"
     header_groups = (
         f'<div style="display:grid;grid-template-columns:'
-        f'120px 90px 70px 200px 200px 120px 60px 1fr;'
+        f'120px 90px 70px 200px 250px 120px 130px 90px 60px 1fr;'
         f'gap:0;margin-bottom:0">'
-        f'<div style="background:{BG_PANEL};padding:5px 12px;font-size:9px;'
-        f'color:{TEXT_MUTED};font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:0.8px;border-bottom:1px solid {GL}33">Ticker</div>'
-        f'<div style="background:{BG_PANEL};padding:5px 12px;font-size:9px;'
-        f'color:{TEXT_MUTED};font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:0.8px;border-bottom:1px solid {GL}33">Price</div>'
-        f'<div style="background:{BG_PANEL};padding:5px 12px;font-size:9px;'
-        f'color:{TEXT_MUTED};font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:0.8px;border-bottom:1px solid {GL}33">Chg%</div>'
-        f'<div style="background:#60A5FA18;padding:5px 12px;font-size:9px;'
-        f'color:{BL};font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:0.8px;border-bottom:2px solid {BL}55">IV Environment</div>'
-        f'<div style="background:#22C55E18;padding:5px 12px;font-size:9px;'
-        f'color:{G};font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:0.8px;border-bottom:2px solid {G}55">Trend &amp; Momentum</div>'
-        f'<div style="background:#A78BFA18;padding:5px 12px;font-size:9px;'
-        f'color:#A78BFA;font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:0.8px;border-bottom:2px solid #A78BFA55">MACD (info)</div>'
-        f'<div style="background:{GL}18;padding:5px 12px;font-size:9px;'
-        f'color:{GL};font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:0.8px;border-bottom:2px solid {GL}55">Score</div>'
-        f'<div style="background:#F47218;padding:5px 12px;font-size:9px;'
-        f'color:#F97316;font-weight:700;text-transform:uppercase;'
-        f'letter-spacing:0.8px;border-bottom:2px solid #F9731655">Flags</div>'
+        f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Ticker</div>'
+        f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Price</div>'
+        f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Chg%</div>'
+        f'<div style="background:{BL}12;{_GH};color:{BL};border-bottom:2px solid {BL}55">IV Environment</div>'
+        f'<div style="background:{G}12;{_GH};color:{G};border-bottom:2px solid {G}55">Trend &amp; Momentum</div>'
+        f'<div style="background:#A78BFA18;{_GH};color:#A78BFA;border-bottom:2px solid #A78BFA55">MACD (info)</div>'
+        f'<div style="background:#34D39918;{_GH};color:#34D399;border-bottom:2px solid #34D39955">Pullback</div>'
+        f'<div style="background:{GL}18;{_GH};color:{GL};border-bottom:2px solid {GL}55">Signal</div>'
+        f'<div style="background:{GL}18;{_GH};color:{GL};border-bottom:2px solid {GL}55">Score</div>'
+        f'<div style="background:#F9731612;{_GH};color:#F97316;border-bottom:2px solid #F9731655">Flags</div>'
         f'</div>'
     )
 
@@ -134,37 +138,54 @@ def _render_csp_table(df: pd.DataFrame):
         for c in [
             "Ticker", "Price", "Chg%",
             "HV30%", "Vol Rank", "Vol Pctile", "IV Trend",
-            "EMA9", "Slope", "RSI", "ADX",
+            "EMA9", "Slope", "RSI", "ADX", "SMA200",
             "Cross", "Hist",
             "Pullback",
+            "Suggest",
             "Score", "Flags",
         ]
     )
 
     rows_html = ""
     for i, (_, row) in enumerate(df.iterrows()):
-        bg  = BG_CARD if i % 2 == 0 else BG_PANEL
-        chg = row["Chg%"]
+        bg      = BG_CARD if i % 2 == 0 else BG_PANEL
+        chg     = row["Chg%"]
         chg_col = ACCENT_GREEN if chg >= 0 else ACCENT_RED
-        sc  = int(row["Score"])
-        sc_col = (ACCENT_GREEN if sc >= 7 else
-                  GOLD if sc >= 5 else
-                  TEXT_MUTED)
-        iv_trend_col = ACCENT_GREEN if "Expan" in str(row["IV Trend"]) else ACCENT_RED
+        sc      = int(row["Score"])
+        sc_col  = ACCENT_GREEN if sc >= 7 else GOLD if sc >= 5 else TEXT_MUTED
 
-        # Vol Rank badge
+        # IV Trend: gold = contracting (good for CSP sellers), blue = expanding (good for LEAP buyers)
+        iv_trend_str = str(row["IV Trend"])
+        iv_trend_col = GOLD if "Contrac" in iv_trend_str else ACCENT_BLUE
+
+        # Vol Rank / Vol Pctile — green if elevated enough for premium selling
         vr = row["Vol Rank"]
-        vr_col = (ACCENT_GREEN if (not pd.isna(vr) and vr >= 30) else TEXT_MUTED)
+        vr_col  = ACCENT_GREEN if (not pd.isna(vr) and vr >= 40) else TEXT_MUTED
         vr_html = (f'<span style="color:{vr_col};font-weight:700">{vr:.0f}</span>'
                    if not pd.isna(vr) else f'<span style="color:{TEXT_MUTED}">—</span>')
 
         vp = row["Vol Pctile"]
-        vp_col = ACCENT_GREEN if (not pd.isna(vp) and vp >= 40) else TEXT_MUTED
+        vp_col  = ACCENT_GREEN if (not pd.isna(vp) and vp >= 45) else TEXT_MUTED
         vp_html = (f'<span style="color:{vp_col};font-weight:700">{vp:.0f}</span>'
                    if not pd.isna(vp) else f'<span style="color:{TEXT_MUTED}">—</span>')
 
-        flags = str(row["Flags"])
+        # SMA200
+        sma200_raw = row.get("SMA200", None)
+        price_v    = row["Price"]
+        if sma200_raw is not None and not pd.isna(sma200_raw):
+            above_200  = price_v > float(sma200_raw)
+            s200_col   = ACCENT_GREEN if above_200 else ACCENT_RED
+            s200_html  = (f'<span style="color:{s200_col};font-size:10px">'
+                          f'{"✅" if above_200 else "❌"} ${float(sma200_raw):.0f}</span>')
+        else:
+            s200_html = f'<span style="color:{TEXT_MUTED}">—</span>'
+
+        flags    = str(row["Flags"])
         flag_col = "#F97316" if flags != "—" else TEXT_MUTED
+        suggest  = str(row.get("Suggest", "Watch"))
+        pb_str   = str(row.get("Pullback", "—"))
+        pb_col   = ("#34D399" if "↘" in pb_str and "low vol" in pb_str
+                    else GOLD if "↘" in pb_str else TEXT_MUTED)
 
         rows_html += (
             f'<tr style="background:{bg}">'
@@ -175,59 +196,55 @@ def _render_csp_table(df: pd.DataFrame):
             # Price
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">'
             f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace">'
-            f'${row["Price"]:.2f}</span></td>'
+            f'${price_v:.2f}</span></td>'
             # Chg%
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">'
             f'<span style="color:{chg_col};font-family:\'DM Mono\',monospace">'
             f'{chg:+.2f}%</span></td>'
             # IV Environment
-            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
-            f'border-left:1px solid #60A5FA33">'
-            f'<span style="color:{ACCENT_BLUE};font-weight:700">'
-            f'{row["HV30%"]:.1f}%</span></td>'
+            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;border-left:1px solid {BL}33">'
+            f'<span style="color:{ACCENT_BLUE};font-weight:700">{row["HV30%"]:.1f}%</span></td>'
+            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">{vr_html}</td>'
+            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">{vp_html}</td>'
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">'
-            f'{vr_html}</td>'
-            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">'
-            f'{vp_html}</td>'
-            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">'
-            f'<span style="color:{iv_trend_col};font-size:11px">{row["IV Trend"]}</span></td>'
+            f'<span style="color:{iv_trend_col};font-size:11px">{iv_trend_str}</span></td>'
             # Trend & Momentum
-            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
-            f'border-left:1px solid {ACCENT_GREEN}33">'
-            f'<span style="color:{ACCENT_GREEN};font-size:11px">{row["EMA9"]}</span></td>'
+            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;border-left:1px solid {G}33">'
+            f'<span style="color:{G};font-size:11px">{row["EMA9"]}</span></td>'
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">'
             f'{_slope_badge(row["EMA9 Slope"])}</td>'
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">'
             f'{_rsi_badge(row["RSI"])}</td>'
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">'
             f'{_adx_badge(row["ADX"])}</td>'
+            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22">{s200_html}</td>'
             # MACD
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
-            f'border-left:1px solid #A78BFA33;font-size:14px;text-align:center">'
-            f'{row["MACD Cross"]}</td>'
+            f'border-left:1px solid #A78BFA33;font-size:14px;text-align:center">{row["MACD Cross"]}</td>'
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
             f'font-size:14px;text-align:center">{row["Hist > 0"]}</td>'
             # Pullback
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
             f'border-left:1px solid #34D39933;white-space:nowrap">'
-            f'<span style="color:{"#34D399" if "↘" in str(row.get("Pullback","")) and "low vol" in str(row.get("Pullback","")) else (GOLD if "↘" in str(row.get("Pullback","")) else TEXT_MUTED)};'
-            f'font-size:11px">{row.get("Pullback", "—")}</span></td>'
-            # Score
+            f'<span style="color:{pb_col};font-size:11px">{pb_str}</span></td>'
+            # Suggest
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
             f'border-left:1px solid {GL}33;text-align:center">'
+            f'{_suggest_badge(suggest)}</td>'
+            # Score
+            f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;text-align:center">'
             f'<span style="color:{sc_col};font-weight:800;font-size:13px">{sc}</span>'
-            f'<span style="color:{TEXT_MUTED};font-size:9px">/11</span></td>'
+            f'<span style="color:{TEXT_MUTED};font-size:9px">/10</span></td>'
             # Flags
             f'<td style="padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22;'
-            f'border-left:1px solid #F9731633;font-size:10px;color:{flag_col}">'
-            f'{flags}</td>'
+            f'border-left:1px solid #F9731633;font-size:10px;color:{flag_col}">{flags}</td>'
             f'</tr>'
         )
 
     st.markdown(
         f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px">'
         f'<table style="width:100%;border-collapse:collapse;font-family:\'Inter\',sans-serif">'
-        f'<thead><tr>{hdr}</tr></thead>'
+        f'<thead>{header_groups}<tr>{hdr}</tr></thead>'
         f'<tbody>{rows_html}</tbody>'
         f'</table></div>',
         unsafe_allow_html=True,
@@ -235,10 +252,10 @@ def _render_csp_table(df: pd.DataFrame):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CSP STRATEGY TAB
+# OPTIONS STRATEGY TAB
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _render_csp_strategy():
+def _render_options_strategy():
     from scanners.csp_strategy import scan_csp_strategy, default_universe
     from config import SP500_SAMPLE, OPTIONS_ETF_UNIVERSE
 
@@ -246,10 +263,10 @@ def _render_csp_strategy():
         f'<div style="background:linear-gradient(135deg,{BG_CARD},{BG_PANEL});'
         f'border:1px solid {GOLD}44;border-radius:12px;padding:18px 24px;margin-bottom:16px">'
         f'<div style="color:{GOLD};font-size:15px;font-weight:700;margin-bottom:6px">'
-        f'💰 CSP Strategy Screener</div>'
+        f'💰 Options Strategy Screener</div>'
         f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
-        f'Filters stocks for optimal Cash-Secured Put entry — no options data needed. '
-        f'IV metrics use <b>realized-volatility history</b> (HV30) as a proxy. '
+        f'Screens stocks for <b>CSP</b> (sell put — high/falling IV) or <b>LEAP</b> (buy call — low/rising IV) entry. '
+        f'No options chain needed — IV proxied from realized-volatility history (HV30). '
         f'Sort: highest-conviction setups first (Score /10).</div>'
         f'</div>',
         unsafe_allow_html=True,
@@ -283,50 +300,49 @@ def _render_csp_strategy():
         with c2:
             st.markdown("**Column guide**")
             st.markdown(
-                "- **HV30%** — 30-day realized vol annualized (IV proxy). Higher = richer premium available\n"
-                "- **Vol Rank** — where HV30 sits in its 52-week range (0–100). ≥ 40 = elevated\n"
-                "- **Vol Pctile** — % of past year where vol was *lower* than today. ≥ 45 = historically rich\n"
-                "- **IV Trend** — HV30 vs HV60. **Contracting ↓** = IV falling (ideal for put sellers — IV crush works for you). Expanding ↑ = IV rising\n"
-                "- **EMA9 Slope** — 3-day % rate of change. Near 0 = consolidating (good CSP entry). Steeply positive = chasing\n"
-                "- **RSI** — 45–60 sweet spot for CSP. > 62 flagged as elevated\n"
-                "- **ADX** — trend strength. ≥ 25 = strong confirmed uptrend. < 20 = flagged as weak\n"
-                "- **MACD Cross / Hist** — informational momentum confirmation. Both ✅ = clean trend\n"
-                "- **Pullback** — ↘ X% · low vol = quiet dip in uptrend (+1 bonus). 'Uptrend · flat/rising' = trend intact but no dip yet — wait\n"
-                "- **Flags** — passed all hard filters but worth noting (high beta, weak ADX, expanding vol, etc.)\n"
+                "- **HV30%** — 30-day realized vol annualized (IV proxy). Higher = richer premium\n"
+                "- **Vol Rank** — HV30 within its 52-week range (0–100). ≥ 40 = elevated (gold)\n"
+                "- **Vol Pctile** — % of past year where vol was lower. ≥ 45 = historically rich\n"
+                "- **IV Trend** — HV30 vs HV60. **Contracting ↓** (gold) = falling IV → ideal for CSP sellers. **Expanding ↑** (blue) = rising IV → ideal for LEAP buyers\n"
+                "- **ADX** — trend strength. ≥ 25 (green) = confirmed uptrend. < 20 = trend too weak\n"
+                "- **SMA200** — ✅ = price above 200-day MA (long-term uptrend intact — key for LEAPs)\n"
+                "- **RSI** — 45–60 sweet spot. > 62 flagged elevated\n"
+                "- **EMA9 Slope** — 3-day % change. Near 0 = consolidating (good CSP entry). Steep = chasing\n"
+                "- **MACD Cross / Hist** — momentum confirmation. Both ✅ + ADX ≥ 25 = strong LEAP signal\n"
+                "- **Pullback** — ↘ X% · low vol = quiet dip in uptrend (+1 score bonus) → ideal CSP entry timing\n"
+                "- **Suggest** — 💰 CSP = sell put (high+falling IV). 🚀 LEAP = buy call (low/rising IV + momentum). 👀 Watch = wait\n"
                 "- **Score** — ≥ 8 = high conviction, 6–7 = moderate, < 6 = speculative"
             )
 
         st.markdown("---")
-        st.markdown("**When to sell a CSP vs buy a LEAP on stocks from this list**")
+        st.markdown("**💰 CSP vs 🚀 LEAP — when to use each**")
         tip1, tip2 = st.columns(2)
         with tip1:
             st.markdown(
                 "**💰 Sell a CSP when:**\n"
-                "- IV Trend = **Contracting ↓** — IV falling after you sell means IV crush profits the seller\n"
-                "- Vol Rank ≥ 40 and Vol Pctile ≥ 45 — premium is rich relative to history\n"
-                "- ADX ≥ 25 — confirmed uptrend; direction is your friend\n"
-                "- Pullback column shows **↘ % · low vol** — quiet dip = better strike, lower breakeven\n"
+                "- IV Trend = **Contracting ↓** — IV crush profits the seller after entry\n"
+                "- Vol Rank ≥ 40 and Vol Pctile ≥ 45 — premium rich relative to history\n"
+                "- ADX ≥ 25 — strong uptrend confirmed\n"
+                "- Pullback column shows **↘ % · low vol** — quiet dip = better entry price\n"
                 "- RSI 45–62 — healthy momentum, not overbought\n"
                 "- Score ≥ 7/10, SPY gate ✅\n\n"
-                "*Sell an OTM put (delta 0.15–0.30), collect premium, let IV crush + time decay work. "
-                "Close at 50% profit or before earnings.*"
+                "*Sell OTM put (delta 0.15–0.30), collect premium, close at 50% profit or before earnings.*"
             )
         with tip2:
             st.markdown(
-                "**🚀 Buy a LEAP instead when:**\n"
-                "- IV Trend = **Expanding ↑** OR Vol Rank < 30 — IV still low, buy before it rises\n"
-                "- Stock just broke out of consolidation or confirmed a new uptrend\n"
-                "- ADX ≥ 25 **and** MACD Cross ✅ **and** Hist > 0 ✅ — strong directional momentum\n"
+                "**🚀 Buy a LEAP when:**\n"
+                "- IV Trend = **Expanding ↑** OR Vol Rank < 30 — buy cheap before IV rises\n"
+                "- Price above **SMA200** ✅ — long-term trend intact\n"
+                "- ADX ≥ 25 **and** MACD Cross ✅ **and** Hist > 0 ✅ — strong momentum\n"
                 "- RSI 55–68 — strong move underway, not yet extended\n"
-                "- Multi-month bullish thesis (earnings catalyst, sector rotation, breakout)\n"
+                "- Multi-month thesis: earnings catalyst, breakout, sector rotation\n"
                 "- Score ≥ 8/10 with all trend signals aligned\n\n"
-                "*Buy a deep ITM call (delta 0.70–0.85, 6–12 month expiry) for leveraged upside "
-                "with defined risk and no assignment obligation.*"
+                "*Buy deep ITM call (delta 0.70–0.85, 6–12 month expiry) — leveraged upside, defined risk, no assignment.*"
             )
         st.markdown(
-            "> **Key rule:** High IV + Falling → **Sell** (CSP). &nbsp; Low IV + Rising → **Buy** (LEAP). "
-            "A stock with Vol Rank ≥ 40 and IV Trend = Contracting ↓ is a CSP candidate. "
-            "The same stock a month earlier — Vol Rank < 30, IV Trend = Expanding ↑ — was a LEAP candidate.",
+            "> **Key rule:** High IV + Falling → **Sell** (CSP — pocket IV crush). "
+            "Low IV + Rising → **Buy** (LEAP — ride IV expansion + price move). "
+            "The **Suggest** column applies this automatically per row.",
             unsafe_allow_html=False,
         )
 
@@ -416,22 +432,22 @@ def _render_csp_strategy():
 
     # Column legend
     st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:10px;line-height:1.8;'
-        f'margin-bottom:8px">'
-        f'<b style="color:{ACCENT_BLUE}">IV Environment</b>: HV30% = 30-day realized vol (proxy for IV) · '
-        f'Vol Rank ≥ 40 = premium elevated · Vol Pctile ≥ 45 = historically rich &nbsp;|&nbsp; '
-        f'<b style="color:{ACCENT_GREEN}">Trend</b>: EMA9 · Slope (3-day %) · RSI · ADX &nbsp;|&nbsp; '
-        f'<b style="color:#A78BFA">MACD</b>: informational only — not a filter &nbsp;|&nbsp; '
-        f'<b style="color:#34D399">Pullback</b>: ↘ % · low vol = +1 bonus (uptrend dip on quiet volume)</div>',
+        f'<div style="color:{TEXT_MUTED};font-size:10px;line-height:1.8;margin-bottom:8px">'
+        f'<b style="color:{ACCENT_BLUE}">IV Env</b>: Vol Rank ≥ 40 · Vol Pctile ≥ 45 = elevated premium &nbsp;|&nbsp; '
+        f'<b style="color:{GOLD}">Contracting ↓</b> = IV falling (CSP) · '
+        f'<b style="color:{ACCENT_BLUE}">Expanding ↑</b> = IV rising (LEAP) &nbsp;|&nbsp; '
+        f'<b style="color:{ACCENT_GREEN}">Trend</b>: ADX ≥ 25 = confirmed · SMA200 ✅ = long-term trend &nbsp;|&nbsp; '
+        f'<b style="color:#34D399">Pullback</b>: ↘ % · low vol = ideal CSP entry (+1 bonus) &nbsp;|&nbsp; '
+        f'<b style="color:{GOLD}">Suggest</b>: 💰 CSP · 🚀 LEAP · 👀 Watch</div>',
         unsafe_allow_html=True,
     )
 
-    _render_csp_table(df_out)
+    _render_options_table(df_out)
 
     # Download
     st.download_button(
         "⬇ Export CSV", df_out.to_csv(index=False),
-        "csp_strategy_scan.csv", "text/csv",
+        "options_strategy_scan.csv", "text/csv",
         use_container_width=False, key="csp_strat_dl",
     )
 
@@ -442,13 +458,13 @@ def _render_csp_strategy():
 
 def render():
     section_header("♟️", "Strategies",
-                   "QQQ / TQQQ weight-of-evidence · CSP stock screener")
+                   "QQQ / TQQQ weight-of-evidence · Options Strategy screener (CSP & LEAP)")
 
     st.markdown(_TAB_CSS, unsafe_allow_html=True)
 
-    tab_qqq, tab_csp = st.tabs([
+    tab_qqq, tab_opts = st.tabs([
         "♟️  QQQ / TQQQ Strategy",
-        "💰  CSP Strategy",
+        "💰  Options Strategy",
     ])
 
     with tab_qqq:
@@ -456,5 +472,5 @@ def render():
         # Strip the section_header call since we already have one above
         _qqq_render(_skip_header=True)
 
-    with tab_csp:
-        _render_csp_strategy()
+    with tab_opts:
+        _render_options_strategy()
