@@ -462,12 +462,32 @@ def _render_options_strategy():
 
     _render_options_table(df_out)
 
-    # Download
-    st.download_button(
-        "⬇ Export CSV", df_out.to_csv(index=False),
-        "options_strategy_scan.csv", "text/csv",
-        use_container_width=False, key="csp_strat_dl",
-    )
+    # ── Export row ────────────────────────────────────────────────────────────
+    dl_col, gs_col, _ = st.columns([1, 1, 4])
+    with dl_col:
+        st.download_button(
+            "⬇ Export CSV", df_out.to_csv(index=False),
+            "options_strategy_scan.csv", "text/csv",
+            use_container_width=True, key="csp_strat_dl",
+        )
+    with gs_col:
+        from scanners.gsheet_helper import export_options_scan, gsheets_configured
+        if gsheets_configured():
+            if st.button("📤 Export to Google Sheets", use_container_width=True,
+                         key="csp_strat_gs"):
+                with st.spinner("Exporting to Google Sheets…"):
+                    ok, msg = export_options_scan(
+                        df_out,
+                        spy_note=spy_note,
+                    )
+                if ok:
+                    st.success(f"✅ {msg}")
+                else:
+                    st.error(f"❌ {msg}")
+        else:
+            st.button("📤 Export to Google Sheets", disabled=True,
+                      help="Google Sheets not configured — add credentials in Streamlit Secrets",
+                      use_container_width=True, key="csp_strat_gs_dis")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

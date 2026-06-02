@@ -868,6 +868,102 @@ def sync_tracking_to_performance() -> tuple:
     return added, skipped
 
 
+# ══════════════════════════════════════════════════════════════════
+# OPTIONS STRATEGY SCAN EXPORT
+# ══════════════════════════════════════════════════════════════════
+
+_OPTIONS_SCAN_HEADERS = [
+    "Ticker", "Price", "Chg%", "AvgVol(K)", "Beta",
+    "HV30%", "Vol Rank", "Vol Pctile", "IV Trend",
+    "EMA9", "EMA9 Slope", "RSI", "ADX", "SMA200",
+    "MACD Cross", "Hist > 0",
+    "Pullback",
+    "Suggest", "Score", "Flags",
+]
+
+
+def export_options_scan(df, date_str: str = "", spy_note: str = "") -> tuple:
+    """
+    Export Options Strategy scan results to a dated tab in the connected spreadsheet.
+    Tab name = 'Options-YYYY-MM-DD'.  If the tab already exists it is cleared and
+    overwritten (safe to re-run the same day).
+    Returns (success: bool, message: str).
+    """
+    import pandas as pd
+
+    if not date_str:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+
+    tab_name = f"Options-{date_str}"
+
+    sh = _gs_spreadsheet()
+    if sh is None:
+        return False, "Google Sheets not connected — check credentials in Secrets."
+
+    # Get or create tab
+    try:
+        try:
+            ws = sh.worksheet(tab_name)
+            ws.clear()
+        except Exception:
+            ws = sh.add_worksheet(title=tab_name, rows=500, cols=len(_OPTIONS_SCAN_HEADERS) + 2)
+    except Exception as e:
+        return False, f"Could not open/create tab '{tab_name}': {e}"
+
+    # ── Build rows ────────────────────────────────────────────────
+    n_csp   = int((df.get("Suggest", pd.Series()) == "CSP").sum())  if "Suggest" in df.columns else 0
+    n_leap  = int((df.get("Suggest", pd.Series()) == "LEAP").sum()) if "Suggest" in df.columns else 0
+    n_watch = int((df.get("Suggest", pd.Series()) == "Watch").sum())if "Suggest" in df.columns else 0
+
+    all_rows = []
+
+    # Meta row
+    all_rows.append([
+        f"Options Strategy Scan  {date_str}",
+        f"Total: {len(df)}",
+        f"CSP: {n_csp}",
+        f"LEAP: {n_leap}",
+        f"Watch: {n_watch}",
+        spy_note,
+    ])
+    all_rows.append([])  # blank separator
+
+    # Headers
+    all_rows.append(_OPTIONS_SCAN_HEADERS)
+
+    # Data rows
+    for _, row in df.iterrows():
+        all_rows.append([
+            str(row.get("Ticker", "")),
+            row.get("Price", ""),
+            row.get("Chg%", ""),
+            row.get("AvgVol(K)", ""),
+            row.get("Beta", ""),
+            row.get("HV30%", ""),
+            row.get("Vol Rank", ""),
+            row.get("Vol Pctile", ""),
+            str(row.get("IV Trend", "")),
+            str(row.get("EMA9", "")),
+            row.get("EMA9 Slope", ""),
+            row.get("RSI", ""),
+            row.get("ADX", ""),
+            row.get("SMA200", ""),
+            str(row.get("MACD Cross", "")),
+            str(row.get("Hist > 0", "")),
+            str(row.get("Pullback", "")),
+            str(row.get("Suggest", "")),
+            row.get("Score", ""),
+            str(row.get("Flags", "")),
+        ])
+
+    try:
+        ws.update(all_rows, "A1")
+        url = f"https://docs.google.com/spreadsheets/d/{sh.id}"
+        return True, f"Exported {len(df)} rows → tab '{tab_name}'  |  {url}"
+    except Exception as e:
+        return False, f"Write failed: {e}"
+
+
 # ── Universe sheet helpers ─────────────────────────────────────
 
 def save_universe(rows: list) -> tuple[bool, str]:
