@@ -483,6 +483,11 @@ def scan_csp_strategy(
 
     df_out = pd.DataFrame(rows)
     if not df_out.empty:
-        df_out = df_out.sort_values("Score", ascending=False).reset_index(drop=True)
+        _suggest_order = {"LEAP": 0, "CSP": 1, "Watch": 2}
+        df_out["_sort"] = df_out["Suggest"].map(_suggest_order).fillna(3)
+        df_out = (df_out
+                  .sort_values(["_sort", "Score"], ascending=[True, False])
+                  .drop(columns="_sort")
+                  .reset_index(drop=True))
 
     return df_out, gate_ok, spy_note
