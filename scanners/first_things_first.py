@@ -154,9 +154,19 @@ def _check_weekly(ticker: str, price: float) -> dict:
         result["W2"] = (sma20_w > 0) and (px <= sma20_w * 1.10)          # within 10%
         result["W3"] = 35 <= rsi_w_v <= 70
         result["W4"] = m_w > s_w
-        result["W5"] = 0.7 <= vol_ratio_w <= 2.0
+        result["W5"] = 0.7 <= vol_ratio_w <= 3.0          # relaxed upper cap: breakout days OK
         result["W6"] = px > sma20_w
-        result["W7"] = (abs(m_w) / px * 100) <= 1.5 if px > 0 else False
+        # W7 — fresh crossover: MACD crossed above Signal within last 8 weekly bars
+        # More reliable than magnitude check; captures the post-cross momentum window
+        _fresh_cross_w = False
+        _macd_d = macd_w.dropna(); _sig_d = sig_w.dropna()
+        _n_check = min(8, len(_macd_d) - 1)
+        for _k in range(1, _n_check + 1):
+            if (float(_macd_d.iloc[-_k]) > float(_sig_d.iloc[-_k]) and
+                    float(_macd_d.iloc[-_k - 1]) <= float(_sig_d.iloc[-_k - 1])):
+                _fresh_cross_w = True
+                break
+        result["W7"] = _fresh_cross_w
         result["W8"] = h_w > h_w_prev
         result["W9"] = (px > sma50_w) or hh_hl
 
@@ -167,6 +177,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
             "hist_w": round(h_w, 4), "hist_w_prev": round(h_w_prev, 4),
             "sma20_w": round(sma20_w, 2), "sma50_w": round(sma50_w, 2),
             "vol_ratio_w": round(vol_ratio_w, 2),
+            "fresh_cross_w": _fresh_cross_w,
             "macd_pct_w": round(abs(m_w) / px * 100, 3) if px > 0 else 0,
         }
         result["pass"] = all(result[k] for k in ["W1","W2","W3","W4","W5","W6","W7","W8","W9"])
@@ -212,12 +223,13 @@ def _check_daily(ticker: str, price: float) -> dict:
         # Volume
         avg_vol = float(vol_d.iloc[-21:-1].mean()) if (vol_d is not None and len(vol_d) >= 21) else None
         cur_vol = float(vol_d.iloc[-1]) if vol_d is not None else None
-        vol_above = (cur_vol > avg_vol) if (cur_vol and avg_vol) else False
+        # D7: relaxed to 0.8× avg — normal consolidation days still qualify
+        vol_above = (cur_vol >= avg_vol * 0.8) if (cur_vol and avg_vol) else False
 
-        # Supply zone: price NOT within 3% below 20-day rolling high
+        # Supply zone: price >2% below 20-day rolling high (relaxed from 3%)
         high_20d = float(close_d.iloc[-20:].max()) if len(close_d) >= 20 else px
         pct_below_high = (high_20d - px) / high_20d * 100 if high_20d > 0 else 0
-        no_supply = pct_below_high > 3.0   # price is >3% below the high = resistance not immediate
+        no_supply = pct_below_high > 2.0   # relaxed: 2% clear of resistance is sufficient
 
         # ADX
         adx_series = pd.Series(dtype=float)
@@ -225,8 +237,8 @@ def _check_daily(ticker: str, price: float) -> dict:
             adx_series = _adx_series(close_d, high_d, low_d)
         adx_v     = float(adx_series.dropna().iloc[-1])   if len(adx_series.dropna()) >= 1 else np.nan
         adx_prev  = float(adx_series.dropna().iloc[-4])   if len(adx_series.dropna()) >= 4 else np.nan
-        adx_ok    = (not np.isnan(adx_v)) and adx_v > 16
-        adx_rising= (not np.isnan(adx_prev)) and adx_v > adx_prev
+        adx_ok    = (not np.isnan(adx_v)) and adx_v > 16   # X1: just >16, rising = display only
+        adx_rising= (not np.isnan(adx_prev)) and adx_v > adx_prev   # shown in table, not a gate
 
         # Bearish divergence
         div = _bearish_divergence(close_d, rsi_d, lookback=14)
@@ -242,7 +254,7 @@ def _check_daily(ticker: str, price: float) -> dict:
         result["D5"] = h_d > h_d_prev
         result["D6"] = no_supply
         result["D7"] = vol_above
-        result["X1"] = adx_ok and adx_rising
+        result["X1"] = adx_ok          # rising is informational only
         result["X2"] = not div                                     # True = no divergence
 
         result["detail"] = {
@@ -307,7 +319,7 @@ def run_ftf_scan(
         w_map = {
             "W1": "HH/HL or Base", "W2": "Not Extended", "W3": "RSI ✓",
             "W4": "MACD>Sig",      "W5": "Vol OK",        "W6": "P>SMA20W",
-            "W7": "|MACD|≤1.5%",   "W8": "Hist↑",         "W9": "Uptrend",
+            "W7": "Fresh Cross≤8wk", "W8": "Hist↑",         "W9": "Uptrend",
         }
         d_map = {
             "D1": "Not Ext'd",  "D2": "RSI ✓",     "D3": "MACD>Sig",

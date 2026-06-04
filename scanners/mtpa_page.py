@@ -62,7 +62,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             for t, c in [
                 ("W: HH/HL or Base", G), ("W: Not Extended", G),
                 ("W: RSI 35-70", G), ("W: MACD>Sig", G),
-                ("W: Vol OK", G), ("W: |MACD|≤1.5%", G),
+                ("W: Vol 0.7-3×", G), ("W: FreshCross≤8wk", G),
                 ("W: Hist↑", G), ("W: Uptrend", G),
                 ("D: RSI 35-70", "#60A5FA"), ("D: MACD>Sig", "#60A5FA"),
                 ("D: P>SMA9", "#60A5FA"), ("D: Hist↑", "#60A5FA"),
@@ -98,9 +98,9 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
     hdr = "".join(
         f'<th style="{_HD}">{c}</th>'
         for c in ["Ticker", "Price",
-                  "W-RSI", "W-MACD Hist↑", "|MACD|%",
-                  "D-RSI", "D-MACD Hist↑", "ADX", "Supply Gap",
-                  "Demand Zone", "Bearish Div"]
+                  "W-RSI", "W-Hist↑", "Fresh Cross",
+                  "D-RSI", "D-Hist↑", "ADX", "Supply Gap",
+                  "Demand Zone", "Bear Div"]
     )
 
     rows_html = ""
@@ -122,8 +122,8 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
         adx_v   = dd.get("adx")
         adx_col = ACCENT_GREEN if (adx_v and adx_v >= 25) else (GOLD if (adx_v and adx_v >= 16) else TEXT_MUTED)
 
-        macd_pct = wd.get("macd_pct_w", 0)
-        mp_col   = ACCENT_GREEN if macd_pct <= 0.5 else (GOLD if macd_pct <= 1.5 else TEXT_MUTED)
+        fresh_cross = wd.get("fresh_cross_w", False)
+        mp_col      = ACCENT_GREEN if fresh_cross else TEXT_MUTED
 
         supply_gap = dd.get("pct_below_high", 0)
         sg_col     = ACCENT_GREEN if supply_gap >= 5 else (GOLD if supply_gap >= 3 else ACCENT_RED)
@@ -147,9 +147,9 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'<span style="color:{hw_col};font-family:\'DM Mono\',monospace">'
             f'{hist_w:.4f}</span>'
             f'<span style="color:{ACCENT_GREEN};font-size:10px"> ↑</span></td>'
-            # |MACD|%
-            f'<td style="background:{bg};padding:8px 12px">'
-            f'<span style="color:{mp_col};font-weight:700">{macd_pct:.2f}%</span></td>'
+            # Fresh Cross (W7)
+            f'<td style="background:{bg};padding:8px 12px;text-align:center;font-size:13px">'
+            f'{"✅" if fresh_cross else "❌"}</td>'
             # D-RSI
             f'<td style="background:{bg};padding:8px 12px">'
             f'<span style="color:{rsi_d_col};font-weight:700">{rsi_d_v:.1f}</span></td>'
