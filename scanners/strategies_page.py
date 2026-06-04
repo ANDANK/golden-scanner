@@ -386,7 +386,7 @@ def _render_options_strategy():
                 unsafe_allow_html=True,
             )
 
-        df_out, spy_ok, spy_note = scan_csp_strategy(universe, status_fn=_status)
+        df_out, spy_ok, spy_note, ftf_rows = scan_csp_strategy(universe, status_fn=_status)
 
         prog_ph.empty()
         stat_ph.empty()
@@ -395,14 +395,8 @@ def _render_options_strategy():
         st.session_state["csp_strat_spy_ok"]   = spy_ok
         st.session_state["csp_strat_spy_note"]  = spy_note
         st.session_state["csp_strat_ts"]        = pd.Timestamp.now().strftime("%b %d %Y  %I:%M %p")
-
-        # First Things First scan — same universe, runs immediately after
-        from scanners.first_things_first import run_ftf_scan
-        _ftf_p = st.progress(0, text="Running First Things First scan…")
-        def _ftf_st(i, n, tk):
-            _ftf_p.progress((i+1)/n, text=f"FTF: {tk} ({i+1}/{n})")
-        st.session_state["csp_strat_ftf"] = run_ftf_scan(universe, status_fn=_ftf_st)
-        _ftf_p.empty()
+        # FTF computed inline inside scan_csp_strategy — no separate scan pass
+        st.session_state["csp_strat_ftf"]       = ftf_rows
 
         st.rerun()
 

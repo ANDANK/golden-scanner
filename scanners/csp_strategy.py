@@ -267,7 +267,8 @@ def scan_csp_strategy(
         f"⚠️ SPY ${spy_px:.2f} < EMA20 ${spy_ema:.2f} — Market caution; use tighter strikes"
     )
 
-    rows = []
+    rows     = []
+    ftf_rows = []   # FTF computed inline — no separate scan needed
 
     for i, ticker in enumerate(tickers):
         if status_fn:
@@ -479,7 +480,113 @@ def scan_csp_strategy(
             "Flags":      " · ".join(flags) if flags else "—",
         })
 
+        # ── First Things First — inline, using already-fetched daily data ───────
+        # Weekly data fetched once here via the cached get_price_history;
+        # this replaces the separate run_ftf_scan() call (which would re-fetch
+        # everything). One extra weekly fetch per ticker vs zero before, but
+        # eliminates one complete duplicate daily fetch per ticker.
+        try:
+            wk_df = get_price_history(ticker, period="2y", interval="1wk")
+            if wk_df is not None and not wk_df.empty and len(wk_df) >= 26:
+                wk_close = wk_df["Close"].squeeze()
+                wk_high  = wk_df["High"].squeeze()  if "High"   in wk_df.columns else None
+                wk_low   = wk_df["Low"].squeeze()   if "Low"    in wk_df.columns else None
+                wk_vol   = wk_df["Volume"].squeeze() if "Volume" in wk_df.columns else None
+
+                # Weekly indicators
+                _sma20w = float(calc_sma(wk_close, 20).dropna().iloc[-1]) if len(wk_close) >= 20 else 0.0
+                _sma50w = float(calc_sma(wk_close, 50).dropna().iloc[-1]) if len(wk_close) >= 50 else _sma20w
+                _wk_ema12 = calc_ema(wk_close, 12); _wk_ema26 = calc_ema(wk_close, 26)
+                _wk_macd  = _wk_ema12 - _wk_ema26
+                _wk_sig   = calc_ema(_wk_macd, 9)
+                _wk_hist  = _wk_macd - _wk_sig
+                _wk_m     = float(_wk_macd.dropna().iloc[-1])
+                _wk_h     = float(_wk_hist.dropna().iloc[-1])
+                _wk_hp    = float(_wk_hist.dropna().iloc[-2]) if len(_wk_hist.dropna()) >= 2 else _wk_h
+                _wk_rsi   = float(calc_rsi(wk_close).dropna().iloc[-1])
+
+                # W1: HH/HL or Tight Base
+                _hh_hl = False
+                if wk_high is not None and len(wk_high) >= 10:
+                    _hh_hl = (float(wk_high.iloc[-5:].max()) > float(wk_high.iloc[-10:-5].max()) and
+                               float(wk_low.iloc[-5:].min())  > float(wk_low.iloc[-10:-5].min()))
+                _tight = False
+                if len(wk_close) >= 10 and _sma20w > 0:
+                    _tight = (float(wk_close.iloc[-10:].max() - wk_close.iloc[-10:].min()) / _sma20w * 100) < 5.0
+                _w1 = _hh_hl or _tight
+
+                # W7: fresh crossover ≤5 weekly bars
+                _fresh_w = False
+                _n5 = min(5, len(_wk_macd.dropna()) - 1)
+                for _k in range(1, _n5 + 1):
+                    if (float(_wk_macd.dropna().iloc[-_k]) > float(_wk_sig.dropna().iloc[-_k]) and
+                            float(_wk_macd.dropna().iloc[-_k-1]) <= float(_wk_sig.dropna().iloc[-_k-1])):
+                        _fresh_w = True; break
+
+                # Weekly volume ratio
+                _wk_avg_v = float(wk_vol.iloc[-21:-1].mean()) if (wk_vol is not None and len(wk_vol) >= 21) else 1.0
+                _wk_vr    = float(wk_vol.iloc[-1]) / _wk_avg_v if (_wk_avg_v > 0 and wk_vol is not None) else 1.0
+
+                # Daily gaps (reuse already-computed values above)
+                _sma9v   = float(calc_ema(close, 9).dropna().iloc[-1]) if len(close) >= 9 else price
+                _ema12d  = calc_ema(close, 12); _ema26d = calc_ema(close, 26)
+                _macd_d  = _ema12d - _ema26d;   _sig_d  = calc_ema(_macd_d, 9)
+                _hist_d  = _macd_d - _sig_d
+                _h_now   = float(_hist_d.dropna().iloc[-1])
+                _h_prev  = float(_hist_d.dropna().iloc[-2]) if len(_hist_d.dropna()) >= 2 else _h_now
+                _high_20 = float(close.iloc[-20:].max()) if len(close) >= 20 else price
+                _pb_pct  = (_high_20 - price) / _high_20 * 100 if _high_20 > 0 else 0
+                _rsi_d   = calc_rsi(close).dropna()
+                _rsi_dv  = float(_rsi_d.iloc[-1]) if len(_rsi_d) >= 1 else 50.0
+
+                # No bearish divergence
+                _no_div = True
+                if len(_rsi_d) >= 14 and len(close) >= 14:
+                    _no_div = not (float(close.iloc[-1]) > float(close.iloc[-14]) and
+                                   float(_rsi_d.iloc[-1]) < float(_rsi_d.iloc[-14]))
+
+                _ftf_pass = all([
+                    _w1,                                     # W1
+                    _sma20w > 0 and price <= _sma20w * 1.10, # W2 not extended
+                    35 <= _wk_rsi <= 70,                     # W3
+                    _wk_h > 0,                               # W4 MACD>Signal (hist>0)
+                    0.7 <= _wk_vr <= 3.0,                    # W5
+                    price > _sma20w if _sma20w > 0 else False,# W6
+                    _fresh_w,                                 # W7
+                    _wk_h > _wk_hp,                          # W8 hist rising
+                    (price > _sma50w if _sma50w > 0 else False) or _hh_hl,  # W9
+                    price <= _sma9v * 1.08 if _sma9v > 0 else True,  # D1
+                    35 <= _rsi_dv <= 70,                     # D2
+                    _h_now > 0,                              # D3 MACD>Signal daily
+                    price > _sma9v,                          # D4
+                    _h_now > _h_prev,                        # D5 hist rising daily
+                    _pb_pct > 2.0,                           # D6 no nearby supply
+                    (float(vol.iloc[-1]) / avg_vol >= 0.8) if (vol is not None and avg_vol > 0) else False,  # D7
+                    not np.isnan(adx_v) and adx_v > 16,     # X1
+                    _no_div,                                  # X2
+                ])
+
+                if _ftf_pass:
+                    ftf_rows.append({
+                        "ticker":  ticker, "price": round(price, 2),
+                        "w_detail": {"rsi_w": round(_wk_rsi, 1), "hist_w": round(_wk_h, 4),
+                                     "hist_w_prev": round(_wk_hp, 4), "fresh_cross_w": _fresh_w,
+                                     "hh_hl": _hh_hl, "tight_base": _tight,
+                                     "vol_ratio_w": round(_wk_vr, 2), "macd_pct_w": 0},
+                        "d_detail": {"rsi_d": round(_rsi_dv, 1), "hist_d": round(_h_now, 4),
+                                     "hist_d_prev": round(_h_prev, 4), "adx": round(adx_v, 1) if not np.isnan(adx_v) else None,
+                                     "adx_rising": False, "bearish_div": not _no_div,
+                                     "in_demand": price <= float(close.iloc[-10:].min()) * 1.05 if len(close) >= 10 else False,
+                                     "pct_below_high": round(_pb_pct, 1)},
+                        "w_flags": [], "d_flags": [],
+                    })
+        except Exception:
+            pass   # FTF failure never affects the CSP screener result
+
         time.sleep(0.1 + random.uniform(0, 0.1))   # light throttle
+
+    # Sort FTF by ADX desc
+    ftf_rows.sort(key=lambda r: r["d_detail"].get("adx") or 0, reverse=True)
 
     df_out = pd.DataFrame(rows)
     if not df_out.empty:
@@ -490,4 +597,4 @@ def scan_csp_strategy(
                   .drop(columns="_sort")
                   .reset_index(drop=True))
 
-    return df_out, gate_ok, spy_note
+    return df_out, gate_ok, spy_note, ftf_rows
