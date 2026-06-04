@@ -156,11 +156,13 @@ def _check_weekly(ticker: str, price: float) -> dict:
         result["W4"] = m_w > s_w
         result["W5"] = 0.7 <= vol_ratio_w <= 3.0          # relaxed upper cap: breakout days OK
         result["W6"] = px > sma20_w
-        # W7 — fresh crossover: MACD crossed above Signal within last 8 weekly bars
-        # More reliable than magnitude check; captures the post-cross momentum window
+        # W7 — fresh crossover: MACD crossed above Signal within last 5 weekly bars
+        # 5 weeks matches a weekly scan cadence — catches brand-new crosses AND
+        # setups where other conditions (RSI, histogram, structure) remained valid
+        # into weeks 4-5 after the initial cross. Beyond 5 weeks = stale setup.
         _fresh_cross_w = False
         _macd_d = macd_w.dropna(); _sig_d = sig_w.dropna()
-        _n_check = min(8, len(_macd_d) - 1)
+        _n_check = min(5, len(_macd_d) - 1)
         for _k in range(1, _n_check + 1):
             if (float(_macd_d.iloc[-_k]) > float(_sig_d.iloc[-_k]) and
                     float(_macd_d.iloc[-_k - 1]) <= float(_sig_d.iloc[-_k - 1])):
@@ -319,7 +321,7 @@ def run_ftf_scan(
         w_map = {
             "W1": "HH/HL or Base", "W2": "Not Extended", "W3": "RSI ✓",
             "W4": "MACD>Sig",      "W5": "Vol OK",        "W6": "P>SMA20W",
-            "W7": "Fresh Cross≤8wk", "W8": "Hist↑",         "W9": "Uptrend",
+            "W7": "Fresh Cross≤5wk", "W8": "Hist↑",         "W9": "Uptrend",
         }
         d_map = {
             "D1": "Not Ext'd",  "D2": "RSI ✓",     "D3": "MACD>Sig",
