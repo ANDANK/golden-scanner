@@ -517,7 +517,7 @@ def scan_csp_strategy(
 
                 # W7: fresh crossover ≤5 weekly bars
                 _fresh_w = False
-                _n5 = min(8, len(_wk_macd.dropna()) - 1)
+                _n5 = min(5, len(_wk_macd.dropna()) - 1)
                 for _k in range(1, _n5 + 1):
                     if (float(_wk_macd.dropna().iloc[-_k]) > float(_wk_sig.dropna().iloc[-_k]) and
                             float(_wk_macd.dropna().iloc[-_k-1]) <= float(_wk_sig.dropna().iloc[-_k-1])):
@@ -560,8 +560,9 @@ def scan_csp_strategy(
                     _h_now > 0,                              # D3 MACD>Signal daily
                     price > _sma9v,                          # D4
                     _h_now > _h_prev,                        # D5 hist rising daily
-                    _pb_pct > 2.0,                           # D6 no nearby supply
-                    (float(vol.iloc[-1]) / avg_vol >= 0.8) if (vol is not None and avg_vol > 0) else False,  # D7
+                    # D6: volume > 20-day avg (supply zone removed — display only)
+                    (float(vol.iloc[-1]) > avg_vol) if (vol is not None and avg_vol > 0) else False,
+                    # D7 removed — D6 now covers volume strictly
                     not np.isnan(adx_v) and adx_v > 16,     # X1
                     _no_div,                                  # X2
                 ])

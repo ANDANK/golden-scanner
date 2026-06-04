@@ -24,7 +24,7 @@ Daily conditions (ALL must hold):
   D4  Price > SMA9D
   D5  Histogram rising (hist[-1] > hist[-2])
   D6  No nearby supply (price NOT within 3% below 20-day rolling high)
-  D7  Volume > 20-day average
+  D6  Volume > 20-day average (replaces supply zone check; D7 removed)
 
 Cross-timeframe:
   X1  ADX > 16 AND ADX rising (ADX[-1] > ADX[-4])
@@ -162,7 +162,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
         # into weeks 4-5 after the initial cross. Beyond 5 weeks = stale setup.
         _fresh_cross_w = False
         _macd_d = macd_w.dropna(); _sig_d = sig_w.dropna()
-        _n_check = min(8, len(_macd_d) - 1)
+        _n_check = min(5, len(_macd_d) - 1)
         for _k in range(1, _n_check + 1):
             if (float(_macd_d.iloc[-_k]) > float(_sig_d.iloc[-_k]) and
                     float(_macd_d.iloc[-_k - 1]) <= float(_sig_d.iloc[-_k - 1])):
@@ -222,16 +222,14 @@ def _check_daily(ticker: str, price: float) -> dict:
         h_d = float(hist_d.dropna().iloc[-1])
         h_d_prev = float(hist_d.dropna().iloc[-2]) if len(hist_d.dropna()) >= 2 else h_d
 
-        # Volume
+        # Volume — D6: strictly above 20-day average (>1.0×)
         avg_vol = float(vol_d.iloc[-21:-1].mean()) if (vol_d is not None and len(vol_d) >= 21) else None
         cur_vol = float(vol_d.iloc[-1]) if vol_d is not None else None
-        # D7: relaxed to 0.8× avg — normal consolidation days still qualify
-        vol_above = (cur_vol >= avg_vol * 0.8) if (cur_vol and avg_vol) else False
+        vol_above = (cur_vol > avg_vol) if (cur_vol and avg_vol) else False  # D6: strict >1.0×
 
-        # Supply zone: price >2% below 20-day rolling high (relaxed from 3%)
+        # Supply zone — display only (no longer a hard gate)
         high_20d = float(close_d.iloc[-20:].max()) if len(close_d) >= 20 else px
         pct_below_high = (high_20d - px) / high_20d * 100 if high_20d > 0 else 0
-        no_supply = pct_below_high > 2.0   # relaxed: 2% clear of resistance is sufficient
 
         # ADX
         adx_series = pd.Series(dtype=float)
@@ -249,30 +247,30 @@ def _check_daily(ticker: str, price: float) -> dict:
         low_10d = float(close_d.iloc[-10:].min()) if len(close_d) >= 10 else px
         in_demand = px <= low_10d * 1.05   # within 5% above recent swing low
 
-        result["D1"] = (sma9_d > 0) and (px <= sma9_d * 1.08)    # within 8% above SMA9
+        result["D1"] = (sma9_d > 0) and (px <= sma9_d * 1.08)  # within 8% above SMA9
         result["D2"] = 35 <= rsi_v <= 70
         result["D3"] = m_d > s_d
         result["D4"] = px > sma9_d
-        result["D5"] = h_d > h_d_prev
-        result["D6"] = no_supply
-        result["D7"] = vol_above
-        result["X1"] = adx_ok          # rising is informational only
-        result["X2"] = not div                                     # True = no divergence
+        result["D5"] = h_d > h_d_prev                           # daily histogram rising
+        result["D6"] = vol_above                                 # volume > 20-day avg (strict)
+        # D7 removed — D6 now covers volume strictly (>1.0× vs old 0.8×)
+        result["X1"] = adx_ok
+        result["X2"] = not div
 
         result["detail"] = {
-            "rsi_d":       round(rsi_v, 1),
-            "macd_d":      round(m_d, 4),
-            "sig_d":       round(s_d, 4),
-            "hist_d":      round(h_d, 4),
-            "hist_d_prev": round(h_d_prev, 4),
-            "sma9_d":      round(sma9_d, 2),
-            "adx":         round(adx_v, 1) if not np.isnan(adx_v) else None,
-            "adx_rising":  adx_rising,
-            "bearish_div": div,
-            "in_demand":   in_demand,
-            "pct_below_high": round(pct_below_high, 1),
+            "rsi_d":          round(rsi_v, 1),
+            "macd_d":         round(m_d, 4),
+            "sig_d":          round(s_d, 4),
+            "hist_d":         round(h_d, 4),
+            "hist_d_prev":    round(h_d_prev, 4),
+            "sma9_d":         round(sma9_d, 2),
+            "adx":            round(adx_v, 1) if not np.isnan(adx_v) else None,
+            "adx_rising":     adx_rising,
+            "bearish_div":    div,
+            "in_demand":      in_demand,
+            "pct_below_high": round(pct_below_high, 1),   # display only
         }
-        daily_conditions = ["D1","D2","D3","D4","D5","D6","D7","X1","X2"]
+        daily_conditions = ["D1","D2","D3","D4","D5","D6","X1","X2"]  # D7 removed
         result["pass"] = all(result[k] for k in daily_conditions)
 
     except Exception:
@@ -325,8 +323,8 @@ def run_ftf_scan(
         }
         d_map = {
             "D1": "Not Ext'd",  "D2": "RSI ✓",     "D3": "MACD>Sig",
-            "D4": "P>SMA9",     "D5": "Hist↑",      "D6": "No Supply",
-            "D7": "Vol>Avg",    "X1": "ADX>16↑",    "X2": "No BearDiv",
+            "D4": "P>SMA9",     "D5": "Hist↑",      "D6": "Vol>Avg",
+            "X1": "ADX>16",                         "X2": "No BearDiv",
         }
         for k, lbl in w_map.items():
             if wk.get(k):

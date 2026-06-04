@@ -2729,7 +2729,7 @@ def _render_mtpa_reference():
         ("W4", "MACD > Signal (weekly)", "Weekly momentum confirmed"),
         ("W5", "Volume 0.7–3× avg", "Institutional but not a spike"),
         ("W6", "Price > SMA20W", "Above key weekly moving average"),
-        ("W7", "Fresh crossover ≤8 weekly bars", "Cross happened within the last 8 weeks"),
+        ("W7", "Fresh crossover ≤5 weekly bars", "Cross happened within the last 5 weeks"),
         ("W9", "Uptrend — Price > SMA50W or HH/HL", "Macro direction confirmed"),
     ]
     ftf_rows_d = [

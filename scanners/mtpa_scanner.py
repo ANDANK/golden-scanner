@@ -633,7 +633,7 @@ def run_mtpa_scan(
                 # W7: fresh weekly MACD crossover within last 5 bars
                 _wk_macd_full, _wk_sig_full, _, _ = calc_macd(wk_close_s2) if len(wk_close_s2) >= 26 else (pd.Series(dtype=float), pd.Series(dtype=float), None, None)
                 _fresh_cross_w = False
-                _n = min(8, max(0, len(_wk_macd_full) - 1))
+                _n = min(5, max(0, len(_wk_macd_full) - 1))
                 for _k in range(1, _n + 1):
                     if (float(_wk_macd_full.iloc[-_k]) > float(_wk_sig_full.iloc[-_k]) and
                             float(_wk_macd_full.iloc[-_k - 1]) <= float(_wk_sig_full.iloc[-_k - 1])):
@@ -658,13 +658,13 @@ def run_mtpa_scan(
                 _, _, _dh_now, _dh_prev = calc_macd(close)
                 _d5 = float(_dh_now) > float(_dh_prev) if (_dh_prev is not None) else False
 
-                # D6: no nearby supply — price > 2% below 20-day rolling high
+                # Supply zone — display only (not a gate)
                 _high_20d = float(close.iloc[-20:].max()) if len(close) >= 20 else price
                 _pct_below = (_high_20d - price) / _high_20d * 100 if _high_20d > 0 else 0
-                _d6 = _pct_below > 2.0
 
-                # D7: volume ≥ 0.8× avg
-                _d7 = volume_ratio >= 0.8
+                # D6: volume > 20-day average (strict; replaces old supply zone check)
+                _d6 = volume_ratio > 1.0
+                # D7 removed — D6 now covers volume strictly
 
                 # X1: ADX > 16 (compute from daily OHLC if available)
                 _adx_ok = False
@@ -710,8 +710,7 @@ def run_mtpa_scan(
                     macd_above_signal,                            # D3
                     price_above_sma9,                             # D4
                     _d5,                                          # D5 daily hist rising
-                    _d6,                                          # D6 no supply
-                    _d7,                                          # D7 volume
+                    _d6,                                          # D6 volume > 20-day avg
                     _adx_ok,                                      # X1
                     _no_div,                                      # X2
                 ])
