@@ -633,7 +633,7 @@ def run_mtpa_scan(
                 # W7: fresh weekly MACD crossover within last 5 bars
                 _wk_macd_full, _wk_sig_full, _, _ = calc_macd(wk_close_s2) if len(wk_close_s2) >= 26 else (pd.Series(dtype=float), pd.Series(dtype=float), None, None)
                 _fresh_cross_w = False
-                _n = min(5, max(0, len(_wk_macd_full) - 1))
+                _n = min(8, max(0, len(_wk_macd_full) - 1))
                 for _k in range(1, _n + 1):
                     if (float(_wk_macd_full.iloc[-_k]) > float(_wk_sig_full.iloc[-_k]) and
                             float(_wk_macd_full.iloc[-_k - 1]) <= float(_wk_sig_full.iloc[-_k - 1])):
@@ -703,7 +703,7 @@ def run_mtpa_scan(
                     _w5,                                          # W5 volume
                     _w6,                                          # W6 price > SMA20W
                     _fresh_cross_w,                               # W7 fresh cross
-                    wk_hist_rising,                               # W8 hist rising weekly
+                    # W8 removed — W4 (wk_hist_pos) already guards positive histogram
                     _w9,                                          # W9 uptrend
                     _d1,                                          # D1 not extended daily
                     35 <= rsi_value <= 70,                        # D2

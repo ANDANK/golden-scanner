@@ -14,7 +14,7 @@ Weekly conditions (ALL must hold):
   W5  Volume OK (0.7–2.0× 20-week avg — not dry, not spike)
   W6  Price > SMA20W
   W7  |MACD line| ≤ 1.5% of price (fresh crossover, not overrun)
-  W8  Histogram rising (hist[-1] > hist[-2])
+  (W8 removed — W4 hist>0 is sufficient; declining positive histogram is still valid)
   W9  Uptrend (price > SMA50W OR HH/HL confirmed)
 
 Daily conditions (ALL must hold):
@@ -99,7 +99,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
     Fetch and evaluate all weekly conditions for a ticker.
     Returns dict with per-condition booleans and a 'pass' key.
     """
-    result = {k: False for k in ["W1","W2","W3","W4","W5","W6","W7","W8","W9","pass"]}
+    result = {k: False for k in ["W1","W2","W3","W4","W5","W6","W7","W9","pass"]}
     result["detail"] = {}
     try:
         raw = yf.download(ticker, period="3y", interval="1wk",
@@ -162,14 +162,14 @@ def _check_weekly(ticker: str, price: float) -> dict:
         # into weeks 4-5 after the initial cross. Beyond 5 weeks = stale setup.
         _fresh_cross_w = False
         _macd_d = macd_w.dropna(); _sig_d = sig_w.dropna()
-        _n_check = min(5, len(_macd_d) - 1)
+        _n_check = min(8, len(_macd_d) - 1)
         for _k in range(1, _n_check + 1):
             if (float(_macd_d.iloc[-_k]) > float(_sig_d.iloc[-_k]) and
                     float(_macd_d.iloc[-_k - 1]) <= float(_sig_d.iloc[-_k - 1])):
                 _fresh_cross_w = True
                 break
         result["W7"] = _fresh_cross_w
-        result["W8"] = h_w > h_w_prev
+        # W8 removed — W4 (hist>0) is sufficient guard
         result["W9"] = (px > sma50_w) or hh_hl
 
         result["detail"] = {
@@ -182,7 +182,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
             "fresh_cross_w": _fresh_cross_w,
             "macd_pct_w": round(abs(m_w) / px * 100, 3) if px > 0 else 0,
         }
-        result["pass"] = all(result[k] for k in ["W1","W2","W3","W4","W5","W6","W7","W8","W9"])
+        result["pass"] = all(result[k] for k in ["W1","W2","W3","W4","W5","W6","W7","W9"])
 
     except Exception:
         pass
@@ -321,7 +321,7 @@ def run_ftf_scan(
         w_map = {
             "W1": "HH/HL or Base", "W2": "Not Extended", "W3": "RSI ✓",
             "W4": "MACD>Sig",      "W5": "Vol OK",        "W6": "P>SMA20W",
-            "W7": "Fresh Cross≤5wk", "W8": "Hist↑",         "W9": "Uptrend",
+            "W7": "Fresh Cross≤8wk",                         "W9": "Uptrend",
         }
         d_map = {
             "D1": "Not Ext'd",  "D2": "RSI ✓",     "D3": "MACD>Sig",

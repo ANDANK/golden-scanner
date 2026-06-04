@@ -517,7 +517,7 @@ def scan_csp_strategy(
 
                 # W7: fresh crossover ≤5 weekly bars
                 _fresh_w = False
-                _n5 = min(5, len(_wk_macd.dropna()) - 1)
+                _n5 = min(8, len(_wk_macd.dropna()) - 1)
                 for _k in range(1, _n5 + 1):
                     if (float(_wk_macd.dropna().iloc[-_k]) > float(_wk_sig.dropna().iloc[-_k]) and
                             float(_wk_macd.dropna().iloc[-_k-1]) <= float(_wk_sig.dropna().iloc[-_k-1])):
@@ -553,7 +553,7 @@ def scan_csp_strategy(
                     0.7 <= _wk_vr <= 3.0,                    # W5
                     price > _sma20w if _sma20w > 0 else False,# W6
                     _fresh_w,                                 # W7
-                    _wk_h > _wk_hp,                          # W8 hist rising
+                    # W8 removed — W4 (_wk_h > 0) already guards positive histogram
                     (price > _sma50w if _sma50w > 0 else False) or _hh_hl,  # W9
                     price <= _sma9v * 1.08 if _sma9v > 0 else True,  # D1
                     35 <= _rsi_dv <= 70,                     # D2

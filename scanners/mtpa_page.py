@@ -61,7 +61,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             for t, c in [
                 ("W: HH/HL or Base", G), ("W: Not Extended", G),
                 ("W: RSI 35-70", G), ("W: MACD>Sig", G),
-                ("W: Vol 0.7-3×", G), ("W: FreshCross≤5wk", G),
+                ("W: Vol 0.7-3×", G), ("W: FreshCross≤8wk", G),
                 ("W: Hist↑", G), ("W: Uptrend", G),
                 ("D: RSI 35-70", "#60A5FA"), ("D: MACD>Sig", "#60A5FA"),
                 ("D: P>SMA9", "#60A5FA"), ("D: Hist↑", "#60A5FA"),
