@@ -791,7 +791,15 @@ def render() -> None:
             f'</div>',
             unsafe_allow_html=True,
         )
-        _render_tech_details()
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:16px;'
+            f'padding:10px 14px;background:{BG_PANEL};border-radius:6px;'
+            f'border-left:3px solid {BORDER_COLOR}">'
+            f'📖 Full filter logic, table criteria, and candlestick reference → '
+            f'<b style="color:{GOLD}">Admin → Tech Details → MTPA Reference</b> tab'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
         return
 
     # ── Handle Export ──────────────────────────────────────────────
@@ -907,5 +915,10 @@ def render() -> None:
             unsafe_allow_html=True,
         )
 
-    # ── Tech reference (always at bottom) ─────────────────────────
-    _render_tech_details()
+    # ── Tech reference pointer ─────────────────────────────────────
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:right;'
+        f'margin-top:8px">📖 Filter logic & definitions → '
+        f'<b style="color:{GOLD}">Admin → Tech Details → MTPA Reference</b></div>',
+        unsafe_allow_html=True,
+    )

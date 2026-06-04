@@ -2554,17 +2554,231 @@ def _render_tos_chart():
 
 # ── Main render ────────────────────────────────────────────────
 
+def _render_mtpa_reference():
+    """MTPA Scanner — Filter Logic & Reference Guide."""
+    G  = ACCENT_GREEN
+    GL = GOLD
+    B  = ACCENT_BLUE
+    P  = "#A78BFA"
+
+    def _sec(title, color, icon=""):
+        st.markdown(
+            f'<div style="background:linear-gradient(135deg,{color}18,{color}08);'
+            f'border-left:4px solid {color};border-radius:0 8px 8px 0;'
+            f'padding:10px 16px;margin:20px 0 6px">'
+            f'<span style="font-size:16px">{icon}</span>'
+            f'<span style="color:{color};font-size:13px;font-weight:700;margin-left:8px">'
+            f'{title}</span></div>',
+            unsafe_allow_html=True,
+        )
+
+    def _row(label, desc, col=None):
+        lc = col or GL
+        return (
+            f'<tr>'
+            f'<td style="padding:8px 14px;border-bottom:1px solid #ffffff0d;'
+            f'white-space:nowrap;vertical-align:top">'
+            f'<span style="color:{lc};font-weight:700;font-size:12px">{label}</span></td>'
+            f'<td style="padding:8px 14px;border-bottom:1px solid #ffffff0d;'
+            f'color:#cbd5e1;font-size:12px;line-height:1.65">{desc}</td>'
+            f'</tr>'
+        )
+
+    def _table(rows_html, col_a="Term", col_b="Definition"):
+        _HD = (f'background:#0f172a;color:{GL};font-size:10px;font-weight:700;'
+               f'text-transform:uppercase;letter-spacing:0.7px;padding:8px 14px;'
+               f'border-bottom:2px solid {GL}33;text-align:left')
+        return (
+            f'<div style="overflow-x:auto;border:1px solid #1e293b;border-radius:8px;margin-bottom:4px">'
+            f'<table style="width:100%;border-collapse:collapse;font-family:\'Inter\',sans-serif">'
+            f'<thead><tr><th style="{_HD};width:22%">{col_a}</th>'
+            f'<th style="{_HD};width:78%">{col_b}</th></tr></thead>'
+            f'<tbody>{rows_html}</tbody></table></div>'
+        )
+
+    # ── Hero banner ────────────────────────────────────────────────────────────
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,#0f172a,#1e1b4b);'
+        f'border:1px solid {GL}44;border-radius:12px;padding:18px 24px;margin-bottom:8px">'
+        f'<div style="color:{GL};font-size:16px;font-weight:700;margin-bottom:6px">'
+        f'📊 MTPA Scanner — Momentum Trend Price Action</div>'
+        f'<div style="color:#a0aec0;font-size:12px;line-height:1.7">'
+        f'A <b style="color:#fff">pure-filter, no-score</b> scanner that categorises stocks by '
+        f'how many timeframes are aligned. No black-box weighting — a stock either passes a '
+        f'condition or it doesn\'t. Each table represents a distinct level of conviction.</div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">'
+        + "".join(
+            f'<span style="background:{c}18;border:1px solid {c}44;color:{c};'
+            f'font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px">{t}</span>'
+            for t, c in [
+                ("🟢 PRIME", G), ("🟡 STRONG", "#FBBF24"),
+                ("🔵 BUILDING", B), ("💜 MACD MOMENTUM", P),
+                ("🎯 First Things First", GL),
+            ]
+        )
+        + f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Weekly conditions ──────────────────────────────────────────────────────
+    _sec("Weekly Conditions", GL, "📅")
+    st.markdown(_table(
+        _row("HH / HL", "Last 6 weekly bars show consecutively higher highs AND higher lows — clean uptrend structure. The stock is printing a staircase pattern.", G) +
+        _row("Tight Base", "Average weekly ATR% (High − Low) / Close over last 5 bars < 4.5%. Low-volatility consolidation — energy coiling before a move.", B) +
+        _row("Mixed", "Neither HH/HL nor Tight Base detected. Structure is unclear.", TEXT_MUTED) +
+        _row("Wk Extended", "Weekly close > Weekly EMA(20) × 1.10. Stock is stretched — risk of mean-reversion. PRIME and STRONG tables require this to be OFF.", ACCENT_RED),
+        "Pattern", "What it means"
+    ), unsafe_allow_html=True)
+
+    # ── Daily conditions ───────────────────────────────────────────────────────
+    _sec("Daily Conditions", B, "📈")
+    st.markdown(_table(
+        _row("RSI GREEN", "RSI(14) is 50–70 AND rising vs 2 bars ago — momentum building in the bullish sweet spot.", G) +
+        _row("RSI YELLOW", "RSI(14) is 40–50 AND rising — recovering from weakness, worth watching.", "#FBBF24") +
+        _row("RSI NEUTRAL", "All other cases: not rising, or outside the 40–70 range.", TEXT_MUTED) +
+        _row("MACD > Signal", "EMA(12) − EMA(26) is above its 9-period signal line — bullish crossover confirmed.", G) +
+        _row("MACD Zone", "🎯 Near Zero: |MACD| ≤ 1% of price (freshest signal). 📈 Positive: above zero. 📉 Negative: below zero. Table 1 (PRIME) requires Near Zero.", GL) +
+        _row("Vol Ratio", "Today's volume ÷ 20-day average. <b>Vol OK = 1.0–1.8×</b> (healthy interest without a blow-off spike).", G) +
+        _row("Price > SMA20", "Price is above its 20-day simple moving average — short/medium-term trend intact.", G) +
+        _row("Price > SMA9", "Price is above its 9-day EMA — very short-term trend intact. Used in PRIME criteria.", G),
+        "Condition", "Definition"
+    ), unsafe_allow_html=True)
+
+    # ── Earnings ───────────────────────────────────────────────────────────────
+    _sec("Earnings Proximity", "#F97316", "📅")
+    st.markdown(_table(
+        _row("🔴 SKIP",   "Earnings in ≤ 7 days. Excluded from PRIME — binary risk invalidates the technical setup.", ACCENT_RED) +
+        _row("🟡 WARN",   "Earnings in 8–14 days. Shown in all tables; flagged as 'Earnings Soon'. Size down.", "#FBBF24") +
+        _row("🟢 OK",     "Earnings > 14 days away or unknown. Full confidence in the setup duration.", G),
+        "Flag", "Action"
+    ), unsafe_allow_html=True)
+
+    # ── Table assignment ───────────────────────────────────────────────────────
+    _sec("Table Assignment — Qualification Criteria", GL, "📋")
+
+    _tier_rows = [
+        ("🟢 PRIME (Table 1)", G,
+         "Weekly HH/HL or Tight Base · Not extended · RSI GREEN or YELLOW · "
+         "MACD > Signal · Volume OK (1–1.8×) · Price > SMA20 · "
+         "|MACD| ≤ 1% of price (fresh crossover) · Earnings not SKIP"),
+        ("🟡 STRONG (Table 2)", "#FBBF24",
+         "Not extended (weekly) · RSI GREEN or YELLOW · MACD > Signal · "
+         "Price > SMA20 · (Any MACD zone allowed — structure confirmed, timing flexible)"),
+        ("🔵 BUILDING (Table 3)", B,
+         "RSI GREEN or YELLOW · MACD > Signal · "
+         "(Weekly structure and volume not required — daily signal only)"),
+    ]
+    tier_html = ""
+    for lbl, col, crit in _tier_rows:
+        tier_html += (
+            f'<div style="background:{col}0E;border:1px solid {col}44;'
+            f'border-radius:8px;padding:12px 16px;margin-bottom:8px">'
+            f'<div style="color:{col};font-size:12px;font-weight:700;margin-bottom:5px">{lbl}</div>'
+            f'<div style="color:#cbd5e1;font-size:11px;line-height:1.7">{crit}</div>'
+            f'</div>'
+        )
+    tier_html += (
+        f'<div style="color:{TEXT_MUTED};font-size:11px;padding:6px 4px">'
+        f'&#9432; Each ticker appears in <b style="color:#fff">at most one table</b> '
+        f'(highest priority wins — PRIME beats STRONG beats BUILDING).</div>'
+    )
+    st.markdown(tier_html, unsafe_allow_html=True)
+
+    # ── MACD Momentum (Table 4) ────────────────────────────────────────────────
+    _sec("💜 MACD Momentum — Table 4", P, "")
+    st.markdown(_table(
+        _row("Weekly", "MACD Line > 0 (EMA12 > EMA26) · Histogram > 0 (MACD > Signal) · Histogram rising (accelerating momentum, not peaking).", P) +
+        _row("Daily", "MACD Line > 0 · Histogram > 0.", P) +
+        _row("Independence", "Table 4 runs independently — a ticker can appear here AND in Table 1/2/3 simultaneously. No dedup applied.", GL) +
+        _row("Circle indicator", "🟢 = also in Table 1 (PRIME) · 🟡 = Table 2 (STRONG) · 🔵 = Table 3 (BUILDING) · No circle = MACD signal only.", G) +
+        _row("RSI column", "Shows <b>W: weekly RSI</b> and <b>D: daily RSI</b> side-by-side. 🟢 GREEN = 50–70 · 🟡 YELLOW = 40–50 · grey = outside range.", B),
+        "Aspect", "Detail"
+    ), unsafe_allow_html=True)
+
+    # ── Candlesticks ───────────────────────────────────────────────────────────
+    _sec("Candlestick Patterns Detected (last 3 bars)", GL, "🕯️")
+    candles = [
+        ("Hammer", "Long lower wick near support — buyers rejected the selloff"),
+        ("Bullish Engulfing", "Big green candle swallows the prior red candle"),
+        ("Morning Star", "3-candle reversal: down · small · up — bottom confirmation"),
+        ("Piercing Line", "Green candle closes above midpoint of prior red candle"),
+        ("Bullish Harami", "Small green candle inside prior large red — indecision → bulls"),
+        ("Three White Soldiers", "Three consecutive strong green candles — sustained buying"),
+        ("Dragonfly Doji", "Open = Close at the high, long lower shadow near support"),
+        ("Inverted Hammer", "Long upper wick at a low — buyers testing after a down move"),
+        ("Tweezer Bottom", "Two candles with identical lows — double rejection of lower prices"),
+    ]
+    c_html = "".join(_row(p, d, G) for p, d in candles)
+    st.markdown(_table(c_html, "Pattern", "Signal"), unsafe_allow_html=True)
+
+    # ── RS vs SPY ──────────────────────────────────────────────────────────────
+    _sec("Relative Strength vs SPY (10-day)", B, "📊")
+    st.markdown(_table(
+        _row("OUTPERFORM", "Ticker 10-day return / SPY 10-day return > 1.02 — stock is leading the market.", G) +
+        _row("MATCH", "Ratio 0.95–1.02 — moving roughly in line with the market.", TEXT_MUTED) +
+        _row("UNDERPERFORM", "Ratio < 0.95 — lagging the market. Caution for swing entries.", ACCENT_RED),
+        "Status", "Threshold"
+    ), unsafe_allow_html=True)
+
+    # ── First Things First ─────────────────────────────────────────────────────
+    _sec("🎯 First Things First — High-Conviction Setup Filter", GL, "")
+    ftf_rows_w = [
+        ("W1", "HH/HL OR Tight Base", "Healthy weekly structure required"),
+        ("W2", "Not Extended (≤10% above SMA20W)", "Not chasing a parabolic move"),
+        ("W3", "RSI 35–70", "GREEN or YELLOW zone weekly"),
+        ("W4", "MACD > Signal (weekly)", "Weekly momentum confirmed"),
+        ("W5", "Volume 0.7–3× avg", "Institutional but not a spike"),
+        ("W6", "Price > SMA20W", "Above key weekly moving average"),
+        ("W7", "Fresh crossover ≤5 weekly bars", "Cross happened within the last 5 weeks"),
+        ("W8", "Histogram rising (weekly)", "Momentum accelerating, not peaking"),
+        ("W9", "Uptrend — Price > SMA50W or HH/HL", "Macro direction confirmed"),
+    ]
+    ftf_rows_d = [
+        ("D1", "Not Extended (≤8% above SMA9D)", "No daily chase"),
+        ("D2", "RSI 35–70 (daily)", "Momentum healthy on daily"),
+        ("D3", "MACD > Signal (daily)", "Daily confirmed"),
+        ("D4", "Price > SMA9D", "Short-term trend intact"),
+        ("D5", "Histogram rising (daily)", "Daily momentum building"),
+        ("D6", "Price >2% below 20-day high", "No immediate supply zone overhead"),
+        ("D7", "Volume ≥ 0.8× 20-day avg", "Not dead quiet — buyers present"),
+        ("X1", "ADX > 16", "Trend exists, not ranging"),
+        ("X2", "No bearish divergence", "Price HH + RSI LL pattern absent"),
+    ]
+    ftf_html = (
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+        f'<div>'
+        f'<div style="color:{G};font-size:11px;font-weight:700;'
+        f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">'
+        f'Weekly (all 9 must hold)</div>'
+        + _table("".join(_row(k, f"<b>{v}</b> — {n}", G) for k, v, n in ftf_rows_w), "#", "Condition")
+        + f'</div><div>'
+        f'<div style="color:{B};font-size:11px;font-weight:700;'
+        f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">'
+        f'Daily + Cross-TF (all 9 must hold)</div>'
+        + _table("".join(_row(k, f"<b>{v}</b> — {n}", B) for k, v, n in ftf_rows_d), "#", "Condition")
+        + f'</div></div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:8px;padding:8px 12px;'
+        f'background:{BG_PANEL};border-radius:6px">'
+        f'&#9432; All 18 conditions must hold simultaneously. '
+        f'Demand zone (within 5% of 10-day low) is informational only — not a hard gate. '
+        f'Results sorted by ADX descending (strongest trend first).'
+        f'</div>'
+    )
+    st.markdown(ftf_html, unsafe_allow_html=True)
+
+
 def render():
     section_header("🔧", "Tech Details",
                    "Scanner guide · Universe browser · Scanner rankings & action playbook · Stock Analysis methodology")
 
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "📊 Scanner Tech & Rankings",
         "📖 Scanner Guide",
         "🗃️ Stock Universe",
         "🔬 Stock Analysis",
         "📺 Trading View",
         "📊 ToS-Chart",
+        "📊 MTPA Reference",
     ])
 
     with tab1:
@@ -2584,3 +2798,6 @@ def render():
 
     with tab6:
         _render_tos_chart()
+
+    with tab7:
+        _render_mtpa_reference()
