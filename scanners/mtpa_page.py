@@ -26,6 +26,171 @@ from config import (
 from utils import section_header
 from scanners.mtpa_scanner import run_mtpa_scan
 from scanners.gsheet_helper import export_mtpa_scan
+from scanners.first_things_first import run_ftf_scan
+
+
+# ── FTF section renderer (shared with strategies_page) ────────────────────────
+
+def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
+    """
+    Render the 'First Things First' section.
+    ftf_rows: output of run_ftf_scan() — empty list = nothing qualified.
+    context:  'mtpa' or 'csp' (controls wording slightly).
+    """
+    G  = ACCENT_GREEN
+    GL = GOLD
+    P  = "#A78BFA"
+
+    # ── Section header ─────────────────────────────────────────────────────────
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,{GL}12,{G}08);'
+        f'border-left:4px solid {GL};border-radius:0 10px 10px 0;'
+        f'padding:12px 18px;margin:0 0 10px">'
+        f'<div style="display:flex;align-items:center;gap:10px">'
+        f'<span style="font-size:22px">🎯</span>'
+        f'<div>'
+        f'<div style="color:{GL};font-size:14px;font-weight:700;letter-spacing:0.3px">'
+        f'First Things First</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:1px">'
+        f'Stocks passing ALL weekly + daily + cross-TF conditions simultaneously — '
+        f'highest-conviction setups right now</div>'
+        f'</div></div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">'
+        + "".join(
+            f'<span style="background:{c}14;color:{c};border:1px solid {c}33;'
+            f'font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px">{t}</span>'
+            for t, c in [
+                ("W: HH/HL or Base", G), ("W: Not Extended", G),
+                ("W: RSI 35-70", G), ("W: MACD>Sig", G),
+                ("W: Vol OK", G), ("W: |MACD|≤1.5%", G),
+                ("W: Hist↑", G), ("W: Uptrend", G),
+                ("D: RSI 35-70", "#60A5FA"), ("D: MACD>Sig", "#60A5FA"),
+                ("D: P>SMA9", "#60A5FA"), ("D: Hist↑", "#60A5FA"),
+                ("D: No Supply", "#60A5FA"), ("D: Vol>Avg", "#60A5FA"),
+                ("ADX>16↑", P), ("No Bearish Div", P),
+            ]
+        )
+        + f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    if not ftf_rows:
+        # Empty state — always show section
+        st.markdown(
+            f'<div style="background:{BG_PANEL};border:1px dashed {BORDER_COLOR};'
+            f'border-radius:10px;padding:28px;text-align:center;margin-bottom:20px">'
+            f'<div style="font-size:28px;margin-bottom:8px">🔍</div>'
+            f'<div style="color:{TEXT_PRIMARY};font-size:13px;font-weight:600;'
+            f'margin-bottom:4px">No Setups Qualify Right Now</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
+            f'All 16 conditions (9 weekly + 7 daily + ADX + no divergence) must pass '
+            f'simultaneously. This is intentionally strict — when something appears '
+            f'here, it\'s the highest-conviction setup in the current market.</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    # ── Table ──────────────────────────────────────────────────────────────────
+    _HD = (f'background:#0f172a;color:{GL};font-size:9px;font-weight:700;'
+           f'text-transform:uppercase;letter-spacing:0.7px;padding:8px 12px;'
+           f'border-bottom:2px solid {GL}33;white-space:nowrap;text-align:left')
+    hdr = "".join(
+        f'<th style="{_HD}">{c}</th>'
+        for c in ["Ticker", "Price",
+                  "W-RSI", "W-MACD Hist↑", "|MACD|%",
+                  "D-RSI", "D-MACD Hist↑", "ADX", "Supply Gap",
+                  "Demand Zone", "Bearish Div"]
+    )
+
+    rows_html = ""
+    for i, r in enumerate(ftf_rows):
+        bg  = BG_CARD if i % 2 == 0 else BG_PANEL
+        wd  = r.get("w_detail", {})
+        dd  = r.get("d_detail", {})
+
+        rsi_w_v = wd.get("rsi_w", 0)
+        rsi_d_v = dd.get("rsi_d", 0)
+        rsi_w_col = ACCENT_GREEN if 50 <= rsi_w_v <= 65 else (GOLD if 35 <= rsi_w_v < 50 or 65 < rsi_w_v <= 70 else TEXT_MUTED)
+        rsi_d_col = ACCENT_GREEN if 50 <= rsi_d_v <= 65 else (GOLD if 35 <= rsi_d_v < 50 or 65 < rsi_d_v <= 70 else TEXT_MUTED)
+
+        hist_w = wd.get("hist_w", 0); hist_w_p = wd.get("hist_w_prev", 0)
+        hist_d = dd.get("hist_d", 0); hist_d_p = dd.get("hist_d_prev", 0)
+        hw_col = ACCENT_GREEN if hist_w > 0 else ACCENT_RED
+        hd_col = ACCENT_GREEN if hist_d > 0 else ACCENT_RED
+
+        adx_v   = dd.get("adx")
+        adx_col = ACCENT_GREEN if (adx_v and adx_v >= 25) else (GOLD if (adx_v and adx_v >= 16) else TEXT_MUTED)
+
+        macd_pct = wd.get("macd_pct_w", 0)
+        mp_col   = ACCENT_GREEN if macd_pct <= 0.5 else (GOLD if macd_pct <= 1.5 else TEXT_MUTED)
+
+        supply_gap = dd.get("pct_below_high", 0)
+        sg_col     = ACCENT_GREEN if supply_gap >= 5 else (GOLD if supply_gap >= 3 else ACCENT_RED)
+
+        in_demand  = dd.get("in_demand", False)
+        bear_div   = dd.get("bearish_div", False)
+
+        rows_html += (
+            f'<tr>'
+            f'<td style="background:{bg};padding:8px 12px;white-space:nowrap">'
+            f'<span style="color:{GL};font-family:\'DM Mono\',monospace;'
+            f'font-weight:700;font-size:13px">{r["ticker"]}</span></td>'
+            f'<td style="background:{bg};padding:8px 12px">'
+            f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace">'
+            f'${r["price"]:.2f}</span></td>'
+            # W-RSI
+            f'<td style="background:{bg};padding:8px 12px">'
+            f'<span style="color:{rsi_w_col};font-weight:700">{rsi_w_v:.1f}</span></td>'
+            # W-MACD Hist
+            f'<td style="background:{bg};padding:8px 12px;font-size:11px">'
+            f'<span style="color:{hw_col};font-family:\'DM Mono\',monospace">'
+            f'{hist_w:.4f}</span>'
+            f'<span style="color:{ACCENT_GREEN};font-size:10px"> ↑</span></td>'
+            # |MACD|%
+            f'<td style="background:{bg};padding:8px 12px">'
+            f'<span style="color:{mp_col};font-weight:700">{macd_pct:.2f}%</span></td>'
+            # D-RSI
+            f'<td style="background:{bg};padding:8px 12px">'
+            f'<span style="color:{rsi_d_col};font-weight:700">{rsi_d_v:.1f}</span></td>'
+            # D-MACD Hist
+            f'<td style="background:{bg};padding:8px 12px;font-size:11px">'
+            f'<span style="color:{hd_col};font-family:\'DM Mono\',monospace">'
+            f'{hist_d:.4f}</span>'
+            f'<span style="color:{ACCENT_GREEN};font-size:10px"> ↑</span></td>'
+            # ADX
+            f'<td style="background:{bg};padding:8px 12px">'
+            f'<span style="color:{adx_col};font-weight:700">'
+            f'{"—" if adx_v is None else f"{adx_v:.1f}"}</span>'
+            f'{"↑" if dd.get("adx_rising") else ""}</td>'
+            # Supply gap
+            f'<td style="background:{bg};padding:8px 12px">'
+            f'<span style="color:{sg_col};font-weight:700">{supply_gap:.1f}% clear</span></td>'
+            # Demand zone
+            f'<td style="background:{bg};padding:8px 12px;text-align:center;font-size:13px">'
+            f'{"💚" if in_demand else "—"}</td>'
+            # Bearish divergence
+            f'<td style="background:{bg};padding:8px 12px;text-align:center;font-size:13px">'
+            f'{"❌" if bear_div else "✅"}</td>'
+            f'</tr>'
+        )
+
+    n = len(ftf_rows)
+    st.markdown(
+        f'<div style="color:{G};font-size:12px;font-weight:600;margin-bottom:6px">'
+        f'⭐ {n} stock{"s" if n != 1 else ""} passed all conditions'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid {GL}44;border-radius:10px;'
+        f'margin-bottom:20px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'Inter\',sans-serif">'
+        f'<thead><tr>{hdr}</tr></thead>'
+        f'<tbody>{rows_html}</tbody>'
+        f'</table></div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ── Session state key ──────────────────────────────────────────────────────────
@@ -591,8 +756,21 @@ def render() -> None:
                 progress_bar=_prog_ph,
                 market=market_code,
             )
-        st.session_state[_SESSION_KEY]     = results
-        st.session_state["_mtpa_scan_ts"]  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        st.session_state[_SESSION_KEY]    = results
+        st.session_state["_mtpa_scan_ts"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # FTF scan — runs on same tickers used by MTPA scan
+        from config import MTPA_200, SP500_SAMPLE
+        _ftf_universe = list(dict.fromkeys(
+            (MTPA_200 if market_code == "US" else SP500_SAMPLE[:100])
+        ))
+        _ftf_prog = st.progress(0, text="Running First Things First scan…")
+        def _ftf_status(i, n, tk):
+            _ftf_prog.progress((i+1)/n, text=f"FTF: {tk} ({i+1}/{n})")
+        ftf_rows = run_ftf_scan(_ftf_universe, status_fn=_ftf_status)
+        _ftf_prog.empty()
+        st.session_state["_mtpa_ftf"] = ftf_rows
+
         st.rerun()
 
     # ── Display results ────────────────────────────────────────────
@@ -652,6 +830,10 @@ def render() -> None:
                 + "</div>",
                 unsafe_allow_html=True,
             )
+
+    # ── First Things First ─────────────────────────────────────────
+    ftf_rows = st.session_state.get("_mtpa_ftf", [])
+    render_ftf_section(ftf_rows, context="mtpa")
 
     # ── Table 1 — PRIME ────────────────────────────────────────────
     n1 = len(results["table1"])

@@ -391,10 +391,19 @@ def _render_options_strategy():
         prog_ph.empty()
         stat_ph.empty()
 
-        st.session_state["csp_strat_df"]      = df_out
-        st.session_state["csp_strat_spy_ok"]  = spy_ok
-        st.session_state["csp_strat_spy_note"]= spy_note
-        st.session_state["csp_strat_ts"]      = pd.Timestamp.now().strftime("%b %d %Y  %I:%M %p")
+        st.session_state["csp_strat_df"]       = df_out
+        st.session_state["csp_strat_spy_ok"]   = spy_ok
+        st.session_state["csp_strat_spy_note"]  = spy_note
+        st.session_state["csp_strat_ts"]        = pd.Timestamp.now().strftime("%b %d %Y  %I:%M %p")
+
+        # First Things First scan — same universe, runs immediately after
+        from scanners.first_things_first import run_ftf_scan
+        _ftf_p = st.progress(0, text="Running First Things First scan…")
+        def _ftf_st(i, n, tk):
+            _ftf_p.progress((i+1)/n, text=f"FTF: {tk} ({i+1}/{n})")
+        st.session_state["csp_strat_ftf"] = run_ftf_scan(universe, status_fn=_ftf_st)
+        _ftf_p.empty()
+
         st.rerun()
 
     # ── Results ────────────────────────────────────────────────────────────────
@@ -417,6 +426,10 @@ def _render_options_strategy():
         st.success(f"✅ {spy_note}")
     else:
         st.warning(f"{spy_note} — Proceed with smaller size / tighter strikes")
+
+    # ── First Things First ─────────────────────────────────────────────────────
+    from scanners.mtpa_page import render_ftf_section
+    render_ftf_section(st.session_state.get("csp_strat_ftf", []), context="csp")
 
     if df_out.empty:
         st.info("No stocks passed all filters. Try a larger universe or check market conditions.")
