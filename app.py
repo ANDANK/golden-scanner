@@ -13,10 +13,194 @@
 # ─────────────────────────────────────────────────────────────────
 
 import streamlit as st
-import sys, os
+import sys, os, math
 sys.path.insert(0, os.path.dirname(__file__))
 
 from config import *
+
+
+# ── Fear & Greed — CNN API ─────────────────────────────────────────────────────
+
+@st.cache_data(ttl=3600, show_spinner=False)   # refresh hourly
+def _fetch_fear_greed() -> dict:
+    """Fetch CNN Fear & Greed score. Returns dict or {} on failure."""
+    try:
+        import urllib.request, ssl, json
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode    = ssl.CERT_NONE
+        req = urllib.request.Request(
+            "https://production.dataviz.cnn.io/index/fearandgreed/graphdata",
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer":    "https://www.cnn.com/",
+                "Accept":     "application/json, text/plain, */*",
+                "Origin":     "https://www.cnn.com",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=5, context=ctx) as r:
+            return json.loads(r.read()).get("fear_and_greed", {})
+    except Exception:
+        return {}
+
+
+def _fear_greed_gauge(score: float, rating: str, prev: float) -> str:
+    """
+    Build a compact SVG semicircular gauge for the sidebar.
+    Width 200px, height 110px.
+    Color zones: Extreme Fear (red) → Fear (orange) → Neutral (yellow)
+                 → Greed (lt-green) → Extreme Greed (green)
+    Needle pivots from centre-bottom of the arc.
+    """
+    W, H   = 200, 110
+    CX, CY = 100, 95        # pivot point (centre of the full circle the arc belongs to)
+    R_OUT  = 82             # outer radius
+    R_IN   = 52             # inner radius (donut)
+    R_NE   = 78             # needle length
+
+    # ── Zone colours & angular extents ─────────────────────────────────────────
+    # Angles: 0 = pointing LEFT (score 0), π = pointing RIGHT (score 100)
+    # SVG angle from positive-x axis, measured clockwise.
+    # We map score → angle in the upper semicircle:
+    #   score=0  → 180° (leftmost)
+    #   score=50 → 90°  (top)
+    #   score=100→ 0°   (rightmost)
+    # In radians: θ = π - score/100 * π  (so score 0 → π, score 100 → 0)
+
+    def _pt(angle_rad, r):
+        return (CX + r * math.cos(angle_rad),
+                CY - r * math.sin(angle_rad))   # SVG y flipped
+
+    def _arc_path(a1, a2, r_out, r_in):
+        """Clockwise arc sector from angle a1 to a2 (in radians, a1 < a2 in score)."""
+        # a1 and a2 in standard math angles (score=0 → π, score=100 → 0)
+        # We go from a2 to a1 in SVG (because higher score = smaller angle)
+        ox1, oy1 = _pt(a2, r_out)
+        ox2, oy2 = _pt(a1, r_out)
+        ix1, iy1 = _pt(a1, r_in)
+        ix2, iy2 = _pt(a2, r_in)
+        large = 1 if abs(a1 - a2) > math.pi else 0
+        return (
+            f"M {ox1:.2f} {oy1:.2f} "
+            f"A {r_out} {r_out} 0 {large} 0 {ox2:.2f} {oy2:.2f} "
+            f"L {ix1:.2f} {iy1:.2f} "
+            f"A {r_in} {r_in} 0 {large} 1 {ix2:.2f} {iy2:.2f} Z"
+        )
+
+    def _score_to_angle(s):
+        return math.pi - (s / 100.0) * math.pi
+
+    zones = [
+        (0,   25, "#EF4444"),   # Extreme Fear
+        (25,  45, "#F97316"),   # Fear
+        (45,  55, "#FBBF24"),   # Neutral
+        (55,  75, "#86EFAC"),   # Greed
+        (75, 100, "#22C55E"),   # Extreme Greed
+    ]
+
+    zone_paths = ""
+    for s_lo, s_hi, col in zones:
+        a_hi = _score_to_angle(s_lo)   # higher score → smaller angle
+        a_lo = _score_to_angle(s_hi)
+        zone_paths += (
+            f'<path d="{_arc_path(a_lo, a_hi, R_OUT, R_IN)}" '
+            f'fill="{col}" opacity="0.85"/>\n'
+        )
+
+    # ── Needle ─────────────────────────────────────────────────────────────────
+    needle_angle = _score_to_angle(max(0, min(100, score)))
+    nx, ny = _pt(needle_angle, R_NE)
+    # Small wing points
+    wing_a1 = needle_angle + math.pi / 2
+    wing_a2 = needle_angle - math.pi / 2
+    wx1, wy1 = CX + 4 * math.cos(wing_a1), CY - 4 * math.sin(wing_a1)
+    wx2, wy2 = CX + 4 * math.cos(wing_a2), CY - 4 * math.sin(wing_a2)
+
+    needle_col = (
+        "#EF4444" if score < 25 else
+        "#F97316" if score < 45 else
+        "#FBBF24" if score < 55 else
+        "#86EFAC" if score < 75 else
+        "#22C55E"
+    )
+
+    # ── Rating & change arrow ──────────────────────────────────────────────────
+    rating_label = rating.replace("_", " ").title()
+    change = score - prev
+    arrow  = ("▲" if change > 0 else "▼" if change < 0 else "●")
+    arrow_col = "#22C55E" if change > 0 else "#EF4444" if change < 0 else "#94A3B8"
+
+    return f"""
+<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg"
+     style="width:100%;max-width:200px;display:block;margin:0 auto">
+
+  <!-- background arc zones -->
+  {zone_paths}
+
+  <!-- zone tick marks -->
+  {''.join(
+      f'<line x1="{_pt(_score_to_angle(s), R_IN-2)[0]:.1f}" y1="{_pt(_score_to_angle(s), R_IN-2)[1]:.1f}" '
+      f'x2="{_pt(_score_to_angle(s), R_OUT+2)[0]:.1f}" y2="{_pt(_score_to_angle(s), R_OUT+2)[1]:.1f}" '
+      f'stroke="#0f172a" stroke-width="1.5" opacity="0.6"/>'
+      for s in [25, 45, 55, 75]
+  )}
+
+  <!-- needle -->
+  <polygon points="{nx:.1f},{ny:.1f} {wx1:.1f},{wy1:.1f} {wx2:.1f},{wy2:.1f}"
+           fill="{needle_col}" opacity="0.95"/>
+  <circle cx="{CX}" cy="{CY}" r="5" fill="{needle_col}"/>
+  <circle cx="{CX}" cy="{CY}" r="3" fill="#0f172a"/>
+
+  <!-- score number -->
+  <text x="{CX}" y="{CY - 16}" text-anchor="middle"
+        font-family="DM Mono, monospace" font-size="18" font-weight="700"
+        fill="{needle_col}">{int(score)}</text>
+
+  <!-- rating label -->
+  <text x="{CX}" y="{H - 6}" text-anchor="middle"
+        font-family="Inter, sans-serif" font-size="10" font-weight="600"
+        fill="#cbd5e1" letter-spacing="0.5">{rating_label}</text>
+
+  <!-- change arrow -->
+  <text x="{CX + 40}" y="{CY - 14}" text-anchor="middle"
+        font-family="Inter, sans-serif" font-size="9"
+        fill="{arrow_col}">{arrow}{abs(change):.0f}</text>
+</svg>
+"""
+
+
+def _render_fear_greed_sidebar():
+    """Render the Fear & Greed widget in the sidebar."""
+    fg = _fetch_fear_greed()
+    if not fg:
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:10px;text-align:center;'
+            f'padding:6px">Fear & Greed unavailable</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    score  = float(fg.get("score", 50))
+    rating = str(fg.get("rating", "neutral"))
+    prev   = float(fg.get("previous_close", score))
+
+    gauge_svg = _fear_greed_gauge(score, rating, prev)
+
+    st.markdown(
+        f'<div style="background:#0f172a;border:1px solid #1e293b;'
+        f'border-radius:10px;padding:10px 8px 6px;margin:8px 0">'
+        f'<div style="color:#94a3b8;font-size:9px;font-weight:700;'
+        f'text-transform:uppercase;letter-spacing:1.2px;'
+        f'text-align:center;margin-bottom:4px">CNN Fear &amp; Greed</div>'
+        f'{gauge_svg}'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'padding:4px 6px 0;margin-top:2px;border-top:1px solid #1e293b">'
+        f'<span style="color:#64748b;font-size:8px">prev close {prev:.0f}</span>'
+        f'<span style="color:#64748b;font-size:8px">1wk {fg.get("previous_1_week",0):.0f}</span>'
+        f'<span style="color:#64748b;font-size:8px">1mo {fg.get("previous_1_month",0):.0f}</span>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
 
 # ── Maintenance check BEFORE set_page_config ──────────────────
 # is_maintenance_mode() uses only Python stdlib — safe before any st.* call.
@@ -887,6 +1071,9 @@ if not _in_maintenance:
                             _render_item_with_children(it)
                         else:
                             _render_nav_item(it)
+
+        # ── Fear & Greed meter ────────────────────────────────────
+        _render_fear_greed_sidebar()
 
         # ── ⚙️ Settings block — same gold-header treatment ───────
         st.markdown('<div class="gs-global-row">⚙️ Settings</div>', unsafe_allow_html=True)
