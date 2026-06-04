@@ -501,21 +501,129 @@ def _render_options_strategy():
 # MAIN RENDER
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ── FTF curated ETF universe ──────────────────────────────────────────────────
+_FTF_ETFS = [
+    "SPY", "QQQ", "IWM", "GLD", "TLT",       # broad market + macro
+    "XLK", "XLF", "XLE", "XLV", "XLI",       # top 5 SPDR sectors
+    "XLC", "XLB",                              # comms + materials
+]
+
+
+def _render_ftf_tab():
+    """Standalone First Things First scanner — full SP500 + quality ETFs."""
+    from config import SP500_SAMPLE
+    from scanners.first_things_first import run_ftf_scan
+    from scanners.mtpa_page import render_ftf_section
+
+    G  = ACCENT_GREEN
+    GL = GOLD
+
+    # ── Universe ───────────────────────────────────────────────────────────────
+    universe = list(dict.fromkeys(SP500_SAMPLE + _FTF_ETFS))  # SP500 + 12 ETFs, deduped
+
+    # ── Info banner ────────────────────────────────────────────────────────────
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,{GL}10,{G}08);'
+        f'border:1px solid {GL}44;border-radius:12px;padding:16px 22px;margin-bottom:14px">'
+        f'<div style="color:{GL};font-size:14px;font-weight:700;margin-bottom:4px">'
+        f'🎯 First Things First — Full Universe Scan</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
+        f'Scans <b style="color:#fff">{len(universe)} tickers</b> '
+        f'(SP500 + {len(_FTF_ETFS)} quality ETFs) for stocks passing all '
+        f'<b style="color:#fff">16 conditions</b> simultaneously across weekly + daily timeframes. '
+        f'Expect a 3–5 minute runtime. Best run <b style="color:{GL}">30–60 min after market open</b> '
+        f'when volume and histogram direction are established.</div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">'
+        + "".join(
+            f'<span style="background:{GL}18;color:{GL};border:1px solid {GL}33;'
+            f'font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px">{e}</span>'
+            for e in _FTF_ETFS
+        )
+        + f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Controls ───────────────────────────────────────────────────────────────
+    run_col, clear_col, _ = st.columns([1, 1, 4])
+    with run_col:
+        run_btn = st.button("▶ Run FTF Scan", type="primary",
+                            use_container_width=True, key="ftf_strat_run")
+    with clear_col:
+        if st.button("🔄 Clear", use_container_width=True, key="ftf_strat_clear"):
+            st.session_state.pop("ftf_strat_rows", None)
+            st.session_state.pop("ftf_strat_ts", None)
+            st.rerun()
+
+    if st.session_state.get("ftf_strat_ts"):
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:2px">'
+            f'Last scan: {st.session_state["ftf_strat_ts"]}</div>',
+            unsafe_allow_html=True,
+        )
+
+    # ── Run ────────────────────────────────────────────────────────────────────
+    if run_btn:
+        prog = st.progress(0, text="Starting FTF scan…")
+        stat = st.empty()
+
+        def _status(i, n, tk):
+            prog.progress((i + 1) / n, text=f"Scanning {tk} ({i+1}/{n})")
+            stat.markdown(
+                f'<div style="color:{TEXT_MUTED};font-size:11px">🔍 {tk}</div>',
+                unsafe_allow_html=True,
+            )
+
+        rows = run_ftf_scan(universe, status_fn=_status)
+        prog.empty(); stat.empty()
+
+        st.session_state["ftf_strat_rows"] = rows
+        st.session_state["ftf_strat_ts"]   = pd.Timestamp.now().strftime("%b %d %Y  %I:%M %p")
+        st.rerun()
+
+    # ── Results ────────────────────────────────────────────────────────────────
+    if "ftf_strat_rows" not in st.session_state:
+        st.markdown(
+            f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;'
+            f'padding:40px;text-align:center;color:{TEXT_MUTED};margin-top:12px">'
+            f'Press <b style="color:{GL}">▶ Run FTF Scan</b> to scan {len(universe)} tickers'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    render_ftf_section(st.session_state["ftf_strat_rows"], context="ftf")
+
+    # Export
+    rows = st.session_state["ftf_strat_rows"]
+    if rows:
+        _df = pd.DataFrame([{
+            "Ticker": r["ticker"], "Price": r["price"],
+            "W-RSI": r["w_detail"].get("rsi_w"),
+            "D-RSI": r["d_detail"].get("rsi_d"),
+            "ADX":   r["d_detail"].get("adx"),
+        } for r in rows])
+        st.download_button("⬇ Export CSV", _df.to_csv(index=False),
+                           "ftf_scan.csv", "text/csv", key="ftf_dl")
+
+
 def render():
     section_header("♟️", "Strategies",
-                   "QQQ / TQQQ weight-of-evidence · Options Strategy screener (CSP & LEAP)")
+                   "QQQ / TQQQ weight-of-evidence · Options Strategy screener · First Things First")
 
     st.markdown(_TAB_CSS, unsafe_allow_html=True)
 
-    tab_qqq, tab_opts = st.tabs([
+    tab_qqq, tab_opts, tab_ftf = st.tabs([
         "♟️  QQQ / TQQQ Strategy",
         "💰  Options Strategy",
+        "🎯  First Things First",
     ])
 
     with tab_qqq:
         from scanners.qqq_strategy_page import render as _qqq_render
-        # Strip the section_header call since we already have one above
         _qqq_render(_skip_header=True)
 
     with tab_opts:
         _render_options_strategy()
+
+    with tab_ftf:
+        _render_ftf_tab()
