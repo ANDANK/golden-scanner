@@ -44,131 +44,6 @@ def _fetch_fear_greed() -> dict:
         return {}
 
 
-def _fear_greed_gauge(score: float, rating: str, prev: float) -> str:
-    """
-    Build a compact SVG semicircular gauge for the sidebar.
-    Width 200px, height 110px.
-    Color zones: Extreme Fear (red) → Fear (orange) → Neutral (yellow)
-                 → Greed (lt-green) → Extreme Greed (green)
-    Needle pivots from centre-bottom of the arc.
-    """
-    W, H   = 200, 110
-    CX, CY = 100, 95        # pivot point (centre of the full circle the arc belongs to)
-    R_OUT  = 82             # outer radius
-    R_IN   = 52             # inner radius (donut)
-    R_NE   = 78             # needle length
-
-    # ── Zone colours & angular extents ─────────────────────────────────────────
-    # Angles: 0 = pointing LEFT (score 0), π = pointing RIGHT (score 100)
-    # SVG angle from positive-x axis, measured clockwise.
-    # We map score → angle in the upper semicircle:
-    #   score=0  → 180° (leftmost)
-    #   score=50 → 90°  (top)
-    #   score=100→ 0°   (rightmost)
-    # In radians: θ = π - score/100 * π  (so score 0 → π, score 100 → 0)
-
-    def _pt(angle_rad, r):
-        return (CX + r * math.cos(angle_rad),
-                CY - r * math.sin(angle_rad))   # SVG y flipped
-
-    def _arc_path(a1, a2, r_out, r_in):
-        """Clockwise arc sector from angle a1 to a2 (in radians, a1 < a2 in score)."""
-        # a1 and a2 in standard math angles (score=0 → π, score=100 → 0)
-        # We go from a2 to a1 in SVG (because higher score = smaller angle)
-        ox1, oy1 = _pt(a2, r_out)
-        ox2, oy2 = _pt(a1, r_out)
-        ix1, iy1 = _pt(a1, r_in)
-        ix2, iy2 = _pt(a2, r_in)
-        large = 1 if abs(a1 - a2) > math.pi else 0
-        return (
-            f"M {ox1:.2f} {oy1:.2f} "
-            f"A {r_out} {r_out} 0 {large} 0 {ox2:.2f} {oy2:.2f} "
-            f"L {ix1:.2f} {iy1:.2f} "
-            f"A {r_in} {r_in} 0 {large} 1 {ix2:.2f} {iy2:.2f} Z"
-        )
-
-    def _score_to_angle(s):
-        return math.pi - (s / 100.0) * math.pi
-
-    zones = [
-        (0,   25, "#EF4444"),   # Extreme Fear
-        (25,  45, "#F97316"),   # Fear
-        (45,  55, "#FBBF24"),   # Neutral
-        (55,  75, "#86EFAC"),   # Greed
-        (75, 100, "#22C55E"),   # Extreme Greed
-    ]
-
-    zone_paths = ""
-    for s_lo, s_hi, col in zones:
-        a_hi = _score_to_angle(s_lo)   # higher score → smaller angle
-        a_lo = _score_to_angle(s_hi)
-        zone_paths += (
-            f'<path d="{_arc_path(a_lo, a_hi, R_OUT, R_IN)}" '
-            f'fill="{col}" opacity="0.85"/>\n'
-        )
-
-    # ── Needle ─────────────────────────────────────────────────────────────────
-    needle_angle = _score_to_angle(max(0, min(100, score)))
-    nx, ny = _pt(needle_angle, R_NE)
-    # Small wing points
-    wing_a1 = needle_angle + math.pi / 2
-    wing_a2 = needle_angle - math.pi / 2
-    wx1, wy1 = CX + 4 * math.cos(wing_a1), CY - 4 * math.sin(wing_a1)
-    wx2, wy2 = CX + 4 * math.cos(wing_a2), CY - 4 * math.sin(wing_a2)
-
-    needle_col = (
-        "#EF4444" if score < 25 else
-        "#F97316" if score < 45 else
-        "#FBBF24" if score < 55 else
-        "#86EFAC" if score < 75 else
-        "#22C55E"
-    )
-
-    # ── Rating & change arrow ──────────────────────────────────────────────────
-    rating_label = rating.replace("_", " ").title()
-    change = score - prev
-    arrow  = ("▲" if change > 0 else "▼" if change < 0 else "●")
-    arrow_col = "#22C55E" if change > 0 else "#EF4444" if change < 0 else "#94A3B8"
-
-    return f"""
-<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg"
-     style="width:100%;max-width:200px;display:block;margin:0 auto">
-
-  <!-- background arc zones -->
-  {zone_paths}
-
-  <!-- zone tick marks -->
-  {''.join(
-      f'<line x1="{_pt(_score_to_angle(s), R_IN-2)[0]:.1f}" y1="{_pt(_score_to_angle(s), R_IN-2)[1]:.1f}" '
-      f'x2="{_pt(_score_to_angle(s), R_OUT+2)[0]:.1f}" y2="{_pt(_score_to_angle(s), R_OUT+2)[1]:.1f}" '
-      f'stroke="#0f172a" stroke-width="1.5" opacity="0.6"/>'
-      for s in [25, 45, 55, 75]
-  )}
-
-  <!-- needle -->
-  <polygon points="{nx:.1f},{ny:.1f} {wx1:.1f},{wy1:.1f} {wx2:.1f},{wy2:.1f}"
-           fill="{needle_col}" opacity="0.95"/>
-  <circle cx="{CX}" cy="{CY}" r="5" fill="{needle_col}"/>
-  <circle cx="{CX}" cy="{CY}" r="3" fill="#0f172a"/>
-
-  <!-- score number -->
-  <text x="{CX}" y="{CY - 16}" text-anchor="middle"
-        font-family="DM Mono, monospace" font-size="18" font-weight="700"
-        fill="{needle_col}">{int(score)}</text>
-
-  <!-- rating label -->
-  <text x="{CX}" y="{H - 6}" text-anchor="middle"
-        font-family="Inter, sans-serif" font-size="10" font-weight="600"
-        fill="#cbd5e1" letter-spacing="0.5">{rating_label}</text>
-
-  <!-- change arrow -->
-  <text x="{CX + 40}" y="{CY - 14}" text-anchor="middle"
-        font-family="Inter, sans-serif" font-size="9"
-        fill="{arrow_col}">{arrow}{abs(change):.0f}</text>
-</svg>
-"""
-
-
 def _render_fear_greed_sidebar():
     """Render the Fear & Greed widget in the sidebar."""
     fg = _fetch_fear_greed()
@@ -180,25 +55,198 @@ def _render_fear_greed_sidebar():
         )
         return
 
-    score  = float(fg.get("score", 50))
-    rating = str(fg.get("rating", "neutral"))
-    prev   = float(fg.get("previous_close", score))
+    score    = float(fg.get("score", 50))
+    rating   = str(fg.get("rating", "neutral"))
+    prev_c   = float(fg.get("previous_close", score))
+    prev_1w  = float(fg.get("previous_1_week", score))
+    prev_1m  = float(fg.get("previous_1_month", score))
 
-    gauge_svg = _fear_greed_gauge(score, rating, prev)
+    # ── Colours ───────────────────────────────────────────────────────────────
+    needle_col = (
+        "#EF4444" if score < 25 else
+        "#F97316" if score < 45 else
+        "#FBBF24" if score < 55 else
+        "#86EFAC" if score < 75 else
+        "#22C55E"
+    )
+    rating_label = rating.replace("_", " ").title()
+    change   = score - prev_c
+    arrow    = "▲" if change > 0 else "▼" if change < 0 else "—"
+    arrow_col= "#22C55E" if change > 0 else "#EF4444" if change < 0 else "#64748b"
 
+    # ── SVG gauge ─────────────────────────────────────────────────────────────
+    # Geometry: viewBox 220×150, pivot at (110, 130) — arc sits well above pivot.
+    # All text lives BELOW the arc baseline inside the card HTML, not in the SVG.
+    W, H   = 220, 115
+    CX, CY = 110, 108   # pivot = horizontal baseline of the arc
+    R_OUT  = 95          # outer ring
+    R_IN   = 60          # inner ring  (donut width = 35px)
+    R_NE   = 88          # needle reach (stays inside outer ring)
+    GAP    = 3           # gap in degrees between zones
+
+    def _pt(a, r):
+        return (CX + r * math.cos(a), CY - r * math.sin(a))
+
+    def _arc_path(s_lo, s_hi, r_out, r_in, gap_deg=GAP):
+        """Return SVG path for a donut sector between score s_lo and s_hi."""
+        g  = math.radians(gap_deg / 2)
+        a1 = math.pi - (s_lo / 100) * math.pi + g   # inner edge of low score
+        a2 = math.pi - (s_hi / 100) * math.pi - g   # inner edge of high score
+        # outer arc goes from a1 side to a2 side (clockwise in SVG = decreasing angle)
+        ox1, oy1 = _pt(a1, r_out)
+        ox2, oy2 = _pt(a2, r_out)
+        ix1, iy1 = _pt(a1, r_in)
+        ix2, iy2 = _pt(a2, r_in)
+        lf = 1 if abs(a1 - a2) > math.pi else 0
+        return (
+            f"M {ox1:.2f},{oy1:.2f} "
+            f"A {r_out},{r_out} 0 {lf} 0 {ox2:.2f},{oy2:.2f} "
+            f"L {ix2:.2f},{iy2:.2f} "
+            f"A {r_in},{r_in} 0 {lf} 1 {ix1:.2f},{iy1:.2f} Z"
+        )
+
+    zones = [
+        (0,  25, "#EF4444", "E.Fear"),
+        (25, 45, "#F97316", "Fear"),
+        (45, 55, "#FBBF24", "Neutral"),
+        (55, 75, "#86EFAC", "Greed"),
+        (75,100, "#22C55E", "E.Greed"),
+    ]
+
+    zone_svgs = []
+    label_svgs = []
+    for s_lo, s_hi, col, lbl in zones:
+        zone_svgs.append(
+            f'<path d="{_arc_path(s_lo, s_hi, R_OUT, R_IN)}" fill="{col}" opacity="0.9"/>'
+        )
+        # Zone label at midpoint angle, just inside the outer ring
+        mid_s    = (s_lo + s_hi) / 2
+        mid_a    = math.pi - (mid_s / 100) * math.pi
+        lx, ly   = _pt(mid_a, (R_OUT + R_IN) / 2)
+        label_svgs.append(
+            f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="middle" '
+            f'dominant-baseline="middle" '
+            f'font-family="Inter,sans-serif" font-size="7.5" font-weight="700" '
+            f'fill="#0f172a" opacity="0.85">{lbl}</text>'
+        )
+
+    # Boundary tick marks between zones
+    tick_svgs = []
+    for s in [25, 45, 55, 75]:
+        a   = math.pi - (s / 100) * math.pi
+        x1, y1 = _pt(a, R_IN - 1)
+        x2, y2 = _pt(a, R_OUT + 1)
+        tick_svgs.append(
+            f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
+            f'stroke="#0f172a" stroke-width="2" opacity="0.7"/>'
+        )
+
+    # Needle — thin white rod with colored dot at tip and dark pivot
+    na       = math.pi - (max(0, min(100, score)) / 100) * math.pi
+    nx_, ny_ = _pt(na, R_NE)
+    bx_, by_ = _pt(na + math.pi, 8)   # short tail behind pivot
+
+    needle_svg = (
+        # shadow for visibility
+        f'<line x1="{CX:.1f}" y1="{CY:.1f}" x2="{nx_:.1f}" y2="{ny_:.1f}" '
+        f'stroke="#000" stroke-width="4" stroke-linecap="round" opacity="0.35"/>'
+        f'<line x1="{CX:.1f}" y1="{CY:.1f}" x2="{nx_:.1f}" y2="{ny_:.1f}" '
+        f'stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>'
+        # colored tip dot
+        f'<circle cx="{nx_:.1f}" cy="{ny_:.1f}" r="4" fill="{needle_col}"/>'
+        # pivot circle
+        f'<circle cx="{CX}" cy="{CY}" r="6" fill="#1e293b" stroke="{needle_col}" stroke-width="1.5"/>'
+        f'<circle cx="{CX}" cy="{CY}" r="3" fill="{needle_col}"/>'
+    )
+
+    # Score & rating text — centred in the donut hole
+    # Donut hole centre (vertically): midpoint of R_IN below CY
+    tx, ty_score  = CX, CY - R_IN // 2 + 4    # ≈ (110, 79)
+    ty_rating     = ty_score + 13
+
+    text_svgs = (
+        f'<text x="{tx}" y="{ty_score}" text-anchor="middle" '
+        f'font-family="DM Mono,monospace" font-size="22" font-weight="800" '
+        f'fill="{needle_col}">{int(score)}</text>'
+        f'<text x="{tx}" y="{ty_rating}" text-anchor="middle" '
+        f'font-family="Inter,sans-serif" font-size="9" font-weight="600" '
+        f'fill="#cbd5e1" letter-spacing="0.3">{rating_label.upper()}</text>'
+    )
+
+    # End labels: "0" left, "100" right
+    end_labels = (
+        f'<text x="{_pt(math.pi, R_OUT+8)[0]:.1f}" y="{CY+12}" '
+        f'text-anchor="middle" font-size="8" fill="#64748b">0</text>'
+        f'<text x="{_pt(0, R_OUT+8)[0]:.1f}" y="{CY+12}" '
+        f'text-anchor="middle" font-size="8" fill="#64748b">100</text>'
+    )
+
+    gauge_svg = (
+        f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" '
+        f'style="width:100%;display:block;margin:0 auto">'
+        + "\n".join(zone_svgs)
+        + "\n".join(tick_svgs)
+        + "\n".join(label_svgs)
+        + needle_svg
+        + text_svgs
+        + end_labels
+        + "</svg>"
+    )
+
+    # ── Historical mini sparkbar ───────────────────────────────────────────────
+    def _hist_bar(label, val, cur):
+        diff  = cur - val
+        d_col = "#22C55E" if diff > 0 else "#EF4444" if diff < 0 else "#64748b"
+        d_sym = "▲" if diff > 0 else "▼" if diff < 0 else "—"
+        bar_w = int(val / 100 * 100)
+        bar_col = (
+            "#EF4444" if val < 25 else "#F97316" if val < 45 else
+            "#FBBF24" if val < 55 else "#86EFAC" if val < 75 else "#22C55E"
+        )
+        return (
+            f'<div style="margin-bottom:5px">'
+            f'<div style="display:flex;justify-content:space-between;'
+            f'align-items:center;margin-bottom:2px">'
+            f'<span style="color:#64748b;font-size:9px">{label}</span>'
+            f'<span style="color:#94a3b8;font-size:9px;font-family:DM Mono,monospace">'
+            f'{val:.0f} <span style="color:{d_col}">{d_sym}{abs(diff):.0f}</span></span>'
+            f'</div>'
+            f'<div style="background:#1e293b;border-radius:3px;height:4px">'
+            f'<div style="background:{bar_col};height:4px;border-radius:3px;'
+            f'width:{bar_w}%"></div></div></div>'
+        )
+
+    hist_html = (
+        _hist_bar("Yesterday", prev_c, score)
+        + _hist_bar("1 Week",   prev_1w, score)
+        + _hist_bar("1 Month",  prev_1m, score)
+    )
+
+    # ── Card HTML ──────────────────────────────────────────────────────────────
+    border_col = needle_col
     st.markdown(
-        f'<div style="background:#0f172a;border:1px solid #1e293b;'
-        f'border-radius:10px;padding:10px 8px 6px;margin:8px 0">'
-        f'<div style="color:#94a3b8;font-size:9px;font-weight:700;'
-        f'text-transform:uppercase;letter-spacing:1.2px;'
-        f'text-align:center;margin-bottom:4px">CNN Fear &amp; Greed</div>'
-        f'{gauge_svg}'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'padding:4px 6px 0;margin-top:2px;border-top:1px solid #1e293b">'
-        f'<span style="color:#64748b;font-size:8px">prev close {prev:.0f}</span>'
-        f'<span style="color:#64748b;font-size:8px">1wk {fg.get("previous_1_week",0):.0f}</span>'
-        f'<span style="color:#64748b;font-size:8px">1mo {fg.get("previous_1_month",0):.0f}</span>'
-        f'</div></div>',
+        f'<div style="background:#0c1222;border:1px solid {border_col}44;'
+        f'border-top:2px solid {border_col};border-radius:10px;'
+        f'padding:8px 10px 10px;margin:6px 0">'
+
+        # Header row: title + change badge
+        f'<div style="display:flex;align-items:center;justify-content:space-between;'
+        f'margin-bottom:4px">'
+        f'<span style="color:#64748b;font-size:9px;font-weight:700;'
+        f'text-transform:uppercase;letter-spacing:1px">CNN Fear &amp; Greed</span>'
+        f'<span style="background:{arrow_col}22;color:{arrow_col};'
+        f'border:1px solid {arrow_col}44;font-size:9px;font-weight:700;'
+        f'padding:1px 7px;border-radius:10px">'
+        f'{arrow} {abs(change):.0f} vs yest</span>'
+        f'</div>'
+
+        # Gauge SVG
+        + gauge_svg
+
+        # Historical comparison bars
+        + f'<div style="margin-top:8px;padding-top:7px;border-top:1px solid #1e293b">'
+        + hist_html
+        + f'</div></div>',
         unsafe_allow_html=True,
     )
 
