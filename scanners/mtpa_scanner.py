@@ -454,6 +454,7 @@ def run_mtpa_scan(
     table2: list[dict] = []
     table3: list[dict] = []
     table4: list[dict] = []   # MACD Momentum — independent, no dedup
+    table_ftf: list[dict] = []  # First Things First — all 18 conditions, zero extra API calls
     failed: list[str]  = []
 
     n = len(tickers)
@@ -618,6 +619,112 @@ def run_mtpa_scan(
                     and dly_macd_line_pos and macd_above_signal):
                 table4.append(result)
 
+            # ── First Things First — computed from already-fetched data ──────
+            # Zero extra API calls — all series (close, wk_df, volume) are
+            # already in memory from the MTPA scan above.
+            try:
+                # ── Weekly gaps ──────────────────────────────────────────────
+                # W6: price > weekly SMA20 (distinct from daily sma20)
+                wk_close_s2 = wk_df["Close"].squeeze() if not wk_df.empty else pd.Series(dtype=float)
+                _sma20w = float(calc_sma(wk_close_s2, 20).dropna().iloc[-1]) if len(wk_close_s2) >= 20 else 0.0
+                _sma50w = float(calc_sma(wk_close_s2, 50).dropna().iloc[-1]) if len(wk_close_s2) >= 50 else _sma20w
+                _w6 = price > _sma20w if _sma20w > 0 else False
+
+                # W7: fresh weekly MACD crossover within last 5 bars
+                _wk_macd_full, _wk_sig_full, _, _ = calc_macd(wk_close_s2) if len(wk_close_s2) >= 26 else (pd.Series(dtype=float), pd.Series(dtype=float), None, None)
+                _fresh_cross_w = False
+                _n = min(5, max(0, len(_wk_macd_full) - 1))
+                for _k in range(1, _n + 1):
+                    if (float(_wk_macd_full.iloc[-_k]) > float(_wk_sig_full.iloc[-_k]) and
+                            float(_wk_macd_full.iloc[-_k - 1]) <= float(_wk_sig_full.iloc[-_k - 1])):
+                        _fresh_cross_w = True
+                        break
+
+                # W9: uptrend = weekly HH/HL OR price > weekly SMA50
+                _w9 = (weekly_pattern == "HH/HL") or (price > _sma50w if _sma50w > 0 else False)
+
+                # W2: not extended = price within 10% above weekly SMA20
+                _w2 = (_sma20w > 0) and (price <= _sma20w * 1.10)
+
+                # W5: weekly volume ratio (use daily as proxy — same direction)
+                _w5 = 0.7 <= volume_ratio <= 3.0
+
+                # ── Daily gaps ────────────────────────────────────────────────
+                # D1: not extended — price within 8% above SMA9
+                _sma9v = float(calc_sma(close, 9).dropna().iloc[-1]) if len(close) >= 9 else price
+                _d1 = (_sma9v > 0) and (price <= _sma9v * 1.08)
+
+                # D5: daily histogram rising (need prev hist bar)
+                _, _, _dh_now, _dh_prev = calc_macd(close)
+                _d5 = float(_dh_now) > float(_dh_prev) if (_dh_prev is not None) else False
+
+                # D6: no nearby supply — price > 2% below 20-day rolling high
+                _high_20d = float(close.iloc[-20:].max()) if len(close) >= 20 else price
+                _pct_below = (_high_20d - price) / _high_20d * 100 if _high_20d > 0 else 0
+                _d6 = _pct_below > 2.0
+
+                # D7: volume ≥ 0.8× avg
+                _d7 = volume_ratio >= 0.8
+
+                # X1: ADX > 16 (compute from daily OHLC if available)
+                _adx_ok = False
+                try:
+                    _hi = daily_df["High"].squeeze()
+                    _lo = daily_df["Low"].squeeze()
+                    _prev_cl = close.shift(1)
+                    _tr = pd.concat([_hi - _lo, (_hi - _prev_cl).abs(), (_lo - _prev_cl).abs()], axis=1).max(axis=1)
+                    _atr = _tr.ewm(com=13, adjust=False).mean()
+                    _up = _hi.diff(); _dn = -_lo.diff()
+                    _pdm = _up.where((_up > _dn) & (_up > 0), 0.0)
+                    _ndm = _dn.where((_dn > _up) & (_dn > 0), 0.0)
+                    _safe = _atr.replace(0, np.nan)
+                    _pdi = 100 * _pdm.ewm(com=13, adjust=False).mean() / _safe
+                    _ndi = 100 * _ndm.ewm(com=13, adjust=False).mean() / _safe
+                    _dx = (100 * (_pdi - _ndi).abs() / (_pdi + _ndi).replace(0, np.nan)).fillna(0)
+                    _adx_val = float(_dx.ewm(com=13, adjust=False).mean().dropna().iloc[-1])
+                    _adx_ok = np.isfinite(_adx_val) and _adx_val > 16
+                except Exception:
+                    _adx_ok = True   # if ADX fails, don't gate on it
+
+                # X2: no bearish divergence (price up 14d but RSI down 14d)
+                _rsi_ser = calc_rsi(close)
+                _no_div = True
+                if len(_rsi_ser.dropna()) >= 14 and len(close) >= 14:
+                    _price_up = float(close.iloc[-1]) > float(close.iloc[-14])
+                    _rsi_dn   = float(_rsi_ser.dropna().iloc[-1]) < float(_rsi_ser.dropna().iloc[-14])
+                    _no_div   = not (_price_up and _rsi_dn)
+
+                # ── FTF gate ─────────────────────────────────────────────────
+                _ftf_pass = all([
+                    weekly_pattern in ("HH/HL", "Tight Base"),  # W1
+                    _w2,                                          # W2 not extended
+                    35 <= wk_rsi_val <= 70,                      # W3
+                    wk_hist_pos,                                  # W4 MACD>Signal weekly (hist>0)
+                    _w5,                                          # W5 volume
+                    _w6,                                          # W6 price > SMA20W
+                    _fresh_cross_w,                               # W7 fresh cross
+                    wk_hist_rising,                               # W8 hist rising weekly
+                    _w9,                                          # W9 uptrend
+                    _d1,                                          # D1 not extended daily
+                    35 <= rsi_value <= 70,                        # D2
+                    macd_above_signal,                            # D3
+                    price_above_sma9,                             # D4
+                    _d5,                                          # D5 daily hist rising
+                    _d6,                                          # D6 no supply
+                    _d7,                                          # D7 volume
+                    _adx_ok,                                      # X1
+                    _no_div,                                      # X2
+                ])
+
+                if _ftf_pass:
+                    table_ftf.append({**result,
+                        "ftf_adx":    round(_adx_val if _adx_ok else 0, 1),
+                        "ftf_pb_pct": round(_pct_below, 1),
+                        "ftf_cross_w": _fresh_cross_w,
+                    })
+            except Exception:
+                pass   # FTF failure never blocks the main MTPA result
+
         except Exception as exc:
             failed.append(f"{ticker}: {type(exc).__name__}")
             continue
@@ -644,11 +751,15 @@ def run_mtpa_scan(
     if progress_bar is not None:
         progress_bar.empty()
 
+    # Sort FTF by ADX descending (strongest trend first)
+    table_ftf.sort(key=lambda r: r.get("ftf_adx", 0), reverse=True)
+
     return {
         "table1":          table1,
         "table2":          table2,
         "table3":          table3,
         "table4":          table4,
+        "table_ftf":       table_ftf,   # First Things First — 0 extra API calls
         "scan_time":       elapsed,
         "total_scanned":   len(tickers),
         "total_matched":   total_matched,

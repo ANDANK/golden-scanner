@@ -26,7 +26,6 @@ from config import (
 from utils import section_header
 from scanners.mtpa_scanner import run_mtpa_scan
 from scanners.gsheet_helper import export_mtpa_scan
-from scanners.first_things_first import run_ftf_scan
 
 
 # ── FTF section renderer (shared with strategies_page) ────────────────────────
@@ -758,18 +757,8 @@ def render() -> None:
             )
         st.session_state[_SESSION_KEY]    = results
         st.session_state["_mtpa_scan_ts"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        # FTF scan — runs on same tickers used by MTPA scan
-        from config import MTPA_200, SP500_SAMPLE
-        _ftf_universe = list(dict.fromkeys(
-            (MTPA_200 if market_code == "US" else SP500_SAMPLE[:100])
-        ))
-        _ftf_prog = st.progress(0, text="Running First Things First scan…")
-        def _ftf_status(i, n, tk):
-            _ftf_prog.progress((i+1)/n, text=f"FTF: {tk} ({i+1}/{n})")
-        ftf_rows = run_ftf_scan(_ftf_universe, status_fn=_ftf_status)
-        _ftf_prog.empty()
-        st.session_state["_mtpa_ftf"] = ftf_rows
+        # FTF results come directly from the MTPA scan — zero extra API calls
+        st.session_state["_mtpa_ftf"]     = results.get("table_ftf", [])
 
         st.rerun()
 
