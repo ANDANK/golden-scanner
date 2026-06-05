@@ -13,7 +13,7 @@ Weekly conditions (ALL must hold):
   W4  MACD > Signal line
   W5  Volume OK (0.7–2.0× 20-week avg — not dry, not spike)
   W6  Price > SMA20W
-  W7  |MACD line| ≤ 1.5% of price (fresh crossover, not overrun)
+  W7  Fresh MACD cross within last 8 weekly bars
   (W8 removed — W4 hist>0 is sufficient; declining positive histogram is still valid)
   W9  Uptrend (price > SMA50W OR HH/HL confirmed)
 
@@ -156,13 +156,10 @@ def _check_weekly(ticker: str, price: float) -> dict:
         result["W4"] = m_w > s_w
         result["W5"] = 0.7 <= vol_ratio_w <= 3.0          # relaxed upper cap: breakout days OK
         result["W6"] = px > sma20_w
-        # W7 — fresh crossover: MACD crossed above Signal within last 5 weekly bars
-        # 5 weeks matches a weekly scan cadence — catches brand-new crosses AND
-        # setups where other conditions (RSI, histogram, structure) remained valid
-        # into weeks 4-5 after the initial cross. Beyond 5 weeks = stale setup.
+        # W7 — fresh crossover: MACD crossed above Signal within last 8 weekly bars
         _fresh_cross_w = False
         _macd_d = macd_w.dropna(); _sig_d = sig_w.dropna()
-        _n_check = min(5, len(_macd_d) - 1)
+        _n_check = min(8, len(_macd_d) - 1)
         for _k in range(1, _n_check + 1):
             if (float(_macd_d.iloc[-_k]) > float(_sig_d.iloc[-_k]) and
                     float(_macd_d.iloc[-_k - 1]) <= float(_sig_d.iloc[-_k - 1])):
@@ -283,14 +280,17 @@ def _check_daily(ticker: str, price: float) -> dict:
 def run_ftf_scan(
     tickers: list[str],
     status_fn=None,
-) -> list[dict]:
+) -> tuple[list[dict], dict]:
     """
     Run the First-Things-First scan across tickers.
-    Returns list of dicts for qualifying tickers, sorted by ADX desc.
-    Each dict contains: ticker, price, weekly_detail, daily_detail,
-    weekly_flags (list of passing W conditions), daily_flags (list of passing D conditions).
+    Returns (results, diagnostics) where:
+      results     — list of dicts for qualifying tickers, sorted by ADX desc
+      diagnostics — {total, weekly_pass, daily_pass} pass counts
+    Each result dict contains: ticker, price, weekly_detail, daily_detail,
+    weekly_flags, daily_flags.
     """
     qualified = []
+    weekly_pass = 0
 
     for i, ticker in enumerate(tickers):
         if status_fn:
@@ -308,6 +308,7 @@ def run_ftf_scan(
         wk = _check_weekly(ticker, price)
         if not wk["pass"]:
             continue
+        weekly_pass += 1
 
         # Daily + cross-TF check
         dy = _check_daily(ticker, price)
@@ -348,4 +349,9 @@ def run_ftf_scan(
         key=lambda r: r["d_detail"].get("adx") or 0,
         reverse=True,
     )
-    return qualified
+    diagnostics = {
+        "total":        len(tickers),
+        "weekly_pass":  weekly_pass,
+        "daily_pass":   len(qualified),
+    }
+    return qualified, diagnostics

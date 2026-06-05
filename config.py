@@ -28,7 +28,7 @@ SP500_SAMPLE = [
     # Broad market & vol
     "SPY","QQQ","IWM","DIA","VTI","VOO","UVXY","VXX",
     # Commodities & bonds
-    "GLD","SLV","TLT","HYG","LQD","USO","UNG",
+    "GLD","SLV","TLT","HYG","LQD",
     # Sector SPDRs
     "XLK","XLF","XLE","XLV","XLI","XLU","XLP","XLY",
     # Tech & semi
@@ -36,7 +36,7 @@ SP500_SAMPLE = [
     # International & emerging
     "EEM","FXI","EWZ","KWEB",
     # Real assets & thematic
-    "GDX","GDXJ","VNQ","IBB",
+    "GDX","GDXJ","VNQ","IBB","USO","UNG",
     # ── Large-cap S&P 500 (56–215) ───────────────────────────
     "ABBV","CVX","CRM","BAC","PEP","ADBE","NFLX","TMO","ACN","WMT",
     "MCD","AMD","CSCO","ORCL","ABT","CAT","GS","TXN","INTU","QCOM",
@@ -67,9 +67,12 @@ SP500_SAMPLE = [
     "WAT","ALGN","RMD","DXCM","MTD","IEX","TFX","HOLX","BIO","VTRS",
     "UAL","LUV","ODFL","JBHT","IR","GNRC","TT","EXPD",
     "ZION","CFG","FITB","KEY","HBAN","RF","WRB","CINF","FAF","FHN",
-    # ── Remaining ETFs (331–350) ──────────────────────────────
-    "EEM","VWO","AGG","BND","LQD","MUB","VCIT","VCSH",
-    "ARKW","IYR","VNQ","XRT","KRE","IAT","XLB","XLRE",
+    # ── Remaining ETFs ────────────────────────────────────────
+    "VWO","AGG","BND","MUB","VCIT","VCSH",
+    "ARKW","IYR","XRT","KRE","IAT","XLRE",
+    # ── 3× Leveraged ETFs ────────────────────────────────────
+    "TQQQ","SOXL","TECL","CURE","NAIL","UPRO","SPXL","TNA",
+    "FNGU","LABU","FAS","UDOW","DPST","HIBL","NUGT","WEBL",
 ]
 
 # ── MTPA Scanner universe — 200 curated tickers ───────────────

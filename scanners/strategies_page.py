@@ -501,11 +501,9 @@ def _render_options_strategy():
 # MAIN RENDER
 # ══════════════════════════════════════════════════════════════════════════════
 
-# ── FTF curated ETF universe ──────────────────────────────────────────────────
-_FTF_ETFS = [
-    "SPY", "QQQ", "IWM", "GLD", "TLT",       # broad market + macro
-    "XLK", "XLF", "XLE", "XLV", "XLI",       # top 5 SPDR sectors
-    "XLC", "XLB",                              # comms + materials
+# ── FTF extra ETFs not already in SP500_SAMPLE ────────────────────────────────
+_FTF_EXTRA_ETFS = [
+    "XLC", "NVDL", "3TSL",                    # comms sector + single-stock 3x
 ]
 
 
@@ -519,7 +517,7 @@ def _render_ftf_tab():
     GL = GOLD
 
     # ── Universe ───────────────────────────────────────────────────────────────
-    universe = list(dict.fromkeys(SP500_SAMPLE + _FTF_ETFS))  # SP500 + 12 ETFs, deduped
+    universe = list(dict.fromkeys(SP500_SAMPLE + _FTF_EXTRA_ETFS))  # deduped
 
     # ── Info banner ────────────────────────────────────────────────────────────
     st.markdown(
@@ -529,17 +527,11 @@ def _render_ftf_tab():
         f'🎯 First Things First — Full Universe Scan</div>'
         f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
         f'Scans <b style="color:#fff">{len(universe)} tickers</b> '
-        f'(SP500 + {len(_FTF_ETFS)} quality ETFs) for stocks passing all '
+        f'(S&P 500 stocks · liquid ETFs · 3× ETFs) for stocks passing all '
         f'<b style="color:#fff">16 conditions</b> simultaneously across weekly + daily timeframes. '
-        f'Expect a 3–5 minute runtime. Best run <b style="color:{GL}">30–60 min after market open</b> '
+        f'Expect a 4–6 minute runtime. Best run <b style="color:{GL}">30–60 min after market open</b> '
         f'when volume and histogram direction are established.</div>'
-        f'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">'
-        + "".join(
-            f'<span style="background:{GL}18;color:{GL};border:1px solid {GL}33;'
-            f'font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px">{e}</span>'
-            for e in _FTF_ETFS
-        )
-        + f'</div></div>',
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -573,10 +565,11 @@ def _render_ftf_tab():
                 unsafe_allow_html=True,
             )
 
-        rows = run_ftf_scan(universe, status_fn=_status)
+        rows, diag = run_ftf_scan(universe, status_fn=_status)
         prog.empty(); stat.empty()
 
         st.session_state["ftf_strat_rows"] = rows
+        st.session_state["ftf_strat_diag"] = diag
         st.session_state["ftf_strat_ts"]   = pd.Timestamp.now().strftime("%b %d %Y  %I:%M %p")
         st.rerun()
 
@@ -590,6 +583,27 @@ def _render_ftf_tab():
             unsafe_allow_html=True,
         )
         return
+
+    # ── Diagnostic funnel ─────────────────────────────────────────────────────
+    diag = st.session_state.get("ftf_strat_diag", {})
+    if diag:
+        total = diag.get("total", 0)
+        wpass = diag.get("weekly_pass", 0)
+        dpass = diag.get("daily_pass", 0)
+        st.markdown(
+            f'<div style="display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap">'
+            f'<span style="background:{TEXT_MUTED}18;color:{TEXT_MUTED};border:1px solid {TEXT_MUTED}33;'
+            f'font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px">'
+            f'🔎 Scanned {total}</span>'
+            f'<span style="background:{GOLD}18;color:{GOLD};border:1px solid {GOLD}33;'
+            f'font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px">'
+            f'📅 Weekly pass {wpass}</span>'
+            f'<span style="background:{ACCENT_GREEN}18;color:{ACCENT_GREEN};border:1px solid {ACCENT_GREEN}33;'
+            f'font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px">'
+            f'✅ Final pass {dpass}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
     render_ftf_section(st.session_state["ftf_strat_rows"], context="ftf")
 
