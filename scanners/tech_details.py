@@ -1027,7 +1027,7 @@ def _render_scanner_tech():
             ),
             "conditions": [
                 ("W2 — Not Extended (Weekly)", "Price ≤ SMA20W × 1.10 — within 10% above the 20-week MA. Avoids chasing extended moves at peak."),
-                ("W3 — RSI 35–70 (Weekly)", "Weekly RSI in the green/yellow zone. Below 35 = downtrend; above 70 = extended. Both excluded."),
+                ("W3 — RSI 35–75 (Weekly)", "Weekly RSI in the momentum zone. Below 35 = downtrend excluded. Upper limit 75 allows strong post-rally stocks (was 70, raised to avoid blocking everything after sharp rallies)."),
                 ("W4 — MACD > Signal (Weekly)", "Weekly MACD line above the signal line — confirms bullish weekly momentum. Hard gate."),
                 ("W5 — Volume OK (Weekly)", "Weekly volume 0.7–3.0× the 20-week average. Filters out dry (no interest) and extreme spike (climax) weeks."),
                 ("W6 — Price > SMA20W (Weekly)", "Price must be above its 20-week moving average — the minimum weekly trend structure requirement."),

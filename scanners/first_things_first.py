@@ -8,7 +8,7 @@ Returns (results, diagnostics) — caller renders the empty state card if no res
 
 Weekly conditions (ALL must hold):
   W2  Not extended (price within 10% above SMA20W)
-  W3  RSI 35–70 (GREEN or YELLOW zone)
+  W3  RSI 35–75 (allows strong-momentum stocks above 70)
   W4  MACD > Signal line
   W5  Volume OK (0.7–3.0× 20-week avg — not dry, not spike)
   W6  Price > SMA20W
@@ -151,7 +151,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
 
         # Evaluate conditions
         result["W2"] = (sma20_w > 0) and (px <= sma20_w * 1.10)          # within 10%
-        result["W3"] = 35 <= rsi_w_v <= 70
+        result["W3"] = 35 <= rsi_w_v <= 75
         result["W4"] = m_w > s_w
         result["W5"] = 0.7 <= vol_ratio_w <= 3.0
         result["W6"] = px > sma20_w

@@ -59,14 +59,13 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'<span style="background:{c}14;color:{c};border:1px solid {c}33;'
             f'font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px">{t}</span>'
             for t, c in [
-                ("W: HH/HL or Base", G), ("W: Not Extended", G),
-                ("W: RSI 35-70", G), ("W: MACD>Sig", G),
-                ("W: Vol 0.7-3×", G), ("W: FreshCross≤5wk", G),
-                ("W: Hist↑", G), ("W: Uptrend", G),
-                ("D: RSI 35-70", "#60A5FA"), ("D: MACD>Sig", "#60A5FA"),
-                ("D: P>SMA9", "#60A5FA"), ("D: Hist↑", "#60A5FA"),
-                ("D: No Supply", "#60A5FA"), ("D: Vol>Avg", "#60A5FA"),
-                ("ADX>16↑", P), ("No Bearish Div", P),
+                ("W: Not Extended", G), ("W: RSI 35-75", G),
+                ("W: MACD>Sig", G), ("W: Vol 0.7-3×", G),
+                ("W: P>SMA20W", G), ("W: Uptrend", G),
+                ("D: Not Ext'd", "#60A5FA"), ("D: RSI 35-70", "#60A5FA"),
+                ("D: MACD>Sig", "#60A5FA"), ("D: P>SMA9", "#60A5FA"),
+                ("D: Hist↑", "#60A5FA"), ("D: Vol>Avg", "#60A5FA"),
+                ("ADX>16", P), ("No Bearish Div", P),
             ]
         )
         + f'</div></div>',
@@ -82,7 +81,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'<div style="color:{TEXT_PRIMARY};font-size:13px;font-weight:600;'
             f'margin-bottom:4px">No Setups Qualify Right Now</div>'
             f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
-            f'All 16 conditions (9 weekly + 7 daily + ADX + no divergence) must pass '
+            f'All 14 conditions (6 weekly + 6 daily + ADX + no divergence) must pass '
             f'simultaneously. This is intentionally strict — when something appears '
             f'here, it\'s the highest-conviction setup in the current market.</div>'
             f'</div>',
