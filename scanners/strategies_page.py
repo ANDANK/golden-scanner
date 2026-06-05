@@ -527,7 +527,7 @@ def _render_ftf_tab():
         f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
         f'Scans <b style="color:#fff">{len(universe)} tickers</b> '
         f'(full S&P 500 · liquid ETFs · sector ETFs · 3× leveraged ETFs) for stocks passing all '
-        f'<b style="color:#fff">15 conditions</b> simultaneously across weekly + daily timeframes. '
+        f'<b style="color:#fff">14 conditions</b> simultaneously across weekly + daily timeframes. '
         f'Expect a 5–8 minute runtime. Best run <b style="color:{GL}">30–60 min after market open</b> '
         f'when volume and histogram direction are established.</div>'
         f'</div>',

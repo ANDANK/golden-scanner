@@ -1,19 +1,19 @@
 """
 scanners/first_things_first.py — "First Things First" high-conviction setup scanner
 
-Applies 15 strict multi-timeframe conditions across weekly AND daily charts.
+Applies 14 strict multi-timeframe conditions across weekly AND daily charts.
 Universe: full S&P 500 + ETFs + 3× leveraged ETFs (~482 tickers via FTF_UNIVERSE).
 Any stock passing ALL 15 conditions is surfaced in the FTF tab under Strategies.
 Returns (results, diagnostics) — caller renders the empty state card if no results.
 
 Weekly conditions (ALL must hold):
-  W1  HH/HL OR Tight Base (< 5% range in last 10 weekly bars)
   W2  Not extended (price within 10% above SMA20W)
   W3  RSI 35–70 (GREEN or YELLOW zone)
   W4  MACD > Signal line
   W5  Volume OK (0.7–3.0× 20-week avg — not dry, not spike)
   W6  Price > SMA20W
   W9  Uptrend (price > SMA50W OR HH/HL confirmed)
+  (W1 removed — redundant with W9; HH/HL already in W9, tight base 5% was too strict)
   (W7 removed — W4 MACD>Signal is sufficient; requiring fresh cross was too restrictive)
   (W8 removed — W4 hist>0 is sufficient)
 
@@ -99,7 +99,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
     Fetch and evaluate all weekly conditions for a ticker.
     Returns dict with per-condition booleans and a 'pass' key.
     """
-    result = {k: False for k in ["W1","W2","W3","W4","W5","W6","W9","pass"]}
+    result = {k: False for k in ["W2","W3","W4","W5","W6","W9","pass"]}
     result["detail"] = {}
     try:
         raw = yf.download(ticker, period="3y", interval="1wk",
@@ -150,7 +150,6 @@ def _check_weekly(ticker: str, price: float) -> dict:
         vol_ratio_w = cur_vol_w / avg_vol_20w if avg_vol_20w > 0 else 1.0
 
         # Evaluate conditions
-        result["W1"] = hh_hl or tight_base
         result["W2"] = (sma20_w > 0) and (px <= sma20_w * 1.10)          # within 10%
         result["W3"] = 35 <= rsi_w_v <= 70
         result["W4"] = m_w > s_w
@@ -166,7 +165,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
             "sma20_w": round(sma20_w, 2), "sma50_w": round(sma50_w, 2),
             "vol_ratio_w": round(vol_ratio_w, 2),
         }
-        result["pass"] = all(result[k] for k in ["W1","W2","W3","W4","W5","W6","W9"])
+        result["pass"] = all(result[k] for k in ["W2","W3","W4","W5","W6","W9"])
 
     except Exception:
         pass
@@ -305,9 +304,8 @@ def run_ftf_scan(
         # Both pass — build condition flag strings
         w_flags = []
         w_map = {
-            "W1": "HH/HL or Base", "W2": "Not Extended", "W3": "RSI ✓",
-            "W4": "MACD>Sig",      "W5": "Vol OK",        "W6": "P>SMA20W",
-            "W9": "Uptrend",
+            "W2": "Not Extended", "W3": "RSI ✓",   "W4": "MACD>Sig",
+            "W5": "Vol OK",       "W6": "P>SMA20W", "W9": "Uptrend",
         }
         d_map = {
             "D1": "Not Ext'd",  "D2": "RSI ✓",     "D3": "MACD>Sig",

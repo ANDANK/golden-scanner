@@ -141,14 +141,14 @@ SCANNERS = [
         "key":   "First Things First",
         "emoji": "🎯",
         "color": GOLD,
-        "desc":  "Highest-conviction multi-timeframe setup scanner. Applies 15 conditions simultaneously across weekly AND daily charts. Only stocks passing every condition are surfaced — quality over quantity. Universe: full S&P 500 + ETFs + 3× ETFs (~482 tickers).",
+        "desc":  "Highest-conviction multi-timeframe setup scanner. Applies 14 conditions simultaneously across weekly AND daily charts. Only stocks passing every condition are surfaced — quality over quantity. Universe: full S&P 500 + ETFs + 3× ETFs (~482 tickers).",
         "params": [
             ("Universe",    "~482 tickers",   "Full S&P 500 + ETFs + 3× ETFs"),
             ("Timeframes",  "Weekly + Daily",  "Both must pass independently"),
-            ("Conditions",  "15 total",        "7 weekly · 8 daily/cross-TF"),
+            ("Conditions",  "14 total",        "6 weekly · 8 daily/cross-TF"),
             ("Sort Order",  "ADX descending",  "Strongest trending setups first"),
         ],
-        "criteria": "W: HH/HL or Base · Not Extended · RSI 35–70 · MACD>Signal · Vol OK · P>SMA20W · Uptrend  |  D: Not Ext'd · RSI 35–70 · MACD>Signal · P>SMA9 · Hist↑ · Vol>Avg · ADX>16 · No BearDiv",
+        "criteria": "W: Not Extended · RSI 35–70 · MACD>Signal · Vol OK · P>SMA20W · Uptrend  |  D: Not Ext'd · RSI 35–70 · MACD>Signal · P>SMA9 · Hist↑ · Vol>Avg · ADX>16 · No BearDiv",
     },
 ]
 
@@ -1015,10 +1015,10 @@ def _render_scanner_tech():
             "icon":  "🎯",
             "badge": "WEEKLY + DAILY",
             "badge_c": GOLD,
-            "style": "Highest Conviction · 15 conditions · ~482-ticker universe",
+            "style": "Highest Conviction · 14 conditions · ~482-ticker universe",
             "color": GOLD,
             "intro": (
-                "The strictest scanner in the platform. Requires <b>all 15 conditions</b> to pass simultaneously "
+                "The strictest scanner in the platform. Requires <b>all 14 conditions</b> to pass simultaneously "
                 "across <b>weekly AND daily</b> timeframes. Weekly conditions act as the primary gate — only "
                 "stocks with a confirmed weekly trend structure proceed to daily evaluation. "
                 "Universe: full S&P 500 stocks + liquid ETFs + sector ETFs + 3× leveraged ETFs (~482 tickers). "
@@ -1026,7 +1026,6 @@ def _render_scanner_tech():
                 "Best run <b>30–60 min after market open</b> when volume and daily histogram direction are established."
             ),
             "conditions": [
-                ("W1 — HH/HL OR Tight Base (Weekly)", "Higher Highs + Higher Lows over the last 5 vs prior 5 weekly bars, OR price range < 5% of SMA20W over last 10 weeks. At least one structure condition required."),
                 ("W2 — Not Extended (Weekly)", "Price ≤ SMA20W × 1.10 — within 10% above the 20-week MA. Avoids chasing extended moves at peak."),
                 ("W3 — RSI 35–70 (Weekly)", "Weekly RSI in the green/yellow zone. Below 35 = downtrend; above 70 = extended. Both excluded."),
                 ("W4 — MACD > Signal (Weekly)", "Weekly MACD line above the signal line — confirms bullish weekly momentum. Hard gate."),
@@ -1051,7 +1050,7 @@ def _render_scanner_tech():
             "scoring": [
                 ("All 15 conditions pass", "Qualified", "Binary pass/fail — no partial credit"),
                 ("Sorted by ADX", "Descending", "Higher ADX = stronger confirmed trend"),
-                ("W conditions gate", "7 checks", "W1 W2 W3 W4 W5 W6 W9"),
+                ("W conditions gate", "6 checks", "W2 W3 W4 W5 W6 W9"),
                 ("D/X conditions gate", "8 checks", "D1 D2 D3 D4 D5 D6 X1 X2"),
                 ("Universe", "~482 tickers", "Full S&P 500 + ETFs + 3× ETFs"),
             ],
