@@ -11,11 +11,11 @@ Weekly conditions (ALL must hold):
   W2  Not extended (price within 10% above SMA20W)
   W3  RSI 35–70 (GREEN or YELLOW zone)
   W4  MACD > Signal line
-  W5  Volume OK (0.7–2.0× 20-week avg — not dry, not spike)
+  W5  Volume OK (0.7–3.0× 20-week avg — not dry, not spike)
   W6  Price > SMA20W
-  W7  Fresh MACD cross within last 8 weekly bars
-  (W8 removed — W4 hist>0 is sufficient; declining positive histogram is still valid)
   W9  Uptrend (price > SMA50W OR HH/HL confirmed)
+  (W7 removed — W4 MACD>Signal is sufficient; requiring fresh cross was too restrictive)
+  (W8 removed — W4 hist>0 is sufficient)
 
 Daily conditions (ALL must hold):
   D1  Not extended (price within 8% above SMA9D)
@@ -99,7 +99,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
     Fetch and evaluate all weekly conditions for a ticker.
     Returns dict with per-condition booleans and a 'pass' key.
     """
-    result = {k: False for k in ["W1","W2","W3","W4","W5","W6","W7","W9","pass"]}
+    result = {k: False for k in ["W1","W2","W3","W4","W5","W6","W9","pass"]}
     result["detail"] = {}
     try:
         raw = yf.download(ticker, period="3y", interval="1wk",
@@ -154,19 +154,8 @@ def _check_weekly(ticker: str, price: float) -> dict:
         result["W2"] = (sma20_w > 0) and (px <= sma20_w * 1.10)          # within 10%
         result["W3"] = 35 <= rsi_w_v <= 70
         result["W4"] = m_w > s_w
-        result["W5"] = 0.7 <= vol_ratio_w <= 3.0          # relaxed upper cap: breakout days OK
+        result["W5"] = 0.7 <= vol_ratio_w <= 3.0
         result["W6"] = px > sma20_w
-        # W7 — fresh crossover: MACD crossed above Signal within last 8 weekly bars
-        _fresh_cross_w = False
-        _macd_d = macd_w.dropna(); _sig_d = sig_w.dropna()
-        _n_check = min(8, len(_macd_d) - 1)
-        for _k in range(1, _n_check + 1):
-            if (float(_macd_d.iloc[-_k]) > float(_sig_d.iloc[-_k]) and
-                    float(_macd_d.iloc[-_k - 1]) <= float(_sig_d.iloc[-_k - 1])):
-                _fresh_cross_w = True
-                break
-        result["W7"] = _fresh_cross_w
-        # W8 removed — W4 (hist>0) is sufficient guard
         result["W9"] = (px > sma50_w) or hh_hl
 
         result["detail"] = {
@@ -176,10 +165,8 @@ def _check_weekly(ticker: str, price: float) -> dict:
             "hist_w": round(h_w, 4), "hist_w_prev": round(h_w_prev, 4),
             "sma20_w": round(sma20_w, 2), "sma50_w": round(sma50_w, 2),
             "vol_ratio_w": round(vol_ratio_w, 2),
-            "fresh_cross_w": _fresh_cross_w,
-            "macd_pct_w": round(abs(m_w) / px * 100, 3) if px > 0 else 0,
         }
-        result["pass"] = all(result[k] for k in ["W1","W2","W3","W4","W5","W6","W7","W9"])
+        result["pass"] = all(result[k] for k in ["W1","W2","W3","W4","W5","W6","W9"])
 
     except Exception:
         pass
@@ -320,7 +307,7 @@ def run_ftf_scan(
         w_map = {
             "W1": "HH/HL or Base", "W2": "Not Extended", "W3": "RSI ✓",
             "W4": "MACD>Sig",      "W5": "Vol OK",        "W6": "P>SMA20W",
-            "W7": "Fresh Cross≤8wk",                         "W9": "Uptrend",
+            "W9": "Uptrend",
         }
         d_map = {
             "D1": "Not Ext'd",  "D2": "RSI ✓",     "D3": "MACD>Sig",

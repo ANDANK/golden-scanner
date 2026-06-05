@@ -509,15 +509,14 @@ _FTF_EXTRA_ETFS = [
 
 def _render_ftf_tab():
     """Standalone First Things First scanner — full SP500 + quality ETFs."""
-    from config import SP500_SAMPLE
+    from config import FTF_UNIVERSE
     from scanners.first_things_first import run_ftf_scan
     from scanners.mtpa_page import render_ftf_section
 
     G  = ACCENT_GREEN
     GL = GOLD
 
-    # ── Universe ───────────────────────────────────────────────────────────────
-    universe = list(dict.fromkeys(SP500_SAMPLE + _FTF_EXTRA_ETFS))  # deduped
+    universe = FTF_UNIVERSE
 
     # ── Info banner ────────────────────────────────────────────────────────────
     st.markdown(
@@ -527,9 +526,9 @@ def _render_ftf_tab():
         f'🎯 First Things First — Full Universe Scan</div>'
         f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
         f'Scans <b style="color:#fff">{len(universe)} tickers</b> '
-        f'(S&P 500 stocks · liquid ETFs · 3× ETFs) for stocks passing all '
-        f'<b style="color:#fff">16 conditions</b> simultaneously across weekly + daily timeframes. '
-        f'Expect a 4–6 minute runtime. Best run <b style="color:{GL}">30–60 min after market open</b> '
+        f'(full S&P 500 · liquid ETFs · sector ETFs · 3× leveraged ETFs) for stocks passing all '
+        f'<b style="color:#fff">15 conditions</b> simultaneously across weekly + daily timeframes. '
+        f'Expect a 5–8 minute runtime. Best run <b style="color:{GL}">30–60 min after market open</b> '
         f'when volume and histogram direction are established.</div>'
         f'</div>',
         unsafe_allow_html=True,
@@ -578,7 +577,7 @@ def _render_ftf_tab():
         st.markdown(
             f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;'
             f'padding:40px;text-align:center;color:{TEXT_MUTED};margin-top:12px">'
-            f'Press <b style="color:{GL}">▶ Run FTF Scan</b> to scan {len(universe)} tickers'
+            f'Press <b style="color:{GL}">▶ Run FTF Scan</b> to scan <b style="color:#fff">{len(universe)}</b> tickers'
             f'</div>',
             unsafe_allow_html=True,
         )

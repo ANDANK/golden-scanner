@@ -75,6 +75,104 @@ SP500_SAMPLE = [
     "FNGU","LABU","FAS","UDOW","DPST","HIBL","NUGT","WEBL",
 ]
 
+# ── FTF Universe — full S&P 500 + ETFs + 3× ETFs ─────────────
+# Used ONLY by the First Things First tab.
+# ~500 S&P 500 stocks + liquid ETFs + sector ETFs + 3× leveraged ETFs.
+# MTPA_200 and SP500_SAMPLE are unchanged.
+FTF_UNIVERSE = list(dict.fromkeys([
+    # ── Mega-cap (20) ────────────────────────────────────────────
+    "AAPL","MSFT","NVDA","AMZN","GOOGL","GOOG","META","BRK-B","LLY","AVGO",
+    "TSLA","UNH","JPM","XOM","V","MA","PG","JNJ","HD","COST",
+    # ── Semiconductors / Hardware (30) ───────────────────────────
+    "AMD","AMAT","ADI","TXN","QCOM","MCHP","SWKS","KEYS","TER","MPWR",
+    "LRCX","KLAC","MRVL","MU","ON","NXPI","STX","WDC","NTAP","TEL",
+    "APH","GLW","HPE","HPQ","ZBRA","CDW","FFIV","JNPR","DXC","EPAM",
+    # ── Software / Cloud / Cyber / AI (35) ───────────────────────
+    "CRM","ADBE","ORCL","INTU","NOW","PANW","CRWD","FTNT","NET","ZS",
+    "WDAY","SNOW","PLTR","DDOG","MDB","OKTA","CDNS","SNPS","ADSK","TEAM",
+    "APP","VRSN","AKAM","CTSH","IT","IBM","PAYC","BR","EFX","SAIC",
+    "LDOS","BAH","CACI","ANSS","PTC",
+    # ── Large-cap Tech / Telecom / Media (15) ────────────────────
+    "CSCO","TMUS","VZ","T","CMCSA","CHTR","DIS","NFLX","RDDT","WBD",
+    "FOXA","NWSA","ANET","UBER","LYFT",
+    # ── Healthcare / Pharma (25) ─────────────────────────────────
+    "MRK","ABBV","LLY","PFE","BMY","AMGN","GILD","REGN","VRTX","MRNA",
+    "BIIB","CVS","WBA","MCK","CAH","COR","MOH","HUM","ELV","CI",
+    "DVA","LH","DGX","RVTY","OGN",
+    # ── Medical Devices / Life Sciences (20) ─────────────────────
+    "TMO","ABT","ISRG","EW","SYK","BSX","MDT","DHR","ZTS","IDXX",
+    "IQV","VEEV","DXCM","RMD","ALGN","HCA","HOLX","STE","PODD","GEHC",
+    # ── More Healthcare (10) ─────────────────────────────────────
+    "MTD","WAT","A","ILMN","BIO","VTRS","TFX","ZBH","HSIC","PDCO",
+    # ── Financials — Banks (15) ──────────────────────────────────
+    "JPM","BAC","WFC","C","GS","MS","USB","PNC","TFC","COF",
+    "ZION","CFG","FITB","KEY","HBAN",
+    # ── Financials — Insurance (15) ──────────────────────────────
+    "BRK-B","AIG","PRU","MET","AFL","ALL","TRV","CB","PGR","MCO",
+    "HIG","UNM","GL","RE","WTW",
+    # ── Financials — Asset Mgmt / Exchanges (15) ─────────────────
+    "BX","KKR","SCHW","AXP","SPGI","ICE","CME","NDAQ","BK","STT",
+    "NTRS","AMP","TROW","RJF","BEN",
+    # ── Financials — Other (10) ──────────────────────────────────
+    "RF","WRB","CINF","FAF","FHN","IVZ","CBOE","MKTX","VOYA","AMP",
+    # ── Consumer Discretionary — Retail (20) ─────────────────────
+    "AMZN","MCD","NKE","SBUX","BKNG","LOW","TJX","ROST","ABNB","MAR",
+    "HLT","LULU","AZO","ORLY","TSCO","BBY","KMX","ETSY","RL","TPR",
+    # ── Consumer Discretionary — Autos / Travel (10) ─────────────
+    "TSLA","F","GM","APTV","BWA","GPC","LKQ","RCL","CCL","NCLH",
+    # ── Consumer Discretionary — Homebuilders / Gaming (10) ──────
+    "DHI","LEN","PHM","NVR","TOL","MGM","LVS","WYNN","CZR","MAT",
+    # ── Consumer Staples (20) ────────────────────────────────────
+    "WMT","COST","PG","KO","PEP","MDLZ","STZ","MO","PM","EL",
+    "CL","KMB","GIS","HSY","MKC","HRL","SJM","CPB","CAG","TAP",
+    # ── Industrials — Aerospace / Defense (15) ───────────────────
+    "GE","BA","RTX","LMT","GD","NOC","LHX","TDG","HWM","AXON",
+    "LDOS","SAIC","BAH","TDY","CW",
+    # ── Industrials — Machinery / Multi (20) ─────────────────────
+    "CAT","DE","HON","EMR","ETN","ITW","PH","ROK","IR","GNRC",
+    "TT","NDSN","AOS","MAS","PNR","XYL","TRMB","ROP","VRSK","CSGP",
+    # ── Industrials — Transportation / Waste (15) ────────────────
+    "UNP","CSX","NSC","UPS","FDX","UAL","DAL","LUV","AAL","ODFL",
+    "JBHT","EXPD","WM","RSG","CPRT",
+    # ── Industrials — Commercial Services (10) ───────────────────
+    "ACN","ADP","PAYX","FAST","GWW","URI","CMI","CARR","OTIS","PCAR",
+    # ── More Industrials (5) ─────────────────────────────────────
+    "CTAS","VLTO","IEX","RRX","ALLE",
+    # ── Energy (15) ──────────────────────────────────────────────
+    "XOM","CVX","COP","OXY","EOG","SLB","HAL","BKR","MRO","DVN",
+    "FANG","APA","CTRA","PSX","MPC",
+    # ── More Energy (5) ──────────────────────────────────────────
+    "VLO","KMI","WMB","OKE","CEG",
+    # ── Utilities (18) ───────────────────────────────────────────
+    "NEE","DUK","SO","D","AEP","EXC","SRE","PEG","XEL","WEC",
+    "ES","DTE","ETR","PPL","FE","CMS","AES","NRG",
+    # ── More Utilities (7) ───────────────────────────────────────
+    "ED","EIX","NI","LNT","EVRG","AWK","VST",
+    # ── Materials (15) ───────────────────────────────────────────
+    "LIN","ECL","SHW","APD","DD","DOW","NEM","FCX","NUE","ALB",
+    "VMC","MLM","STLD","RS","PKG",
+    # ── More Materials (8) ───────────────────────────────────────
+    "IP","AVY","CCK","BALL","OLN","SEE","SON","SW",
+    # ── Real Estate — REITs (20) ─────────────────────────────────
+    "AMT","EQIX","CCI","PSA","PLD","AVB","EQR","WELL","VTR","O",
+    "DLR","IRM","SBAC","EXR","ARE","BXP","KIM","REG","SPG","WPC",
+    # ── More REITs (5) ───────────────────────────────────────────
+    "EGP","CPT","UDR","NNN","CUBE",
+    # ── Liquid ETFs — Broad Market & Vol (10) ────────────────────
+    "SPY","QQQ","IWM","DIA","VTI","VOO","MDY","RSP","UVXY","VXX",
+    # ── Liquid ETFs — Commodities & Bonds (10) ───────────────────
+    "GLD","SLV","TLT","IEF","HYG","LQD","USO","UNG","GDX","GDXJ",
+    # ── Liquid ETFs — Sector SPDRs (12) ──────────────────────────
+    "XLK","XLF","XLE","XLV","XLI","XLU","XLP","XLY","XLC","XLB","XLRE","XBI",
+    # ── Liquid ETFs — Thematic / International (10) ──────────────
+    "SOXX","SMH","ARKK","IBB","EEM","FXI","EWZ","KWEB","VNQ","EFA",
+    # ── More ETFs (6) ───────────────────────────────────────────
+    "VWO","AGG","BND","XRT","KRE","IAT",
+    # ── 3× Leveraged ETFs (18) ───────────────────────────────────
+    "TQQQ","SOXL","TECL","CURE","NAIL","UPRO","SPXL","TNA",
+    "FNGU","LABU","FAS","UDOW","DPST","HIBL","NUGT","WEBL","NVDL","3TSL",
+]))
+
 # ── MTPA Scanner universe — 200 curated tickers ───────────────
 # Criteria: growth-oriented, volatile enough for momentum setups,
 # quality companies you would not regret holding long-term.
