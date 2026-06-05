@@ -137,6 +137,19 @@ SCANNERS = [
         ],
         "criteria": "Price above SMA20 · RSI in range · MACD bullish · Volume spike confirmation",
     },
+    {
+        "key":   "First Things First",
+        "emoji": "🎯",
+        "color": GOLD,
+        "desc":  "Highest-conviction multi-timeframe setup scanner. Applies 15 conditions simultaneously across weekly AND daily charts. Only stocks passing every condition are surfaced — quality over quantity. Universe: full S&P 500 + ETFs + 3× ETFs (~482 tickers).",
+        "params": [
+            ("Universe",    "~482 tickers",   "Full S&P 500 + ETFs + 3× ETFs"),
+            ("Timeframes",  "Weekly + Daily",  "Both must pass independently"),
+            ("Conditions",  "15 total",        "7 weekly · 8 daily/cross-TF"),
+            ("Sort Order",  "ADX descending",  "Strongest trending setups first"),
+        ],
+        "criteria": "W: HH/HL or Base · Not Extended · RSI 35–70 · MACD>Signal · Vol OK · P>SMA20W · Uptrend  |  D: Not Ext'd · RSI 35–70 · MACD>Signal · P>SMA9 · Hist↑ · Vol>Avg · ADX>16 · No BearDiv",
+    },
 ]
 
 
@@ -144,6 +157,7 @@ SCANNERS = [
 
 def _build_universe_df() -> pd.DataFrame:
     from scanners.deep_analysis import STANDARD_TICKERS
+    from config import FTF_UNIVERSE
     ticker_map: dict[str, list] = {}
 
     def _add(tickers, label):
@@ -154,6 +168,7 @@ def _build_universe_df() -> pd.DataFrame:
 
     _add(SP500_SAMPLE[:200],   "Golden Scan (top 200)")
     _add(SP500_SAMPLE[200:],   "Golden Scan (extended)")
+    _add(FTF_UNIVERSE,         "First Things First")
     _add(STANDARD_TICKERS,     "Stock Analysis Watchlist")
     _add(ETF_UNIVERSE,         "ETF Universe")
     _add(ETF_3X_UNIVERSE,      "3× ETF Scanner")
@@ -332,10 +347,12 @@ _NOISE_COLOR = {
 # ── Render: Scanner Guide ─────────────────────────────────────
 
 def _render_guide():
-    c1, c2, c3 = st.columns(3)
+    from config import FTF_UNIVERSE
+    c1, c2, c3, c4 = st.columns(4)
     with c1: st.metric("📡 Scanners Available", str(len(SCANNERS)))
-    with c2: st.metric("🗂️ Universe Size", f"{len(SP500_SAMPLE):,} tickers")
-    with c3: st.metric("⚡ Options ETFs", f"{len(OPTIONS_ETF_UNIVERSE)} liquid ETFs")
+    with c2: st.metric("🗂️ Golden Scan Universe", f"{len(SP500_SAMPLE):,} tickers")
+    with c3: st.metric("🎯 FTF Universe", f"{len(FTF_UNIVERSE):,} tickers")
+    with c4: st.metric("⚡ Options ETFs", f"{len(OPTIONS_ETF_UNIVERSE)} liquid ETFs")
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(
@@ -347,6 +364,7 @@ def _render_guide():
 
     groups = {
         "📊 Multi-Factor":       ["Golden Scan"],
+        "🎯 High Conviction":    ["First Things First"],
         "📈 Equity Scans":       ["Momentum", "Growth", "Value", "Headlines"],
         "🎯 Options Strategies": ["CSP", "LEAPS"],
         "💰 Income & Dividends": ["Dividend", "Div+CC"],
@@ -990,6 +1008,52 @@ def _render_scanner_tech():
                 ("Volume ≥ 2×", "Higher score", "Minimum 1.1×"),
                 ("At 20D high", "Bonus", ""),
                 ("RS vs SPY", "Proportional", ""),
+            ],
+        },
+        {
+            "key":   "First Things First (FTF)",
+            "icon":  "🎯",
+            "badge": "WEEKLY + DAILY",
+            "badge_c": GOLD,
+            "style": "Highest Conviction · 15 conditions · ~482-ticker universe",
+            "color": GOLD,
+            "intro": (
+                "The strictest scanner in the platform. Requires <b>all 15 conditions</b> to pass simultaneously "
+                "across <b>weekly AND daily</b> timeframes. Weekly conditions act as the primary gate — only "
+                "stocks with a confirmed weekly trend structure proceed to daily evaluation. "
+                "Universe: full S&P 500 stocks + liquid ETFs + sector ETFs + 3× leveraged ETFs (~482 tickers). "
+                "Expect 0–10 results per scan — this is intentional. "
+                "Best run <b>30–60 min after market open</b> when volume and daily histogram direction are established."
+            ),
+            "conditions": [
+                ("W1 — HH/HL OR Tight Base (Weekly)", "Higher Highs + Higher Lows over the last 5 vs prior 5 weekly bars, OR price range < 5% of SMA20W over last 10 weeks. At least one structure condition required."),
+                ("W2 — Not Extended (Weekly)", "Price ≤ SMA20W × 1.10 — within 10% above the 20-week MA. Avoids chasing extended moves at peak."),
+                ("W3 — RSI 35–70 (Weekly)", "Weekly RSI in the green/yellow zone. Below 35 = downtrend; above 70 = extended. Both excluded."),
+                ("W4 — MACD > Signal (Weekly)", "Weekly MACD line above the signal line — confirms bullish weekly momentum. Hard gate."),
+                ("W5 — Volume OK (Weekly)", "Weekly volume 0.7–3.0× the 20-week average. Filters out dry (no interest) and extreme spike (climax) weeks."),
+                ("W6 — Price > SMA20W (Weekly)", "Price must be above its 20-week moving average — the minimum weekly trend structure requirement."),
+                ("W9 — Uptrend (Weekly)", "Price > SMA50W OR HH/HL confirmed. Ensures the macro trend is intact on the weekly chart."),
+                ("D1 — Not Extended (Daily)", "Price ≤ EMA9D × 1.08 — within 8% above the 9-day EMA. Avoids entries too far from near-term support."),
+                ("D2 — RSI 35–70 (Daily)", "Daily RSI in the momentum zone. Mirrors the weekly RSI filter on the daily timeframe."),
+                ("D3 — MACD > Signal (Daily)", "Daily MACD line above signal line — short-term momentum bullish."),
+                ("D4 — Price > EMA9D (Daily)", "Price above the 9-day EMA — the most sensitive daily trend filter."),
+                ("D5 — Histogram Rising (Daily)", "Daily MACD histogram today > yesterday. Momentum is accelerating, not fading. Stocks with declining histogram are excluded even if MACD is still positive."),
+                ("D6 — Volume > 20-Day Average (Daily)", "Today's volume exceeds the 20-day average. Confirms institutional participation on the day of the scan."),
+                ("X1 — ADX > 16 (Cross-TF)", "Average Directional Index above 16 — confirms a real trend exists, not sideways chop. Calculated from daily data."),
+                ("X2 — No Bearish Divergence (Cross-TF)", "Price is NOT making higher highs while RSI is making lower highs over the last 14 daily bars. Classic bearish divergence = excluded."),
+            ],
+            "avoid": [
+                "W7 removed — W4 (MACD>Signal) is sufficient; fresh-cross requirement was too restrictive in choppy markets",
+                "Running mid-session before volume has developed (D6 volume check needs established volume)",
+                "Expecting many results — FTF typically returns 0–10 tickers; that is correct behavior",
+                "Ignoring the scan funnel chips (Scanned N → Weekly pass N → Final pass N) — these tell you where stocks fail",
+            ],
+            "scoring": [
+                ("All 15 conditions pass", "Qualified", "Binary pass/fail — no partial credit"),
+                ("Sorted by ADX", "Descending", "Higher ADX = stronger confirmed trend"),
+                ("W conditions gate", "7 checks", "W1 W2 W3 W4 W5 W6 W9"),
+                ("D/X conditions gate", "8 checks", "D1 D2 D3 D4 D5 D6 X1 X2"),
+                ("Universe", "~482 tickers", "Full S&P 500 + ETFs + 3× ETFs"),
             ],
         },
         {

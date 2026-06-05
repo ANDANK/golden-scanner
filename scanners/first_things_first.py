@@ -1,10 +1,10 @@
 """
 scanners/first_things_first.py — "First Things First" high-conviction setup scanner
 
-Applies a strict multi-timeframe filter across weekly AND daily charts.
-Any stock that passes ALL conditions is surfaced at the top of the MTPA and
-CSP Strategy pages.  Returns even if nothing qualifies — caller renders the
-empty state card.
+Applies 15 strict multi-timeframe conditions across weekly AND daily charts.
+Universe: full S&P 500 + ETFs + 3× leveraged ETFs (~482 tickers via FTF_UNIVERSE).
+Any stock passing ALL 15 conditions is surfaced in the FTF tab under Strategies.
+Returns (results, diagnostics) — caller renders the empty state card if no results.
 
 Weekly conditions (ALL must hold):
   W1  HH/HL OR Tight Base (< 5% range in last 10 weekly bars)
