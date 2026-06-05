@@ -3,7 +3,7 @@ scanners/first_things_first.py — "First Things First" high-conviction setup sc
 
 Applies 14 strict multi-timeframe conditions across weekly AND daily charts.
 Universe: full S&P 500 + ETFs + 3× leveraged ETFs (~482 tickers via FTF_UNIVERSE).
-Any stock passing ALL 15 conditions is surfaced in the FTF tab under Strategies.
+Any stock passing ALL 14 conditions is surfaced in the FTF tab under Strategies.
 Returns (results, diagnostics) — caller renders the empty state card if no results.
 
 Weekly conditions (ALL must hold):
@@ -176,7 +176,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
 
 def _check_daily(ticker: str, price: float) -> dict:
     """Evaluate all daily + cross-timeframe conditions."""
-    result = {k: False for k in ["D1","D2","D3","D4","D5","D6","D7","X1","X2","pass"]}
+    result = {k: False for k in ["D1","D2","D3","D4","D5","D6","X1","X2","pass"]}
     result["detail"] = {}
     try:
         df = get_price_history(ticker, period="6mo")

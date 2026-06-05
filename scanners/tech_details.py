@@ -148,7 +148,7 @@ SCANNERS = [
             ("Conditions",  "14 total",        "6 weekly · 8 daily/cross-TF"),
             ("Sort Order",  "ADX descending",  "Strongest trending setups first"),
         ],
-        "criteria": "W: Not Extended · RSI 35–70 · MACD>Signal · Vol OK · P>SMA20W · Uptrend  |  D: Not Ext'd · RSI 35–70 · MACD>Signal · P>SMA9 · Hist↑ · Vol>Avg · ADX>16 · No BearDiv",
+        "criteria": "W: Not Extended · RSI 35–75 · MACD>Signal · Vol OK · P>SMA20W · Uptrend  |  D: Not Ext'd · RSI 35–70 · MACD>Signal · P>EMA9 · Hist↑ · Vol>Avg · ADX>16 · No BearDiv",
     },
 ]
 
@@ -1048,7 +1048,7 @@ def _render_scanner_tech():
                 "Ignoring the scan funnel chips (Scanned N → Weekly pass N → Final pass N) — these tell you where stocks fail",
             ],
             "scoring": [
-                ("All 15 conditions pass", "Qualified", "Binary pass/fail — no partial credit"),
+                ("All 14 conditions pass", "Qualified", "Binary pass/fail — no partial credit"),
                 ("Sorted by ADX", "Descending", "Higher ADX = stronger confirmed trend"),
                 ("W conditions gate", "6 checks", "W2 W3 W4 W5 W6 W9"),
                 ("D/X conditions gate", "8 checks", "D1 D2 D3 D4 D5 D6 X1 X2"),
@@ -2786,24 +2786,21 @@ def _render_mtpa_reference():
     # ── First Things First ─────────────────────────────────────────────────────
     _sec("🎯 First Things First — High-Conviction Setup Filter", GL, "")
     ftf_rows_w = [
-        ("W1", "HH/HL OR Tight Base", "Healthy weekly structure required"),
         ("W2", "Not Extended (≤10% above SMA20W)", "Not chasing a parabolic move"),
-        ("W3", "RSI 35–70", "GREEN or YELLOW zone weekly"),
+        ("W3", "RSI 35–75 (weekly)", "Momentum zone — 75 cap allows strong post-rally stocks"),
         ("W4", "MACD > Signal (weekly)", "Weekly momentum confirmed"),
         ("W5", "Volume 0.7–3× avg", "Institutional but not a spike"),
         ("W6", "Price > SMA20W", "Above key weekly moving average"),
-        ("W7", "Fresh crossover ≤5 weekly bars", "Cross happened within the last 5 weeks"),
         ("W9", "Uptrend — Price > SMA50W or HH/HL", "Macro direction confirmed"),
     ]
     ftf_rows_d = [
-        ("D1", "Not Extended (≤8% above SMA9D)", "No daily chase"),
+        ("D1", "Not Extended (≤8% above EMA9D)", "No daily chase"),
         ("D2", "RSI 35–70 (daily)", "Momentum healthy on daily"),
-        ("D3", "MACD > Signal (daily)", "Daily confirmed"),
-        ("D4", "Price > SMA9D", "Short-term trend intact"),
-        ("D5", "Histogram rising (daily)", "Daily momentum building"),
-        ("D6", "Price >2% below 20-day high", "No immediate supply zone overhead"),
-        ("D7", "Volume ≥ 0.8× 20-day avg", "Not dead quiet — buyers present"),
-        ("X1", "ADX > 16", "Trend exists, not ranging"),
+        ("D3", "MACD > Signal (daily)", "Daily momentum confirmed"),
+        ("D4", "Price > EMA9D", "Short-term trend intact"),
+        ("D5", "Histogram rising (daily)", "Daily momentum building, not fading"),
+        ("D6", "Volume > 20-day avg", "Institutional participation confirmed"),
+        ("X1", "ADX > 16", "Trend exists, not sideways chop"),
         ("X2", "No bearish divergence", "Price HH + RSI LL pattern absent"),
     ]
     ftf_html = (
@@ -2811,18 +2808,19 @@ def _render_mtpa_reference():
         f'<div>'
         f'<div style="color:{G};font-size:11px;font-weight:700;'
         f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">'
-        f'Weekly (all 9 must hold)</div>'
+        f'Weekly (all 6 must hold)</div>'
         + _table("".join(_row(k, f"<b>{v}</b> — {n}", G) for k, v, n in ftf_rows_w), "#", "Condition")
         + f'</div><div>'
         f'<div style="color:{B};font-size:11px;font-weight:700;'
         f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">'
-        f'Daily + Cross-TF (all 9 must hold)</div>'
+        f'Daily + Cross-TF (all 8 must hold)</div>'
         + _table("".join(_row(k, f"<b>{v}</b> — {n}", B) for k, v, n in ftf_rows_d), "#", "Condition")
         + f'</div></div>'
         f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:8px;padding:8px 12px;'
         f'background:{BG_PANEL};border-radius:6px">'
-        f'&#9432; All 18 conditions must hold simultaneously. '
-        f'Demand zone (within 5% of 10-day low) is informational only — not a hard gate. '
+        f'&#9432; All 14 conditions must hold simultaneously (6 weekly + 8 daily/cross-TF). '
+        f'Universe: ~482 tickers (full S&amp;P 500 + ETFs + 3× ETFs). '
+        f'Removed: W1 (redundant with W9), W7 (fresh-cross too strict), D7 (merged into D6). '
         f'Results sorted by ADX descending (strongest trend first).'
         f'</div>'
     )

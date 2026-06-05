@@ -96,7 +96,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
     hdr = "".join(
         f'<th style="{_HD}">{c}</th>'
         for c in ["Ticker", "Price",
-                  "W-RSI", "W-Hist↑", "Fresh Cross",
+                  "W-RSI", "W-MACD Hist",
                   "D-RSI", "D-Hist↑", "ADX", "Supply Gap",
                   "Demand Zone", "Bear Div"]
     )
@@ -109,7 +109,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
 
         rsi_w_v = wd.get("rsi_w", 0)
         rsi_d_v = dd.get("rsi_d", 0)
-        rsi_w_col = ACCENT_GREEN if 50 <= rsi_w_v <= 65 else (GOLD if 35 <= rsi_w_v < 50 or 65 < rsi_w_v <= 70 else TEXT_MUTED)
+        rsi_w_col = ACCENT_GREEN if 50 <= rsi_w_v <= 65 else (GOLD if 35 <= rsi_w_v < 50 or 65 < rsi_w_v <= 75 else TEXT_MUTED)
         rsi_d_col = ACCENT_GREEN if 50 <= rsi_d_v <= 65 else (GOLD if 35 <= rsi_d_v < 50 or 65 < rsi_d_v <= 70 else TEXT_MUTED)
 
         hist_w = wd.get("hist_w", 0); hist_w_p = wd.get("hist_w_prev", 0)
@@ -119,9 +119,6 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
 
         adx_v   = dd.get("adx")
         adx_col = ACCENT_GREEN if (adx_v and adx_v >= 25) else (GOLD if (adx_v and adx_v >= 16) else TEXT_MUTED)
-
-        fresh_cross = wd.get("fresh_cross_w", False)
-        mp_col      = ACCENT_GREEN if fresh_cross else TEXT_MUTED
 
         supply_gap = dd.get("pct_below_high", 0)
         sg_col     = ACCENT_GREEN if supply_gap >= 5 else (GOLD if supply_gap >= 3 else ACCENT_RED)
@@ -144,10 +141,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'<td style="background:{bg};padding:8px 12px;font-size:11px">'
             f'<span style="color:{hw_col};font-family:\'DM Mono\',monospace">'
             f'{hist_w:.4f}</span>'
-            f'<span style="color:{ACCENT_GREEN};font-size:10px"> ↑</span></td>'
-            # Fresh Cross (W7)
-            f'<td style="background:{bg};padding:8px 12px;text-align:center;font-size:13px">'
-            f'{"✅" if fresh_cross else "❌"}</td>'
+            f'<span style="color:{hw_col};font-size:10px"> {"↑" if hist_w > hist_w_p else "↓"}</span></td>'
             # D-RSI
             f'<td style="background:{bg};padding:8px 12px">'
             f'<span style="color:{rsi_d_col};font-weight:700">{rsi_d_v:.1f}</span></td>'
