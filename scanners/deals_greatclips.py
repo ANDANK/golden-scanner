@@ -29,6 +29,57 @@ SITE_ORIGIN   = "https://onecountrysweepstakes.com"
 
 DEFAULT_CITIES = ["Plano", "McKinney", "Frisco"]
 
+# ── Seed data (last verified: 2026-06-06 local scan) ──────────
+# Used as fallback when live scan is blocked by cloud-IP filtering.
+_SEED_DATE = "Jun 6, 2026"
+_SEED_COUPONS: list[dict] = [
+    # ── Frisco ─────────────────────────────────────────────────
+    {
+        "city": "Frisco", "location": "Great Clips Coit Main Plaza",
+        "address": "8949 Coit Rd, Frisco, TX",
+        "amount": 6.00, "coupon_type": "off", "sort_key": -6.00,
+        "denomination": "$6.00 OFF", "denomination_label": "Coupon $6 Off",
+        "coupon_url": "https://offers.greatclips.com/mCbDAzF",
+    },
+    {
+        "city": "Frisco", "location": "Great Clips Coit Main Plaza",
+        "address": "8949 Coit Rd, Frisco, TX",
+        "amount": 6.00, "coupon_type": "off", "sort_key": -6.00,
+        "denomination": "$6.00 OFF", "denomination_label": "Coupon $6 Off",
+        "coupon_url": "https://offers.greatclips.com/2t3hunI",
+    },
+    {
+        "city": "Frisco", "location": "Great Clips Custer Star",
+        "address": "15962 Eldorado Pkwy, Frisco, TX",
+        "amount": 15.99, "coupon_type": "flat", "sort_key": 15.99,
+        "denomination": "$15.99", "denomination_label": "Coupon $15.99",
+        "coupon_url": "https://offers.greatclips.com/h0v0AeC",
+    },
+    # ── McKinney ────────────────────────────────────────────────
+    {
+        "city": "McKinney", "location": "Great Clips McKinney Town Crossing",
+        "address": "7645 Custer Rd, McKinney, TX",
+        "amount": 15.99, "coupon_type": "flat", "sort_key": 15.99,
+        "denomination": "$15.99", "denomination_label": "Coupon $15.99",
+        "coupon_url": "https://offers.greatclips.com/cXHWpKs",
+    },
+    {
+        "city": "McKinney", "location": "Great Clips Shops at Eagle Point",
+        "address": "1521 N Custer Rd, McKinney, TX",
+        "amount": 15.99, "coupon_type": "flat", "sort_key": 15.99,
+        "denomination": "$15.99", "denomination_label": "Coupon $15.99",
+        "coupon_url": "https://offers.greatclips.com/BZeG1Mg",
+    },
+    # ── Plano ───────────────────────────────────────────────────
+    {
+        "city": "Plano", "location": "Great Clips Coit Marketplace",
+        "address": "9605 Coit Rd, Plano, TX",
+        "amount": 15.99, "coupon_type": "flat", "sort_key": 15.99,
+        "denomination": "$15.99", "denomination_label": "Coupon $15.99",
+        "coupon_url": "https://offers.greatclips.com/MrO06jW",
+    },
+]
+
 _HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -341,25 +392,39 @@ def _scan_secondary(target_cities: list[str],
     return results, "weeklyadlist.com"
 
 
+def _seed_for_cities(target_cities: list[str]) -> list[dict]:
+    """Return seed coupons filtered to the requested cities."""
+    cities_lower = {c.lower() for c in target_cities}
+    return [r for r in _SEED_COUPONS if r["city"].lower() in cities_lower]
+
+
 def run_scan(target_cities: list[str],
-             progress_cb=None) -> tuple[list[dict], str]:
+             progress_cb=None) -> tuple[list[dict], str, bool]:
     """
-    Main entry: try primary, fall back to secondary.
-    Returns (sorted_results, source_label).
+    Main entry: try primary → secondary → seed fallback.
+    Returns (sorted_results, source_label, is_live).
+    is_live=False means results came from cached seed data.
     """
     results, source = _scan_primary(target_cities, progress_cb)
+    is_live = bool(results)
+
     if not results and source == "":
         # Primary unreachable — try secondary
         results, source = _scan_secondary(target_cities, progress_cb)
+        is_live = bool(results)
 
-    # Sort: off coupons first (highest discount), then flat price ascending
+    if not results:
+        # Both live sources blocked/empty — use verified seed data
+        results = _seed_for_cities(target_cities)
+        source  = f"cached ({_SEED_DATE})"
+        is_live = False
+
     def _sorter(r):
-        # off → type_rank=0, flat → type_rank=1; then sort_key
         type_rank = 0 if r["coupon_type"] == "off" else 1
         return (type_rank, r["sort_key"])
 
     results.sort(key=_sorter)
-    return results, source
+    return results, source, is_live
 
 
 # ── Display helpers ────────────────────────────────────────────
@@ -524,13 +589,14 @@ def render():
             prog_bar.progress(pct)
             progress_ph.caption(f"{msg}  ({done}/{total})")
 
-        results, source = run_scan(target_cities, _progress)
+        results, source, is_live = run_scan(target_cities, _progress)
 
         # Store in session state
-        st.session_state[_CACHE_KEY]    = results
-        st.session_state[_CACHE_TS_KEY] = datetime.now()
-        st.session_state[_CITY_KEY]     = target_cities
-        st.session_state[_SRC_KEY]      = source
+        st.session_state[_CACHE_KEY]        = results
+        st.session_state[_CACHE_TS_KEY]     = datetime.now()
+        st.session_state[_CITY_KEY]         = target_cities
+        st.session_state[_SRC_KEY]          = source
+        st.session_state["gc_coupon_live"]  = is_live
 
         # Clear progress UI
         status_box.empty()
@@ -543,33 +609,37 @@ def render():
     if _CACHE_KEY in st.session_state:
         results: list[dict] = st.session_state[_CACHE_KEY]
         source: str         = st.session_state.get(_SRC_KEY, "")
+        is_live: bool       = st.session_state.get("gc_coupon_live", True)
         scanned_cities      = st.session_state.get(_CITY_KEY, target_cities)
         scan_ts             = st.session_state.get(_CACHE_TS_KEY, datetime.now())
+
+        # ── Seed-data banner ───────────────────────────────────
+        if not is_live:
+            st.info(
+                f"⚠️ **Live scan was blocked** — the coupon site (`offers.greatclips.com`) "
+                f"rejects requests from cloud servers. "
+                f"Showing **{len(results)} verified coupons** from the last successful scan "
+                f"({_SEED_DATE}). Links are still active — tap **Redeem Coupon** to open each one.",
+                icon="ℹ️",
+            )
 
         # ── Summary bar ────────────────────────────────────────
         st.markdown("---")
         c1, c2, c3 = st.columns(3)
         c1.metric("Coupons Found", len(results))
-        c2.metric("Cities Searched", len(scanned_cities))
-        c3.metric("Source", source or "N/A")
-        st.caption(f"Last scanned: {scan_ts.strftime('%b %d, %Y %I:%M %p')}")
+        c2.metric("Cities", len(scanned_cities))
+        c3.metric("Source", "Live ✅" if is_live else f"Cached ({_SEED_DATE})")
+        st.caption(f"Last checked: {scan_ts.strftime('%b %d, %Y %I:%M %p')}")
 
         col_rescan, _ = st.columns([1, 4])
         with col_rescan:
             if st.button("🔄 Re-scan"):
-                for k in (_CACHE_KEY, _CACHE_TS_KEY, _CITY_KEY, _SRC_KEY):
+                for k in (_CACHE_KEY, _CACHE_TS_KEY, _CITY_KEY, _SRC_KEY, "gc_coupon_live"):
                     st.session_state.pop(k, None)
                 st.rerun()
 
         if not results:
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.warning(
-                f"No location-specific coupons found for **{', '.join(scanned_cities)}** "
-                f"on {source}.\n\n"
-                "This usually means the coupon site is blocking automated requests from cloud servers. "
-                "Use the **🔧 Debug** panel above to test a single URL and see what the server returns — "
-                "paste `https://offers.greatclips.com/MrO06jW` (a known Plano link) and click **Test URL**."
-            )
+            st.warning("No coupon data available for the selected cities.")
             return
 
         st.markdown("<br>", unsafe_allow_html=True)
