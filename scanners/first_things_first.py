@@ -10,7 +10,7 @@ Weekly conditions (ALL must hold):
   W2  Not extended (price within 10% above SMA20W)
   W3  RSI 35–75 (allows strong-momentum stocks above 70)
   W4  MACD > Signal line
-  W5  Volume OK (0.7–3.0× 20-week avg — not dry, not spike)
+  W5  Volume OK (0.7–6.0× 20-week avg — not dry; ceiling raised to allow momentum surges)
   W6  Price > SMA20W
   W9  Uptrend (price > SMA50W OR HH/HL confirmed)
   (W1 removed — redundant with W9; HH/HL already in W9, tight base 5% was too strict)
@@ -22,9 +22,8 @@ Daily conditions (ALL must hold):
   D2  RSI 35–70
   D3  MACD > Signal line
   D4  Price > SMA9D
-  D5  Histogram rising (hist[-1] > hist[-2])
-  D6  No nearby supply (price NOT within 3% below 20-day rolling high)
-  D6  Volume > 20-day average (replaces supply zone check; D7 removed)
+  D5  Histogram rising — display only (dropped as gate; MACD>Signal is sufficient)
+  D6  Volume > 0.7× 20-day average (relaxed from strict >1.0×)
 
 Cross-timeframe:
   X1  ADX > 16 AND ADX rising (ADX[-1] > ADX[-4])
@@ -153,7 +152,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
         result["W2"] = (sma20_w > 0) and (px <= sma20_w * 1.10)          # within 10%
         result["W3"] = 35 <= rsi_w_v <= 75
         result["W4"] = m_w > s_w
-        result["W5"] = 0.7 <= vol_ratio_w <= 3.0
+        result["W5"] = 0.7 <= vol_ratio_w <= 6.0
         result["W6"] = px > sma20_w
         result["W9"] = (px > sma50_w) or hh_hl
 
@@ -208,7 +207,7 @@ def _check_daily(ticker: str, price: float) -> dict:
         # Volume — D6: strictly above 20-day average (>1.0×)
         avg_vol = float(vol_d.iloc[-21:-1].mean()) if (vol_d is not None and len(vol_d) >= 21) else None
         cur_vol = float(vol_d.iloc[-1]) if vol_d is not None else None
-        vol_above = (cur_vol > avg_vol) if (cur_vol and avg_vol) else False  # D6: strict >1.0×
+        vol_above = (cur_vol > 0.7 * avg_vol) if (cur_vol and avg_vol) else False  # D6: relaxed >0.7×
 
         # Supply zone — display only (no longer a hard gate)
         high_20d = float(close_d.iloc[-20:].max()) if len(close_d) >= 20 else px
@@ -234,8 +233,8 @@ def _check_daily(ticker: str, price: float) -> dict:
         result["D2"] = 35 <= rsi_v <= 70
         result["D3"] = m_d > s_d
         result["D4"] = px > sma9_d
-        result["D5"] = h_d > h_d_prev                           # daily histogram rising
-        result["D6"] = vol_above                                 # volume > 20-day avg (strict)
+        result["D5"] = h_d > h_d_prev                           # daily histogram rising — display only
+        result["D6"] = vol_above                                 # volume > 0.7× 20-day avg
         # D7 removed — D6 now covers volume strictly (>1.0× vs old 0.8×)
         result["X1"] = adx_ok
         result["X2"] = not div
@@ -253,7 +252,7 @@ def _check_daily(ticker: str, price: float) -> dict:
             "in_demand":      in_demand,
             "pct_below_high": round(pct_below_high, 1),   # display only
         }
-        daily_conditions = ["D1","D2","D3","D4","D5","D6","X1","X2"]  # D7 removed
+        daily_conditions = ["D1","D2","D3","D4","D6","X1","X2"]  # D5 hist↑ dropped (display only); D7 removed
         result["pass"] = all(result[k] for k in daily_conditions)
 
     except Exception:
@@ -308,9 +307,9 @@ def run_ftf_scan(
             "W5": "Vol OK",       "W6": "P>SMA20W", "W9": "Uptrend",
         }
         d_map = {
-            "D1": "Not Ext'd",  "D2": "RSI ✓",     "D3": "MACD>Sig",
-            "D4": "P>SMA9",     "D5": "Hist↑",      "D6": "Vol>Avg",
-            "X1": "ADX>16",                         "X2": "No BearDiv",
+            "D1": "Not Ext'd",  "D2": "RSI ✓",  "D3": "MACD>Sig",
+            "D4": "P>SMA9",     "D6": "Vol>0.7×",
+            "X1": "ADX>16",     "X2": "No BearDiv",
         }
         for k, lbl in w_map.items():
             if wk.get(k):
