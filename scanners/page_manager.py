@@ -60,6 +60,9 @@ ALL_PAGES = [
      "label": "Upcoming Dividends"},
     {"group": "Dividend",  "key": "📅  Dividend + CC Capture",
      "label": "Dividend + CC Capture"},
+    # ── Deals ──────────────────────────────────────────────────
+    {"group": "Deals",     "key": "🎟️  Great Clips Coupons",
+     "label": "Great Clips Coupons"},
     # ── Info ───────────────────────────────────────────────────
     {"group": "Info",      "key": "ℹ️  About & Guide",
      "label": "About & Guide"},
@@ -75,6 +78,7 @@ GROUP_META = {
     "Stocks":    {"icon": "📊"},
     "Options":   {"icon": "🎯"},
     "Dividend":  {"icon": "💵"},
+    "Deals":     {"icon": "🎟️"},
     "Info":      {"icon": "ℹ️"},
 }
 

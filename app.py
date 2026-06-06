@@ -898,6 +898,12 @@ NAV_GROUPS = [
         ],
     },
     {
+        "sep": "Deals", "icon": "🎟️", "expanded": False,
+        "items": [
+            {"key": "🎟️  Great Clips Coupons"},
+        ],
+    },
+    {
         "sep": "Info", "icon": "ℹ️", "expanded": False,
         "items": [
             {"key": "ℹ️  About & Guide"},
@@ -1279,6 +1285,9 @@ elif page in ("💵  Upcoming Dividends", "📅  Dividend + CC Capture"):
     else:
         from scanners.dividend_cc_scanner import render
         render()
+elif page == "🎟️  Great Clips Coupons":
+    from scanners.deals_greatclips import render
+    render()
 elif page == "ℹ️  About & Guide":
     from scanners.about import render
     render()
