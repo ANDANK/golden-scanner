@@ -35,19 +35,32 @@ _HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
     ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "cross-site",
+    "Cache-Control": "max-age=0",
 }
-TIMEOUT       = 12
+_OFFER_HEADERS = {
+    **_HEADERS,
+    "Referer": "https://onecountrysweepstakes.com/great-clips-coupon-9-99/",
+    "Sec-Fetch-Site": "cross-site",
+}
+TIMEOUT       = 15
 MAX_WORKERS   = 12           # parallel HTTP threads
 CACHE_TTL_MIN = 120          # cache results for 2 hours
 
 
 # ── HTTP helpers ───────────────────────────────────────────────
 
-def _get(url: str) -> "requests.Response | None":
+def _get(url: str, extra_headers: dict | None = None) -> "requests.Response | None":
     try:
-        return requests.get(url, headers=_HEADERS, timeout=TIMEOUT, verify=False,
+        hdrs = {**_HEADERS, **(extra_headers or {})}
+        return requests.get(url, headers=hdrs, timeout=TIMEOUT, verify=False,
                             allow_redirects=True)
     except Exception:
         return None
@@ -58,6 +71,27 @@ def _soup(url: str) -> "BeautifulSoup | None":
     if r is None or not r.ok:
         return None
     return BeautifulSoup(r.text, "html.parser")
+
+
+def _debug_fetch_offer(url: str) -> dict:
+    """Fetch one offer URL and return diagnostic info (for the debug panel)."""
+    try:
+        r = _get(url, _OFFER_HEADERS)
+        if r is None:
+            return {"status": "ERROR", "final_url": url, "snippet": "Request failed (None)"}
+        soup = BeautifulSoup(r.text, "html.parser")
+        desc_el = soup.find("p", id="description")
+        desc_text = desc_el.get_text(" ", strip=True) if desc_el else ""
+        plain = soup.get_text(" ", strip=True)
+        return {
+            "status":    r.status_code,
+            "final_url": r.url,
+            "desc_el":   desc_text[:300] if desc_text else "(not found)",
+            "snippet":   plain[:500],
+            "html_head": r.text[:800],
+        }
+    except Exception as e:
+        return {"status": "EXCEPTION", "final_url": url, "snippet": str(e)}
 
 
 # ── Primary-site scraping ──────────────────────────────────────
@@ -90,56 +124,88 @@ def _collect_offer_links(soup: "BeautifulSoup") -> list[str]:
     return links
 
 
-def _extract_coupon_info(url: str, page_text: str) -> dict | None:
-    """Parse city, location name, address, price/type from the Sparkfly offer page."""
-    try:
-        m = re.search(
-            r"Get a great haircut for ([^\s]+(?:\s+off)?)\s+at\s+Great Clips\s+(.+?)\s+at\s+(.+?)\s+in\s+(\w[\w\s]+?)\.",
-            page_text,
-            re.IGNORECASE | re.DOTALL,
-        )
-        if not m:
-            return None
-
-        raw_price_str, loc_name, address, city = (g.strip() for g in m.groups())
-
-        # Normalise price — strip everything except digits and dots
-        digits = re.sub(r"[^\d.]", "", raw_price_str)
-        if not digits:
-            return None
-        amount = float(digits)
-
-        price_lower = raw_price_str.lower()
-        if "off" in price_lower:
-            coupon_type = "off"
-            sort_key    = -amount
-        else:
-            coupon_type = "flat"
-            sort_key    = amount
-
-        denom = raw_price_str if raw_price_str.startswith("$") else f"${raw_price_str}"
-
-        return {
-            "city":              city,
-            "location":          loc_name,
-            "address":           address,
-            "raw_price":         raw_price_str,
-            "amount":            amount,
-            "coupon_type":       coupon_type,
-            "sort_key":          sort_key,
-            "coupon_url":        url,
-            "denomination":      denom,
-            "denomination_label": "",
-        }
-    except Exception:
+def _parse_description(desc: str) -> dict | None:
+    """
+    Parse a plain-text description like:
+      "Get a great haircut for $9.99 at Great Clips Coit Marketplace
+       at 9605 Coit Rd in Plano."
+      "Get a great haircut for $6.00 off at Great Clips Coit Main Plaza
+       at 8949 Coit Rd in Frisco."
+    Returns structured dict or None.
+    """
+    # Normalise whitespace
+    desc = re.sub(r"\s+", " ", desc).strip()
+    m = re.search(
+        r"Get a great haircut for\s+(\$[\d.]+(?:\s+off)?)\s+at\s+Great Clips\s+(.+?)\s+at\s+(.+?)\s+in\s+([\w][^.]+?)\s*\.",
+        desc,
+        re.IGNORECASE,
+    )
+    if not m:
         return None
+
+    raw_price_str = m.group(1).strip()
+    loc_name      = m.group(2).strip()
+    address       = m.group(3).strip()
+    city          = m.group(4).strip().split(",")[0].strip()   # drop state if present
+
+    digits = re.sub(r"[^\d.]", "", raw_price_str)
+    if not digits:
+        return None
+    # guard against strings like "6." → valid float
+    try:
+        amount = float(digits)
+    except ValueError:
+        return None
+
+    if "off" in raw_price_str.lower():
+        coupon_type = "off"
+        sort_key    = -amount
+        denom       = f"${amount:.2f} OFF"
+    else:
+        coupon_type = "flat"
+        sort_key    = amount
+        denom       = f"${amount:.2f}"
+
+    return {
+        "city":               city,
+        "location":           loc_name,
+        "address":            address,
+        "raw_price":          raw_price_str,
+        "amount":             amount,
+        "coupon_type":        coupon_type,
+        "sort_key":           sort_key,
+        "denomination":       denom,
+        "denomination_label": "",
+    }
 
 
 def _fetch_offer(url: str) -> dict | None:
-    r = _get(url)
-    if r is None:
+    """Fetch one offers.greatclips.com short URL and extract coupon info."""
+    try:
+        r = _get(url, _OFFER_HEADERS)
+        if r is None or not r.ok:
+            return None
+
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        # Strategy 1: target <p id="description"> directly (most reliable)
+        desc_el = soup.find("p", id="description")
+        if desc_el:
+            info = _parse_description(desc_el.get_text(" ", strip=True))
+            if info:
+                info["coupon_url"] = url
+                return info
+
+        # Strategy 2: search all plain text for the known sentence pattern
+        plain = soup.get_text(" ", strip=True)
+        info = _parse_description(plain)
+        if info:
+            info["coupon_url"] = url
+            return info
+
         return None
-    return _extract_coupon_info(url, r.text)
+    except Exception:
+        return None
 
 
 def _scan_primary(target_cities: list[str],
@@ -394,6 +460,28 @@ def render():
 
     target_cities = [c.strip() for c in city_input.split(",") if c.strip()]
 
+    # ── Debug panel ────────────────────────────────────────────
+    with st.expander("🔧 Debug — test a single coupon link", expanded=False):
+        st.caption("Use this to see exactly what the server returns for one offer URL.")
+        test_url = st.text_input(
+            "Offer URL to test",
+            value="https://offers.greatclips.com/MrO06jW",
+            key="gc_debug_url",
+        )
+        if st.button("Test URL", key="gc_debug_btn"):
+            with st.spinner("Fetching…"):
+                info = _debug_fetch_offer(test_url)
+            st.write("**HTTP Status:**", info.get("status"))
+            st.write("**Final URL:**", info.get("final_url"))
+            st.write("**`<p id='description'>` element:**")
+            st.code(info.get("desc_el", "(not found)"))
+            st.write("**Plain text (first 500 chars):**")
+            st.code(info.get("snippet", ""))
+            st.write("**Raw HTML head (first 800 chars):**")
+            st.code(info.get("html_head", ""))
+            parsed = _parse_description(info.get("desc_el") or info.get("snippet", ""))
+            st.write("**Parsed result:**", parsed)
+
     # ── Cache management ────────────────────────────────────────
     _CACHE_KEY    = "gc_coupon_results"
     _CACHE_TS_KEY = "gc_coupon_ts"
@@ -478,10 +566,9 @@ def render():
             st.warning(
                 f"No location-specific coupons found for **{', '.join(scanned_cities)}** "
                 f"on {source}.\n\n"
-                "These coupons may not be available for your city at this time, or "
-                "the site may list only generic (all-location) deals. "
-                "Try visiting [greatclips.com/coupons](https://www.greatclips.com/coupons) "
-                "and entering your zip code directly."
+                "This usually means the coupon site is blocking automated requests from cloud servers. "
+                "Use the **🔧 Debug** panel above to test a single URL and see what the server returns — "
+                "paste `https://offers.greatclips.com/MrO06jW` (a known Plano link) and click **Test URL**."
             )
             return
 
