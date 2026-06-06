@@ -531,7 +531,7 @@ def run_mtpa_scan(
             ) if len(volume) > 20 else float(volume.mean())
             curr_vol    = float(volume.iloc[-1])
             volume_ratio = curr_vol / avg_vol if avg_vol > 0 else 0.0
-            volume_ok    = bool(1.0 < volume_ratio < 1.8)
+            volume_ok    = bool(volume_ratio > 0.7)
 
             # ── SMA checks ────────────────────────────────────────
             sma9_ser  = calc_sma(close, 9)

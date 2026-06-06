@@ -639,7 +639,7 @@ A pure-filter, no-score scanner that categorizes stocks by how many timeframes a
 <li><b>MACD &gt; Sig</b> — EMA(12) − EMA(26) &gt; Signal line (9-period EMA of MACD). Indicates bullish crossover.</li>
 <li><b>MACD Zone</b> — 🎯 Near Zero: |MACD| ≤ 3 (display label only). 📈 Positive: &gt;3. 📉 Negative: &lt;−3.
   Table 1 uses price-normalised threshold (|MACD| ≤ 1% of price) rather than the fixed ±3 display zones.</li>
-<li><b>Vol Ratio</b> — Today's volume ÷ 20-day average. Volume OK = 1.0–1.8× (healthy interest, not a spike).</li>
+<li><b>Vol Ratio</b> — Today's volume ÷ 20-day average. Volume OK = &gt;0.7× (relaxed from 1.0–1.8× to allow lighter momentum days).</li>
 <li><b>&gt;SMA20 / &gt;SMA9</b> — Price above its 20-day or 9-day simple moving average.</li>
 </ul>
 

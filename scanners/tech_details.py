@@ -141,14 +141,14 @@ SCANNERS = [
         "key":   "First Things First",
         "emoji": "🎯",
         "color": GOLD,
-        "desc":  "Highest-conviction multi-timeframe setup scanner. Applies 14 conditions simultaneously across weekly AND daily charts. Only stocks passing every condition are surfaced — quality over quantity. Universe: full S&P 500 + ETFs + 3× ETFs (~482 tickers).",
+        "desc":  "Highest-conviction multi-timeframe setup scanner. Applies 13 conditions simultaneously across weekly AND daily charts. Only stocks passing every condition are surfaced — quality over quantity. Universe: full S&P 500 + ETFs + 3× ETFs (~482 tickers).",
         "params": [
             ("Universe",    "~482 tickers",   "Full S&P 500 + ETFs + 3× ETFs"),
             ("Timeframes",  "Weekly + Daily",  "Both must pass independently"),
-            ("Conditions",  "14 total",        "6 weekly · 8 daily/cross-TF"),
+            ("Conditions",  "13 conditions",   "6 weekly · 7 daily/cross-TF"),
             ("Sort Order",  "ADX descending",  "Strongest trending setups first"),
         ],
-        "criteria": "W: Not Extended · RSI 35–75 · MACD>Signal · Vol OK · P>SMA20W · Uptrend  |  D: Not Ext'd · RSI 35–70 · MACD>Signal · P>EMA9 · Hist↑ · Vol>Avg · ADX>16 · No BearDiv",
+        "criteria": "W: Not Extended · RSI 35–75 · MACD>Signal · Vol 0.7–6× · P>SMA20W · Uptrend  |  D: Not Ext'd · RSI 35–70 · MACD>Signal · P>EMA9 · Vol>0.7× · ADX>16 · No BearDiv",
     },
 ]
 
@@ -1015,29 +1015,29 @@ def _render_scanner_tech():
             "icon":  "🎯",
             "badge": "WEEKLY + DAILY",
             "badge_c": GOLD,
-            "style": "Highest Conviction · 14 conditions · ~482-ticker universe",
+            "style": "Highest Conviction · 13 conditions · ~482-ticker universe",
             "color": GOLD,
             "intro": (
-                "The strictest scanner in the platform. Requires <b>all 14 conditions</b> to pass simultaneously "
+                "The strictest scanner in the platform. Requires <b>all 13 conditions</b> to pass simultaneously "
                 "across <b>weekly AND daily</b> timeframes. Weekly conditions act as the primary gate — only "
                 "stocks with a confirmed weekly trend structure proceed to daily evaluation. "
                 "Universe: full S&P 500 stocks + liquid ETFs + sector ETFs + 3× leveraged ETFs (~482 tickers). "
                 "Expect 0–10 results per scan — this is intentional. "
-                "Best run <b>30–60 min after market open</b> when volume and daily histogram direction are established."
+                "Best run <b>30–60 min after market open</b> when volume is established."
             ),
             "conditions": [
                 ("W2 — Not Extended (Weekly)", "Price ≤ SMA20W × 1.10 — within 10% above the 20-week MA. Avoids chasing extended moves at peak."),
                 ("W3 — RSI 35–75 (Weekly)", "Weekly RSI in the momentum zone. Below 35 = downtrend excluded. Upper limit 75 allows strong post-rally stocks (was 70, raised to avoid blocking everything after sharp rallies)."),
                 ("W4 — MACD > Signal (Weekly)", "Weekly MACD line above the signal line — confirms bullish weekly momentum. Hard gate."),
-                ("W5 — Volume OK (Weekly)", "Weekly volume 0.7–3.0× the 20-week average. Filters out dry (no interest) and extreme spike (climax) weeks."),
+                ("W5 — Volume OK (Weekly)", "Weekly volume 0.7–6.0× the 20-week average. Filters out dry (no interest) weeks. Ceiling raised to 6× to allow strong momentum-surge weeks through."),
                 ("W6 — Price > SMA20W (Weekly)", "Price must be above its 20-week moving average — the minimum weekly trend structure requirement."),
                 ("W9 — Uptrend (Weekly)", "Price > SMA50W OR HH/HL confirmed. Ensures the macro trend is intact on the weekly chart."),
                 ("D1 — Not Extended (Daily)", "Price ≤ EMA9D × 1.08 — within 8% above the 9-day EMA. Avoids entries too far from near-term support."),
                 ("D2 — RSI 35–70 (Daily)", "Daily RSI in the momentum zone. Mirrors the weekly RSI filter on the daily timeframe."),
                 ("D3 — MACD > Signal (Daily)", "Daily MACD line above signal line — short-term momentum bullish."),
                 ("D4 — Price > EMA9D (Daily)", "Price above the 9-day EMA — the most sensitive daily trend filter."),
-                ("D5 — Histogram Rising (Daily)", "Daily MACD histogram today > yesterday. Momentum is accelerating, not fading. Stocks with declining histogram are excluded even if MACD is still positive."),
-                ("D6 — Volume > 20-Day Average (Daily)", "Today's volume exceeds the 20-day average. Confirms institutional participation on the day of the scan."),
+                ("D5 — Histogram Rising (Daily)", "Display only — not a gate condition. Shown in results for reference. MACD > Signal (D3) is sufficient to confirm bullish momentum direction."),
+                ("D6 — Volume > 0.7× 20-Day Average (Daily)", "Today's volume exceeds 70% of the 20-day average. Relaxed from strict >1.0× — filters out truly dead-volume days while allowing lighter momentum days through."),
                 ("X1 — ADX > 16 (Cross-TF)", "Average Directional Index above 16 — confirms a real trend exists, not sideways chop. Calculated from daily data."),
                 ("X2 — No Bearish Divergence (Cross-TF)", "Price is NOT making higher highs while RSI is making lower highs over the last 14 daily bars. Classic bearish divergence = excluded."),
             ],
@@ -1051,7 +1051,7 @@ def _render_scanner_tech():
                 ("All 14 conditions pass", "Qualified", "Binary pass/fail — no partial credit"),
                 ("Sorted by ADX", "Descending", "Higher ADX = stronger confirmed trend"),
                 ("W conditions gate", "6 checks", "W2 W3 W4 W5 W6 W9"),
-                ("D/X conditions gate", "8 checks", "D1 D2 D3 D4 D5 D6 X1 X2"),
+                ("D/X conditions gate", "7 checks", "D1 D2 D3 D4 D6 X1 X2  (D5 Hist↑ display-only)"),
                 ("Universe", "~482 tickers", "Full S&P 500 + ETFs + 3× ETFs"),
             ],
         },
