@@ -1048,7 +1048,7 @@ def _render_scanner_tech():
                 "Ignoring the scan funnel chips (Scanned N → Weekly pass N → Final pass N) — these tell you where stocks fail",
             ],
             "scoring": [
-                ("All 14 conditions pass", "Qualified", "Binary pass/fail — no partial credit"),
+                ("All 13 conditions pass", "Qualified", "Binary pass/fail — no partial credit"),
                 ("Sorted by ADX", "Descending", "Higher ADX = stronger confirmed trend"),
                 ("W conditions gate", "6 checks", "W2 W3 W4 W5 W6 W9"),
                 ("D/X conditions gate", "7 checks", "D1 D2 D3 D4 D6 X1 X2  (D5 Hist↑ display-only)"),
