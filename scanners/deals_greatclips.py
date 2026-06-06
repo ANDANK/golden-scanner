@@ -92,42 +92,47 @@ def _collect_offer_links(soup: "BeautifulSoup") -> list[str]:
 
 def _extract_coupon_info(url: str, page_text: str) -> dict | None:
     """Parse city, location name, address, price/type from the Sparkfly offer page."""
-    # The page text contains a sentence like:
-    # "Get a great haircut for $9.99 at Great Clips Coit Marketplace
-    #  at 11521 N FM 620 in Austin."
-    # or "...for $6.00 off at Great Clips ..."
-    m = re.search(
-        r"Get a great haircut for ([^\s]+(?:\s+off)?)\s+at\s+Great Clips\s+(.+?)\s+at\s+(.+?)\s+in\s+(\w[\w\s]+?)\.",
-        page_text,
-        re.IGNORECASE | re.DOTALL,
-    )
-    if not m:
+    try:
+        m = re.search(
+            r"Get a great haircut for ([^\s]+(?:\s+off)?)\s+at\s+Great Clips\s+(.+?)\s+at\s+(.+?)\s+in\s+(\w[\w\s]+?)\.",
+            page_text,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if not m:
+            return None
+
+        raw_price_str, loc_name, address, city = (g.strip() for g in m.groups())
+
+        # Normalise price — strip everything except digits and dots
+        digits = re.sub(r"[^\d.]", "", raw_price_str)
+        if not digits:
+            return None
+        amount = float(digits)
+
+        price_lower = raw_price_str.lower()
+        if "off" in price_lower:
+            coupon_type = "off"
+            sort_key    = -amount
+        else:
+            coupon_type = "flat"
+            sort_key    = amount
+
+        denom = raw_price_str if raw_price_str.startswith("$") else f"${raw_price_str}"
+
+        return {
+            "city":              city,
+            "location":          loc_name,
+            "address":           address,
+            "raw_price":         raw_price_str,
+            "amount":            amount,
+            "coupon_type":       coupon_type,
+            "sort_key":          sort_key,
+            "coupon_url":        url,
+            "denomination":      denom,
+            "denomination_label": "",
+        }
+    except Exception:
         return None
-
-    raw_price_str, loc_name, address, city = (g.strip() for g in m.groups())
-
-    # Normalise price
-    price_lower = raw_price_str.lower()
-    if "off" in price_lower:
-        amount = float(re.sub(r"[^\d.]", "", raw_price_str))
-        coupon_type = "off"
-        sort_key    = -amount   # negative so higher discount sorts first
-    else:
-        amount = float(re.sub(r"[^\d.]", "", raw_price_str))
-        coupon_type = "flat"
-        sort_key    = amount
-
-    return {
-        "city":         city,
-        "location":     loc_name,
-        "address":      address,
-        "raw_price":    raw_price_str,
-        "amount":       amount,
-        "coupon_type":  coupon_type,
-        "sort_key":     sort_key,
-        "coupon_url":   url,
-        "denomination": f"${raw_price_str}" if not raw_price_str.startswith("$") else raw_price_str,
-    }
 
 
 def _fetch_offer(url: str) -> dict | None:
@@ -179,20 +184,27 @@ def _scan_primary(target_cities: list[str],
     lock = threading.Lock()
 
     def _worker(url: str) -> dict | None:
-        info = _fetch_offer(url)
-        if info and info["city"].lower() in cities_lower:
-            info["denomination_label"] = offer_map.get(url, "")
-            return info
+        try:
+            info = _fetch_offer(url)
+            if info and info["city"].lower() in cities_lower:
+                info["denomination_label"] = offer_map.get(url, "")
+                return info
+        except Exception:
+            pass
         return None
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
         futures = {ex.submit(_worker, u): u for u in all_offer_urls}
         for fut in as_completed(futures):
             done += 1
-            result = fut.result()
+            try:
+                result = fut.result()
+            except Exception:
+                result = None
             if result:
                 with lock:
                     results.append(result)
+            # progress_cb touches Streamlit state — call from main thread only
             if progress_cb:
                 progress_cb(done, total, f"Checked {done}/{total} coupons…")
 
