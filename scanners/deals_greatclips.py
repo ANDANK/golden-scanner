@@ -399,32 +399,49 @@ def _seed_for_cities(target_cities: list[str]) -> list[dict]:
 
 
 def run_scan(target_cities: list[str],
-             progress_cb=None) -> tuple[list[dict], str, bool]:
+             progress_cb=None) -> tuple[list[dict], bool]:
     """
-    Main entry: try primary → secondary → seed fallback.
-    Returns (sorted_results, source_label, is_live).
-    is_live=False means results came from cached seed data.
+    Scan both primary and secondary sources in parallel, merge, deduplicate.
+    Falls back to seed data if both return nothing.
+    Returns (sorted_results, is_live).
     """
-    results, source = _scan_primary(target_cities, progress_cb)
-    is_live = bool(results)
+    primary_results:   list[dict] = []
+    secondary_results: list[dict] = []
+    lock = threading.Lock()
 
-    if not results and source == "":
-        # Primary unreachable — try secondary
-        results, source = _scan_secondary(target_cities, progress_cb)
-        is_live = bool(results)
+    def _run_primary():
+        r, _ = _scan_primary(target_cities, progress_cb)
+        with lock:
+            primary_results.extend(r)
 
-    if not results:
-        # Both live sources blocked/empty — use verified seed data
-        results = _seed_for_cities(target_cities)
-        source  = f"cached ({_SEED_DATE})"
-        is_live = False
+    def _run_secondary():
+        r, _ = _scan_secondary(target_cities)   # no progress_cb — runs silently
+        with lock:
+            secondary_results.extend(r)
+
+    t1 = threading.Thread(target=_run_primary,   daemon=True)
+    t2 = threading.Thread(target=_run_secondary, daemon=True)
+    t1.start(); t2.start()
+    t1.join();  t2.join()
+
+    # Merge and deduplicate by coupon URL
+    seen_urls: set[str] = set()
+    merged: list[dict] = []
+    for r in primary_results + secondary_results:
+        if r["coupon_url"] not in seen_urls:
+            merged.append(r)
+            seen_urls.add(r["coupon_url"])
+
+    is_live = bool(merged)
+    if not merged:
+        merged = _seed_for_cities(target_cities)
 
     def _sorter(r):
         type_rank = 0 if r["coupon_type"] == "off" else 1
         return (type_rank, r["sort_key"])
 
-    results.sort(key=_sorter)
-    return results, source, is_live
+    merged.sort(key=_sorter)
+    return merged, is_live
 
 
 # ── Display helpers ────────────────────────────────────────────
@@ -551,7 +568,6 @@ def render():
     _CACHE_KEY    = "gc_coupon_results"
     _CACHE_TS_KEY = "gc_coupon_ts"
     _CITY_KEY     = "gc_coupon_cities"
-    _SRC_KEY      = "gc_coupon_source"
 
     cache_valid = (
         _CACHE_KEY in st.session_state
@@ -562,8 +578,7 @@ def render():
 
     # ── Trigger scan ────────────────────────────────────────────
     if scan_clicked or (not cache_valid and _CACHE_KEY in st.session_state):
-        # Clear stale cache if cities changed
-        for k in (_CACHE_KEY, _CACHE_TS_KEY, _CITY_KEY, _SRC_KEY):
+        for k in (_CACHE_KEY, _CACHE_TS_KEY, _CITY_KEY, "gc_coupon_live"):
             st.session_state.pop(k, None)
         cache_valid = False
 
@@ -589,14 +604,13 @@ def render():
             prog_bar.progress(pct)
             progress_ph.caption(f"{msg}  ({done}/{total})")
 
-        results, source, is_live = run_scan(target_cities, _progress)
+        results, is_live = run_scan(target_cities, _progress)
 
         # Store in session state
-        st.session_state[_CACHE_KEY]        = results
-        st.session_state[_CACHE_TS_KEY]     = datetime.now()
-        st.session_state[_CITY_KEY]         = target_cities
-        st.session_state[_SRC_KEY]          = source
-        st.session_state["gc_coupon_live"]  = is_live
+        st.session_state[_CACHE_KEY]       = results
+        st.session_state[_CACHE_TS_KEY]    = datetime.now()
+        st.session_state[_CITY_KEY]        = target_cities
+        st.session_state["gc_coupon_live"] = is_live
 
         # Clear progress UI
         status_box.empty()
@@ -608,33 +622,18 @@ def render():
     # ── Display results (from cache) ───────────────────────────
     if _CACHE_KEY in st.session_state:
         results: list[dict] = st.session_state[_CACHE_KEY]
-        source: str         = st.session_state.get(_SRC_KEY, "")
-        is_live: bool       = st.session_state.get("gc_coupon_live", True)
         scanned_cities      = st.session_state.get(_CITY_KEY, target_cities)
         scan_ts             = st.session_state.get(_CACHE_TS_KEY, datetime.now())
 
-        # ── Seed-data banner ───────────────────────────────────
-        if not is_live:
-            st.info(
-                f"⚠️ **Live scan was blocked** — the coupon site (`offers.greatclips.com`) "
-                f"rejects requests from cloud servers. "
-                f"Showing **{len(results)} verified coupons** from the last successful scan "
-                f"({_SEED_DATE}). Links are still active — tap **Redeem Coupon** to open each one.",
-                icon="ℹ️",
-            )
-
         # ── Summary bar ────────────────────────────────────────
         st.markdown("---")
-        c1, c2, c3 = st.columns(3)
+        c1, c2, col_btn = st.columns([1, 1, 1])
         c1.metric("Coupons Found", len(results))
-        c2.metric("Cities", len(scanned_cities))
-        c3.metric("Source", "Live ✅" if is_live else f"Cached ({_SEED_DATE})")
-        st.caption(f"Last checked: {scan_ts.strftime('%b %d, %Y %I:%M %p')}")
-
-        col_rescan, _ = st.columns([1, 4])
-        with col_rescan:
-            if st.button("🔄 Re-scan"):
-                for k in (_CACHE_KEY, _CACHE_TS_KEY, _CITY_KEY, _SRC_KEY, "gc_coupon_live"):
+        c2.metric("Last Scanned", scan_ts.strftime("%b %d, %I:%M %p"))
+        with col_btn:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🔄 Re-scan", use_container_width=True):
+                for k in (_CACHE_KEY, _CACHE_TS_KEY, _CITY_KEY, "gc_coupon_live"):
                     st.session_state.pop(k, None)
                 st.rerun()
 
