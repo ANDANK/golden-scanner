@@ -144,8 +144,8 @@ def _check_weekly(ticker: str, df_daily: pd.DataFrame) -> dict:
             rng = float(close_w.iloc[-10:].max() - close_w.iloc[-10:].min())
             tight_base = (rng / sma20_w * 100) < 5.0
 
-        # RSI
-        rsi_w_v = float(calc_rsi(close_w).dropna().iloc[-1])
+        # RSI — calc_rsi() returns a float directly
+        rsi_w_v = float(calc_rsi(close_w))
 
         # MACD
         macd_w, sig_w, hist_w = _macd(close_w)
@@ -205,9 +205,13 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
         sma9_d  = float(calc_ema(close_d, 9).dropna().iloc[-1])
         sma20_d = float(calc_sma(close_d, 20).dropna().iloc[-1])
 
-        # RSI
-        rsi_d = calc_rsi(close_d).dropna()
-        rsi_v = float(rsi_d.iloc[-1])
+        # RSI — calc_rsi() returns a float; also build a Series for divergence check
+        rsi_v  = float(calc_rsi(close_d))
+        _delta = close_d.diff().dropna()
+        _gain  = _delta.clip(lower=0).ewm(alpha=1/14, adjust=False).mean()
+        _loss  = (-_delta.clip(upper=0)).ewm(alpha=1/14, adjust=False).mean()
+        _rs    = _gain / _loss.replace(0, float("nan"))
+        rsi_d  = (100 - 100 / (1 + _rs)).fillna(50)
 
         # MACD
         macd_d, sig_d, hist_d = _macd(close_d)
