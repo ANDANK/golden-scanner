@@ -608,48 +608,101 @@ def _render_ftf_tab():
             unsafe_allow_html=True,
         )
 
-        # Exception sample — shown first if errors exist
+        # ── Always-visible breakdown (weekly + daily) ─────────────────────────
         w_errors = diag.get("w_errors", {})
-        if wpass == 0 and w_errors:
-            err_lines = "".join(
-                f'<div style="color:{ACCENT_RED};font-size:10px;font-family:monospace;'
-                f'padding:2px 0">{t}: {e}</div>'
-                for t, e in list(w_errors.items())[:5]
-            )
-            st.markdown(
-                f'<div style="background:{ACCENT_RED}0D;border:1px solid {ACCENT_RED}33;'
-                f'border-radius:6px;padding:10px 14px;margin-bottom:8px">'
-                f'<div style="color:{ACCENT_RED};font-size:11px;font-weight:700;margin-bottom:6px">'
-                f'🐛 Weekly check throwing exceptions — sample:</div>'
-                f'{err_lines}</div>',
-                unsafe_allow_html=True,
-            )
 
-        # Per-condition failure breakdown (only show when weekly pass = 0 to aid debugging)
-        if wpass == 0 and w_fails and dok > 0:
-            w_labels = {"W2":"Not Extended (≤15% above SMA20W)","W3":"RSI 35–75","W4":"MACD>Signal",
-                        "W5":"Volume 0.7–6×","W6":"Price > SMA20W","W9":"Uptrend"}
-            rows_html = "".join(
+        def _breakdown_table(fails: dict, labels: dict, n: int, color: str) -> str:
+            if not fails or n == 0:
+                return ""
+            rows = "".join(
                 f'<tr>'
-                f'<td style="padding:5px 12px;color:{GOLD};font-family:monospace;font-weight:700">{k}</td>'
-                f'<td style="padding:5px 12px;color:#fff">{w_labels.get(k,k)}</td>'
-                f'<td style="padding:5px 12px;color:{"#EF4444" if v > dok*0.5 else GOLD};font-weight:700">'
-                f'{v}/{dok} fail ({v*100//dok if dok else 0}%)</td>'
+                f'<td style="padding:5px 10px;color:{color};font-family:monospace;'
+                f'font-weight:700;white-space:nowrap">{k}</td>'
+                f'<td style="padding:5px 10px;color:#ddd;font-size:11px">{labels.get(k, k)}</td>'
+                f'<td style="padding:5px 10px;font-weight:700;font-size:11px;white-space:nowrap;'
+                f'color:{"#EF4444" if v > n*0.7 else ("#FBBF24" if v > n*0.3 else "#22C55E")}">'
+                f'{v}/{n} ({v*100//n}%)</td>'
                 f'</tr>'
-                for k, v in sorted(w_fails.items(), key=lambda x: -x[1])
+                for k, v in sorted(fails.items(), key=lambda x: -x[1])
             )
-            st.markdown(
-                f'<details style="margin-bottom:10px"><summary style="color:{GOLD};font-size:11px;'
-                f'font-weight:700;cursor:pointer">⚠️ Weekly gate breakdown — click to expand</summary>'
-                f'<div style="background:#0f172a;border-radius:6px;padding:6px;margin-top:6px;overflow-x:auto">'
+            return (
                 f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
                 f'<thead><tr>'
-                f'<th style="padding:4px 12px;color:{TEXT_MUTED};text-align:left">Cond</th>'
-                f'<th style="padding:4px 12px;color:{TEXT_MUTED};text-align:left">Description</th>'
-                f'<th style="padding:4px 12px;color:{TEXT_MUTED};text-align:left">Fail Rate</th>'
-                f'</tr></thead><tbody>{rows_html}</tbody></table></div></details>',
-                unsafe_allow_html=True,
+                f'<th style="padding:4px 10px;color:{TEXT_MUTED};text-align:left;font-size:10px">Cond</th>'
+                f'<th style="padding:4px 10px;color:{TEXT_MUTED};text-align:left;font-size:10px">Description</th>'
+                f'<th style="padding:4px 10px;color:{TEXT_MUTED};text-align:left;font-size:10px">Fail Rate ↓</th>'
+                f'</tr></thead><tbody>{rows}</tbody></table>'
             )
+
+        w_labels = {"W2":"Not Extended ≤15% above SMA20W","W3":"RSI 35–75 (weekly)",
+                    "W4":"MACD > Signal (weekly)","W5":"Volume 0.7–6×",
+                    "W6":"Price > SMA20W","W9":"Uptrend (P>SMA50W or HH/HL)"}
+        d_labels = {"D1":"Not Extended ≤8% above EMA9","D2":"RSI 35–70 (daily)",
+                    "D3":"MACD > Signal (daily)","D4":"Price > EMA9",
+                    "D6":"Volume > 20-day avg","X1":"ADX > 16","X2":"No Bearish Divergence"}
+
+        with st.expander("🔬 Condition breakdown (always visible — expand for details)", expanded=(dpass == 0)):
+            # Errors if any
+            if w_errors:
+                err_html = "".join(
+                    f'<div style="color:{ACCENT_RED};font-size:10px;font-family:monospace;padding:1px 0">'
+                    f'{t}: {e}</div>' for t, e in list(w_errors.items())[:5]
+                )
+                st.markdown(
+                    f'<div style="background:{ACCENT_RED}0D;border:1px solid {ACCENT_RED}33;'
+                    f'border-radius:6px;padding:8px 12px;margin-bottom:10px">'
+                    f'<b style="color:{ACCENT_RED};font-size:11px">🐛 Exceptions in weekly check:</b><br>'
+                    f'{err_html}</div>', unsafe_allow_html=True,
+                )
+
+            # Show weekly passers detail
+            weekly_passers = diag.get("weekly_passers", [])
+            if weekly_passers:
+                rows_wp = "".join(
+                    f'<tr>'
+                    f'<td style="padding:4px 10px;color:{GOLD};font-family:monospace;font-weight:700">{p["ticker"]}</td>'
+                    f'<td style="padding:4px 10px;color:#ddd">${p["price"]}</td>'
+                    f'<td style="padding:4px 10px;color:#ddd">W-RSI {p["w_detail"].get("rsi_w","?")} · '
+                    f'MACD {p["w_detail"].get("macd_w","?"):.4f}</td>'
+                    f'<td style="padding:4px 10px;color:{ACCENT_RED};font-size:10px">'
+                    f'Daily fail: {", ".join(p.get("d_flags_fail", []))}</td>'
+                    f'</tr>'
+                    for p in weekly_passers[:20]
+                )
+                st.markdown(
+                    f'<div style="color:{GOLD};font-size:11px;font-weight:700;margin-bottom:4px">'
+                    f'⭐ Weekly passers ({len(weekly_passers)}) — why they failed daily:</div>'
+                    f'<div style="background:#0f172a;border-radius:6px;padding:4px;overflow-x:auto;margin-bottom:10px">'
+                    f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+                    f'<thead><tr>'
+                    f'<th style="padding:4px 10px;color:{TEXT_MUTED};font-size:10px;text-align:left">Ticker</th>'
+                    f'<th style="padding:4px 10px;color:{TEXT_MUTED};font-size:10px;text-align:left">Price</th>'
+                    f'<th style="padding:4px 10px;color:{TEXT_MUTED};font-size:10px;text-align:left">Weekly values</th>'
+                    f'<th style="padding:4px 10px;color:{TEXT_MUTED};font-size:10px;text-align:left">Failing daily conds</th>'
+                    f'</tr></thead><tbody>{rows_wp}</tbody></table></div>',
+                    unsafe_allow_html=True,
+                )
+
+            col_w, col_d = st.columns(2)
+            with col_w:
+                st.markdown(
+                    f'<div style="color:{GOLD};font-size:11px;font-weight:700;margin-bottom:4px">'
+                    f'📅 Weekly gate — {wpass}/{dok} passed</div>'
+                    + f'<div style="background:#0f172a;border-radius:6px;padding:4px;overflow-x:auto">'
+                    + _breakdown_table(w_fails, w_labels, dok, GOLD)
+                    + '</div>',
+                    unsafe_allow_html=True,
+                )
+            with col_d:
+                st.markdown(
+                    f'<div style="color:{ACCENT_GREEN};font-size:11px;font-weight:700;margin-bottom:4px">'
+                    f'📊 Daily gate — {dpass}/{wpass} passed (of weekly passers)</div>'
+                    + f'<div style="background:#0f172a;border-radius:6px;padding:4px;overflow-x:auto">'
+                    + (_breakdown_table(d_fails, d_labels, wpass, ACCENT_GREEN) if wpass > 0
+                       else f'<div style="color:{TEXT_MUTED};font-size:11px;padding:8px">No tickers reached daily gate</div>')
+                    + '</div>',
+                    unsafe_allow_html=True,
+                )
 
     render_ftf_section(st.session_state["ftf_strat_rows"], context="ftf")
 

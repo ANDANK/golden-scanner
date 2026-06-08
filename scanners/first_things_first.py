@@ -290,10 +290,11 @@ def run_ftf_scan(
     Each result dict contains: ticker, price, weekly_detail, daily_detail,
     weekly_flags, daily_flags.
     """
-    qualified  = []
-    weekly_pass = 0
-    data_ok     = 0
-    w_errors    = {}   # ticker -> error string for first 5 weekly errors
+    qualified    = []
+    weekly_pass  = 0
+    data_ok      = 0
+    w_errors     = {}   # ticker -> error string for first 5 weekly errors
+    weekly_passers = []  # tickers that passed weekly but may have failed daily
     # Per-condition fail counters (how many tickers failed EACH condition)
     w_fails = {k: 0 for k in ["W2","W3","W4","W5","W6","W9"]}
     d_fails = {k: 0 for k in ["D1","D2","D3","D4","D6","X1","X2"]}
@@ -325,6 +326,10 @@ def run_ftf_scan(
         if not wk["pass"]:
             continue
         weekly_pass += 1
+        weekly_passers.append({
+            "ticker": ticker, "price": round(price, 2),
+            "w_detail": wk.get("detail", {}),
+        })
 
         # Daily + cross-TF check — reuses the same daily DataFrame
         dy = _check_daily(ticker, price, df_daily=df_daily)
@@ -332,6 +337,9 @@ def run_ftf_scan(
             if not dy.get(k, False):
                 d_fails[k] += 1
         if not dy["pass"]:
+            # store daily detail for debugging
+            weekly_passers[-1]["d_detail"] = dy.get("detail", {})
+            weekly_passers[-1]["d_flags_fail"] = [k for k in ["D1","D2","D3","D4","D6","X1","X2"] if not dy.get(k, False)]
             continue
 
         # Both pass — build condition flag strings
@@ -374,6 +382,7 @@ def run_ftf_scan(
         "daily_pass":   len(qualified),
         "w_fails":      w_fails,   # {condition: n_tickers_that_failed}
         "d_fails":      d_fails,
-        "w_errors":     w_errors,  # sample of weekly exceptions {ticker: error_str}
+        "w_errors":        w_errors,       # sample of weekly exceptions {ticker: error_str}
+        "weekly_passers":  weekly_passers, # tickers that passed weekly (with detail)
     }
     return qualified, diagnostics
