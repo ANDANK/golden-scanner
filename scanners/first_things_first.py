@@ -35,7 +35,6 @@ from __future__ import annotations
 import math
 import numpy as np
 import pandas as pd
-import yfinance as yf
 
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -101,8 +100,7 @@ def _check_weekly(ticker: str, price: float) -> dict:
     result = {k: False for k in ["W2","W3","W4","W5","W6","W9","pass"]}
     result["detail"] = {}
     try:
-        raw = yf.download(ticker, period="3y", interval="1wk",
-                          progress=False, auto_adjust=True)
+        raw = get_price_history(ticker, period="3y", interval="1wk")
         if raw is None or raw.empty or len(raw) < 26:
             return result
         if isinstance(raw.columns, pd.MultiIndex):
