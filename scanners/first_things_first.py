@@ -92,21 +92,32 @@ def _bearish_divergence(close: pd.Series, rsi: pd.Series, lookback: int = 14) ->
 
 # ── Weekly check ───────────────────────────────────────────────────────────────
 
-def _check_weekly(ticker: str, price: float) -> dict:
+def _resample_weekly(df_daily: pd.DataFrame) -> pd.DataFrame:
+    """Resample a daily OHLCV DataFrame to weekly bars (week ending Friday)."""
+    df = df_daily.copy()
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+    # Normalise column names to lower-case
+    df.columns = [c.lower() for c in df.columns]
+    df.index = pd.to_datetime(df.index)
+    agg = {"close": "last", "open": "first", "high": "max", "low": "min", "volume": "sum"}
+    agg = {k: v for k, v in agg.items() if k in df.columns}
+    weekly = df.resample("W-FRI").agg(agg).dropna(subset=["close"])
+    return weekly
+
+
+def _check_weekly(ticker: str, df_daily: pd.DataFrame) -> dict:
     """
-    Fetch and evaluate all weekly conditions for a ticker.
+    Evaluate all weekly conditions from a pre-fetched daily DataFrame
+    (resampled to weekly bars in-memory — no separate API call).
     Returns dict with per-condition booleans and a 'pass' key.
     """
     result = {k: False for k in ["W2","W3","W4","W5","W6","W9","pass"]}
     result["detail"] = {}
     try:
-        raw = get_price_history(ticker, period="3y", interval="1wk")
+        raw = _resample_weekly(df_daily)
         if raw is None or raw.empty or len(raw) < 26:
             return result
-        if isinstance(raw.columns, pd.MultiIndex):
-            raw.columns = raw.columns.get_level_values(0)
-        raw.columns = [c.lower() for c in raw.columns]
-        raw = raw.dropna(subset=["close"])
 
         close_w = raw["close"].squeeze()
         high_w  = raw["high"].squeeze()
@@ -171,12 +182,13 @@ def _check_weekly(ticker: str, price: float) -> dict:
 
 # ── Daily check ────────────────────────────────────────────────────────────────
 
-def _check_daily(ticker: str, price: float) -> dict:
-    """Evaluate all daily + cross-timeframe conditions."""
+def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> dict:
+    """Evaluate all daily + cross-timeframe conditions.
+    Accepts a pre-fetched df_daily to avoid a redundant API call."""
     result = {k: False for k in ["D1","D2","D3","D4","D5","D6","X1","X2","pass"]}
     result["detail"] = {}
     try:
-        df = get_price_history(ticker, period="6mo")
+        df = df_daily if (df_daily is not None and not df_daily.empty) else get_price_history(ticker, period="6mo")
         if df is None or df.empty or len(df) < 30:
             return result
 
@@ -279,22 +291,26 @@ def run_ftf_scan(
         if status_fn:
             status_fn(i, len(tickers), ticker)
 
+        # One fetch: 2y daily data — reused for weekly resample + daily checks
         try:
-            df_px = get_price_history(ticker, period="5d")
-            if df_px is None or df_px.empty:
+            df_daily = get_price_history(ticker, period="2y", interval="1d")
+            if df_daily is None or df_daily.empty or len(df_daily) < 30:
                 continue
-            price = float(df_px["Close"].squeeze().dropna().iloc[-1])
+            close_col = next((c for c in df_daily.columns if c.lower() == "close"), None)
+            if close_col is None:
+                continue
+            price = float(df_daily[close_col].dropna().iloc[-1])
         except Exception:
             continue
 
-        # Weekly check first (gate)
-        wk = _check_weekly(ticker, price)
+        # Weekly check — resamples daily data in-memory, no extra API call
+        wk = _check_weekly(ticker, df_daily)
         if not wk["pass"]:
             continue
         weekly_pass += 1
 
-        # Daily + cross-TF check
-        dy = _check_daily(ticker, price)
+        # Daily + cross-TF check — reuses the same daily DataFrame
+        dy = _check_daily(ticker, price, df_daily=df_daily)
         if not dy["pass"]:
             continue
 
