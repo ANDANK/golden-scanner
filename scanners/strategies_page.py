@@ -608,6 +608,23 @@ def _render_ftf_tab():
             unsafe_allow_html=True,
         )
 
+        # Exception sample — shown first if errors exist
+        w_errors = diag.get("w_errors", {})
+        if wpass == 0 and w_errors:
+            err_lines = "".join(
+                f'<div style="color:{ACCENT_RED};font-size:10px;font-family:monospace;'
+                f'padding:2px 0">{t}: {e}</div>'
+                for t, e in list(w_errors.items())[:5]
+            )
+            st.markdown(
+                f'<div style="background:{ACCENT_RED}0D;border:1px solid {ACCENT_RED}33;'
+                f'border-radius:6px;padding:10px 14px;margin-bottom:8px">'
+                f'<div style="color:{ACCENT_RED};font-size:11px;font-weight:700;margin-bottom:6px">'
+                f'🐛 Weekly check throwing exceptions — sample:</div>'
+                f'{err_lines}</div>',
+                unsafe_allow_html=True,
+            )
+
         # Per-condition failure breakdown (only show when weekly pass = 0 to aid debugging)
         if wpass == 0 and w_fails and dok > 0:
             w_labels = {"W2":"Not Extended (≤15% above SMA20W)","W3":"RSI 35–75","W4":"MACD>Signal",

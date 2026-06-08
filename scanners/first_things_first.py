@@ -114,9 +114,11 @@ def _check_weekly(ticker: str, df_daily: pd.DataFrame) -> dict:
     """
     result = {k: False for k in ["W2","W3","W4","W5","W6","W9","pass"]}
     result["detail"] = {}
+    result["error"] = None
     try:
         raw = _resample_weekly(df_daily)
         if raw is None or raw.empty or len(raw) < 26:
+            result["error"] = f"insufficient_weekly_bars:{len(raw) if raw is not None else 0}"
             return result
 
         close_w = raw["close"].squeeze()
@@ -175,8 +177,8 @@ def _check_weekly(ticker: str, df_daily: pd.DataFrame) -> dict:
         }
         result["pass"] = all(result[k] for k in ["W2","W3","W4","W5","W6","W9"])
 
-    except Exception:
-        pass
+    except Exception as e:
+        result["error"] = f"{type(e).__name__}: {str(e)[:120]}"
     return result
 
 
@@ -287,6 +289,7 @@ def run_ftf_scan(
     qualified  = []
     weekly_pass = 0
     data_ok     = 0
+    w_errors    = {}   # ticker -> error string for first 5 weekly errors
     # Per-condition fail counters (how many tickers failed EACH condition)
     w_fails = {k: 0 for k in ["W2","W3","W4","W5","W6","W9"]}
     d_fails = {k: 0 for k in ["D1","D2","D3","D4","D6","X1","X2"]}
@@ -310,6 +313,8 @@ def run_ftf_scan(
 
         # Weekly check — resamples daily data in-memory, no extra API call
         wk = _check_weekly(ticker, df_daily)
+        if wk.get("error") and len(w_errors) < 5:
+            w_errors[ticker] = wk["error"]
         for k in w_fails:
             if not wk.get(k, False):
                 w_fails[k] += 1
@@ -365,5 +370,6 @@ def run_ftf_scan(
         "daily_pass":   len(qualified),
         "w_fails":      w_fails,   # {condition: n_tickers_that_failed}
         "d_fails":      d_fails,
+        "w_errors":     w_errors,  # sample of weekly exceptions {ticker: error_str}
     }
     return qualified, diagnostics
