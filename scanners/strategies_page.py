@@ -586,23 +586,53 @@ def _render_ftf_tab():
     # ── Diagnostic funnel ─────────────────────────────────────────────────────
     diag = st.session_state.get("ftf_strat_diag", {})
     if diag:
-        total = diag.get("total", 0)
-        wpass = diag.get("weekly_pass", 0)
-        dpass = diag.get("daily_pass", 0)
+        total  = diag.get("total", 0)
+        dok    = diag.get("data_ok", total)
+        wpass  = diag.get("weekly_pass", 0)
+        dpass  = diag.get("daily_pass", 0)
+        w_fails = diag.get("w_fails", {})
+        d_fails = diag.get("d_fails", {})
+
+        # Funnel chips
         st.markdown(
-            f'<div style="display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap">'
+            f'<div style="display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;align-items:center">'
             f'<span style="background:{TEXT_MUTED}18;color:{TEXT_MUTED};border:1px solid {TEXT_MUTED}33;'
-            f'font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px">'
-            f'🔎 Scanned {total}</span>'
+            f'font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px">🔎 Scanned {total}</span>'
+            f'<span style="background:{TEXT_MUTED}18;color:{TEXT_MUTED};border:1px solid {TEXT_MUTED}33;'
+            f'font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px">📥 Data OK {dok}</span>'
             f'<span style="background:{GOLD}18;color:{GOLD};border:1px solid {GOLD}33;'
-            f'font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px">'
-            f'📅 Weekly pass {wpass}</span>'
+            f'font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px">📅 Weekly pass {wpass}</span>'
             f'<span style="background:{ACCENT_GREEN}18;color:{ACCENT_GREEN};border:1px solid {ACCENT_GREEN}33;'
-            f'font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px">'
-            f'✅ Final pass {dpass}</span>'
+            f'font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px">✅ Final pass {dpass}</span>'
             f'</div>',
             unsafe_allow_html=True,
         )
+
+        # Per-condition failure breakdown (only show when weekly pass = 0 to aid debugging)
+        if wpass == 0 and w_fails and dok > 0:
+            w_labels = {"W2":"Not Extended (≤15% above SMA20W)","W3":"RSI 35–75","W4":"MACD>Signal",
+                        "W5":"Volume 0.7–6×","W6":"Price > SMA20W","W9":"Uptrend"}
+            rows_html = "".join(
+                f'<tr>'
+                f'<td style="padding:5px 12px;color:{GOLD};font-family:monospace;font-weight:700">{k}</td>'
+                f'<td style="padding:5px 12px;color:#fff">{w_labels.get(k,k)}</td>'
+                f'<td style="padding:5px 12px;color:{"#EF4444" if v > dok*0.5 else GOLD};font-weight:700">'
+                f'{v}/{dok} fail ({v*100//dok if dok else 0}%)</td>'
+                f'</tr>'
+                for k, v in sorted(w_fails.items(), key=lambda x: -x[1])
+            )
+            st.markdown(
+                f'<details style="margin-bottom:10px"><summary style="color:{GOLD};font-size:11px;'
+                f'font-weight:700;cursor:pointer">⚠️ Weekly gate breakdown — click to expand</summary>'
+                f'<div style="background:#0f172a;border-radius:6px;padding:6px;margin-top:6px;overflow-x:auto">'
+                f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+                f'<thead><tr>'
+                f'<th style="padding:4px 12px;color:{TEXT_MUTED};text-align:left">Cond</th>'
+                f'<th style="padding:4px 12px;color:{TEXT_MUTED};text-align:left">Description</th>'
+                f'<th style="padding:4px 12px;color:{TEXT_MUTED};text-align:left">Fail Rate</th>'
+                f'</tr></thead><tbody>{rows_html}</tbody></table></div></details>',
+                unsafe_allow_html=True,
+            )
 
     render_ftf_section(st.session_state["ftf_strat_rows"], context="ftf")
 

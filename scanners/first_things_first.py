@@ -158,7 +158,7 @@ def _check_weekly(ticker: str, df_daily: pd.DataFrame) -> dict:
         vol_ratio_w = cur_vol_w / avg_vol_20w if avg_vol_20w > 0 else 1.0
 
         # Evaluate conditions
-        result["W2"] = (sma20_w > 0) and (px <= sma20_w * 1.10)          # within 10%
+        result["W2"] = (sma20_w > 0) and (px <= sma20_w * 1.15)          # within 15%
         result["W3"] = 35 <= rsi_w_v <= 75
         result["W4"] = m_w > s_w
         result["W5"] = 0.7 <= vol_ratio_w <= 6.0
@@ -284,8 +284,12 @@ def run_ftf_scan(
     Each result dict contains: ticker, price, weekly_detail, daily_detail,
     weekly_flags, daily_flags.
     """
-    qualified = []
+    qualified  = []
     weekly_pass = 0
+    data_ok     = 0
+    # Per-condition fail counters (how many tickers failed EACH condition)
+    w_fails = {k: 0 for k in ["W2","W3","W4","W5","W6","W9"]}
+    d_fails = {k: 0 for k in ["D1","D2","D3","D4","D6","X1","X2"]}
 
     for i, ticker in enumerate(tickers):
         if status_fn:
@@ -300,17 +304,24 @@ def run_ftf_scan(
             if close_col is None:
                 continue
             price = float(df_daily[close_col].dropna().iloc[-1])
+            data_ok += 1
         except Exception:
             continue
 
         # Weekly check — resamples daily data in-memory, no extra API call
         wk = _check_weekly(ticker, df_daily)
+        for k in w_fails:
+            if not wk.get(k, False):
+                w_fails[k] += 1
         if not wk["pass"]:
             continue
         weekly_pass += 1
 
         # Daily + cross-TF check — reuses the same daily DataFrame
         dy = _check_daily(ticker, price, df_daily=df_daily)
+        for k in d_fails:
+            if not dy.get(k, False):
+                d_fails[k] += 1
         if not dy["pass"]:
             continue
 
@@ -349,7 +360,10 @@ def run_ftf_scan(
     )
     diagnostics = {
         "total":        len(tickers),
+        "data_ok":      data_ok,
         "weekly_pass":  weekly_pass,
         "daily_pass":   len(qualified),
+        "w_fails":      w_fails,   # {condition: n_tickers_that_failed}
+        "d_fails":      d_fails,
     }
     return qualified, diagnostics
