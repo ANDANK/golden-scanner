@@ -3,7 +3,7 @@ scanners/first_things_first.py — "First Things First" high-conviction setup sc
 
 Applies 14 strict multi-timeframe conditions across weekly AND daily charts.
 Universe: full S&P 500 + ETFs + 3× leveraged ETFs (~482 tickers via FTF_UNIVERSE).
-Any stock passing ALL 12 conditions is surfaced in the FTF tab under Strategies.
+Any stock passing ALL 13 conditions is surfaced in the FTF tab under Strategies.
 Returns (results, diagnostics) — caller renders the empty state card if no results.
 
 Weekly conditions (ALL must hold):
@@ -22,7 +22,7 @@ Daily conditions (ALL must hold):
   D2  RSI 35–70
   D3  MACD > Signal line
   D4  Price > SMA9D
-  D5  Histogram rising — display only (dropped as gate; MACD>Signal is sufficient)
+  D5  Histogram rising (hist[-1] > hist[-2]) — momentum accelerating, not fading
   D6  Volume > 0.7× 20-day average (relaxed from strict >1.0×)
 
 Cross-timeframe:
@@ -267,7 +267,7 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
             "in_demand":      in_demand,
             "pct_below_high": round(pct_below_high, 1),   # display only
         }
-        daily_conditions = ["D1","D2","D3","D4","D6","X1","X2"]  # D5 hist↑ dropped (display only); D7 removed
+        daily_conditions = ["D1","D2","D3","D4","D5","D6","X1","X2"]  # D7 removed; D5 restored
         result["pass"] = all(result[k] for k in daily_conditions)
 
     except Exception:
@@ -296,7 +296,7 @@ def run_ftf_scan(
     weekly_passers = []  # tickers that passed weekly but may have failed daily
     # Per-condition fail counters (how many tickers failed EACH condition)
     w_fails = {k: 0 for k in ["W2","W3","W4","W6","W9"]}
-    d_fails = {k: 0 for k in ["D1","D2","D3","D4","D6","X1","X2"]}
+    d_fails = {k: 0 for k in ["D1","D2","D3","D4","D5","D6","X1","X2"]}
 
     for i, ticker in enumerate(tickers):
         if status_fn:
@@ -348,8 +348,8 @@ def run_ftf_scan(
             "W4": "MACD>Sig",     "W6": "P>SMA20W", "W9": "Uptrend",
         }
         d_map = {
-            "D1": "Not Ext'd",  "D2": "RSI ✓",  "D3": "MACD>Sig",
-            "D4": "P>SMA9",     "D6": "Vol>0.7×",
+            "D1": "Not Ext'd",  "D2": "RSI ✓",   "D3": "MACD>Sig",
+            "D4": "P>SMA9",     "D5": "Hist↑",    "D6": "Vol>0.7×",
             "X1": "ADX>16",     "X2": "No BearDiv",
         }
         for k, lbl in w_map.items():

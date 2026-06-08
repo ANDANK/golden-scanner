@@ -527,7 +527,7 @@ def _render_ftf_tab():
         f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
         f'Scans <b style="color:#fff">{len(universe)} tickers</b> '
         f'(full S&P 500 · liquid ETFs · sector ETFs · 3× leveraged ETFs) for stocks passing all '
-        f'<b style="color:#fff">12 conditions</b> simultaneously across weekly + daily timeframes. '
+        f'<b style="color:#fff">13 conditions</b> simultaneously across weekly + daily timeframes. '
         f'Expect a 5–8 minute runtime. Best run <b style="color:{GL}">30–60 min after market open</b> '
         f'when volume and histogram direction are established.</div>'
         f'</div>',
@@ -639,7 +639,8 @@ def _render_ftf_tab():
                     "W6":"Price > SMA20W","W9":"Uptrend (P>SMA50W or HH/HL)"}
         d_labels = {"D1":"Not Extended ≤8% above EMA9","D2":"RSI 35–70 (daily)",
                     "D3":"MACD > Signal (daily)","D4":"Price > EMA9",
-                    "D6":"Volume > 20-day avg","X1":"ADX > 16","X2":"No Bearish Divergence"}
+                    "D5":"Histogram rising (momentum accelerating)",
+                    "D6":"Volume > 0.7× 20-day avg","X1":"ADX > 16","X2":"No Bearish Divergence"}
 
         with st.expander("🔬 Condition breakdown (always visible — expand for details)", expanded=(dpass == 0)):
             # Errors if any

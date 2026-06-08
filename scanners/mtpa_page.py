@@ -81,7 +81,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'<div style="color:{TEXT_PRIMARY};font-size:13px;font-weight:600;'
             f'margin-bottom:4px">No Setups Qualify Right Now</div>'
             f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
-            f'All 12 conditions (5 weekly + 5 daily + ADX + no divergence) must pass '
+            f'All 13 conditions (5 weekly + 6 daily + ADX + no divergence) must pass '
             f'simultaneously. This is intentionally strict — when something appears '
             f'here, it\'s the highest-conviction setup in the current market.</div>'
             f'</div>',
