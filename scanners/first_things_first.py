@@ -3,19 +3,19 @@ scanners/first_things_first.py — "First Things First" high-conviction setup sc
 
 Applies 14 strict multi-timeframe conditions across weekly AND daily charts.
 Universe: full S&P 500 + ETFs + 3× leveraged ETFs (~482 tickers via FTF_UNIVERSE).
-Any stock passing ALL 14 conditions is surfaced in the FTF tab under Strategies.
+Any stock passing ALL 12 conditions is surfaced in the FTF tab under Strategies.
 Returns (results, diagnostics) — caller renders the empty state card if no results.
 
 Weekly conditions (ALL must hold):
   W2  Not extended (price within 10% above SMA20W)
   W3  RSI 35–75 (allows strong-momentum stocks above 70)
   W4  MACD > Signal line
-  W5  Volume OK (0.7–6.0× 20-week avg — not dry; ceiling raised to allow momentum surges)
   W6  Price > SMA20W
   W9  Uptrend (price > SMA50W OR HH/HL confirmed)
-  (W1 removed — redundant with W9; HH/HL already in W9, tight base 5% was too strict)
-  (W7 removed — W4 MACD>Signal is sufficient; requiring fresh cross was too restrictive)
-  (W8 removed — W4 hist>0 is sufficient)
+  (W5 removed — weekly volume from resampled daily data is unreliable; D6 daily covers this)
+  (W1 removed — redundant with W9)
+  (W7 removed — W4 MACD>Signal is sufficient)
+  (W8 removed)
 
 Daily conditions (ALL must hold):
   D1  Not extended (price within 8% above SMA9D)
@@ -112,7 +112,7 @@ def _check_weekly(ticker: str, df_daily: pd.DataFrame) -> dict:
     (resampled to weekly bars in-memory — no separate API call).
     Returns dict with per-condition booleans and a 'pass' key.
     """
-    result = {k: False for k in ["W2","W3","W4","W5","W6","W9","pass"]}
+    result = {k: False for k in ["W2","W3","W4","W6","W9","pass"]}
     result["detail"] = {}
     result["error"] = None
     try:
@@ -163,7 +163,6 @@ def _check_weekly(ticker: str, df_daily: pd.DataFrame) -> dict:
         result["W2"] = (sma20_w > 0) and (px <= sma20_w * 1.15)          # within 15%
         result["W3"] = 35 <= rsi_w_v <= 75
         result["W4"] = m_w > s_w
-        result["W5"] = 0.7 <= vol_ratio_w <= 6.0
         result["W6"] = px > sma20_w
         result["W9"] = (px > sma50_w) or hh_hl
 
@@ -175,7 +174,7 @@ def _check_weekly(ticker: str, df_daily: pd.DataFrame) -> dict:
             "sma20_w": round(sma20_w, 2), "sma50_w": round(sma50_w, 2),
             "vol_ratio_w": round(vol_ratio_w, 2),
         }
-        result["pass"] = all(result[k] for k in ["W2","W3","W4","W5","W6","W9"])
+        result["pass"] = all(result[k] for k in ["W2","W3","W4","W6","W9"])
 
     except Exception as e:
         result["error"] = f"{type(e).__name__}: {str(e)[:120]}"
@@ -296,7 +295,7 @@ def run_ftf_scan(
     w_errors     = {}   # ticker -> error string for first 5 weekly errors
     weekly_passers = []  # tickers that passed weekly but may have failed daily
     # Per-condition fail counters (how many tickers failed EACH condition)
-    w_fails = {k: 0 for k in ["W2","W3","W4","W5","W6","W9"]}
+    w_fails = {k: 0 for k in ["W2","W3","W4","W6","W9"]}
     d_fails = {k: 0 for k in ["D1","D2","D3","D4","D6","X1","X2"]}
 
     for i, ticker in enumerate(tickers):
@@ -345,8 +344,8 @@ def run_ftf_scan(
         # Both pass — build condition flag strings
         w_flags = []
         w_map = {
-            "W2": "Not Extended", "W3": "RSI ✓",   "W4": "MACD>Sig",
-            "W5": "Vol OK",       "W6": "P>SMA20W", "W9": "Uptrend",
+            "W2": "Not Extended", "W3": "RSI ✓",
+            "W4": "MACD>Sig",     "W6": "P>SMA20W", "W9": "Uptrend",
         }
         d_map = {
             "D1": "Not Ext'd",  "D2": "RSI ✓",  "D3": "MACD>Sig",

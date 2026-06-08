@@ -60,7 +60,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px">{t}</span>'
             for t, c in [
                 ("W: Not Extended", G), ("W: RSI 35-75", G),
-                ("W: MACD>Sig", G), ("W: Vol 0.7-6×", G),
+                ("W: MACD>Sig", G),
                 ("W: P>SMA20W", G), ("W: Uptrend", G),
                 ("D: Not Ext'd", "#60A5FA"), ("D: RSI 35-70", "#60A5FA"),
                 ("D: MACD>Sig", "#60A5FA"), ("D: P>SMA9", "#60A5FA"),
@@ -81,7 +81,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'<div style="color:{TEXT_PRIMARY};font-size:13px;font-weight:600;'
             f'margin-bottom:4px">No Setups Qualify Right Now</div>'
             f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
-            f'All 13 conditions (6 weekly + 5 daily + ADX + no divergence) must pass '
+            f'All 12 conditions (5 weekly + 5 daily + ADX + no divergence) must pass '
             f'simultaneously. This is intentionally strict — when something appears '
             f'here, it\'s the highest-conviction setup in the current market.</div>'
             f'</div>',
@@ -624,7 +624,7 @@ A pure-filter, no-score scanner that categorizes stocks by how many timeframes a
 
 <b style="color:{GOLD}">Weekly Conditions</b>
 <ul>
-<li><b>HH/HL</b> — Last 6 weekly bars show consecutively higher highs AND higher lows (clean uptrend structure).</li>
+<li><b>HH/HL</b> — Last 5 weekly bars show consecutively higher highs AND higher lows (clean uptrend structure).</li>
 <li><b>Tight Base</b> — Average weekly ATR% (High − Low) / Close over last 5 bars &lt; 4.5% (low-volatility consolidation).</li>
 <li><b>Mixed</b> — Neither pattern detected.</li>
 <li><b>Wk Extended</b> — Weekly close is &gt; Weekly EMA(20) × 1.10 (stretched, risk of mean-reversion).
