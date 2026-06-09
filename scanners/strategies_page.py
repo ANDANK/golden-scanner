@@ -540,9 +540,17 @@ def _render_ftf_tab():
         run_btn = st.button("▶ Run FTF Scan", type="primary",
                             use_container_width=True, key="ftf_strat_run")
     with clear_col:
-        if st.button("🔄 Clear", use_container_width=True, key="ftf_strat_clear"):
-            st.session_state.pop("ftf_strat_rows", None)
-            st.session_state.pop("ftf_strat_ts", None)
+        if st.button("🔄 Clear + Fresh Data", use_container_width=True, key="ftf_strat_clear"):
+            # Clear scan results
+            for _k in ["ftf_strat_rows", "ftf_strat_ts", "ftf_strat_diag"]:
+                st.session_state.pop(_k, None)
+            # Clear price data cache so next run fetches fresh quotes
+            try:
+                from data_loader import get_price_history, _PROC_PRICE_CACHE
+                get_price_history.clear()
+                _PROC_PRICE_CACHE.clear()
+            except Exception:
+                pass
             st.rerun()
 
     if st.session_state.get("ftf_strat_ts"):
