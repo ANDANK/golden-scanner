@@ -107,7 +107,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
                   "W-RSI", "W-MACD Hist",
                   "D-RSI", "D-Hist↑", "ADX",
                   "EMA9 Gap", "Resist Gap", "W-SMA20 Gap",
-                  "Bear Div"]
+                  "Demand Zone", "Bear Div"]
     )
 
     rows_html = ""
@@ -192,6 +192,9 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'<td style="background:{bg};padding:8px 12px;white-space:nowrap">'
             f'<span style="color:{sma20w_col};font-weight:700">{sma20w_gap:+.1f}%</span>'
             f'<span style="color:{TEXT_MUTED};font-size:9px"> abv SMA20W</span></td>'
+            # Demand zone
+            f'<td style="background:{bg};padding:8px 12px;text-align:center;font-size:13px">'
+            f'{"💚" if dd.get("in_demand") else "—"}</td>'
             # Bear Div
             f'<td style="background:{bg};padding:8px 12px;text-align:center;font-size:13px">'
             f'{"❌" if bear_div else "✅"}</td>'
