@@ -711,10 +711,19 @@ def _render_ftf_tab():
     rows = st.session_state["ftf_strat_rows"]
     if rows:
         _df = pd.DataFrame([{
-            "Ticker": r["ticker"], "Price": r["price"],
-            "W-RSI": r["w_detail"].get("rsi_w"),
-            "D-RSI": r["d_detail"].get("rsi_d"),
-            "ADX":   r["d_detail"].get("adx"),
+            "Ticker":        r["ticker"],
+            "Price":         r["price"],
+            "Suggest":       r.get("suggest", ""),
+            "W-RSI":         r["w_detail"].get("rsi_w"),
+            "W-MACD":        r["w_detail"].get("macd_w"),
+            "D-RSI":         r["d_detail"].get("rsi_d"),
+            "D-Hist":        r["d_detail"].get("hist_d"),
+            "ADX":           r["d_detail"].get("adx"),
+            "EMA9 Gap %":    r["d_detail"].get("pct_above_ema9"),
+            "Resist Gap %":  r["d_detail"].get("pct_below_high"),
+            "W-SMA20 Gap %": round((r["price"] - r["w_detail"].get("sma20_w", r["price"])) /
+                                   r["w_detail"].get("sma20_w", r["price"]) * 100, 1)
+                             if r["w_detail"].get("sma20_w") else None,
         } for r in rows])
         st.download_button("⬇ Export CSV", _df.to_csv(index=False),
                            "ftf_scan.csv", "text/csv", key="ftf_dl")

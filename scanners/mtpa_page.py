@@ -93,12 +93,21 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
     _HD = (f'background:#0f172a;color:{GL};font-size:9px;font-weight:700;'
            f'text-transform:uppercase;letter-spacing:0.7px;padding:8px 12px;'
            f'border-bottom:2px solid {GL}33;white-space:nowrap;text-align:left')
+    # Suggestion badge colours
+    _SUG = {
+        "LEAP":  ("#818CF8", "🚀"),
+        "Swing": (ACCENT_GREEN, "⚡"),
+        "CSP":   (GOLD, "💰"),
+        "Watch": (TEXT_MUTED, "👀"),
+    }
+
     hdr = "".join(
         f'<th style="{_HD}">{c}</th>'
-        for c in ["Ticker", "Price",
+        for c in ["Ticker", "Price", "Suggest",
                   "W-RSI", "W-MACD Hist",
-                  "D-RSI", "D-Hist↑", "ADX", "Supply Gap",
-                  "Demand Zone", "Bear Div"]
+                  "D-RSI", "D-Hist↑", "ADX",
+                  "EMA9 Gap", "Resist Gap", "W-SMA20 Gap",
+                  "Bear Div"]
     )
 
     rows_html = ""
@@ -106,6 +115,8 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
         bg  = BG_CARD if i % 2 == 0 else BG_PANEL
         wd  = r.get("w_detail", {})
         dd  = r.get("d_detail", {})
+        sug = r.get("suggest", "Swing")
+        sug_col, sug_icon = _SUG.get(sug, (TEXT_MUTED, "—"))
 
         rsi_w_v = wd.get("rsi_w", 0)
         rsi_d_v = dd.get("rsi_d", 0)
@@ -120,48 +131,68 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
         adx_v   = dd.get("adx")
         adx_col = ACCENT_GREEN if (adx_v and adx_v >= 25) else (GOLD if (adx_v and adx_v >= 16) else TEXT_MUTED)
 
-        supply_gap = dd.get("pct_below_high", 0)
-        sg_col     = ACCENT_GREEN if supply_gap >= 5 else (GOLD if supply_gap >= 3 else ACCENT_RED)
+        # Zone columns
+        ema9_gap   = dd.get("pct_above_ema9", 0)    # % above EMA9  (support distance)
+        resist_gap = dd.get("pct_below_high", 0)     # % below 20-day high (resistance distance)
+        sma20w_gap = 0.0
+        if wd.get("sma20_w", 0) > 0:
+            sma20w_gap = round((r["price"] - wd["sma20_w"]) / wd["sma20_w"] * 100, 1)
 
-        in_demand  = dd.get("in_demand", False)
-        bear_div   = dd.get("bearish_div", False)
+        # Color: green = close to support / lots of room; red = extended / near resistance
+        ema9_col   = ACCENT_GREEN if ema9_gap <= 3 else (GOLD if ema9_gap <= 6 else ACCENT_RED)
+        resist_col = ACCENT_GREEN if resist_gap >= 5 else (GOLD if resist_gap >= 3 else ACCENT_RED)
+        sma20w_col = ACCENT_GREEN if 0 < sma20w_gap <= 8 else (GOLD if 8 < sma20w_gap <= 15 else ACCENT_RED)
+
+        bear_div = dd.get("bearish_div", False)
 
         rows_html += (
             f'<tr>'
+            # Ticker
             f'<td style="background:{bg};padding:8px 12px;white-space:nowrap">'
             f'<span style="color:{GL};font-family:\'DM Mono\',monospace;'
             f'font-weight:700;font-size:13px">{r["ticker"]}</span></td>'
+            # Price
             f'<td style="background:{bg};padding:8px 12px">'
             f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace">'
             f'${r["price"]:.2f}</span></td>'
+            # Suggest
+            f'<td style="background:{bg};padding:8px 12px;white-space:nowrap">'
+            f'<span style="background:{sug_col}22;color:{sug_col};border:1px solid {sug_col}55;'
+            f'font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px">'
+            f'{sug_icon} {sug}</span></td>'
             # W-RSI
             f'<td style="background:{bg};padding:8px 12px">'
             f'<span style="color:{rsi_w_col};font-weight:700">{rsi_w_v:.1f}</span></td>'
             # W-MACD Hist
             f'<td style="background:{bg};padding:8px 12px;font-size:11px">'
-            f'<span style="color:{hw_col};font-family:\'DM Mono\',monospace">'
-            f'{hist_w:.4f}</span>'
+            f'<span style="color:{hw_col};font-family:\'DM Mono\',monospace">{hist_w:.4f}</span>'
             f'<span style="color:{hw_col};font-size:10px"> {"↑" if hist_w > hist_w_p else "↓"}</span></td>'
             # D-RSI
             f'<td style="background:{bg};padding:8px 12px">'
             f'<span style="color:{rsi_d_col};font-weight:700">{rsi_d_v:.1f}</span></td>'
             # D-MACD Hist
             f'<td style="background:{bg};padding:8px 12px;font-size:11px">'
-            f'<span style="color:{hd_col};font-family:\'DM Mono\',monospace">'
-            f'{hist_d:.4f}</span>'
-            f'<span style="color:{ACCENT_GREEN};font-size:10px"> ↑</span></td>'
+            f'<span style="color:{hd_col};font-family:\'DM Mono\',monospace">{hist_d:.4f}</span>'
+            f'<span style="color:{hd_col};font-size:10px"> {"↑" if hist_d > hist_d_p else "↓"}</span></td>'
             # ADX
             f'<td style="background:{bg};padding:8px 12px">'
             f'<span style="color:{adx_col};font-weight:700">'
             f'{"—" if adx_v is None else f"{adx_v:.1f}"}</span>'
-            f'{"↑" if dd.get("adx_rising") else ""}</td>'
-            # Supply gap
-            f'<td style="background:{bg};padding:8px 12px">'
-            f'<span style="color:{sg_col};font-weight:700">{supply_gap:.1f}% clear</span></td>'
-            # Demand zone
-            f'<td style="background:{bg};padding:8px 12px;text-align:center;font-size:13px">'
-            f'{"💚" if in_demand else "—"}</td>'
-            # Bearish divergence
+            f'{"<span style=\'color:" + ACCENT_GREEN + ";font-size:10px\'>↑</span>" if dd.get("adx_rising") else ""}'
+            f'</td>'
+            # EMA9 Gap (support)
+            f'<td style="background:{bg};padding:8px 12px;white-space:nowrap">'
+            f'<span style="color:{ema9_col};font-weight:700">{ema9_gap:+.1f}%</span>'
+            f'<span style="color:{TEXT_MUTED};font-size:9px"> abv EMA9</span></td>'
+            # Resist Gap
+            f'<td style="background:{bg};padding:8px 12px;white-space:nowrap">'
+            f'<span style="color:{resist_col};font-weight:700">{resist_gap:.1f}%</span>'
+            f'<span style="color:{TEXT_MUTED};font-size:9px"> to resist</span></td>'
+            # W-SMA20 Gap
+            f'<td style="background:{bg};padding:8px 12px;white-space:nowrap">'
+            f'<span style="color:{sma20w_col};font-weight:700">{sma20w_gap:+.1f}%</span>'
+            f'<span style="color:{TEXT_MUTED};font-size:9px"> abv SMA20W</span></td>'
+            # Bear Div
             f'<td style="background:{bg};padding:8px 12px;text-align:center;font-size:13px">'
             f'{"❌" if bear_div else "✅"}</td>'
             f'</tr>'

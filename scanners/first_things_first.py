@@ -254,18 +254,25 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
         result["X1"] = adx_ok
         result["X2"] = not div
 
+        # Zone metrics
+        pct_above_ema9  = round((px - sma9_d)  / sma9_d  * 100, 1) if sma9_d  > 0 else 0
+        pct_above_sma20d = round((px - sma20_d) / sma20_d * 100, 1) if sma20_d > 0 else 0
+
         result["detail"] = {
-            "rsi_d":          round(rsi_v, 1),
-            "macd_d":         round(m_d, 4),
-            "sig_d":          round(s_d, 4),
-            "hist_d":         round(h_d, 4),
-            "hist_d_prev":    round(h_d_prev, 4),
-            "sma9_d":         round(sma9_d, 2),
-            "adx":            round(adx_v, 1) if not np.isnan(adx_v) else None,
-            "adx_rising":     adx_rising,
-            "bearish_div":    div,
-            "in_demand":      in_demand,
-            "pct_below_high": round(pct_below_high, 1),   # display only
+            "rsi_d":           round(rsi_v, 1),
+            "macd_d":          round(m_d, 4),
+            "sig_d":           round(s_d, 4),
+            "hist_d":          round(h_d, 4),
+            "hist_d_prev":     round(h_d_prev, 4),
+            "sma9_d":          round(sma9_d, 2),
+            "sma20_d":         round(sma20_d, 2),
+            "adx":             round(adx_v, 1) if not np.isnan(adx_v) else None,
+            "adx_rising":      adx_rising,
+            "bearish_div":     div,
+            "in_demand":       in_demand,
+            "pct_below_high":  round(pct_below_high, 1),   # % below 20-day high (resistance gap)
+            "pct_above_ema9":  pct_above_ema9,              # % above EMA9 (support gap)
+            "pct_above_sma20d": pct_above_sma20d,           # % above SMA20D (swing support gap)
         }
         daily_conditions = ["D1","D2","D3","D4","D5","D6","X1","X2"]  # D7 removed; D5 restored
         result["pass"] = all(result[k] for k in daily_conditions)
@@ -273,6 +280,45 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
     except Exception:
         pass
     return result
+
+
+# ── Trade suggestion ──────────────────────────────────────────────────────────
+
+def _ftf_suggest(w_detail: dict, d_detail: dict) -> str:
+    """
+    Return a trade suggestion based on the passing weekly + daily signals.
+
+    LEAP  🚀  ADX > 22 + rising + early-stage (W-RSI < 65, hist turning)
+    Swing ⚡  RSI 50–65 daily + close to EMA9 (≤4% above) + ADX any
+    CSP   💰  Pulled back (>5% below 20-day high) + W-RSI < 65
+    Watch 👀  Near resistance (<3% below high) OR RSI > 68
+    """
+    rsi_d          = d_detail.get("rsi_d", 50)
+    rsi_w          = w_detail.get("rsi_w", 50)
+    adx            = d_detail.get("adx") or 0
+    adx_rising     = d_detail.get("adx_rising", False)
+    pct_below_high = d_detail.get("pct_below_high", 0)   # higher = more room to resistance
+    pct_above_ema9 = d_detail.get("pct_above_ema9", 0)   # lower = closer to EMA9 support
+    hist_w         = w_detail.get("hist_w", 0)
+    hist_w_prev    = w_detail.get("hist_w_prev", 0)
+    hist_d         = d_detail.get("hist_d", 0)
+
+    # Watch — extended or at resistance
+    if rsi_d > 68 or pct_below_high < 3:
+        return "Watch"
+
+    # LEAP — early-stage trend igniting on both timeframes
+    if (adx > 22 and adx_rising and rsi_w < 65
+            and hist_w > hist_w_prev   # weekly histogram building
+            and pct_above_ema9 <= 5):
+        return "LEAP"
+
+    # CSP — pulled back meaningfully, uptrend intact, good put-sell entry
+    if pct_below_high > 5 and rsi_w < 65 and rsi_d < 65:
+        return "CSP"
+
+    # Default: swing trade
+    return "Swing"
 
 
 # ── Main scanner ───────────────────────────────────────────────────────────────
@@ -361,12 +407,13 @@ def run_ftf_scan(
                 d_flags.append(lbl)
 
         qualified.append({
-            "ticker":       ticker,
-            "price":        round(price, 2),
-            "w_detail":     wk.get("detail", {}),
-            "d_detail":     dy.get("detail", {}),
-            "w_flags":      w_flags,
-            "d_flags":      d_flags,
+            "ticker":   ticker,
+            "price":    round(price, 2),
+            "w_detail": wk.get("detail", {}),
+            "d_detail": dy.get("detail", {}),
+            "w_flags":  w_flags,
+            "d_flags":  d_flags,
+            "suggest":  _ftf_suggest(wk.get("detail", {}), dy.get("detail", {})),
         })
 
     # Sort by ADX descending (higher ADX = stronger trend)
