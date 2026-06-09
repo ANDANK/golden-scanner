@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import SP500_SAMPLE, OPTIONS_ETF_UNIVERSE
 from data_loader import get_price_history
 from utils import calc_ema, calc_sma, calc_rsi
+from scanners.first_things_first import _ftf_suggest
 
 # ── Universe ───────────────────────────────────────────────────────────────────
 def default_universe() -> list[str]:
@@ -503,7 +504,7 @@ def scan_csp_strategy(
                 _wk_m     = float(_wk_macd.dropna().iloc[-1])
                 _wk_h     = float(_wk_hist.dropna().iloc[-1])
                 _wk_hp    = float(_wk_hist.dropna().iloc[-2]) if len(_wk_hist.dropna()) >= 2 else _wk_h
-                _wk_rsi   = float(calc_rsi(wk_close).dropna().iloc[-1])
+                _wk_rsi   = float(calc_rsi(wk_close))   # calc_rsi returns float directly
 
                 # W1: HH/HL or Tight Base
                 _hh_hl = False
@@ -536,50 +537,65 @@ def scan_csp_strategy(
                 _h_prev  = float(_hist_d.dropna().iloc[-2]) if len(_hist_d.dropna()) >= 2 else _h_now
                 _high_20 = float(close.iloc[-20:].max()) if len(close) >= 20 else price
                 _pb_pct  = (_high_20 - price) / _high_20 * 100 if _high_20 > 0 else 0
-                _rsi_d   = calc_rsi(close).dropna()
-                _rsi_dv  = float(_rsi_d.iloc[-1]) if len(_rsi_d) >= 1 else 50.0
+                _rsi_dv  = float(calc_rsi(close))   # calc_rsi returns float directly
+                # Rebuild RSI series for divergence check
+                _delta   = close.diff().dropna()
+                _gain    = _delta.clip(lower=0).ewm(alpha=1/14, adjust=False).mean()
+                _loss    = (-_delta.clip(upper=0)).ewm(alpha=1/14, adjust=False).mean()
+                _rsi_ser = (100 - 100 / (1 + _gain / _loss.replace(0, float("nan")))).fillna(50)
 
                 # No bearish divergence
                 _no_div = True
-                if len(_rsi_d) >= 14 and len(close) >= 14:
+                if len(_rsi_ser) >= 14 and len(close) >= 14:
                     _no_div = not (float(close.iloc[-1]) > float(close.iloc[-14]) and
-                                   float(_rsi_d.iloc[-1]) < float(_rsi_d.iloc[-14]))
+                                   float(_rsi_ser.iloc[-1]) < float(_rsi_ser.iloc[-14]))
+
+                # Zone metrics
+                _pct_above_ema9   = round((price - _sma9v) / _sma9v * 100, 1) if _sma9v > 0 else 0
+                _sma20d = float(calc_sma(close, 20).dropna().iloc[-1]) if len(close) >= 20 else price
+                _pct_above_sma20d = round((price - _sma20d) / _sma20d * 100, 1) if _sma20d > 0 else 0
+                _vol_ok = (float(vol.iloc[-1]) > 0.7 * avg_vol) if (vol is not None and avg_vol > 0) else False
 
                 _ftf_pass = all([
-                    _w1,                                     # W1
-                    _sma20w > 0 and price <= _sma20w * 1.10, # W2 not extended
-                    35 <= _wk_rsi <= 70,                     # W3
-                    _wk_h > 0,                               # W4 MACD>Signal (hist>0)
-                    0.7 <= _wk_vr <= 3.0,                    # W5
+                    # Weekly (W1 W5 W7 removed)
+                    _sma20w > 0 and price <= _sma20w * 1.15, # W2 not extended (≤15%)
+                    35 <= _wk_rsi <= 75,                     # W3 RSI (raised to 75)
+                    _wk_h > 0,                               # W4 MACD>Signal weekly
                     price > _sma20w if _sma20w > 0 else False,# W6
-                    _fresh_w,                                 # W7
-                    # W8 removed — W4 (_wk_h > 0) already guards positive histogram
                     (price > _sma50w if _sma50w > 0 else False) or _hh_hl,  # W9
+                    # Daily
                     price <= _sma9v * 1.08 if _sma9v > 0 else True,  # D1
                     35 <= _rsi_dv <= 70,                     # D2
                     _h_now > 0,                              # D3 MACD>Signal daily
                     price > _sma9v,                          # D4
-                    _h_now > _h_prev,                        # D5 hist rising daily
-                    # D6: volume > 20-day avg (supply zone removed — display only)
-                    (float(vol.iloc[-1]) > avg_vol) if (vol is not None and avg_vol > 0) else False,
-                    # D7 removed — D6 now covers volume strictly
+                    _h_now > _h_prev,                        # D5 hist rising
+                    _vol_ok,                                 # D6 volume > 0.7× avg
                     not np.isnan(adx_v) and adx_v > 16,     # X1
                     _no_div,                                  # X2
                 ])
 
                 if _ftf_pass:
+                    _w_det = {
+                        "rsi_w": round(_wk_rsi, 1), "hist_w": round(_wk_h, 4),
+                        "hist_w_prev": round(_wk_hp, 4), "hh_hl": _hh_hl,
+                        "sma20_w": round(_sma20w, 2), "sma50_w": round(_sma50w, 2),
+                    }
+                    _d_det = {
+                        "rsi_d": round(_rsi_dv, 1), "hist_d": round(_h_now, 4),
+                        "hist_d_prev": round(_h_prev, 4),
+                        "adx": round(adx_v, 1) if not np.isnan(adx_v) else None,
+                        "adx_rising": False, "bearish_div": not _no_div,
+                        "in_demand": price <= float(close.iloc[-10:].min()) * 1.05 if len(close) >= 10 else False,
+                        "pct_below_high":   round(_pb_pct, 1),
+                        "pct_above_ema9":   _pct_above_ema9,
+                        "pct_above_sma20d": _pct_above_sma20d,
+                    }
                     ftf_rows.append({
                         "ticker":  ticker, "price": round(price, 2),
-                        "w_detail": {"rsi_w": round(_wk_rsi, 1), "hist_w": round(_wk_h, 4),
-                                     "hist_w_prev": round(_wk_hp, 4), "fresh_cross_w": _fresh_w,
-                                     "hh_hl": _hh_hl, "tight_base": _tight,
-                                     "vol_ratio_w": round(_wk_vr, 2), "macd_pct_w": 0},
-                        "d_detail": {"rsi_d": round(_rsi_dv, 1), "hist_d": round(_h_now, 4),
-                                     "hist_d_prev": round(_h_prev, 4), "adx": round(adx_v, 1) if not np.isnan(adx_v) else None,
-                                     "adx_rising": False, "bearish_div": not _no_div,
-                                     "in_demand": price <= float(close.iloc[-10:].min()) * 1.05 if len(close) >= 10 else False,
-                                     "pct_below_high": round(_pb_pct, 1)},
+                        "w_detail": _w_det,
+                        "d_detail": _d_det,
                         "w_flags": [], "d_flags": [],
+                        "suggest": _ftf_suggest(_w_det, _d_det),
                     })
         except Exception:
             pass   # FTF failure never affects the CSP screener result

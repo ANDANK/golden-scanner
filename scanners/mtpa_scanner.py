@@ -20,6 +20,7 @@ from typing import Optional
 from config import SP500_SAMPLE, MTPA_200, INDIA_150
 from utils import calc_ema, calc_rsi, calc_macd, calc_sma
 from data_loader import get_price_history, get_info, prefetch_tickers
+from scanners.first_things_first import _ftf_suggest
 
 
 # ── Sector ETF mapping ────────────────────────────────────────────────────────
@@ -686,40 +687,71 @@ def run_mtpa_scan(
                 except Exception:
                     _adx_ok = True   # if ADX fails, don't gate on it
 
-                # X2: no bearish divergence (price up 14d but RSI down 14d)
-                _rsi_ser = calc_rsi(close)
-                _no_div = True
-                if len(_rsi_ser.dropna()) >= 14 and len(close) >= 14:
-                    _price_up = float(close.iloc[-1]) > float(close.iloc[-14])
-                    _rsi_dn   = float(_rsi_ser.dropna().iloc[-1]) < float(_rsi_ser.dropna().iloc[-14])
-                    _no_div   = not (_price_up and _rsi_dn)
+                # X2: no bearish divergence — rebuild RSI series (calc_rsi returns float)
+                _delta_r  = close.diff().dropna()
+                _gain_r   = _delta_r.clip(lower=0).ewm(alpha=1/14, adjust=False).mean()
+                _loss_r   = (-_delta_r.clip(upper=0)).ewm(alpha=1/14, adjust=False).mean()
+                _rsi_ser  = (100 - 100 / (1 + _gain_r / _loss_r.replace(0, float("nan")))).fillna(50)
+                _no_div   = True
+                if len(_rsi_ser) >= 14 and len(close) >= 14:
+                    _no_div = not (float(close.iloc[-1]) > float(close.iloc[-14]) and
+                                   float(_rsi_ser.iloc[-1]) < float(_rsi_ser.iloc[-14]))
 
-                # ── FTF gate ─────────────────────────────────────────────────
+                # Zone metrics
+                _pct_above_ema9   = round((price - _sma9v) / _sma9v * 100, 1) if _sma9v > 0 else 0
+                _sma20d_v = float(calc_sma(close, 20).dropna().iloc[-1]) if len(close) >= 20 else price
+                _pct_above_sma20d = round((price - _sma20d_v) / _sma20d_v * 100, 1) if _sma20d_v > 0 else 0
+                # D6 relaxed: volume > 0.7× avg (not strict >1.0×)
+                _d6_relaxed = volume_ratio > 0.7
+
+                # ── FTF gate — current conditions (W1 W5 W7 removed; W2→15%, W3→75) ──
+                _w2_curr = (_sma20w > 0) and (price <= _sma20w * 1.15)
                 _ftf_pass = all([
-                    weekly_pattern in ("HH/HL", "Tight Base"),  # W1
-                    _w2,                                          # W2 not extended
-                    35 <= wk_rsi_val <= 70,                      # W3
-                    wk_hist_pos,                                  # W4 MACD>Signal weekly (hist>0)
-                    _w5,                                          # W5 volume
-                    _w6,                                          # W6 price > SMA20W
-                    _fresh_cross_w,                               # W7 fresh cross
-                    # W8 removed — W4 (wk_hist_pos) already guards positive histogram
-                    _w9,                                          # W9 uptrend
-                    _d1,                                          # D1 not extended daily
-                    35 <= rsi_value <= 70,                        # D2
-                    macd_above_signal,                            # D3
-                    price_above_sma9,                             # D4
-                    _d5,                                          # D5 daily hist rising
-                    _d6,                                          # D6 volume > 20-day avg
-                    _adx_ok,                                      # X1
-                    _no_div,                                      # X2
+                    _w2_curr,               # W2 not extended (≤15%)
+                    35 <= wk_rsi_val <= 75, # W3 RSI (weekly, raised to 75)
+                    wk_hist_pos,            # W4 MACD>Signal weekly
+                    _w6,                    # W6 price > SMA20W
+                    _w9,                    # W9 uptrend
+                    _d1,                    # D1 not extended daily
+                    35 <= rsi_value <= 70,  # D2
+                    macd_above_signal,      # D3
+                    price_above_sma9,       # D4
+                    _d5,                    # D5 daily hist rising
+                    _d6_relaxed,            # D6 volume > 0.7× avg
+                    _adx_ok,                # X1
+                    _no_div,                # X2
                 ])
 
                 if _ftf_pass:
-                    table_ftf.append({**result,
-                        "ftf_adx":    round(_adx_val if _adx_ok else 0, 1),
-                        "ftf_pb_pct": round(_pct_below, 1),
-                        "ftf_cross_w": _fresh_cross_w,
+                    _w_det = {
+                        "rsi_w":      round(wk_rsi_val, 1),
+                        "hist_w":     round(float(_dh_now), 4),   # best proxy available
+                        "hist_w_prev":round(float(_dh_prev), 4),
+                        "hh_hl":      weekly_pattern == "HH/HL",
+                        "sma20_w":    round(_sma20w, 2),
+                        "sma50_w":    round(_sma50w, 2),
+                        "macd_w":     0, "sig_w": 0,              # not separately tracked
+                    }
+                    _d_det = {
+                        "rsi_d":           round(rsi_value, 1),
+                        "hist_d":          round(float(_dh_now), 4),
+                        "hist_d_prev":     round(float(_dh_prev), 4),
+                        "adx":             round(_adx_val, 1) if (_adx_ok and np.isfinite(_adx_val)) else None,
+                        "adx_rising":      False,
+                        "bearish_div":     not _no_div,
+                        "in_demand":       price <= float(close.iloc[-10:].min()) * 1.05 if len(close) >= 10 else False,
+                        "pct_below_high":  round(_pct_below, 1),
+                        "pct_above_ema9":  _pct_above_ema9,
+                        "pct_above_sma20d":_pct_above_sma20d,
+                    }
+                    table_ftf.append({
+                        "ticker":   ticker,
+                        "price":    round(price, 2),
+                        "w_detail": _w_det,
+                        "d_detail": _d_det,
+                        "w_flags":  [],
+                        "d_flags":  [],
+                        "suggest":  _ftf_suggest(_w_det, _d_det),
                     })
             except Exception:
                 pass   # FTF failure never blocks the main MTPA result
@@ -751,7 +783,7 @@ def run_mtpa_scan(
         progress_bar.empty()
 
     # Sort FTF by ADX descending (strongest trend first)
-    table_ftf.sort(key=lambda r: r.get("ftf_adx", 0), reverse=True)
+    table_ftf.sort(key=lambda r: r.get("d_detail", {}).get("adx") or 0, reverse=True)
 
     return {
         "table1":          table1,
