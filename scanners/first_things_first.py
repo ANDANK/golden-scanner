@@ -22,8 +22,8 @@ Daily conditions (ALL must hold):
   D2  RSI 35–70
   D3  MACD > Signal line
   D4  Price > SMA9D
-  D5  Histogram rising (hist[-1] > hist[-2]) — momentum accelerating, not fading
-  D6  Volume > 0.7× 20-day average (relaxed from strict >1.0×)
+  D5  Histogram rising for 2 consecutive bars (hist[-1]>hist[-2] AND hist[-2]>hist[-3])
+  (D6 removed — volume check redundant with MACD+histogram momentum filters)
 
 Cross-timeframe:
   X1  ADX > 16 AND ADX rising (ADX[-1] > ADX[-4])
@@ -186,7 +186,7 @@ def _check_weekly(ticker: str, df_daily: pd.DataFrame) -> dict:
 def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> dict:
     """Evaluate all daily + cross-timeframe conditions.
     Accepts a pre-fetched df_daily to avoid a redundant API call."""
-    result = {k: False for k in ["D1","D2","D3","D4","D5","D6","X1","X2","pass"]}
+    result = {k: False for k in ["D1","D2","D3","D4","D5","X1","X2","pass"]}
     result["detail"] = {}
     try:
         df = df_daily if (df_daily is not None and not df_daily.empty) else get_price_history(ticker, period="6mo")
@@ -216,15 +216,10 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
         macd_d, sig_d, hist_d = _macd(close_d)
         m_d = float(macd_d.dropna().iloc[-1])
         s_d = float(sig_d.dropna().iloc[-1])
-        h_d = float(hist_d.dropna().iloc[-1])
-        h_d_prev = float(hist_d.dropna().iloc[-2]) if len(hist_d.dropna()) >= 2 else h_d
-
-        # Volume — D6: use yesterday's completed bar (iloc[-2]), not today's partial intraday bar.
-        # Today's volume at open is 5-10% of daily avg → would fail every ticker early in session.
-        # avg_vol already excludes today (iloc[-21:-1]), so both sides use completed bars.
-        avg_vol = float(vol_d.iloc[-21:-1].mean()) if (vol_d is not None and len(vol_d) >= 21) else None
-        cur_vol = float(vol_d.iloc[-2]) if (vol_d is not None and len(vol_d) >= 2) else None
-        vol_above = (cur_vol > 0.7 * avg_vol) if (cur_vol and avg_vol) else False  # D6: ≥0.7× prior day
+        hist_d_clean = hist_d.dropna()
+        h_d      = float(hist_d_clean.iloc[-1]) if len(hist_d_clean) >= 1 else 0.0
+        h_d_prev = float(hist_d_clean.iloc[-2]) if len(hist_d_clean) >= 2 else h_d
+        h_d_prev2= float(hist_d_clean.iloc[-3]) if len(hist_d_clean) >= 3 else h_d_prev
 
         # Supply zone — display only (no longer a hard gate)
         high_20d = float(close_d.iloc[-20:].max()) if len(close_d) >= 20 else px
@@ -246,13 +241,11 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
         low_10d = float(close_d.iloc[-10:].min()) if len(close_d) >= 10 else px
         in_demand = px <= low_10d * 1.05   # within 5% above recent swing low
 
-        result["D1"] = (sma9_d > 0) and (px <= sma9_d * 1.08)  # within 8% above SMA9
+        result["D1"] = (sma9_d > 0) and (px <= sma9_d * 1.08)  # within 8% above EMA9
         result["D2"] = 35 <= rsi_v <= 70
         result["D3"] = m_d > s_d
         result["D4"] = px > sma9_d
-        result["D5"] = h_d > h_d_prev                           # daily histogram rising — display only
-        result["D6"] = vol_above                                 # volume > 0.7× 20-day avg
-        # D7 removed — D6 now covers volume strictly (>1.0× vs old 0.8×)
+        result["D5"] = (h_d > h_d_prev) and (h_d_prev > h_d_prev2)  # 2 consecutive rising bars
         result["X1"] = adx_ok
         result["X2"] = not div
 
@@ -266,6 +259,7 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
             "sig_d":           round(s_d, 4),
             "hist_d":          round(h_d, 4),
             "hist_d_prev":     round(h_d_prev, 4),
+            "hist_d_prev2":    round(h_d_prev2, 4),
             "sma9_d":          round(sma9_d, 2),
             "sma20_d":         round(sma20_d, 2),
             "adx":             round(adx_v, 1) if not np.isnan(adx_v) else None,
@@ -276,7 +270,7 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
             "pct_above_ema9":  pct_above_ema9,              # % above EMA9 (support gap)
             "pct_above_sma20d": pct_above_sma20d,           # % above SMA20D (swing support gap)
         }
-        daily_conditions = ["D1","D2","D3","D4","D5","D6","X1","X2"]  # D7 removed; D5 restored
+        daily_conditions = ["D1","D2","D3","D4","D5","X1","X2"]  # D6 removed; D5 = 2 consecutive bars
         result["pass"] = all(result[k] for k in daily_conditions)
 
     except Exception:
@@ -348,7 +342,7 @@ def run_ftf_scan(
     weekly_passers = []  # tickers that passed weekly but may have failed daily
     # Per-condition fail counters (how many tickers failed EACH condition)
     w_fails = {k: 0 for k in ["W2","W3","W4","W6","W9"]}
-    d_fails = {k: 0 for k in ["D1","D2","D3","D4","D5","D6","X1","X2"]}
+    d_fails = {k: 0 for k in ["D1","D2","D3","D4","D5","X1","X2"]}
 
     for i, ticker in enumerate(tickers):
         if status_fn:
@@ -390,7 +384,7 @@ def run_ftf_scan(
         if not dy["pass"]:
             # store daily detail for debugging
             weekly_passers[-1]["d_detail"] = dy.get("detail", {})
-            weekly_passers[-1]["d_flags_fail"] = [k for k in ["D1","D2","D3","D4","D6","X1","X2"] if not dy.get(k, False)]
+            weekly_passers[-1]["d_flags_fail"] = [k for k in ["D1","D2","D3","D4","D5","X1","X2"] if not dy.get(k, False)]
             continue
 
         # Both pass — build condition flag strings
@@ -400,9 +394,9 @@ def run_ftf_scan(
             "W4": "MACD>Sig",     "W6": "P>SMA20W", "W9": "Uptrend",
         }
         d_map = {
-            "D1": "Not Ext'd",  "D2": "RSI ✓",   "D3": "MACD>Sig",
-            "D4": "P>SMA9",     "D5": "Hist↑",    "D6": "Vol>0.7×",
-            "X1": "ADX>16",     "X2": "No BearDiv",
+            "D1": "Not Ext'd", "D2": "RSI ✓",  "D3": "MACD>Sig",
+            "D4": "P>EMA9",    "D5": "Hist↑↑",  "X1": "ADX>16",
+            "X2": "No BearDiv",
         }
         for k, lbl in w_map.items():
             if wk.get(k):

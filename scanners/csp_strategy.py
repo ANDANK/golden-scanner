@@ -533,8 +533,10 @@ def scan_csp_strategy(
                 _ema12d  = calc_ema(close, 12); _ema26d = calc_ema(close, 26)
                 _macd_d  = _ema12d - _ema26d;   _sig_d  = calc_ema(_macd_d, 9)
                 _hist_d  = _macd_d - _sig_d
-                _h_now   = float(_hist_d.dropna().iloc[-1])
-                _h_prev  = float(_hist_d.dropna().iloc[-2]) if len(_hist_d.dropna()) >= 2 else _h_now
+                _hd_clean = _hist_d.dropna()
+                _h_now   = float(_hd_clean.iloc[-1]) if len(_hd_clean) >= 1 else 0.0
+                _h_prev  = float(_hd_clean.iloc[-2]) if len(_hd_clean) >= 2 else _h_now
+                _h_prev2 = float(_hd_clean.iloc[-3]) if len(_hd_clean) >= 3 else _h_prev
                 _high_20 = float(close.iloc[-20:].max()) if len(close) >= 20 else price
                 _pb_pct  = (_high_20 - price) / _high_20 * 100 if _high_20 > 0 else 0
                 _rsi_dv  = float(calc_rsi(close))   # calc_rsi returns float directly
@@ -569,8 +571,7 @@ def scan_csp_strategy(
                     35 <= _rsi_dv <= 70,                     # D2
                     _h_now > 0,                              # D3 MACD>Signal daily
                     price > _sma9v,                          # D4
-                    _h_now > _h_prev,                        # D5 hist rising
-                    _vol_ok,                                 # D6 volume > 0.7× avg
+                    (_h_now > _h_prev) and (_h_prev > _h_prev2),  # D5 2 consecutive rising bars
                     not np.isnan(adx_v) and adx_v > 16,     # X1
                     _no_div,                                  # X2
                 ])

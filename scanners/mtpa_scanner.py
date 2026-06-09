@@ -656,9 +656,14 @@ def run_mtpa_scan(
                 _sma9v = float(calc_sma(close, 9).dropna().iloc[-1]) if len(close) >= 9 else price
                 _d1 = (_sma9v > 0) and (price <= _sma9v * 1.08)
 
-                # D5: daily histogram rising (need prev hist bar)
-                _, _, _dh_now, _dh_prev = calc_macd(close)
-                _d5 = float(_dh_now) > float(_dh_prev) if (_dh_prev is not None) else False
+                # D5: 2 consecutive rising histogram bars
+                _dh_series = (calc_ema(close, 12) - calc_ema(close, 26))
+                _dh_series = _dh_series - calc_ema(_dh_series, 9)
+                _dh_clean  = _dh_series.dropna()
+                _dh_now    = float(_dh_clean.iloc[-1]) if len(_dh_clean) >= 1 else 0.0
+                _dh_prev   = float(_dh_clean.iloc[-2]) if len(_dh_clean) >= 2 else _dh_now
+                _dh_prev2  = float(_dh_clean.iloc[-3]) if len(_dh_clean) >= 3 else _dh_prev
+                _d5 = (_dh_now > _dh_prev) and (_dh_prev > _dh_prev2)
 
                 # Supply zone — display only (not a gate)
                 _high_20d = float(close.iloc[-20:].max()) if len(close) >= 20 else price
@@ -717,8 +722,7 @@ def run_mtpa_scan(
                     35 <= rsi_value <= 70,  # D2
                     macd_above_signal,      # D3
                     price_above_sma9,       # D4
-                    _d5,                    # D5 daily hist rising
-                    _d6_relaxed,            # D6 volume > 0.7× avg
+                    _d5,                    # D5: 2 consecutive rising hist bars
                     _adx_ok,                # X1
                     _no_div,                # X2
                 ])
@@ -726,8 +730,8 @@ def run_mtpa_scan(
                 if _ftf_pass:
                     _w_det = {
                         "rsi_w":      round(wk_rsi_val, 1),
-                        "hist_w":     round(float(_dh_now), 4),   # best proxy available
-                        "hist_w_prev":round(float(_dh_prev), 4),
+                        "hist_w":     round(_dh_now, 4),
+                        "hist_w_prev":round(_dh_prev, 4),
                         "hh_hl":      weekly_pattern == "HH/HL",
                         "sma20_w":    round(_sma20w, 2),
                         "sma50_w":    round(_sma50w, 2),
@@ -735,8 +739,9 @@ def run_mtpa_scan(
                     }
                     _d_det = {
                         "rsi_d":           round(rsi_value, 1),
-                        "hist_d":          round(float(_dh_now), 4),
-                        "hist_d_prev":     round(float(_dh_prev), 4),
+                        "hist_d":          round(_dh_now, 4),
+                        "hist_d_prev":     round(_dh_prev, 4),
+                        "hist_d_prev2":    round(_dh_prev2, 4),
                         "adx":             round(_adx_val, 1) if (_adx_ok and np.isfinite(_adx_val)) else None,
                         "adx_rising":      False,
                         "bearish_div":     not _no_div,
