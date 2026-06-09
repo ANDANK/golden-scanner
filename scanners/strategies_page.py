@@ -743,10 +743,11 @@ def render():
 
     st.markdown(_TAB_CSS, unsafe_allow_html=True)
 
-    tab_qqq, tab_opts, tab_ftf = st.tabs([
+    tab_qqq, tab_opts, tab_ftf, tab_sr = st.tabs([
         "♟️  QQQ / TQQQ Strategy",
         "💰  Options Strategy",
         "🎯  First Things First",
+        "📊  Sector Rotation",
     ])
 
     with tab_qqq:
@@ -758,3 +759,7 @@ def render():
 
     with tab_ftf:
         _render_ftf_tab()
+
+    with tab_sr:
+        from scanners.sector_rotation import render_sector_rotation
+        render_sector_rotation()
