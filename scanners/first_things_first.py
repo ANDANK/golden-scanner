@@ -219,10 +219,12 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
         h_d = float(hist_d.dropna().iloc[-1])
         h_d_prev = float(hist_d.dropna().iloc[-2]) if len(hist_d.dropna()) >= 2 else h_d
 
-        # Volume — D6: strictly above 20-day average (>1.0×)
+        # Volume — D6: use yesterday's completed bar (iloc[-2]), not today's partial intraday bar.
+        # Today's volume at open is 5-10% of daily avg → would fail every ticker early in session.
+        # avg_vol already excludes today (iloc[-21:-1]), so both sides use completed bars.
         avg_vol = float(vol_d.iloc[-21:-1].mean()) if (vol_d is not None and len(vol_d) >= 21) else None
-        cur_vol = float(vol_d.iloc[-1]) if vol_d is not None else None
-        vol_above = (cur_vol > 0.7 * avg_vol) if (cur_vol and avg_vol) else False  # D6: relaxed >0.7×
+        cur_vol = float(vol_d.iloc[-2]) if (vol_d is not None and len(vol_d) >= 2) else None
+        vol_above = (cur_vol > 0.7 * avg_vol) if (cur_vol and avg_vol) else False  # D6: ≥0.7× prior day
 
         # Supply zone — display only (no longer a hard gate)
         high_20d = float(close_d.iloc[-20:].max()) if len(close_d) >= 20 else px

@@ -554,7 +554,8 @@ def scan_csp_strategy(
                 _pct_above_ema9   = round((price - _sma9v) / _sma9v * 100, 1) if _sma9v > 0 else 0
                 _sma20d = float(calc_sma(close, 20).dropna().iloc[-1]) if len(close) >= 20 else price
                 _pct_above_sma20d = round((price - _sma20d) / _sma20d * 100, 1) if _sma20d > 0 else 0
-                _vol_ok = (float(vol.iloc[-1]) > 0.7 * avg_vol) if (vol is not None and avg_vol > 0) else False
+                # Use yesterday's completed bar (iloc[-2]) — today's bar is partial at open
+                _vol_ok = (float(vol.iloc[-2] if len(vol) >= 2 else vol.iloc[-1]) > 0.7 * avg_vol) if (vol is not None and avg_vol > 0) else False
 
                 _ftf_pass = all([
                     # Weekly (W1 W5 W7 removed)
