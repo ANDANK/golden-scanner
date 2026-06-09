@@ -145,10 +145,10 @@ SCANNERS = [
         "params": [
             ("Universe",    "~482 tickers",   "Full S&P 500 + ETFs + 3× ETFs"),
             ("Timeframes",  "Weekly + Daily",  "Both must pass independently"),
-            ("Conditions",  "12 conditions",   "5 weekly · 7 daily/cross-TF"),
+            ("Conditions",  "12 conditions",   "5 weekly · 5 daily · ADX · No BearDiv"),
             ("Sort Order",  "ADX descending",  "Strongest trending setups first"),
         ],
-        "criteria": "W: Not Extended · RSI 35–75 · MACD>Signal · Vol 0.7–6× · P>SMA20W · Uptrend  |  D: Not Ext'd · RSI 35–70 · MACD>Signal · P>EMA9 · Vol>0.7× · ADX>16 · No BearDiv",
+        "criteria": "W: Not Extended · RSI 35–70 · MACD>Signal · P>SMA20W · Uptrend  |  D: Not Ext'd · RSI 35–70 · MACD>Signal · P>EMA9 · Hist↑↑(2 bars) · ADX>16 · No BearDiv",
     },
 ]
 
@@ -1026,32 +1026,31 @@ def _render_scanner_tech():
                 "Best run <b>30–60 min after market open</b> when volume is established."
             ),
             "conditions": [
-                ("W2 — Not Extended (Weekly)", "Price ≤ SMA20W × 1.10 — within 10% above the 20-week MA. Avoids chasing extended moves at peak."),
-                ("W3 — RSI 35–75 (Weekly)", "Weekly RSI in the momentum zone. Below 35 = downtrend excluded. Upper limit 75 allows strong post-rally stocks (was 70, raised to avoid blocking everything after sharp rallies)."),
-                ("W4 — MACD > Signal (Weekly)", "Weekly MACD line above the signal line — confirms bullish weekly momentum. Hard gate."),
-                ("W5 — Volume OK (Weekly)", "Weekly volume 0.7–6.0× the 20-week average. Filters out dry (no interest) weeks. Ceiling raised to 6× to allow strong momentum-surge weeks through."),
-                ("W6 — Price > SMA20W (Weekly)", "Price must be above its 20-week moving average — the minimum weekly trend structure requirement."),
-                ("W9 — Uptrend (Weekly)", "Price > SMA50W OR HH/HL confirmed. Ensures the macro trend is intact on the weekly chart."),
-                ("D1 — Not Extended (Daily)", "Price ≤ EMA9D × 1.08 — within 8% above the 9-day EMA. Avoids entries too far from near-term support."),
-                ("D2 — RSI 35–70 (Daily)", "Daily RSI in the momentum zone. Mirrors the weekly RSI filter on the daily timeframe."),
-                ("D3 — MACD > Signal (Daily)", "Daily MACD line above signal line — short-term momentum bullish."),
-                ("D4 — Price > EMA9D (Daily)", "Price above the 9-day EMA — the most sensitive daily trend filter."),
-                ("D5 — Histogram Rising (Daily)", "Display only — not a gate condition. Shown in results for reference. MACD > Signal (D3) is sufficient to confirm bullish momentum direction."),
-                ("D6 — Volume > 0.7× 20-Day Average (Daily)", "Today's volume exceeds 70% of the 20-day average. Relaxed from strict >1.0× — filters out truly dead-volume days while allowing lighter momentum days through."),
-                ("X1 — ADX > 16 (Cross-TF)", "Average Directional Index above 16 — confirms a real trend exists, not sideways chop. Calculated from daily data."),
-                ("X2 — No Bearish Divergence (Cross-TF)", "Price is NOT making higher highs while RSI is making lower highs over the last 14 daily bars. Classic bearish divergence = excluded."),
+                ("W2 — Not Extended (Weekly)", "Price ≤ SMA20W × 1.15 — within 15% above the 20-week MA. Prevents chasing extended moves; tighter = better weekly risk/reward."),
+                ("W3 — RSI 35–70 (Weekly)", "Weekly RSI in the healthy momentum zone. Below 35 = downtrend excluded. Above 70 = overbought weekly excluded. Matches daily RSI range."),
+                ("W4 — MACD > Signal (Weekly)", "Weekly MACD line above the signal line — confirms the weekly trend has bullish momentum. Hard gate."),
+                ("W6 — Price > SMA20W (Weekly)", "Price must be above its 20-week moving average — basic weekly uptrend requirement."),
+                ("W9 — Uptrend (Weekly)", "Price > SMA50W OR higher highs + higher lows confirmed. Ensures the macro weekly trend is intact."),
+                ("D1 — Not Extended (Daily)", "Price ≤ EMA9 × 1.08 — within 8% above the 9-day EMA. Entries close to near-term support = better risk/reward."),
+                ("D2 — RSI 35–70 (Daily)", "Daily RSI in the momentum zone. Below 35 = oversold excluded. Above 70 = overbought daily excluded."),
+                ("D3 — MACD > Signal (Daily)", "Daily MACD line above signal — short-term momentum bullish."),
+                ("D4 — Price > EMA9 (Daily)", "Price above the 9-day EMA — the most sensitive daily trend check."),
+                ("D5 — Histogram Rising 2 Consecutive Bars (Daily)", "hist[-1] > hist[-2] AND hist[-2] > hist[-3]. Momentum must be accelerating for TWO consecutive days — eliminates one-day bounces and ensures sustained daily momentum build."),
+                ("X1 — ADX > 16 (Cross-TF)", "Average Directional Index above 16 — confirms a real trend exists, not sideways chop. Calculated from daily OHLC data."),
+                ("X2 — No Bearish Divergence (Cross-TF)", "Price not making higher highs while RSI makes lower highs over the last 14 bars. Bearish divergence = momentum fading despite rising price = excluded."),
             ],
             "avoid": [
-                "W7 removed — W4 (MACD>Signal) is sufficient; fresh-cross requirement was too restrictive in choppy markets",
-                "Running mid-session before volume has developed (D6 volume check needs established volume)",
-                "Expecting many results — FTF typically returns 0–10 tickers; that is correct behavior",
-                "Ignoring the scan funnel chips (Scanned N → Weekly pass N → Final pass N) — these tell you where stocks fail",
+                "Expecting many results — FTF returns 0–15 tickers on most days; intentionally strict",
+                "Scanning at market open — D5 uses yesterday's completed bars; runs reliably any time of day",
+                "Ignoring the scan funnel (Weekly pass N → Final pass N) — reveals which gate is the bottleneck",
+                "D6 removed — volume gate was failing 99% of tickers at open; D3+D5 already confirm participation",
+                "W5 removed — weekly volume from resampled daily data unreliable; D conditions cover this",
             ],
             "scoring": [
                 ("All 12 conditions pass", "Qualified", "Binary pass/fail — no partial credit"),
                 ("Sorted by ADX", "Descending", "Higher ADX = stronger confirmed trend"),
-                ("W conditions gate", "6 checks", "W2 W3 W4 W5 W6 W9"),
-                ("D/X conditions gate", "7 checks", "D1 D2 D3 D4 D6 X1 X2  (D5 Hist↑ display-only)"),
+                ("W gate", "5 checks", "W2 W3 W4 W6 W9"),
+                ("D/X gate", "7 checks", "D1 D2 D3 D4 D5 X1 X2"),
                 ("Universe", "~482 tickers", "Full S&P 500 + ETFs + 3× ETFs"),
             ],
         },
@@ -2786,41 +2785,40 @@ def _render_mtpa_reference():
     # ── First Things First ─────────────────────────────────────────────────────
     _sec("🎯 First Things First — High-Conviction Setup Filter", GL, "")
     ftf_rows_w = [
-        ("W2", "Not Extended (≤10% above SMA20W)", "Not chasing a parabolic move"),
-        ("W3", "RSI 35–75 (weekly)", "Momentum zone — 75 cap allows strong post-rally stocks"),
-        ("W4", "MACD > Signal (weekly)", "Weekly momentum confirmed"),
-        ("W5", "Volume 0.7–3× avg", "Institutional but not a spike"),
-        ("W6", "Price > SMA20W", "Above key weekly moving average"),
-        ("W9", "Uptrend — Price > SMA50W or HH/HL", "Macro direction confirmed"),
+        ("W2", "Not Extended (≤15% above SMA20W)", "Prevents chasing parabolic moves"),
+        ("W3", "RSI 35–70 (weekly)", "Healthy momentum zone — matches daily RSI range"),
+        ("W4", "MACD > Signal (weekly)", "Weekly momentum bullish"),
+        ("W6", "Price > SMA20W", "Above 20-week moving average"),
+        ("W9", "Uptrend — Price > SMA50W or HH/HL", "Macro weekly trend confirmed"),
     ]
     ftf_rows_d = [
-        ("D1", "Not Extended (≤8% above EMA9D)", "No daily chase"),
-        ("D2", "RSI 35–70 (daily)", "Momentum healthy on daily"),
-        ("D3", "MACD > Signal (daily)", "Daily momentum confirmed"),
-        ("D4", "Price > EMA9D", "Short-term trend intact"),
-        ("D5", "Histogram rising (daily)", "Daily momentum building, not fading"),
-        ("D6", "Volume > 20-day avg", "Institutional participation confirmed"),
-        ("X1", "ADX > 16", "Trend exists, not sideways chop"),
-        ("X2", "No bearish divergence", "Price HH + RSI LL pattern absent"),
+        ("D1", "Not Extended (≤8% above EMA9)", "Entry close to near-term support"),
+        ("D2", "RSI 35–70 (daily)", "Daily momentum in healthy zone"),
+        ("D3", "MACD > Signal (daily)", "Daily momentum bullish"),
+        ("D4", "Price > EMA9", "Above short-term daily trend"),
+        ("D5", "Histogram rising — 2 consecutive bars", "Momentum accelerating for 2 days straight, not a 1-day bounce"),
+        ("X1", "ADX > 16", "Confirmed trend — not sideways chop"),
+        ("X2", "No bearish divergence", "Price making higher highs but RSI not = excluded"),
     ]
     ftf_html = (
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
         f'<div>'
         f'<div style="color:{G};font-size:11px;font-weight:700;'
         f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">'
-        f'Weekly (all 6 must hold)</div>'
+        f'Weekly (all 5 must hold)</div>'
         + _table("".join(_row(k, f"<b>{v}</b> — {n}", G) for k, v, n in ftf_rows_w), "#", "Condition")
         + f'</div><div>'
         f'<div style="color:{B};font-size:11px;font-weight:700;'
         f'text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">'
-        f'Daily + Cross-TF (all 8 must hold)</div>'
+        f'Daily + Cross-TF (all 7 must hold)</div>'
         + _table("".join(_row(k, f"<b>{v}</b> — {n}", B) for k, v, n in ftf_rows_d), "#", "Condition")
         + f'</div></div>'
         f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:8px;padding:8px 12px;'
         f'background:{BG_PANEL};border-radius:6px">'
-        f'&#9432; All 12 conditions must hold simultaneously (5 weekly + 8 daily/cross-TF). '
+        f'&#9432; All 12 conditions must hold simultaneously (5 weekly + 5 daily + ADX + no divergence). '
         f'Universe: ~482 tickers (full S&amp;P 500 + ETFs + 3× ETFs). '
-        f'Removed: W1 (redundant with W9), W7 (fresh-cross too strict), D7 (merged into D6). '
+        f'Removed: W1 W5 W7 (redundant/unreliable), D6 (volume — redundant with MACD+Hist filters). '
+        f'D5 requires 2 consecutive rising histogram bars (not just 1). '
         f'Results sorted by ADX descending (strongest trend first).'
         f'</div>'
     )

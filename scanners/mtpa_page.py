@@ -59,13 +59,12 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'<span style="background:{c}14;color:{c};border:1px solid {c}33;'
             f'font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px">{t}</span>'
             for t, c in [
-                ("W: Not Extended", G), ("W: RSI 35-75", G),
-                ("W: MACD>Sig", G),
-                ("W: P>SMA20W", G), ("W: Uptrend", G),
-                ("D: Not Ext'd", "#60A5FA"), ("D: RSI 35-70", "#60A5FA"),
-                ("D: MACD>Sig", "#60A5FA"), ("D: P>SMA9", "#60A5FA"),
-                ("D: Hist↑↑", "#60A5FA"),
-                ("ADX>16", P), ("No Bearish Div", P),
+                ("W: Not Extended ≤15%", G), ("W: RSI 35-70", G),
+                ("W: MACD>Sig", G), ("W: P>SMA20W", G), ("W: Uptrend", G),
+                ("D: Not Ext'd ≤8%", "#60A5FA"), ("D: RSI 35-70", "#60A5FA"),
+                ("D: MACD>Sig", "#60A5FA"), ("D: P>EMA9", "#60A5FA"),
+                ("D: Hist↑↑ 2-bars", "#60A5FA"),
+                ("ADX>16", P), ("No BearDiv", P),
             ]
         )
         + f'</div></div>',
@@ -81,7 +80,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'<div style="color:{TEXT_PRIMARY};font-size:13px;font-weight:600;'
             f'margin-bottom:4px">No Setups Qualify Right Now</div>'
             f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
-            f'All 12 conditions (5 weekly + 5 daily + ADX + no divergence) must pass '
+            f'All 12 conditions (5 weekly · 5 daily · ADX · No BearDiv) must pass '
             f'simultaneously. This is intentionally strict — when something appears '
             f'here, it\'s the highest-conviction setup in the current market.</div>'
             f'</div>',

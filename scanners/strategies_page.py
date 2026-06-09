@@ -527,9 +527,9 @@ def _render_ftf_tab():
         f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
         f'Scans <b style="color:#fff">{len(universe)} tickers</b> '
         f'(full S&P 500 · liquid ETFs · sector ETFs · 3× leveraged ETFs) for stocks passing all '
-        f'<b style="color:#fff">12 conditions</b> simultaneously across weekly + daily timeframes. '
-        f'Expect a 5–8 minute runtime. Best run <b style="color:{GL}">30–60 min after market open</b> '
-        f'when volume and histogram direction are established.</div>'
+        f'<b style="color:#fff">12 conditions</b> (5 weekly · 5 daily · ADX · No BearDiv) simultaneously. '
+        f'Expect a 5–8 minute runtime. Can be run <b style="color:{GL}">any time of day</b> — '
+        f'uses yesterday\'s completed bars for all calculations.</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -642,12 +642,12 @@ def _render_ftf_tab():
                 f'</tr></thead><tbody>{rows}</tbody></table>'
             )
 
-        w_labels = {"W2":"Not Extended ≤15% above SMA20W","W3":"RSI 35–75 (weekly)",
+        w_labels = {"W2":"Not Extended ≤15% above SMA20W","W3":"RSI 35–70 (weekly)",
                     "W4":"MACD > Signal (weekly)",
                     "W6":"Price > SMA20W","W9":"Uptrend (P>SMA50W or HH/HL)"}
         d_labels = {"D1":"Not Extended ≤8% above EMA9","D2":"RSI 35–70 (daily)",
                     "D3":"MACD > Signal (daily)","D4":"Price > EMA9",
-                    "D5":"Histogram rising (momentum accelerating)",
+                    "D5":"Histogram rising 2 consecutive bars",
                     "X1":"ADX > 16","X2":"No Bearish Divergence"}
 
         with st.expander("🔬 Condition breakdown (always visible — expand for details)", expanded=(dpass == 0)):
