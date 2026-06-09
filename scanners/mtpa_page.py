@@ -106,7 +106,7 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
         for c in ["Ticker", "Price", "Suggest",
                   "W-RSI", "W-MACD Hist",
                   "D-RSI", "D-Hist↑", "ADX",
-                  "EMA9 Gap", "Resist Gap", "W-SMA20 Gap",
+                  "EMA9 Gap ↓best", "20D High Gap", "W-SMA20 Gap",
                   "Demand Zone", "Bear Div"]
     )
 
@@ -138,10 +138,12 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
         if wd.get("sma20_w", 0) > 0:
             sma20w_gap = round((r["price"] - wd["sma20_w"]) / wd["sma20_w"] * 100, 1)
 
-        # Color: green = close to support / lots of room; red = extended / near resistance
+        # EMA9 gap: green = tight to support (≤3%), amber = ok (≤6%), red = extended (>6%)
         ema9_col   = ACCENT_GREEN if ema9_gap <= 3 else (GOLD if ema9_gap <= 6 else ACCENT_RED)
-        resist_col = ACCENT_GREEN if resist_gap >= 5 else (GOLD if resist_gap >= 3 else ACCENT_RED)
-        sma20w_col = ACCENT_GREEN if 0 < sma20w_gap <= 8 else (GOLD if 8 < sma20w_gap <= 15 else ACCENT_RED)
+        # Resist gap: in FTF, near 20-day high = breakout (green); far below = pullback (gold = CSP zone)
+        resist_col = ACCENT_GREEN if resist_gap <= 3 else (GOLD if resist_gap <= 8 else TEXT_MUTED)
+        # W-SMA20 gap: green = healthy (≤10%), amber = extended (≤15%), red = overextended (>15%)
+        sma20w_col = ACCENT_GREEN if 0 < sma20w_gap <= 10 else (GOLD if 10 < sma20w_gap <= 15 else ACCENT_RED)
 
         bear_div = dd.get("bearish_div", False)
 
@@ -184,10 +186,11 @@ def render_ftf_section(ftf_rows: list[dict], context: str = "mtpa") -> None:
             f'<td style="background:{bg};padding:8px 12px;white-space:nowrap">'
             f'<span style="color:{ema9_col};font-weight:700">{ema9_gap:+.1f}%</span>'
             f'<span style="color:{TEXT_MUTED};font-size:9px"> abv EMA9</span></td>'
-            # Resist Gap
+            # 20D High Gap
             f'<td style="background:{bg};padding:8px 12px;white-space:nowrap">'
             f'<span style="color:{resist_col};font-weight:700">{resist_gap:.1f}%</span>'
-            f'<span style="color:{TEXT_MUTED};font-size:9px"> to resist</span></td>'
+            f'<span style="color:{TEXT_MUTED};font-size:9px">'
+            f' {"🔼 breakout" if resist_gap <= 1 else "blo 20D hi"}</span></td>'
             # W-SMA20 Gap
             f'<td style="background:{bg};padding:8px 12px;white-space:nowrap">'
             f'<span style="color:{sma20w_col};font-weight:700">{sma20w_gap:+.1f}%</span>'
