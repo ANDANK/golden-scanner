@@ -193,8 +193,15 @@ def _fetch_holdings_sectors(proxy: str) -> tuple:
     except Exception:
         pass
 
-    if not holdings:
+    # Only use yfinance holdings if they have valid ticker symbols.
+    # If yfinance returned holdings with empty tickers (just names), overlap
+    # detection breaks — fall back to curated STATIC_HOLDINGS instead.
+    valid_tickers = [h for h in holdings if h[1] and h[1] not in ("", "N/A", "-")]
+    if not valid_tickers:
         holdings = STATIC_HOLDINGS.get(proxy, [])
+    else:
+        holdings = valid_tickers
+
     if not sectors:
         sectors = STATIC_SECTORS.get(proxy, {})
     return holdings, sectors
@@ -445,16 +452,29 @@ def _holdings_overlap_analysis(selected_syms: list) -> dict:
     if len(all_holdings) < 2:
         return {}
 
-    # Find ticker symbols that appear in 2+ funds
-    ticker_map = {}  # {ticker: [(fund_sym, name, pct), ...]}
+    # Match holdings by ticker first, then by normalized name as fallback
+    ticker_map = {}  # {key: [(fund_sym, name, pct), ...]}
     for fund_sym, holdings in all_holdings.items():
         for name, tick, pct in holdings:
-            if tick and tick not in ("", "N/A"):
-                if tick not in ticker_map:
-                    ticker_map[tick] = []
-                ticker_map[tick].append((fund_sym, name, pct))
+            # Use ticker if available, else normalize name as key
+            if tick and tick not in ("", "N/A", "-"):
+                key = tick.upper()
+            elif name:
+                # Normalize: lowercase, strip Inc/Corp/Ltd etc.
+                import re as _re
+                key = "NAME:" + _re.sub(r'\b(inc|corp|ltd|plc|co|llc|sa|nv|ag)\b', '', name.lower()).strip()
+            else:
+                continue
+            if key not in ticker_map:
+                ticker_map[key] = []
+            ticker_map[key].append((fund_sym, name or tick, pct))
 
-    overlaps = {t: v for t, v in ticker_map.items() if len(v) >= 2}
+    overlaps = {}
+    for key, entries in ticker_map.items():
+        if len(entries) >= 2:
+            # Use the ticker (without "NAME:" prefix) as display key
+            display = key.replace("NAME:", "")
+            overlaps[display] = entries
     return overlaps
 
 
