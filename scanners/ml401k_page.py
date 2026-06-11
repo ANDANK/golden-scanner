@@ -803,6 +803,23 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
 
 # ── Main render ───────────────────────────────────────────────────────────────
 
+def _equal_split(selected: set, allocs: dict):
+    """Assign equal allocations that always sum exactly to 100.0.
+    Also writes into the number_input widget keys so the UI reflects the values."""
+    syms = sorted(selected)
+    n = len(syms)
+    if n == 0:
+        return
+    base = round(100 / n, 1)
+    for s in syms:
+        allocs[s] = base
+    # fix floating-point remainder on last item
+    allocs[syms[-1]] = round(100 - base * (n - 1), 1)
+    # push values into the number_input widget session state keys
+    for s in syms:
+        st.session_state[f"_401k_alloc_{s}"] = float(allocs[s])
+
+
 def render():
     from config import GOLD, BG_CARD, BORDER_COLOR, TEXT_MUTED, TEXT_PRIMARY
 
@@ -904,29 +921,16 @@ Fund closing prices shown are from your ML statement — not live data.""",
                     )
                     if chk and sym not in selected:
                         selected.add(sym)
-                        # Equal split that always sums exactly to 100
-                        syms_list = sorted(selected)
-                        n = len(syms_list)
-                        base = round(100 / n, 1)
-                        for i, s in enumerate(syms_list):
-                            allocs[s] = base
-                        # Fix rounding remainder on last item
-                        remainder = round(100 - base * n, 1)
-                        allocs[syms_list[-1]] = round(base + remainder, 1)
+                        _equal_split(selected, allocs)
                         st.session_state["_401k_sel"]   = selected
                         st.session_state["_401k_alloc"] = allocs
                         st.rerun()
                     elif not chk and sym in selected:
                         selected.discard(sym)
                         allocs.pop(sym, None)
+                        st.session_state.pop(f"_401k_alloc_{sym}", None)
                         if selected:
-                            syms_list = sorted(selected)
-                            n = len(syms_list)
-                            base = round(100 / n, 1)
-                            for s in syms_list:
-                                allocs[s] = base
-                            remainder = round(100 - base * n, 1)
-                            allocs[syms_list[-1]] = round(base + remainder, 1)
+                            _equal_split(selected, allocs)
                         st.session_state["_401k_sel"]   = selected
                         st.session_state["_401k_alloc"] = allocs
                         st.rerun()
