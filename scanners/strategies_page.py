@@ -648,6 +648,7 @@ def _render_ftf_tab():
         d_labels = {"D1":"Not Extended ≤8% above EMA9","D2":"RSI 35–70 (daily)",
                     "D3":"MACD > Signal (daily)","D4":"Price > EMA9",
                     "D5":"Histogram rising 2 consecutive bars",
+                    "D6":"Volume > 0.7× 20-day avg (yesterday's bar)",
                     "X1":"ADX > 16","X2":"No Bearish Divergence"}
 
         with st.expander("🔬 Condition breakdown (always visible — expand for details)", expanded=(dpass == 0)):

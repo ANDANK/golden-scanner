@@ -186,7 +186,7 @@ def _check_weekly(ticker: str, df_daily: pd.DataFrame) -> dict:
 def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> dict:
     """Evaluate all daily + cross-timeframe conditions.
     Accepts a pre-fetched df_daily to avoid a redundant API call."""
-    result = {k: False for k in ["D1","D2","D3","D4","D5","X1","X2","pass"]}
+    result = {k: False for k in ["D1","D2","D3","D4","D5","D6","X1","X2","pass"]}
     result["detail"] = {}
     try:
         df = df_daily if (df_daily is not None and not df_daily.empty) else get_price_history(ticker, period="6mo")
@@ -246,6 +246,15 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
         result["D3"] = m_d > s_d
         result["D4"] = px > sma9_d
         result["D5"] = (h_d > h_d_prev) and (h_d_prev > h_d_prev2)  # 2 consecutive rising bars
+
+        # D6: yesterday's completed volume > 0.7× 20-day avg (uses iloc[-2] to avoid partial intraday bar)
+        vol_d6 = False
+        if vol_d is not None and len(vol_d) >= 22:
+            avg_vol_20d = float(vol_d.iloc[-22:-2].mean())   # 20 completed bars ending 2 days ago
+            yest_vol    = float(vol_d.iloc[-2])               # yesterday's completed bar
+            vol_d6 = yest_vol >= 0.7 * avg_vol_20d if avg_vol_20d > 0 else False
+        result["D6"] = vol_d6
+
         result["X1"] = adx_ok
         result["X2"] = not div
 
@@ -270,7 +279,7 @@ def _check_daily(ticker: str, price: float, df_daily: pd.DataFrame = None) -> di
             "pct_above_ema9":  pct_above_ema9,              # % above EMA9 (support gap)
             "pct_above_sma20d": pct_above_sma20d,           # % above SMA20D (swing support gap)
         }
-        daily_conditions = ["D1","D2","D3","D4","D5","X1","X2"]  # D6 removed; D5 = 2 consecutive bars
+        daily_conditions = ["D1","D2","D3","D4","D5","D6","X1","X2"]
         result["pass"] = all(result[k] for k in daily_conditions)
 
     except Exception:
@@ -342,7 +351,7 @@ def run_ftf_scan(
     weekly_passers = []  # tickers that passed weekly but may have failed daily
     # Per-condition fail counters (how many tickers failed EACH condition)
     w_fails = {k: 0 for k in ["W2","W3","W4","W6","W9"]}
-    d_fails = {k: 0 for k in ["D1","D2","D3","D4","D5","X1","X2"]}
+    d_fails = {k: 0 for k in ["D1","D2","D3","D4","D5","D6","X1","X2"]}
 
     for i, ticker in enumerate(tickers):
         if status_fn:
@@ -384,7 +393,7 @@ def run_ftf_scan(
         if not dy["pass"]:
             # store daily detail for debugging
             weekly_passers[-1]["d_detail"] = dy.get("detail", {})
-            weekly_passers[-1]["d_flags_fail"] = [k for k in ["D1","D2","D3","D4","D5","X1","X2"] if not dy.get(k, False)]
+            weekly_passers[-1]["d_flags_fail"] = [k for k in ["D1","D2","D3","D4","D5","D6","X1","X2"] if not dy.get(k, False)]
             continue
 
         # Both pass — build condition flag strings
@@ -395,8 +404,8 @@ def run_ftf_scan(
         }
         d_map = {
             "D1": "Not Ext'd", "D2": "RSI ✓",  "D3": "MACD>Sig",
-            "D4": "P>EMA9",    "D5": "Hist↑↑",  "X1": "ADX>16",
-            "X2": "No BearDiv",
+            "D4": "P>EMA9",    "D5": "Hist↑↑",  "D6": "Vol>0.7×Avg",
+            "X1": "ADX>16",    "X2": "No BearDiv",
         }
         for k, lbl in w_map.items():
             if wk.get(k):
