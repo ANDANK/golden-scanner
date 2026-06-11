@@ -619,35 +619,26 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
         if port_ret:
             st.plotly_chart(_perf_chart(port_ret, "Your Portfolio", spy_ret), use_container_width=True, config={"displayModeBar": False})
 
-    # Growth of $10,000
-    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:8px 0 4px">Growth of $10,000</div>', unsafe_allow_html=True)
-    with st.spinner("Building portfolio chart…"):
-        port_df = _portfolio_index(selected_syms, allocations)
-    if not port_df.empty:
-        st.plotly_chart(_growth_chart(port_df), use_container_width=True, config={"displayModeBar": False})
-
-    # Sector overlap
+    # ── Sector overlap ────────────────────────────────────────────────────────
     st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:12px 0 4px">Combined Sector Exposure</div>', unsafe_allow_html=True)
     combined_sectors: dict = {}
     for sym in selected_syms:
-        f = FUND_BY_SYMBOL[sym]
-        _, sectors = _fetch_holdings_sectors(f["proxy"])
+        fd2 = FUND_BY_SYMBOL[sym]
+        _, sectors = _fetch_holdings_sectors(fd2["proxy"])
         w = allocations.get(sym, 0) / 100
         for sec, pct in sectors.items():
             combined_sectors[sec] = combined_sectors.get(sec, 0) + pct * w
     if combined_sectors:
-        # round and filter tiny positions
         combined_sectors = {k: round(v, 1) for k, v in combined_sectors.items() if v > 0.5}
         cs1, cs2 = st.columns([1, 1.5])
         with cs1:
             st.plotly_chart(_sector_donut(combined_sectors, "Portfolio Sector Mix"), use_container_width=True, config={"displayModeBar": False})
         with cs2:
-            # Top 3 sector concentration text
-            top3 = sorted(combined_sectors.items(), key=lambda x: x[1], reverse=True)[:5]
-            rows = ""
-            for sec, pct in top3:
-                bar_w = int(pct / top3[0][1] * 100)
-                rows += (
+            top5 = sorted(combined_sectors.items(), key=lambda x: x[1], reverse=True)[:6]
+            sec_rows = ""
+            for sec, pct in top5:
+                bar_w = int(pct / top5[0][1] * 100)
+                sec_rows += (
                     f'<div style="margin-bottom:7px">'
                     f'<div style="display:flex;justify-content:space-between;margin-bottom:2px">'
                     f'<span style="font-size:12px;color:#cbd5e1">{sec}</span>'
@@ -659,42 +650,67 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
                 )
             st.markdown(
                 f'<div style="background:#0f1929;border:1px solid #1e293b;border-radius:8px;padding:14px">'
-                f'<div style="font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:10px">Top 5 Sectors</div>'
-                f'{rows}</div>',
+                f'<div style="font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:10px">Top Sectors (portfolio-weighted)</div>'
+                f'{sec_rows}</div>',
                 unsafe_allow_html=True,
             )
 
-    # Holdings overlap
+    # ── Holdings overlap (enhanced) ───────────────────────────────────────────
     st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:12px 0 4px">Holdings Overlap</div>', unsafe_allow_html=True)
     with st.spinner("Checking holdings overlap…"):
         overlaps = _holdings_overlap_analysis(selected_syms)
+
     if overlaps:
         overlap_count = len(overlaps)
         overlap_color = _RED if overlap_count > 5 else (_GOLD if overlap_count > 2 else _GREEN)
-        st.markdown(
-            f'<div style="background:#0f1929;border:1px solid #1e293b;border-radius:8px;padding:12px 14px">'
-            f'<div style="font-size:12px;color:{_MUTED};margin-bottom:8px">'
-            f'<span style="color:{overlap_color};font-weight:700">{overlap_count} shared holding{"s" if overlap_count != 1 else ""}</span> appear in 2+ selected funds</div>'
+        # Build detailed table: ticker | appears in | % per fund
+        overlap_html = (
+            f'<div style="background:#0f1929;border:1px solid #1e293b;border-radius:8px;padding:14px">'
+            f'<div style="font-size:12px;color:{_MUTED};margin-bottom:10px">'
+            f'<span style="color:{overlap_color};font-weight:700">{overlap_count} shared holding{"s" if overlap_count != 1 else ""}</span>'
+            f' appear in 2 or more of your selected funds — these positions are double-counted in your portfolio.</div>'
+            f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+            f'<thead><tr>'
+            f'<th style="text-align:left;color:{_MUTED};padding:4px 8px;border-bottom:1px solid #1e293b">Holding</th>'
+            f'<th style="text-align:center;color:{_MUTED};padding:4px 8px;border-bottom:1px solid #1e293b">In # Funds</th>'
             + "".join(
-                f'<span style="display:inline-block;background:#1e293b;border:1px solid #334155;'
-                f'border-radius:6px;padding:3px 8px;margin:2px;font-size:10px;color:#94a3b8">'
-                f'{tick} <span style="color:{_GOLD}">{len(funds)}×</span></span>'
-                for tick, funds in list(overlaps.items())[:20]
+                f'<th style="text-align:right;color:{_MUTED};padding:4px 6px;border-bottom:1px solid #1e293b">{FUND_BY_SYMBOL[s]["name"].split()[0]}<br><span style="font-weight:400;font-size:10px">{allocations.get(s,0):.0f}%</span></th>'
+                for s in selected_syms
             )
-            + f'</div>',
-            unsafe_allow_html=True,
+            + f'</tr></thead><tbody>'
         )
+        for tick, fund_entries in list(overlaps.items())[:15]:
+            fund_pcts = {fe[0]: fe[2] for fe in fund_entries}  # {fund_sym: holding_pct}
+            name = fund_entries[0][1] if fund_entries[0][1] else tick
+            overlap_html += (
+                f'<tr style="border-bottom:1px solid #0f1929">'
+                f'<td style="padding:5px 8px;color:#cbd5e1">{name[:22]}'
+                f'<span style="color:{_MUTED};font-size:9px;margin-left:4px">{tick}</span></td>'
+                f'<td style="text-align:center;padding:5px 8px;color:{overlap_color};font-weight:700">{len(fund_entries)}</td>'
+                + "".join(
+                    '<td style="text-align:right;padding:5px 6px;color:' + (_GOLD if s in fund_pcts else _MUTED) + '">'
+                    + ("%.1f%%" % fund_pcts[s] if s in fund_pcts else "—") + '</td>'
+                    for s in selected_syms
+                )
+                + f'</tr>'
+            )
+        overlap_html += (
+            f'</tbody></table>'
+            + (f'<div style="font-size:10px;color:{_MUTED};margin-top:8px">Showing top {min(15,overlap_count)} of {overlap_count} overlapping holdings</div>' if overlap_count > 15 else "")
+            + f'</div>'
+        )
+        st.markdown(overlap_html, unsafe_allow_html=True)
     else:
-        st.markdown(f'<div style="color:{_GREEN};font-size:12px;padding:8px">✓ No significant holdings overlap detected between selected funds.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:10px 14px;color:#dcfce7;font-size:12px">✅ No significant holdings overlap — good diversification between selected funds.</div>', unsafe_allow_html=True)
 
-    # Assessment / feedback
-    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:12px 0 4px">Portfolio Assessment</div>', unsafe_allow_html=True)
+    # ── Portfolio Assessment ──────────────────────────────────────────────────
+    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Portfolio Assessment</div>', unsafe_allow_html=True)
     msgs = _assess_portfolio(selected_syms, allocations)
     for level, msg in msgs:
-        icon  = "✅" if level == "good" else "⚠️" if level == "warn" else "ℹ️"
-        color = "#dcfce7" if level == "good" else "#fef3c7" if level == "warn" else "#dbeafe"
-        bg    = "rgba(34,197,94,0.08)" if level == "good" else "rgba(251,191,36,0.08)" if level == "warn" else "rgba(59,130,246,0.08)"
-        border= "rgba(34,197,94,0.25)" if level == "good" else "rgba(251,191,36,0.25)" if level == "warn" else "rgba(59,130,246,0.25)"
+        icon   = "✅" if level == "good" else "⚠️" if level == "warn" else "ℹ️"
+        color  = "#dcfce7" if level == "good" else "#fef3c7" if level == "warn" else "#dbeafe"
+        bg     = "rgba(34,197,94,0.08)" if level == "good" else "rgba(251,191,36,0.08)" if level == "warn" else "rgba(59,130,246,0.08)"
+        border = "rgba(34,197,94,0.25)" if level == "good" else "rgba(251,191,36,0.25)" if level == "warn" else "rgba(59,130,246,0.25)"
         st.markdown(
             f'<div style="background:{bg};border:1px solid {border};border-radius:8px;'
             f'padding:10px 14px;margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">'
@@ -704,25 +720,48 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
             unsafe_allow_html=True,
         )
 
-    # Per-fund performance comparison table
-    with st.expander("📊 Per-Fund Performance Detail"):
-        rows = []
-        for sym in selected_syms:
-            f = FUND_BY_SYMBOL[sym]
-            r = all_returns.get(sym, {})
-            rows.append({
-                "Fund": f["name"][:30],
-                "Alloc": f"{allocations[sym]:.0f}%",
-                "Exp %": f"{KNOWN_EXPENSE.get(sym, 0):.2f}%",
-                "3M": f'{r.get("3M"):+.1f}%' if r.get("3M") is not None else "—",
-                "6M": f'{r.get("6M"):+.1f}%' if r.get("6M") is not None else "—",
-                "1Y":  f'{r.get("1Y"):+.1f}%' if r.get("1Y") is not None else "—",
-                "3Y":  f'{r.get("3Y"):+.1f}%' if r.get("3Y") is not None else "—",
-                "5Y":  f'{r.get("5Y"):+.1f}%' if r.get("5Y") is not None else "—",
-                "Proxy": f["proxy"] if f["is_cit"] else "—",
-            })
-        df = pd.DataFrame(rows)
-        st.dataframe(df, use_container_width=True, hide_index=True)
+    # ── Growth of $10,000 (moved to end) ──────────────────────────────────────
+    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:14px 0 4px">Growth of $10,000 (Historical Simulation)</div>', unsafe_allow_html=True)
+    with st.spinner("Building portfolio chart…"):
+        port_df = _portfolio_index(selected_syms, allocations)
+    if not port_df.empty:
+        st.plotly_chart(_growth_chart(port_df), use_container_width=True, config={"displayModeBar": False})
+    else:
+        st.markdown(f'<div style="color:{_MUTED};font-size:12px;padding:8px">Historical chart unavailable — proxy data not found.</div>', unsafe_allow_html=True)
+
+    # Per-fund performance comparison table (always visible, not in expander)
+    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px">Per-Fund Performance Detail</div>', unsafe_allow_html=True)
+    spy_1y = spy_ret.get("1Y")
+    perf_rows = []
+    for sym in selected_syms:
+        fd = FUND_BY_SYMBOL[sym]
+        r  = all_returns.get(sym, {})
+        def _fmt(v):
+            return f"{v:+.1f}%" if v is not None else "—"
+        perf_rows.append({
+            "Fund":  fd["name"][:32],
+            "Alloc": f"{allocations.get(sym, 0):.1f}%",
+            "Exp":   f"{KNOWN_EXPENSE.get(sym, 0):.2f}%",
+            "3M":    _fmt(r.get("3M")),
+            "6M":    _fmt(r.get("6M")),
+            "1Y":    _fmt(r.get("1Y")),
+            "3Y":    _fmt(r.get("3Y")),
+            "5Y":    _fmt(r.get("5Y")),
+            "Proxy": fd["proxy"] if fd["is_cit"] else "direct",
+        })
+    # SPY benchmark row
+    perf_rows.append({
+        "Fund": "▶ SPY Benchmark",
+        "Alloc": "—",
+        "Exp": "0.09%",
+        "3M":  _fmt(spy_ret.get("3M")),
+        "6M":  _fmt(spy_ret.get("6M")),
+        "1Y":  _fmt(spy_ret.get("1Y")),
+        "3Y":  _fmt(spy_ret.get("3Y")),
+        "5Y":  _fmt(spy_ret.get("5Y")),
+        "Proxy": "SPY",
+    })
+    st.dataframe(pd.DataFrame(perf_rows), use_container_width=True, hide_index=True)
 
 
 # ── Main render ───────────────────────────────────────────────────────────────
@@ -828,10 +867,15 @@ Fund closing prices shown are from your ML statement — not live data.""",
                     )
                     if chk and sym not in selected:
                         selected.add(sym)
-                        # Default allocation: equal split
-                        n = len(selected)
-                        for s in selected:
-                            allocs[s] = round(100 / n, 1)
+                        # Equal split that always sums exactly to 100
+                        syms_list = sorted(selected)
+                        n = len(syms_list)
+                        base = round(100 / n, 1)
+                        for i, s in enumerate(syms_list):
+                            allocs[s] = base
+                        # Fix rounding remainder on last item
+                        remainder = round(100 - base * n, 1)
+                        allocs[syms_list[-1]] = round(base + remainder, 1)
                         st.session_state["_401k_sel"]   = selected
                         st.session_state["_401k_alloc"] = allocs
                         st.rerun()
@@ -839,9 +883,13 @@ Fund closing prices shown are from your ML statement — not live data.""",
                         selected.discard(sym)
                         allocs.pop(sym, None)
                         if selected:
-                            n = len(selected)
-                            for s in selected:
-                                allocs[s] = round(100 / n, 1)
+                            syms_list = sorted(selected)
+                            n = len(syms_list)
+                            base = round(100 / n, 1)
+                            for s in syms_list:
+                                allocs[s] = base
+                            remainder = round(100 - base * n, 1)
+                            allocs[syms_list[-1]] = round(base + remainder, 1)
                         st.session_state["_401k_sel"]   = selected
                         st.session_state["_401k_alloc"] = allocs
                         st.rerun()
