@@ -729,39 +729,76 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
     else:
         st.markdown(f'<div style="color:{_MUTED};font-size:12px;padding:8px">Historical chart unavailable — proxy data not found.</div>', unsafe_allow_html=True)
 
-    # Per-fund performance comparison table (always visible, not in expander)
-    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px">Per-Fund Performance Detail</div>', unsafe_allow_html=True)
-    spy_1y = spy_ret.get("1Y")
-    perf_rows = []
+    # ── Per-fund performance table (HTML — avoids dark-theme invisible text) ──
+    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Per-Fund Performance Detail</div>', unsafe_allow_html=True)
+
+    def _fmt(v):
+        return f"{v:+.1f}%" if v is not None else "—"
+
+    def _perf_color(val_str, bench_str):
+        try:
+            v = float(val_str.replace("%","").replace("+",""))
+            b = float(bench_str.replace("%","").replace("+",""))
+            return _GREEN if v >= b else _RED
+        except Exception:
+            return "#cbd5e1"
+
+    cols_order = ["3M", "6M", "1Y", "3Y", "5Y"]
+    spy_vals   = {p: _fmt(spy_ret.get(p)) for p in cols_order}
+
+    thead = (
+        f'<thead><tr style="border-bottom:1px solid #334155">'
+        f'<th style="text-align:left;padding:7px 10px;color:{_MUTED};font-size:10px;font-weight:600;text-transform:uppercase">Fund</th>'
+        f'<th style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:10px;font-weight:600">Alloc</th>'
+        f'<th style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:10px;font-weight:600">Exp %</th>'
+        + "".join(f'<th style="text-align:right;padding:7px 10px;color:{_MUTED};font-size:10px;font-weight:600">{p}</th>' for p in cols_order)
+        + f'<th style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:10px;font-weight:600">Data</th>'
+        f'</tr></thead>'
+    )
+
+    tbody = "<tbody>"
     for sym in selected_syms:
-        fd = FUND_BY_SYMBOL[sym]
-        r  = all_returns.get(sym, {})
-        def _fmt(v):
-            return f"{v:+.1f}%" if v is not None else "—"
-        perf_rows.append({
-            "Fund":  fd["name"][:32],
-            "Alloc": f"{allocations.get(sym, 0):.1f}%",
-            "Exp":   f"{KNOWN_EXPENSE.get(sym, 0):.2f}%",
-            "3M":    _fmt(r.get("3M")),
-            "6M":    _fmt(r.get("6M")),
-            "1Y":    _fmt(r.get("1Y")),
-            "3Y":    _fmt(r.get("3Y")),
-            "5Y":    _fmt(r.get("5Y")),
-            "Proxy": fd["proxy"] if fd["is_cit"] else "direct",
-        })
-    # SPY benchmark row
-    perf_rows.append({
-        "Fund": "▶ SPY Benchmark",
-        "Alloc": "—",
-        "Exp": "0.09%",
-        "3M":  _fmt(spy_ret.get("3M")),
-        "6M":  _fmt(spy_ret.get("6M")),
-        "1Y":  _fmt(spy_ret.get("1Y")),
-        "3Y":  _fmt(spy_ret.get("3Y")),
-        "5Y":  _fmt(spy_ret.get("5Y")),
-        "Proxy": "SPY",
-    })
-    st.dataframe(pd.DataFrame(perf_rows), use_container_width=True, hide_index=True)
+        fd  = FUND_BY_SYMBOL[sym]
+        r   = all_returns.get(sym, {})
+        vals = {p: _fmt(r.get(p)) for p in cols_order}
+        exp_c = _GREEN if KNOWN_EXPENSE.get(sym, 0.5) <= 0.10 else (_GOLD if KNOWN_EXPENSE.get(sym, 0.5) <= 0.40 else _RED)
+        tbody += (
+            f'<tr style="border-bottom:1px solid #1e293b">'
+            f'<td style="padding:7px 10px;color:#cbd5e1;font-size:11px">{fd["name"][:34]}</td>'
+            f'<td style="text-align:center;padding:7px 8px;color:{_GOLD};font-size:11px;font-family:DM Mono,monospace;font-weight:700">{allocations.get(sym,0):.1f}%</td>'
+            f'<td style="text-align:center;padding:7px 8px;color:{exp_c};font-size:11px;font-family:DM Mono,monospace">{KNOWN_EXPENSE.get(sym,0):.2f}%</td>'
+            + "".join(
+                f'<td style="text-align:right;padding:7px 10px;color:{_perf_color(vals[p], spy_vals[p])};font-size:11px;font-family:DM Mono,monospace">{vals[p]}</td>'
+                for p in cols_order
+            )
+            + f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:9px">{"proxy:"+fd["proxy"] if fd["is_cit"] else "direct"}</td>'
+            f'</tr>'
+        )
+
+    # SPY benchmark row (separator then row)
+    tbody += (
+        f'<tr style="border-top:1px solid #334155;background:rgba(100,116,139,0.06)">'
+        f'<td style="padding:7px 10px;color:{_MUTED};font-size:11px;font-style:italic">SPY — S&amp;P 500 Benchmark</td>'
+        f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:11px">—</td>'
+        f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:11px">0.09%</td>'
+        + "".join(
+            f'<td style="text-align:right;padding:7px 10px;color:#94a3b8;font-size:11px;font-family:DM Mono,monospace">{spy_vals[p]}</td>'
+            for p in cols_order
+        )
+        + f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:9px">direct</td>'
+        f'</tr>'
+    )
+    tbody += "</tbody>"
+
+    st.markdown(
+        f'<div style="overflow-x:auto">'
+        f'<table style="width:100%;border-collapse:collapse;background:#0f1929;border:1px solid #1e293b;border-radius:8px;overflow:hidden">'
+        + thead + tbody +
+        f'</table>'
+        f'<div style="font-size:9px;color:{_MUTED};margin-top:4px">Return colors: green = beats SPY for that period, red = lags SPY</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ── Main render ───────────────────────────────────────────────────────────────
