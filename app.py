@@ -867,6 +867,7 @@ NAV_GROUPS = [
             {"key": "📱  Social Trends"},
             {"key": "🔄  Auto Scan & Track"},
             {"key": "👁  WatchList"},
+            {"key": "💰  ML 401K"},
         ],
     },
     {
@@ -1240,6 +1241,9 @@ elif page in ("🔄  Trade Pipeline", "📅  Scheduled Scans", "📌  Tracking",
     render()
 elif page == "👁  WatchList":
     from scanners.watchlist_page import render
+    render()
+elif page == "💰  ML 401K":
+    from scanners.ml401k_page import render
     render()
 elif page == "🔀  Golden Scan":
     from scanners.combined_scanner import render
