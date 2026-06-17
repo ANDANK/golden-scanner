@@ -766,8 +766,17 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
     cols_order = ["3M", "6M", "1Y", "3Y", "5Y"]
     spy_vals   = {p: _fmt(spy_ret.get(p)) for p in cols_order}
 
+    # Rank funds by 1Y return (fallback to 3M), best = #1
+    def _raw(sym, period):
+        v = all_returns.get(sym, {}).get(period)
+        return v if v is not None else -999.0
+    ranked = sorted(selected_syms, key=lambda s: _raw(s, "1Y"), reverse=True)
+    rank_map = {sym: i + 1 for i, sym in enumerate(ranked)}
+    rank_medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+
     thead = (
         f'<thead><tr style="border-bottom:1px solid #334155">'
+        f'<th style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:10px;font-weight:600;width:36px">#</th>'
         f'<th style="text-align:left;padding:7px 10px;color:{_MUTED};font-size:10px;font-weight:600;text-transform:uppercase">Fund</th>'
         f'<th style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:10px;font-weight:600">Alloc</th>'
         f'<th style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:10px;font-weight:600">Exp %</th>'
@@ -777,14 +786,18 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
     )
 
     tbody = "<tbody>"
-    for sym in selected_syms:
-        fd  = FUND_BY_SYMBOL[sym]
-        r   = all_returns.get(sym, {})
+    # Render in rank order (best 1Y first)
+    for sym in ranked:
+        fd   = FUND_BY_SYMBOL[sym]
+        r    = all_returns.get(sym, {})
         vals = {p: _fmt(r.get(p)) for p in cols_order}
         exp_c = _GREEN if KNOWN_EXPENSE.get(sym, 0.5) <= 0.10 else (_GOLD if KNOWN_EXPENSE.get(sym, 0.5) <= 0.40 else _RED)
+        rnk   = rank_map[sym]
+        medal = rank_medals.get(rnk, str(rnk))
         tbody += (
             f'<tr style="border-bottom:1px solid #1e293b">'
-            f'<td style="padding:7px 10px;color:#cbd5e1;font-size:11px">{fd["name"][:34]}</td>'
+            f'<td style="text-align:center;padding:7px 8px;font-size:13px">{medal}</td>'
+            f'<td style="padding:7px 10px;color:#cbd5e1;font-size:11px">{fd["name"][:38]}</td>'
             f'<td style="text-align:center;padding:7px 8px;color:{_GOLD};font-size:11px;font-family:DM Mono,monospace;font-weight:700">{allocations.get(sym,0):.1f}%</td>'
             f'<td style="text-align:center;padding:7px 8px;color:{exp_c};font-size:11px;font-family:DM Mono,monospace">{KNOWN_EXPENSE.get(sym,0):.2f}%</td>'
             + "".join(
@@ -795,9 +808,10 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
             f'</tr>'
         )
 
-    # SPY benchmark row (separator then row)
+    # SPY benchmark row
     tbody += (
         f'<tr style="border-top:1px solid #334155;background:rgba(100,116,139,0.06)">'
+        f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:11px">—</td>'
         f'<td style="padding:7px 10px;color:{_MUTED};font-size:11px;font-style:italic">SPY — S&amp;P 500 Benchmark</td>'
         f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:11px">—</td>'
         f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:11px">0.09%</td>'
@@ -810,12 +824,13 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
     )
     tbody += "</tbody>"
 
+    # Use st.container to break out of column width constraint
     st.markdown(
-        f'<div style="overflow-x:auto">'
+        f'<div style="overflow-x:auto;margin-left:-8px;margin-right:-8px">'
         f'<table style="width:100%;border-collapse:collapse;background:#0f1929;border:1px solid #1e293b;border-radius:8px;overflow:hidden">'
         + thead + tbody +
         f'</table>'
-        f'<div style="font-size:9px;color:{_MUTED};margin-top:4px">Return colors: green = beats SPY for that period, red = lags SPY</div>'
+        f'<div style="font-size:9px;color:{_MUTED};margin-top:4px;padding-left:8px">Ranked by 1Y return · green = beats SPY, red = lags SPY · Exp % color: green ≤0.10%, amber ≤0.40%, red &gt;0.40%</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
