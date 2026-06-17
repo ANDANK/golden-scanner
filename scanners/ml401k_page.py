@@ -749,88 +749,112 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
     else:
         st.markdown(f'<div style="color:{_MUTED};font-size:12px;padding:8px">Historical chart unavailable — proxy data not found.</div>', unsafe_allow_html=True)
 
-    # ── Per-fund performance table (HTML — avoids dark-theme invisible text) ──
-    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Per-Fund Performance Detail</div>', unsafe_allow_html=True)
+
+# ── Full-width per-fund performance table (rendered outside the column grid) ──
+
+def _render_perf_table(selected_syms: list, allocations: dict):
+    """Per-fund performance table with independent 1Y / 3Y / 5Y rank badges.
+    Sorted by 1Y rank. Rendered full-width (called outside the column layout)."""
+    spy_ret = _calc_returns(_fetch_hist("SPY"))
+    all_returns = {s: _calc_returns(_fetch_hist(FUND_BY_SYMBOL[s]["proxy"])) for s in selected_syms}
 
     def _fmt(v):
         return f"{v:+.1f}%" if v is not None else "—"
 
-    def _perf_color(val_str, bench_str):
-        try:
-            v = float(val_str.replace("%","").replace("+",""))
-            b = float(bench_str.replace("%","").replace("+",""))
-            return _GREEN if v >= b else _RED
-        except Exception:
+    def _perf_color(v, bench):
+        if v is None or bench is None:
             return "#cbd5e1"
+        return _GREEN if v >= bench else _RED
 
-    cols_order = ["3M", "6M", "1Y", "3Y", "5Y"]
-    spy_vals   = {p: _fmt(spy_ret.get(p)) for p in cols_order}
+    cols_order   = ["3M", "6M", "1Y", "3Y", "5Y"]
+    rank_periods = ["1Y", "3Y", "5Y"]
 
-    # Rank funds by 1Y return (fallback to 3M), best = #1
-    def _raw(sym, period):
-        v = all_returns.get(sym, {}).get(period)
+    # Independent ranking per period (best return = rank 1)
+    ranks: dict = {}
+    for p in rank_periods:
+        valid = [(s, all_returns.get(s, {}).get(p)) for s in selected_syms]
+        valid = [(s, v) for s, v in valid if v is not None]
+        ordered = sorted(valid, key=lambda x: x[1], reverse=True)
+        ranks[p] = {s: i + 1 for i, (s, _v) in enumerate(ordered)}
+
+    # Sort rows by 1Y rank (funds with no 1Y data sink to the bottom)
+    def _r1y(s):
+        v = all_returns.get(s, {}).get("1Y")
         return v if v is not None else -999.0
-    ranked = sorted(selected_syms, key=lambda s: _raw(s, "1Y"), reverse=True)
-    rank_map = {sym: i + 1 for i, sym in enumerate(ranked)}
-    rank_medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+    ranked = sorted(selected_syms, key=_r1y, reverse=True)
 
-    thead = (
-        f'<thead><tr style="border-bottom:1px solid #334155">'
-        f'<th style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:10px;font-weight:600;width:36px">#</th>'
-        f'<th style="text-align:left;padding:7px 10px;color:{_MUTED};font-size:10px;font-weight:600;text-transform:uppercase">Fund</th>'
-        f'<th style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:10px;font-weight:600">Alloc</th>'
-        f'<th style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:10px;font-weight:600">Exp %</th>'
-        + "".join(f'<th style="text-align:right;padding:7px 10px;color:{_MUTED};font-size:10px;font-weight:600">{p}</th>' for p in cols_order)
-        + f'<th style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:10px;font-weight:600">Data</th>'
-        f'</tr></thead>'
+    medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+    def _badge(rank):
+        if rank is None:
+            return ""
+        if rank in medals:
+            return f'<span style="margin-left:5px;font-size:12px">{medals[rank]}</span>'
+        return (f'<span style="margin-left:5px;background:#1e293b;color:{_MUTED};'
+                f'font-size:9px;padding:1px 5px;border-radius:8px;vertical-align:middle">#{rank}</span>')
+
+    # ── Header ──
+    head_cells = (
+        f'<th style="text-align:left;padding:8px 12px;color:{_MUTED};font-size:10px;font-weight:600;text-transform:uppercase">Fund</th>'
+        f'<th style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:10px;font-weight:600">Alloc</th>'
+        f'<th style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:10px;font-weight:600">Exp %</th>'
     )
+    for p in cols_order:
+        tag = ' <span style="color:#475569;font-weight:400">(ranked)</span>' if p in rank_periods else ""
+        head_cells += f'<th style="text-align:right;padding:8px 14px;color:{_MUTED};font-size:10px;font-weight:600">{p}{tag}</th>'
+    head_cells += f'<th style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:10px;font-weight:600">Data</th>'
+    thead = f'<thead><tr style="border-bottom:2px solid #334155">{head_cells}</tr></thead>'
 
+    # ── Body ──
     tbody = "<tbody>"
-    # Render in rank order (best 1Y first)
     for sym in ranked:
-        fd   = FUND_BY_SYMBOL[sym]
-        r    = all_returns.get(sym, {})
-        vals = {p: _fmt(r.get(p)) for p in cols_order}
-        exp_c = _GREEN if KNOWN_EXPENSE.get(sym, 0.5) <= 0.10 else (_GOLD if KNOWN_EXPENSE.get(sym, 0.5) <= 0.40 else _RED)
-        rnk   = rank_map[sym]
-        medal = rank_medals.get(rnk, str(rnk))
+        fd  = FUND_BY_SYMBOL[sym]
+        r   = all_returns.get(sym, {})
+        exp = KNOWN_EXPENSE.get(sym, 0.5)
+        exp_c = _GREEN if exp <= 0.10 else (_GOLD if exp <= 0.40 else _RED)
+        period_cells = ""
+        for p in cols_order:
+            v = r.get(p)
+            color = _perf_color(v, spy_ret.get(p))
+            badge = _badge(ranks.get(p, {}).get(sym)) if p in rank_periods else ""
+            period_cells += (
+                f'<td style="text-align:right;padding:8px 14px;color:{color};'
+                f'font-size:12px;font-family:DM Mono,monospace">{_fmt(v)}{badge}</td>'
+            )
         tbody += (
             f'<tr style="border-bottom:1px solid #1e293b">'
-            f'<td style="text-align:center;padding:7px 8px;font-size:13px">{medal}</td>'
-            f'<td style="padding:7px 10px;color:#cbd5e1;font-size:11px">{fd["name"][:38]}</td>'
-            f'<td style="text-align:center;padding:7px 8px;color:{_GOLD};font-size:11px;font-family:DM Mono,monospace;font-weight:700">{allocations.get(sym,0):.1f}%</td>'
-            f'<td style="text-align:center;padding:7px 8px;color:{exp_c};font-size:11px;font-family:DM Mono,monospace">{KNOWN_EXPENSE.get(sym,0):.2f}%</td>'
-            + "".join(
-                f'<td style="text-align:right;padding:7px 10px;color:{_perf_color(vals[p], spy_vals[p])};font-size:11px;font-family:DM Mono,monospace">{vals[p]}</td>'
-                for p in cols_order
-            )
-            + f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:9px">{"proxy:"+fd["proxy"] if fd["is_cit"] else "direct"}</td>'
+            f'<td style="padding:8px 12px;color:#e5e7eb;font-size:12px">{fd["name"]}</td>'
+            f'<td style="text-align:center;padding:8px 10px;color:{_GOLD};font-size:12px;font-family:DM Mono,monospace;font-weight:700">{allocations.get(sym,0):.1f}%</td>'
+            f'<td style="text-align:center;padding:8px 10px;color:{exp_c};font-size:12px;font-family:DM Mono,monospace">{exp:.2f}%</td>'
+            + period_cells
+            + f'<td style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:9px">{"proxy:"+fd["proxy"] if fd["is_cit"] else "direct"}</td>'
             f'</tr>'
         )
 
     # SPY benchmark row
+    spy_cells = ""
+    for p in cols_order:
+        spy_cells += (f'<td style="text-align:right;padding:8px 14px;color:#94a3b8;'
+                      f'font-size:12px;font-family:DM Mono,monospace">{_fmt(spy_ret.get(p))}</td>')
     tbody += (
-        f'<tr style="border-top:1px solid #334155;background:rgba(100,116,139,0.06)">'
-        f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:11px">—</td>'
-        f'<td style="padding:7px 10px;color:{_MUTED};font-size:11px;font-style:italic">SPY — S&amp;P 500 Benchmark</td>'
-        f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:11px">—</td>'
-        f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:11px">0.09%</td>'
-        + "".join(
-            f'<td style="text-align:right;padding:7px 10px;color:#94a3b8;font-size:11px;font-family:DM Mono,monospace">{spy_vals[p]}</td>'
-            for p in cols_order
-        )
-        + f'<td style="text-align:center;padding:7px 8px;color:{_MUTED};font-size:9px">direct</td>'
-        f'</tr>'
+        f'<tr style="border-top:2px solid #334155;background:rgba(100,116,139,0.06)">'
+        f'<td style="padding:8px 12px;color:{_MUTED};font-size:12px;font-style:italic">SPY — S&amp;P 500 Benchmark</td>'
+        f'<td style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:12px">—</td>'
+        f'<td style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:12px">0.09%</td>'
+        + spy_cells
+        + f'<td style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:9px">direct</td>'
+        f'</tr></tbody>'
     )
-    tbody += "</tbody>"
 
-    # Use st.container to break out of column width constraint
+    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:18px 0 6px">Per-Fund Performance Detail</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div style="overflow-x:auto;margin-left:-8px;margin-right:-8px">'
+        f'<div style="overflow-x:auto">'
         f'<table style="width:100%;border-collapse:collapse;background:#0f1929;border:1px solid #1e293b;border-radius:8px;overflow:hidden">'
         + thead + tbody +
         f'</table>'
-        f'<div style="font-size:9px;color:{_MUTED};margin-top:4px;padding-left:8px">Ranked by 1Y return · green = beats SPY, red = lags SPY · Exp % color: green ≤0.10%, amber ≤0.40%, red &gt;0.40%</div>'
+        f'<div style="font-size:10px;color:{_MUTED};margin-top:6px">'
+        f'🥇🥈🥉 / #N = rank within selected funds for that period · Rows sorted by 1Y rank · '
+        f'Return color: <span style="color:{_GREEN}">green</span> beats SPY, <span style="color:{_RED}">red</span> lags SPY · '
+        f'Exp %: <span style="color:{_GREEN}">≤0.10</span> / <span style="color:{_GOLD}">≤0.40</span> / <span style="color:{_RED}">&gt;0.40</span></div>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -1029,6 +1053,12 @@ Fund closing prices shown are from your ML statement — not live data.""",
             if abs(total - 100) > 0.5:
                 st.warning(f"⚠️ Allocations must sum to 100%. Current total: {total:.1f}%. Adjust in the left panel.")
             _render_multi_fund(list(selected), allocs)
+
+    # ── Full-width performance table (rendered OUTSIDE the column grid) ─────────
+    if len(selected) >= 2:
+        total = sum(allocs.get(s, 0) for s in selected)
+        if abs(total - 100) <= 0.5:
+            _render_perf_table(list(selected), allocs)
 
     # Disclaimer
     st.markdown(
