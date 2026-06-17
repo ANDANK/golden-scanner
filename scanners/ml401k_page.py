@@ -675,54 +675,6 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
                 unsafe_allow_html=True,
             )
 
-    # ── Holdings overlap (enhanced) ───────────────────────────────────────────
-    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:12px 0 4px">Holdings Overlap</div>', unsafe_allow_html=True)
-    with st.spinner("Checking holdings overlap…"):
-        overlaps = _holdings_overlap_analysis(selected_syms)
-
-    if overlaps:
-        overlap_count = len(overlaps)
-        overlap_color = _RED if overlap_count > 5 else (_GOLD if overlap_count > 2 else _GREEN)
-        # Build detailed table: ticker | appears in | % per fund
-        overlap_html = (
-            f'<div style="background:#0f1929;border:1px solid #1e293b;border-radius:8px;padding:14px">'
-            f'<div style="font-size:12px;color:{_MUTED};margin-bottom:10px">'
-            f'<span style="color:{overlap_color};font-weight:700">{overlap_count} shared holding{"s" if overlap_count != 1 else ""}</span>'
-            f' appear in 2 or more of your selected funds — these positions are double-counted in your portfolio.</div>'
-            f'<table style="width:100%;border-collapse:collapse;font-size:11px">'
-            f'<thead><tr>'
-            f'<th style="text-align:left;color:{_MUTED};padding:4px 8px;border-bottom:1px solid #1e293b">Holding</th>'
-            f'<th style="text-align:center;color:{_MUTED};padding:4px 8px;border-bottom:1px solid #1e293b">In # Funds</th>'
-            + "".join(
-                f'<th style="text-align:right;color:{_MUTED};padding:4px 6px;border-bottom:1px solid #1e293b">{FUND_BY_SYMBOL[s]["name"].split()[0]}<br><span style="font-weight:400;font-size:10px">{allocations.get(s,0):.0f}%</span></th>'
-                for s in selected_syms
-            )
-            + f'</tr></thead><tbody>'
-        )
-        for tick, fund_entries in list(overlaps.items())[:15]:
-            fund_pcts = {fe[0]: fe[2] for fe in fund_entries}  # {fund_sym: holding_pct}
-            name = fund_entries[0][1] if fund_entries[0][1] else tick
-            overlap_html += (
-                f'<tr style="border-bottom:1px solid #0f1929">'
-                f'<td style="padding:5px 8px;color:#cbd5e1">{name[:22]}'
-                f'<span style="color:{_MUTED};font-size:9px;margin-left:4px">{tick}</span></td>'
-                f'<td style="text-align:center;padding:5px 8px;color:{overlap_color};font-weight:700">{len(fund_entries)}</td>'
-                + "".join(
-                    '<td style="text-align:right;padding:5px 6px;color:' + (_GOLD if s in fund_pcts else _MUTED) + '">'
-                    + ("%.1f%%" % fund_pcts[s] if s in fund_pcts else "—") + '</td>'
-                    for s in selected_syms
-                )
-                + f'</tr>'
-            )
-        overlap_html += (
-            f'</tbody></table>'
-            + (f'<div style="font-size:10px;color:{_MUTED};margin-top:8px">Showing top {min(15,overlap_count)} of {overlap_count} overlapping holdings</div>' if overlap_count > 15 else "")
-            + f'</div>'
-        )
-        st.markdown(overlap_html, unsafe_allow_html=True)
-    else:
-        st.markdown(f'<div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:10px 14px;color:#dcfce7;font-size:12px">✅ No significant holdings overlap — good diversification between selected funds.</div>', unsafe_allow_html=True)
-
     # ── Portfolio Assessment ──────────────────────────────────────────────────
     st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Portfolio Assessment</div>', unsafe_allow_html=True)
     msgs = _assess_portfolio(selected_syms, allocations)
@@ -753,8 +705,9 @@ def _render_multi_fund(selected_syms: list, allocations: dict):
 # ── Full-width per-fund performance table (rendered outside the column grid) ──
 
 def _render_perf_table(selected_syms: list, allocations: dict):
-    """Per-fund performance table with independent 1Y / 3Y / 5Y rank badges.
-    Sorted by 1Y rank. Rendered full-width (called outside the column layout)."""
+    """Per-fund performance table with an Overall rank (composite of 1Y/3Y/5Y)
+    plus independent per-period rank badges. Sorted by Overall rank.
+    Rendered full-width (called outside the column layout)."""
     spy_ret = _calc_returns(_fetch_hist("SPY"))
     all_returns = {s: _calc_returns(_fetch_hist(FUND_BY_SYMBOL[s]["proxy"])) for s in selected_syms}
 
@@ -777,11 +730,19 @@ def _render_perf_table(selected_syms: list, allocations: dict):
         ordered = sorted(valid, key=lambda x: x[1], reverse=True)
         ranks[p] = {s: i + 1 for i, (s, _v) in enumerate(ordered)}
 
-    # Sort rows by 1Y rank (funds with no 1Y data sink to the bottom)
     def _r1y(s):
         v = all_returns.get(s, {}).get("1Y")
         return v if v is not None else -999.0
-    ranked = sorted(selected_syms, key=_r1y, reverse=True)
+
+    # Composite "Overall" score = average of the 1Y / 3Y / 5Y rank positions.
+    # Lower average rank = better. Equal weight so big 5Y numbers don't dominate.
+    def _composite(s):
+        rs = [ranks[p].get(s) for p in rank_periods if ranks[p].get(s) is not None]
+        return sum(rs) / len(rs) if rs else 999.0
+
+    # Sort by composite (best first); tie-break by 1Y return descending
+    overall_sorted = sorted(selected_syms, key=lambda s: (_composite(s), -_r1y(s)))
+    overall_rank = {s: i + 1 for i, s in enumerate(overall_sorted)}
 
     medals = {1: "🥇", 2: "🥈", 3: "🥉"}
     def _badge(rank):
@@ -792,8 +753,17 @@ def _render_perf_table(selected_syms: list, allocations: dict):
         return (f'<span style="margin-left:5px;background:#1e293b;color:{_MUTED};'
                 f'font-size:9px;padding:1px 5px;border-radius:8px;vertical-align:middle">#{rank}</span>')
 
+    def _overall_cell(rank):
+        """Big medal/number for the leading Overall column."""
+        if rank in medals:
+            return f'<span style="font-size:18px">{medals[rank]}</span>'
+        return (f'<span style="display:inline-block;background:#1e293b;color:#cbd5e1;'
+                f'font-size:12px;font-weight:700;width:24px;height:24px;line-height:24px;'
+                f'border-radius:50%;font-family:DM Mono,monospace">{rank}</span>')
+
     # ── Header ──
     head_cells = (
+        f'<th style="text-align:center;padding:8px 8px;color:{_GOLD};font-size:10px;font-weight:700;width:64px">Overall</th>'
         f'<th style="text-align:left;padding:8px 12px;color:{_MUTED};font-size:10px;font-weight:600;text-transform:uppercase">Fund</th>'
         f'<th style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:10px;font-weight:600">Alloc</th>'
         f'<th style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:10px;font-weight:600">Exp %</th>'
@@ -806,7 +776,7 @@ def _render_perf_table(selected_syms: list, allocations: dict):
 
     # ── Body ──
     tbody = "<tbody>"
-    for sym in ranked:
+    for sym in overall_sorted:
         fd  = FUND_BY_SYMBOL[sym]
         r   = all_returns.get(sym, {})
         exp = KNOWN_EXPENSE.get(sym, 0.5)
@@ -822,6 +792,7 @@ def _render_perf_table(selected_syms: list, allocations: dict):
             )
         tbody += (
             f'<tr style="border-bottom:1px solid #1e293b">'
+            f'<td style="text-align:center;padding:8px 8px">{_overall_cell(overall_rank[sym])}</td>'
             f'<td style="padding:8px 12px;color:#e5e7eb;font-size:12px">{fd["name"]}</td>'
             f'<td style="text-align:center;padding:8px 10px;color:{_GOLD};font-size:12px;font-family:DM Mono,monospace;font-weight:700">{allocations.get(sym,0):.1f}%</td>'
             f'<td style="text-align:center;padding:8px 10px;color:{exp_c};font-size:12px;font-family:DM Mono,monospace">{exp:.2f}%</td>'
@@ -837,6 +808,7 @@ def _render_perf_table(selected_syms: list, allocations: dict):
                       f'font-size:12px;font-family:DM Mono,monospace">{_fmt(spy_ret.get(p))}</td>')
     tbody += (
         f'<tr style="border-top:2px solid #334155;background:rgba(100,116,139,0.06)">'
+        f'<td style="text-align:center;padding:8px 8px;color:{_MUTED};font-size:12px">—</td>'
         f'<td style="padding:8px 12px;color:{_MUTED};font-size:12px;font-style:italic">SPY — S&amp;P 500 Benchmark</td>'
         f'<td style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:12px">—</td>'
         f'<td style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:12px">0.09%</td>'
@@ -852,10 +824,81 @@ def _render_perf_table(selected_syms: list, allocations: dict):
         + thead + tbody +
         f'</table>'
         f'<div style="font-size:10px;color:{_MUTED};margin-top:6px">'
-        f'🥇🥈🥉 / #N = rank within selected funds for that period · Rows sorted by 1Y rank · '
+        f'<b style="color:{_GOLD}">Overall</b> = best average rank across 1Y, 3Y &amp; 5Y (equal weight) · '
+        f'🥇🥈🥉 / #N = rank within selected funds for that period · '
         f'Return color: <span style="color:{_GREEN}">green</span> beats SPY, <span style="color:{_RED}">red</span> lags SPY · '
         f'Exp %: <span style="color:{_GREEN}">≤0.10</span> / <span style="color:{_GOLD}">≤0.40</span> / <span style="color:{_RED}">&gt;0.40</span></div>'
         f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
+# ── Full-width holdings overlap table (rendered outside the column grid) ──
+
+def _render_overlap_table(selected_syms: list, allocations: dict):
+    """Holdings overlap across selected funds — which stocks appear in 2+ funds
+    and at what weight in each. Rendered full-width below the performance table."""
+    st.markdown('<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:18px 0 6px">Holdings Overlap</div>', unsafe_allow_html=True)
+    with st.spinner("Checking holdings overlap…"):
+        overlaps = _holdings_overlap_analysis(selected_syms)
+
+    if not overlaps:
+        st.markdown(
+            f'<div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);'
+            f'border-radius:8px;padding:12px 16px;color:#dcfce7;font-size:12px">'
+            f'✅ No significant holdings overlap — good diversification between selected funds.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    overlap_count = len(overlaps)
+    overlap_color = _RED if overlap_count > 5 else (_GOLD if overlap_count > 2 else _GREEN)
+
+    # Header: Holding | In # Funds | one column per selected fund
+    head_cells = (
+        f'<th style="text-align:left;padding:8px 12px;color:{_MUTED};font-size:10px;font-weight:600;text-transform:uppercase">Holding</th>'
+        f'<th style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:10px;font-weight:600">In&nbsp;#&nbsp;Funds</th>'
+    )
+    for s in selected_syms:
+        head_cells += (
+            f'<th style="text-align:right;padding:8px 12px;color:{_MUTED};font-size:10px;font-weight:600">'
+            f'{FUND_BY_SYMBOL[s]["name"].split()[0]}'
+            f'<br><span style="font-weight:400;font-size:9px;color:{_GOLD}">{allocations.get(s,0):.0f}%</span></th>'
+        )
+    thead = f'<thead><tr style="border-bottom:2px solid #334155">{head_cells}</tr></thead>'
+
+    tbody = "<tbody>"
+    for tick, fund_entries in list(overlaps.items())[:25]:
+        fund_pcts = {fe[0]: fe[2] for fe in fund_entries}  # {fund_sym: holding_pct}
+        name = fund_entries[0][1] if fund_entries[0][1] else tick
+        n_funds = len(fund_entries)
+        row_color = _RED if n_funds >= 3 else _GOLD
+        tbody += (
+            f'<tr style="border-bottom:1px solid #1e293b">'
+            f'<td style="padding:7px 12px;color:#e5e7eb;font-size:12px">{name[:34]}'
+            f'<span style="color:{_MUTED};font-size:9px;margin-left:6px">{tick}</span></td>'
+            f'<td style="text-align:center;padding:7px 10px;color:{row_color};font-weight:700;font-size:12px">{n_funds}×</td>'
+            + "".join(
+                '<td style="text-align:right;padding:7px 12px;font-size:12px;font-family:DM Mono,monospace;color:'
+                + (_GOLD if s in fund_pcts else "#334155") + '">'
+                + ("%.1f%%" % fund_pcts[s] if s in fund_pcts else "·") + '</td>'
+                for s in selected_syms
+            )
+            + f'</tr>'
+        )
+    tbody += "</tbody>"
+
+    more_note = (f'<div style="font-size:10px;color:{_MUTED};margin-top:6px">Showing top 25 of {overlap_count} overlapping holdings</div>'
+                 if overlap_count > 25 else "")
+
+    st.markdown(
+        f'<div style="font-size:12px;color:{_MUTED};margin-bottom:8px">'
+        f'<span style="color:{overlap_color};font-weight:700">{overlap_count} shared holding{"s" if overlap_count != 1 else ""}</span>'
+        f' appear in 2 or more of your selected funds — these positions are effectively double-counted in your portfolio.</div>'
+        f'<div style="overflow-x:auto">'
+        f'<table style="width:100%;border-collapse:collapse;background:#0f1929;border:1px solid #1e293b;border-radius:8px;overflow:hidden">'
+        + thead + tbody +
+        f'</table>{more_note}</div>',
         unsafe_allow_html=True,
     )
 
@@ -1054,11 +1097,12 @@ Fund closing prices shown are from your ML statement — not live data.""",
                 st.warning(f"⚠️ Allocations must sum to 100%. Current total: {total:.1f}%. Adjust in the left panel.")
             _render_multi_fund(list(selected), allocs)
 
-    # ── Full-width performance table (rendered OUTSIDE the column grid) ─────────
+    # ── Full-width tables (rendered OUTSIDE the column grid) ───────────────────
     if len(selected) >= 2:
         total = sum(allocs.get(s, 0) for s in selected)
         if abs(total - 100) <= 0.5:
             _render_perf_table(list(selected), allocs)
+            _render_overlap_table(list(selected), allocs)
 
     # Disclaimer
     st.markdown(
