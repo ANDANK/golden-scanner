@@ -995,6 +995,10 @@ Fund closing prices shown are from your ML statement — not live data.""",
             if st.button("Clear All", use_container_width=True, key="_401k_clearall"):
                 st.session_state["_401k_sel"]   = set()
                 st.session_state["_401k_alloc"] = {}
+                # Reset every checkbox + allocation widget key so boxes uncheck
+                for _f in FUND_CATALOG:
+                    st.session_state.pop(f"_401k_chk_{_f['symbol']}", None)
+                    st.session_state.pop(f"_401k_alloc_{_f['symbol']}", None)
                 st.rerun()
         with b2:
             sel_count = len(selected)
@@ -1015,6 +1019,32 @@ Fund closing prices shown are from your ML statement — not live data.""",
                 st.rerun()
 
             if is_open:
+                # Per-category Select-all / Deselect-all toggle
+                cat_syms = [fnd["symbol"] for fnd in funds]
+                n_cat    = len(cat_syms)
+                all_sel  = all(s in selected for s in cat_syms)
+                n_sel    = sum(1 for s in cat_syms if s in selected)
+                tog_label = (f"✗ Deselect all ({n_cat})" if all_sel
+                             else f"✓ Select all ({n_sel}/{n_cat})")
+                if st.button(tog_label, key=f"_401k_toggle_{group_label}", use_container_width=True):
+                    if all_sel:
+                        for s in cat_syms:
+                            selected.discard(s)
+                            allocs.pop(s, None)
+                            st.session_state.pop(f"_401k_alloc_{s}", None)
+                            st.session_state.pop(f"_401k_chk_{s}", None)
+                    else:
+                        for s in cat_syms:
+                            selected.add(s)
+                            st.session_state.pop(f"_401k_chk_{s}", None)
+                    if selected:
+                        _equal_split(selected, allocs)
+                    else:
+                        allocs.clear()
+                    st.session_state["_401k_sel"]   = selected
+                    st.session_state["_401k_alloc"] = allocs
+                    st.rerun()
+
                 for f in funds:
                     sym = f["symbol"]
                     is_sel = sym in selected
