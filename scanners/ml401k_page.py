@@ -744,21 +744,24 @@ def _render_perf_table(selected_syms: list, allocations: dict):
     overall_sorted = sorted(selected_syms, key=lambda s: (_composite(s), -_r1y(s)))
     overall_rank = {s: i + 1 for i, s in enumerate(overall_sorted)}
 
-    medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+    # Color-coded ranks: 1 green (best), 2 gold, 3 red, 4+ muted gray.
+    def _rank_color(rank):
+        return {1: _GREEN, 2: _GOLD, 3: _RED}.get(rank, _MUTED)
+
     def _badge(rank):
+        """Small inline rank pill next to a per-period return value."""
         if rank is None:
             return ""
-        if rank in medals:
-            return f'<span style="margin-left:5px;font-size:12px">{medals[rank]}</span>'
-        return (f'<span style="margin-left:5px;background:#1e293b;color:{_MUTED};'
-                f'font-size:9px;padding:1px 5px;border-radius:8px;vertical-align:middle">#{rank}</span>')
+        c = _rank_color(rank)
+        return (f'<span style="margin-left:5px;background:{c}22;color:{c};border:1px solid {c}66;'
+                f'font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;'
+                f'vertical-align:middle">#{rank}</span>')
 
     def _overall_cell(rank):
-        """Big medal/number for the leading Overall column."""
-        if rank in medals:
-            return f'<span style="font-size:18px">{medals[rank]}</span>'
-        return (f'<span style="display:inline-block;background:#1e293b;color:#cbd5e1;'
-                f'font-size:12px;font-weight:700;width:24px;height:24px;line-height:24px;'
+        """Filled colored circle with the rank number for the leading Overall column."""
+        c = _rank_color(rank)
+        return (f'<span style="display:inline-block;background:{c};color:#0c1222;'
+                f'font-size:13px;font-weight:800;width:26px;height:26px;line-height:26px;'
                 f'border-radius:50%;font-family:DM Mono,monospace">{rank}</span>')
 
     # ── Header ──
@@ -825,7 +828,7 @@ def _render_perf_table(selected_syms: list, allocations: dict):
         f'</table>'
         f'<div style="font-size:10px;color:{_MUTED};margin-top:6px">'
         f'<b style="color:{_GOLD}">Overall</b> = best average rank across 1Y, 3Y &amp; 5Y (equal weight) · '
-        f'🥇🥈🥉 / #N = rank within selected funds for that period · '
+        f'Rank: <span style="color:{_GREEN}">#1</span> / <span style="color:{_GOLD}">#2</span> / <span style="color:{_RED}">#3</span> / <span style="color:{_MUTED}">#4+</span> within selected funds · '
         f'Return color: <span style="color:{_GREEN}">green</span> beats SPY, <span style="color:{_RED}">red</span> lags SPY · '
         f'Exp %: <span style="color:{_GREEN}">≤0.10</span> / <span style="color:{_GOLD}">≤0.40</span> / <span style="color:{_RED}">&gt;0.40</span></div>'
         f'</div>',
