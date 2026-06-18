@@ -863,9 +863,11 @@ def _render_overlap_table(selected_syms: list, allocations: dict):
         f'<th style="text-align:center;padding:8px 10px;color:{_MUTED};font-size:10px;font-weight:600">In&nbsp;#&nbsp;Funds</th>'
     )
     for s in selected_syms:
+        fd_h = FUND_BY_SYMBOL[s]
         head_cells += (
-            f'<th style="text-align:right;padding:8px 12px;color:{_MUTED};font-size:10px;font-weight:600">'
-            f'{FUND_BY_SYMBOL[s]["name"].split()[0]}'
+            f'<th title="{fd_h["name"]}" style="text-align:right;padding:8px 12px;color:#cbd5e1;font-size:11px;font-weight:700">'
+            f'{s}'
+            f'<br><span style="font-weight:500;font-size:9px;color:{_MUTED}">{fd_h["sub"]}</span>'
             f'<br><span style="font-weight:400;font-size:9px;color:{_GOLD}">{allocations.get(s,0):.0f}%</span></th>'
         )
     thead = f'<thead><tr style="border-bottom:2px solid #334155">{head_cells}</tr></thead>'
