@@ -796,7 +796,10 @@ def _render_perf_table(selected_syms: list, allocations: dict):
         tbody += (
             f'<tr style="border-bottom:1px solid #1e293b">'
             f'<td style="text-align:center;padding:8px 8px">{_overall_cell(overall_rank[sym])}</td>'
-            f'<td style="padding:8px 12px;color:#e5e7eb;font-size:12px">{fd["name"]}</td>'
+            f'<td style="padding:8px 12px;color:#e5e7eb;font-size:12px">{fd["name"]}'
+            f'<span style="margin-left:8px;background:#1e3a5f;color:#93c5fd;border:1px solid #2563eb44;'
+            f'font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;'
+            f'font-family:DM Mono,monospace;vertical-align:middle">{sym}</span></td>'
             f'<td style="text-align:center;padding:8px 10px;color:{_GOLD};font-size:12px;font-family:DM Mono,monospace;font-weight:700">{allocations.get(sym,0):.1f}%</td>'
             f'<td style="text-align:center;padding:8px 10px;color:{exp_c};font-size:12px;font-family:DM Mono,monospace">{exp:.2f}%</td>'
             + period_cells
