@@ -2825,11 +2825,295 @@ def _render_mtpa_reference():
     st.markdown(ftf_html, unsafe_allow_html=True)
 
 
+# ── Render: Summary — Scanner × Technicals Matrix ─────────────
+# Grouped matrices: technicals as rows, scanners as columns.
+# Cell legend: value/threshold = hard gate · "+sc" = scored only ·
+#              "chart" = drawn not filtered · "—" = not used.
+
+def _summary_header(title: str, subtitle: str = ""):
+    sub = (f'<div style="color:{TEXT_MUTED};font-size:12px;margin-top:2px">{subtitle}</div>'
+           if subtitle else "")
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:14px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1.2px;margin:18px 0 8px;padding-bottom:6px;'
+        f'border-bottom:1px solid {GOLD}33">{title}</div>{sub}',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_summary_matrix():
+    st.markdown(
+        f'<div style="border-left:4px solid {GOLD};padding:10px 16px;'
+        f'background:linear-gradient(90deg,{GOLD}18,{BG_PANEL});border-radius:0 8px 8px 0;'
+        f'margin-bottom:10px"><span style="color:{TEXT_PRIMARY};font-size:13px;line-height:1.6">'
+        f'Every scanner in the platform mapped against the technical indicators it uses. '
+        f'There are <b>23 distinct scanners</b>, grouped into 4 families for readability.'
+        f'</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        "**Legend** &nbsp; a value/threshold = **hard gate** (must pass) · "
+        "`+sc` = feeds the score only · `chart` = drawn but not filtered · `—` = not used."
+    )
+
+    # ── Group 1 ──────────────────────────────────────────────────
+    _summary_header("Group 1 — Daily Stock, Trend & Breakout Scanners")
+    st.markdown("""
+| Technical | ⚡ Momentum | 🚀 Growth | 💎 Value | 📡 MACD Cross | 🏛 Trend Stack | 🌀 Squeeze | 🐋 HVB | 🎯 Multi-Factor |
+|---|---|---|---|---|---|---|---|---|
+| **Price range** | $10–3000 | $10–3000 | $5–3000 | $10–3000 | ≥$15 | $10–3000 | $10–3000 | $10–3000 |
+| **SMA20** | over-ext guard (>15%→skip) | over-ext guard | — | — | — | — | — | — |
+| **SMA50** | price > 50 (gate) | price > 50 (gate) | — | price > 50 (gate) | in stack | price > 50 (gate) | price > 50 (gate) | price>50>200 (gate) |
+| **SMA200** | +sc (50>200) | — | price>200 +sc | — | stack + slope-up (gate) | — | — | gate (50>200) |
+| **EMA20** | — | — | — | — | price>EMA20>50>200 (gate) | — | — | — |
+| **RSI** | 55–68 (gate) | <75 guard | — | <70 (gate) | 55–68 (gate) | rising +sc | ≥60 (gate) | 55–68 (gate) |
+| **MACD** | hist>0 **and** rising (gate) | +sc | — | fresh bull cross (gate) | chart | turning up (opt gate) | — | hist>0 (gate) |
+| **Volume ratio** | ≥1.25× (gate) | +sc (≥1.5) | — | ≥1.25× (gate) | ≥1.25× (gate) | trending up (opt gate) | ≥2× (gate) | ≥1.25× (gate) |
+| **ATR / expansion** | +sc | shown | — | shown | +sc | shown | shown | expanding (gate) |
+| **Bollinger Bands** | — | — | — | — | chart | width@20d-low + break upper (gate) | — | chart |
+| **Keltner / TTM Squeeze** | — | — | — | — | — | BB inside KC (gate) | — | — |
+| **OBV** | — | — | — | — | — | — | +sc | — |
+| **RS vs SPY** | +sc | ≥1.02 (gate) | — | — | ≥1.05 (gate) | — | — | ≥1.05 (gate) |
+| **20D high / breakout** | +sc | — | — | — | within 3% (gate) | — | breaks 20/50D high (gate) | within 2% + res-break (gate) |
+| **Gap up** | — | — | — | +sc | — | — | +sc | +sc |
+| **Fundamentals** | — | Rev>X%, EPS>X% (gate) | P/E,P/B,ROE,D/E,FCF (gate) | — | — | — | — | — |
+| **Market cap** | min (gate) | shown | shown | — | — | — | — | — |
+| **Earnings proximity** | optional exclude | — | — | — | — | — | — | — |
+| **Backtest engine** | — | — | — | ✅ win-rate/avg | — | — | ✅ win-rate/avg | — |
+| **Score basis** | trend+RSI+MACD+vol+20DH+RS | rev/EPS+RS+trend | P/E+P/B+ROE+D/E+FCF+>200 | cross+RSI+vol+gap | stack+RSI+vol+20DH+RS+ATR | squeeze+BB+MACD+vol+firing | breakout+vol+RSI+OBV | 0–100 + "X/7 conditions" |
+| **When / how to use** | bull swings 10–30d | growth names 30–180d | cheap quality, reversion | earliest momentum | trend ride | pre-breakout coils | volume breakouts | strict all-agree entry |
+| **Why good** | clean momentum filter | fundamentals + technicals | trap-screened value | catches moves early | strongest MA alignment | times expansion | big-money footprint | highest probability (7 gates) |
+| **Why weak** | lags bottom; chop whipsaw | needs fundamentals | value traps; ignores momentum | early = false starts | needs 200+ bars; late | fires either direction | can buy the spike top | very few results |
+""")
+
+    # ── Group 2 ──────────────────────────────────────────────────
+    _summary_header("Group 2 — Weekly Setups, Aggregator & MTPA (Admin)")
+    st.markdown("""
+| Technical | 🎯 Trend Align | 📈 Trend Cont. | 🔄 Reset Bounce | ✦ Golden Scan | 📊 MTPA (T1–T4 + FTF) |
+|---|---|---|---|---|---|
+| **Timeframe** | daily + weekly | weekly | weekly | merges all daily+weekly | daily + weekly |
+| **Daily MACD** | fresh cross ≤3 bars (gate) | — | — | via members | line>signal (gate); near-zero T1 |
+| **Weekly MACD** | — | chart | hist turns/positive (gate) | via members | T4: line>0 + hist>0 + rising |
+| **Daily RSI** | 55–78 (gate) | — | — | 45–70 signal | 50–70 rising = GREEN |
+| **Weekly RSI** | — | 60–75 (gate) | 48–62 + rising (gate) | — | shown; FTF 35–75 |
+| **ADX** | >18 daily (gate) | — | — | — | FTF: >16 (gate) |
+| **30-week SMA** | price>30W + rising (gate) | price>30W + rising (gate) | price>30W + rising (gate) | — | — |
+| **10W vs 30W SMA** | — | 10W>30W (gate) | — | — | — |
+| **EMA pullback (10W/21W)** | — | — | low touches EMA (gate) | — | — |
+| **SMA9 / SMA20 (daily)** | — | — | — | — | price>SMA20 (T1/T2); >SMA9 (FTF) |
+| **Weekly resist / base break** | 8-wk close high (gate) | 8–20wk break or near-hi (gate) | — | — | — |
+| **Weekly pattern (HH/HL, base)** | — | — | — | — | T1 gate; FTF uptrend |
+| **Volume** | wk ≥1.2× + liq>200k | wk spike ≥1.5× +sc | rising vs prior wk (gate) | spike signal | >0.7×/>1.0× (gate) |
+| **RS vs SPY** | 26-wk +sc | 26-wk + new-high +sc | 26-wk +sc | shown | 10-day RS status |
+| **Reversal candle** | — | — | bullish wk candle (gate) | — | candlestick patterns (display) |
+| **Earnings proximity** | exclude ≤14d (opt) | — | — | — | SKIP ≤7d / WARN ≤14d |
+| **Sector ETF trend** | — | — | SPY>30W context | — | sector ETF MACD bull |
+| **Score basis** | cross+RSI+ADX+MA+vol+RS | MA+RSI+base+vol+RS | MA+EMA+RSI+MACD+candle+vol | inherits + multi-signal rank | **no score** — tier assignment |
+| **When / how to use** | breakout 15–45d | weekly ride 20–60d | buy-the-dip 10–30d | confluence dashboard | structured watch-list (admin) |
+| **Why good** | multi-timeframe confirm | catches trends early | best entry price | ranks 2+ scanner hits | 4 tiers + 18-cond FTF |
+| **Why weak** | many gates → sparse | enters mid-trend | fails if trend broke | only as good as members | complex; admin; no score |
+""")
+
+    # ── Group 3 ──────────────────────────────────────────────────
+    _summary_header("Group 3 — Options Income & Directional Scanners")
+    st.markdown("""
+| Technical | 📦 Covered Calls | 💰 Cash-Sec. Puts | 🧨 LEAPS | 📈 ETF Options | ⚡ 3× ETF Options | 📅 Dividend + CC |
+|---|---|---|---|---|---|---|
+| **Underlying universe** | stocks / ETFs | stocks / ETFs | stocks / ETFs | 15 liquid ETFs | 13 leveraged ETFs | div large caps |
+| **Trend (SMA50)** | near-resist heuristic | price>50 = bullish +sc | price>50>200 (gate) | — | — | — |
+| **Delta** | 0.15–0.25 (gate) | 0.15–0.30 (gate) | 0.60–0.75 ITM (gate) | 0.15–0.30 (~0.22) | ~0.20 OTM | ATM/slightly OTM |
+| **IV / IV Rank** | IV rank +sc | IV rank ≥min (gate) | IV rank ≤max (gate) | IV rank ≥min (gate) | IV rank ≥min (gate) | IV shown |
+| **Premium %** | ≥ yield min (gate) | ≥% of strike (gate) | — (cost focus) | ≥% (gate) | ≥% of strike (gate) | total income % (gate) |
+| **DTE** | 1–20 (gate) | 1–35 (gate) | ≥300 (gate) | 1–20 (gate) | 7–30 (gate) | ex-div→+28 |
+| **Bid/Ask spread** | mid-price | ≤max % (gate) | mid-price | liquidity score | ≤max +sc | spread +sc |
+| **Annualized return** | shown | shown | — | shown | shown | "if called" P&L |
+| **Resistance (20D high)** | within 5% +sc | — | — | — | — | — |
+| **ATR / volatility** | — | — | — | — | risk flags (>5/8%) | — |
+| **Ex-dividend date** | — | — | — | — | — | 1–N days out (gate) |
+| **Leverage / breakeven** | upside cap, P(assign) | BE=K−prem | leverage, BE=K+prem | — | BE=K−prem | never-lose-if-called |
+| **Score basis** | delta+prem+resist+IV+DTE | IV+delta+prem+spread+trend | trend+RS+RSI+MACD+IV+delta | liquidity (spread+vol+IV) | IV+prem+spread+prem/risk | income+days+called-P&L |
+| **When / how to use** | income on owned shares | get paid to buy lower | leveraged long (low IV) | premium on liquid ETFs | high-octane premium | capture dividend safely |
+| **Why good** | steady yield | enter at discount | stock-like, less capital | tight spreads | huge premiums | "never lose if called" |
+| **Why weak** | caps upside if called | assignment risk | capital tied long | lower premium | volatility decay; risk | tiny edge; data-dependent |
+""")
+
+    # ── Group 4 ──────────────────────────────────────────────────
+    _summary_header("Group 4 — ETF Trend, Sector & Dividend Income")
+    st.markdown("""
+| Technical | 📊 ETF Trends | ⚡ 3× Leveraged ETF | 📊 Sector Rotation | 💵 Dividend Hacker |
+|---|---|---|---|---|
+| **Universe** | broad ETF list | 17 bull/bear 3× ETFs | 11 SPDR sectors + macro | ~150 div stocks/ETFs |
+| **Price (SMA20)** | — | price>20 +sc | vs SMA20 shown | — |
+| **Price (SMA50)** | price>50 (gate) | price>50 +sc | above/below = in/out | — |
+| **Price (SMA200)** | +sc (50>200) | — | SPY context | — |
+| **EMA9** | — | — | ≤3% = entry zone | — |
+| **RSI** | 50–70 (gate) | 45–75 (gate) | 45–65 ideal | — |
+| **MACD** | hist>0 +sc | hist>0 +sc | — | — |
+| **Volume ratio** | ≥1.3 flow signal | ≥mult (gate) | >1.2× = accumulation | min avg vol filter |
+| **ATR / expansion** | shown | warn (>3/5%) +sc | — | — |
+| **RS vs SPY** | ≥1.02 (gate) | — | 3-mo ratio + trend (core) | — |
+| **Returns (1M/3M)** | — | — | shown | — |
+| **Dividend yield** | — | — | — | range filter (gate) |
+| **Ex-div date** | — | — | — | within N weeks (gate) |
+| **Frequency / consistency** | — | — | — | freq + payout consistency |
+| **Direction (bull/bear)** | — | selectable filter | rotate in/out | — |
+| **Score basis** | trend+RSI+RS+MACD+vol | intensity+RSI+MACD+vol+ATR | sorted by RS (+ trade-idea) | sort: yield/cap/consistency |
+| **When / how to use** | find leading sectors | short-term bursts | where money rotates | plan ex-div income |
+| **Why good** | sector-leadership view | high reward in trends | top-down regime read | reliable 6-source ex-div |
+| **Why weak** | broad, not single-name | volatility decay | macro, not exact entry | drops ~div on ex-day |
+""")
+
+    _summary_header("Cross-cutting notes")
+    st.markdown("""
+- **Shared core engine:** almost every scanner reuses `calc_sma / calc_ema / calc_rsi / calc_macd / calc_atr` from `utils.py`; options scanners add `approx_iv_rank` and `annualized_return`.
+- **Scoring convention:** stock/ETF scanners normalize to **0–100** and sort descending. **Sector Rotation** sorts by RS; **MTPA** uses tier assignment (no 0–100 score).
+- **Hard-gate vs scored:** a scanner can *require* an indicator (gate) or merely *reward* it (`+sc`). Multi-Factor makes 7 indicators hard gates; Momentum gates 4 and scores the rest.
+- **Single-scanner indicators:** Bollinger/Keltner squeeze → **Squeeze** · OBV → **HVB** · ADX → **Trend Align / MTPA-FTF** · candlesticks → **MTPA** · ex-dividend logic → **Dividend Hacker / Dividend+CC** · P/E·P/B·ROE·D/E·FCF → **Value** · Rev/EPS growth → **Growth**.
+""")
+
+
+# ── Render: Summary — Power Ranking ───────────────────────────
+# Highest → lowest signal power, with strength / use / location / power-ups.
+
+def _render_summary_ranking():
+    st.markdown(
+        f'<div style="border-left:4px solid {GOLD};padding:10px 16px;'
+        f'background:linear-gradient(90deg,{GOLD}18,{BG_PANEL});border-radius:0 8px 8px 0;'
+        f'margin-bottom:12px"><span style="color:{TEXT_PRIMARY};font-size:13px;line-height:1.6">'
+        f'Scanners ranked by <b>signal power</b> — how reliably the signal precedes a real move. '
+        f'Directional scanners are judged on edge; income/options scanners (⚙️) are judged on '
+        f'their own purpose and sit lower because they don\'t generate directional edge themselves.'
+        f'</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("""
+### 🥇 1. Golden Scan — Multi-Signal tickers
+- **Strength:** The most powerful view in the app. Runs 6 scanners and surfaces tickers confirmed by **2+ independent scanners** across daily *and* weekly timeframes. Confluence = highest probability.
+- **When:** Your weekly starting point — find where multiple methods agree.
+- **How:** Read the **⭐ Multi-Signal** expander first; ignore single-scanner hits unless score ≥ 80.
+- **Location:** **Stocks → Golden Scan → ⭐ Multi-Signal Tickers**
+- **Power-ups:** (1) Weight ranking by *scanner conviction priority*, not just raw count. (2) Add a market-regime gate — flag all longs when SPY is below its 200-SMA.
+
+### 🥈 2. MTPA — Table 1 (PRIME) + First Things First
+- **Strength:** Strictest structural filter: weekly pattern + not-extended + daily RSI/MACD + volume + SMA20 + MACD-near-zero + earnings-clear. FTF layers **18 conditions** incl. ADX and no-bearish-divergence.
+- **When:** When you want a small, hand-pickable watch-list of textbook setups.
+- **How:** Table 1 = buy list, Table 2 (STRONG) = on-deck, Table 3 (BUILDING) = early. FTF rows are most vetted.
+- **Location:** **Admin → MTPA Scanner** (Tables 1/2/3/4); FTF also at **Admin → Strategies → FTF tab**
+- **Power-ups:** (1) Make **RS vs SPY** and **sector-trending** hard gates for Table 1 (computed but not enforced). (2) Add a 0–100 score so PRIME rows can be ranked.
+
+### 🥉 3. Multi-Factor Breakout
+- **Strength:** 7 hard gates must *all* agree (trend, RSI, MACD, volume, ATR-expansion, near-20D-high, RS). Shows "X/7" conviction. Rare but high-quality.
+- **When:** Strong/neutral market, only the cleanest breakouts.
+- **How:** Filter to **7/7 conditions**; size up only those.
+- **Location:** **Stocks → Golden Scan** (runs as the "MF" engine; per-scanner expander)
+- **Power-ups:** (1) Add **weekly MACD** confirmation (daily-only today). (2) Add an **ADX > 20** gate.
+
+### 4. Trend Continuation (weekly)
+- **Strength:** Catches institutional momentum early — price > rising 30W SMA, 10W > 30W, weekly RSI 60–75, base breakout + RS new highs.
+- **When:** Holding 20–60 days; riding established trends.
+- **How:** Prefer rows with **Consol Break ✅ + RS New Hi ✅**.
+- **Location:** **Stocks → Golden Scan** ("TC" expander)
+- **Power-ups:** (1) Add a **daily entry trigger** so weekly signals don't enter late. (2) Add an **ADX** strength filter.
+
+### 5. Trend Stack
+- **Strength:** Full MA alignment (price > EMA20 > SMA50 > SMA200) with the 200-SMA sloping up — the cleanest "everything stacked" trend.
+- **When:** Trend-following entries near the 20-day high.
+- **How:** Take **Stack = ✅ Full** with RS > 1.10.
+- **Location:** **Stocks → Golden Scan** ("TS" expander)
+- **Power-ups:** (1) Require **volume trending up** on the breakout bar. (2) Output an ATR-based stop suggestion.
+
+### 6. Trend Alignment (daily + weekly)
+- **Strength:** Multi-timeframe — fresh daily MACD cross + RSI 55–78 + **ADX > 18** + price breaking weekly resistance above a rising 30W MA + liquidity floor.
+- **When:** Breakout entries, 15–45 day holds.
+- **How:** Favor **ADX ≥ 30** with weekly break confirmed.
+- **Location:** **Stocks → Golden Scan** ("TA" expander)
+- **Power-ups:** (1) Add **weekly MACD** alignment. (2) Raise the liquidity floor for cleaner fills.
+
+### 7. Momentum Reset Bounce (weekly)
+- **Strength:** Best *entry price* in a strong trend — buys the pullback to the 10W/21W EMA with RSI resetting (48–62) and turning up, plus a bullish reversal candle and SPY-bullish context.
+- **When:** Adding to / initiating in trends that just dipped.
+- **How:** Prefer **10W EMA touch + MACD → +**.
+- **Location:** **Stocks → Golden Scan** ("MRS" expander)
+- **Power-ups:** (1) Require a **daily confirmation trigger**. (2) Gate on sector "rotating IN."
+
+### 8. Sector Rotation
+- **Strength:** Top-down regime read — ranks 11 SPDR sectors by RS vs SPY with rotation in/out + ready-made LEAP/CSP trade ideas. Tells you *which pond to fish in*.
+- **When:** Start-of-week macro context; pairs with every stock scanner.
+- **How:** Take the top 3 sectors (improving RS, RSI < 68) and scan stocks within them.
+- **Location:** **Admin → Strategies → Sector Rotation tab**
+- **Power-ups:** (1) Add a **breadth metric** (% sectors above SMA50). (2) Auto-feed top sectors' constituents into stock scans.
+
+### 9. MACD Power Cross
+- **Strength:** Earliest momentum-ignition signal, and one of only two scanners with a **built-in backtest** (win-rate/avg-return).
+- **When:** Catching moves at the start; aggressive entries.
+- **How:** Cross-check the backtest card before trusting the signal.
+- **Location:** **Stocks → Golden Scan** (feeds "MACDd" signal); standalone engine in Tech Hackers
+- **Power-ups:** (1) Add an **RS-vs-SPY** gate (has none today). (2) Require price > 200-SMA.
+
+### 10. High-Volume Breakout (HVB)
+- **Strength:** Tracks the institutional footprint — break of 20/50D high on ≥2× volume + OBV + strong close. Also backtested.
+- **When:** Momentum/breakout trading on volume surges.
+- **How:** Prefer **Breaks 50D ✅ + Vol ≥ 3× + OBV rising**.
+- **Location:** **Stocks → Golden Scan**; standalone engine in Tech Hackers
+- **Power-ups:** (1) Add **2-day follow-through** confirmation. (2) Layer float/short-interest context.
+
+### 11. Momentum (daily)
+- **Strength:** Solid, well-filtered baseline — bull trend, RSI 55–68, MACD rising, volume-confirmed, over-extension guard.
+- **When:** General medium-swing momentum, 10–30 days.
+- **Location:** **Stocks → Golden Scan** ("M" expander)
+- **Power-ups:** (1) Add **weekly trend confirmation**. (2) Reward **RS at new highs**.
+
+### 12. Volatility Squeeze
+- **Strength:** Times coiled-spring setups (Bollinger inside Keltner) *before* expansion — great timing tool.
+- **When:** Anticipating a big move when direction is unclear.
+- **How:** Wait for **Firing! 🔥** (price breaking upper BB) to confirm direction.
+- **Location:** Standalone engine in Tech Hackers (surfaced via Golden Scan's BB-squeeze icon)
+- **Power-ups:** (1) Add a **directional bias gate** — only fire long when MACD + RS bullish. (2) Output an expected-move / position-size estimate.
+
+### 13. Growth
+- **Strength:** Pairs fundamentals (rev/EPS acceleration) with technical confirmation — durable multi-month plays.
+- **When:** 30–180 day holds in growth names.
+- **Location:** **Stocks → Golden Scan** (optional "G" — checkbox, slower)
+- **Power-ups:** (1) Reward **RS new highs**. (2) Add earnings-estimate-revision trend to avoid decelerating names.
+
+### 14. 3× Leveraged ETF Momentum
+- **Strength:** Highest reward-per-day when a trend is clean; built-in volatility warnings.
+- **When:** *Short-term only* directional bursts.
+- **How:** Take strong intensity scores in the trend direction; never hold through chop.
+- **Location:** **Stocks → 3× Leveraged ETFs**
+- **Power-ups:** (1) Gate on the **underlying index trend + VIX regime**. (2) Enforce a hard max-hold reminder.
+
+### 15. Value
+- **Strength:** Finds cheap quality with a trap-screen (debt/ROE/FCF). Counter-cyclical diversifier.
+- **When:** Mean-reversion / rotation into value.
+- **Location:** Standalone engine (logic in `value_scanner`)
+- **Power-ups:** (1) Add a **catalyst / earnings-revision** filter. (2) Require RSI bottoming so you don't buy a falling knife.
+
+---
+
+### ⚙️ Execution / income tools (powerful for their job, not directional edge)
+- **CSP — Stocks/ETFs** → *Options → CSP*: get paid to buy lower. **Power-up:** compute *true* IV Rank from 52-week IV history (today it's `approx_iv_rank` from a single IV) + earnings-inside-DTE filter.
+- **LEAPS — Stocks/ETFs** → *Options → LEAPS*: leveraged long-term, less capital. **Power-up:** rank by underlying RS/trend strength.
+- **3× ETF Options** → *Options → 3× ETF Options*: huge premium from high IV (small size only). **Power-up:** gate on underlying-index trend.
+- **Dividend + CC Capture** → *Dividend → Dividend + CC Capture*: engineered "never lose if called." **Power-up:** rank by live assignment probability (delta).
+- **Dividend Hacker** → *Dividend → Upcoming Dividends*: ex-div income calendar (6-source waterfall). **Power-up:** add post-ex-div price-recovery history to estimate true capture yield.
+- **QQQ/TQQQ & CSP Strategy** → *Admin → Strategies*: rule-based playbooks rather than scanners.
+
+---
+
+> **The app's real edge is confluence:** use **Sector Rotation** (#8) to pick the sector → **Golden Scan Multi-Signal** (#1) or **MTPA PRIME** (#2) to pick the stock → the options tools to choose the instrument.
+""")
+
+
 def render():
     section_header("🔧", "Tech Details",
-                   "Scanner guide · Universe browser · Scanner rankings & action playbook · Stock Analysis methodology")
+                   "Summary · Scanner guide · Universe browser · Scanner rankings & action playbook · Stock Analysis methodology")
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+    (tab_sum1, tab_sum2, tab1, tab2, tab3, tab4, tab5, tab6, tab7) = st.tabs([
+        "📋 Summary — Matrix",
+        "🏆 Summary — Power Ranking",
         "📊 Scanner Tech & Rankings",
         "📖 Scanner Guide",
         "🗃️ Stock Universe",
@@ -2838,6 +3122,12 @@ def render():
         "📊 ToS-Chart",
         "📊 MTPA Reference",
     ])
+
+    with tab_sum1:
+        _render_summary_matrix()
+
+    with tab_sum2:
+        _render_summary_ranking()
 
     with tab1:
         _render_scanner_tech()
