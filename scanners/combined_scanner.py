@@ -764,7 +764,13 @@ def render():
         single_df["_key"]  = single_df["_abbr"].map(_ABBREV_TO_KEY)
 
         seen_keys = single_df["_key"].dropna().unique()
-        ordered   = sorted(seen_keys, key=lambda n: SCANNER_PRIORITY.get(n, 99))
+        # Pin Multi-Factor to the top of the per-scanner expanders (directly
+        # under the ⭐ Multi-Signal group); everything else follows in
+        # conviction-priority order.
+        ordered   = sorted(
+            seen_keys,
+            key=lambda n: (0 if n == "Multi-Factor" else 1, SCANNER_PRIORITY.get(n, 99)),
+        )
 
         for scanner_name in ordered:
             sub = single_df[single_df["_key"] == scanner_name].drop(columns=["_abbr", "_key"])
