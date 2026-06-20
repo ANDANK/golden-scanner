@@ -540,6 +540,22 @@ _SCANNER_ABBREV = {
     "Golden Scan":           "GS",   # normalise legacy source tags stored as "AM·Golden Scan"
 }
 
+# ── Scanner display map (abbrev → timeframe + readable name) ───
+# Used to render the "Scanners" column as clear DAILY/WEEKLY badges
+# (e.g. "DAILY Momentum") instead of cryptic codes ("M"). The Style
+# column shown alongside provides the descriptor ("Medium Swing").
+# Keep the underlying "Scanners" data as abbreviations — only the
+# on-screen display is expanded here.
+_SCANNER_DISPLAY = {
+    "M":   ("DAILY",  "Momentum"),
+    "TS":  ("DAILY",  "Trend Stack"),
+    "MF":  ("DAILY",  "Multi-Factor"),
+    "G":   ("DAILY",  "Growth"),
+    "TA":  ("WEEKLY", "Trend Align"),
+    "TC":  ("WEEKLY", "Trend Cont."),
+    "MRS": ("WEEKLY", "Reset Bounce"),
+}
+
 
 # ── Strategy-aware column sets ─────────────────────────────────
 # These define the preferred column order per strategy type.
@@ -739,7 +755,7 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
             df = df.sort_values(_sort_by, ascending=_sort_asc, na_position="last")
 
     # Column width hints — wider for text-heavy columns, narrower for numbers
-    _wide = {"Ticker", "Sector", "Catalysts", "Momentum", "Trap Risk", "Mkt Cap", "Signal", "Signals"}
+    _wide = {"Ticker", "Sector", "Catalysts", "Momentum", "Trap Risk", "Mkt Cap", "Signal", "Signals", "Scanners"}
     _med  = {"Score", "Strategy", "Direction", "MACD Bull", "FCF", ">200 SMA"}
     col_widths = []
     for c in data_cols:
@@ -859,6 +875,37 @@ def render_results_table(df: pd.DataFrame, score_col: str = "Score",
                         ) if parts else f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>'
                     st.markdown(
                         f'<div style="background:{bg};padding:6px 4px">{sig_html}</div>',
+                        unsafe_allow_html=True,
+                    )
+                elif col_name == "Scanners":
+                    # Expand "TC + TS" → stacked "WEEKLY Trend Cont." / "DAILY Trend Stack"
+                    raw = str(val).strip()
+                    parts = [p.strip() for p in raw.split(" + ")
+                             if p.strip() and p.strip().lower() not in ("nan", "none", "")]
+                    chips = []
+                    for p in parts:
+                        abbr = _SCANNER_ABBREV.get(p, p)          # normalise legacy full names
+                        tf, name = _SCANNER_DISPLAY.get(abbr, ("", p))
+                        if tf:
+                            tf_color = ACCENT_BLUE if tf == "DAILY" else ACCENT_GREEN
+                            chips.append(
+                                f'<div style="white-space:nowrap;line-height:1.5">'
+                                f'<span style="background:{tf_color}1A;color:{tf_color};'
+                                f'border:1px solid {tf_color}44;padding:0 5px;border-radius:3px;'
+                                f'font-size:9px;font-weight:700;letter-spacing:.4px">{tf}</span> '
+                                f'<span style="color:{TEXT_PRIMARY};font-size:11px;font-weight:600">{name}</span>'
+                                f'</div>'
+                            )
+                        else:
+                            chips.append(
+                                f'<div style="white-space:nowrap;color:{TEXT_PRIMARY};'
+                                f'font-size:11px">{name}</div>'
+                            )
+                    inner = ("".join(chips) if chips
+                             else f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>')
+                    st.markdown(
+                        f'<div style="background:{bg};padding:6px 4px;display:flex;'
+                        f'flex-direction:column;gap:2px">{inner}</div>',
                         unsafe_allow_html=True,
                     )
                 else:
