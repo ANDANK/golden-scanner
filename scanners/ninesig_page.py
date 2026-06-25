@@ -55,6 +55,39 @@ def _next_quarter_start(d: date) -> date:
     qs = _quarter_start(d)
     return date(qs.year + 1, 1, 1) if qs.month == 10 else date(qs.year, qs.month + 3, 1)
 
+def _parse_date(s, fallback: date | None = None) -> date:
+    try:
+        return date.fromisoformat(str(s)[:10])
+    except Exception:
+        return fallback or date.today()
+
+def _xirr(flows: list) -> float | None:
+    """Annualised money-weighted return (XIRR) from (date, amount) cash flows.
+    Contributions are negative (cash in); the final portfolio value is positive.
+    Returns a fraction (e.g. 0.18 = 18%) or None when it can't be solved."""
+    flows = [(d, a) for d, a in flows if abs(a) > 1e-9]
+    if len(flows) < 2:
+        return None
+    d0 = min(d for d, _ in flows)
+
+    def npv(r: float) -> float:
+        return sum(a / (1.0 + r) ** ((d - d0).days / 365.0) for d, a in flows)
+
+    lo, hi = -0.9999, 10.0
+    f_lo, f_hi = npv(lo), npv(hi)
+    if f_lo * f_hi > 0:          # no sign change → not solvable in range
+        return None
+    for _ in range(200):
+        mid = (lo + hi) / 2.0
+        f_mid = npv(mid)
+        if abs(f_mid) < 1e-7:
+            return mid
+        if f_lo * f_mid < 0:
+            hi, f_hi = mid, f_mid
+        else:
+            lo, f_lo = mid, f_mid
+    return (lo + hi) / 2.0
+
 
 def _compute(prior_tqqq: float, contribution: float, tqqq_now: float, agg_now: float,
              skip_sell: bool = False, force_6040: bool = False) -> dict:
@@ -182,6 +215,49 @@ def _whatif_table(prior_tqqq: float, tqqq_now: float, agg_now: float,
     )
 
 
+# ── Performance summary (contributed vs value, gain, XIRR) ─────
+def _perf_summary(rows: list):
+    """Total contributed vs current value, net gain, and annualised return.
+    'Current value' is the most recent committed Total (i.e. as of the last
+    rebalance) — between rebalances it's marked at the last known balances."""
+    if not rows:
+        return
+    contributed = sum(_f(r.get("Contribution")) for r in rows)
+    last = rows[-1]
+    value   = _f(last.get("Total"))
+    val_dt  = _parse_date(last.get("Date"))
+    gain    = value - contributed
+    gain_pct = (gain / contributed * 100) if contributed > 0 else 0.0
+    gain_c  = ACCENT_GREEN if gain >= 0 else ACCENT_RED
+
+    # Money-weighted annualised return: each contribution is cash-in (negative),
+    # the current value is the final cash-in (positive) on the valuation date.
+    flows = [(_parse_date(r.get("Date")), -_f(r.get("Contribution")))
+             for r in rows if _f(r.get("Contribution")) > 0]
+    flows.append((val_dt, value))
+    irr = _xirr(flows)
+    irr_str = f"{irr*100:+.1f}%" if irr is not None else "—"
+    irr_c   = ACCENT_GREEN if (irr or 0) >= 0 else ACCENT_RED
+
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:1px;margin:14px 0 8px">Performance Summary</div>',
+        unsafe_allow_html=True,
+    )
+    c1, c2, c3, c4 = st.columns(4)
+    with c1: st.metric("Total contributed", _money(contributed))
+    with c2: st.metric("Current value", _money(value))
+    with c3: st.metric("Net gain", f"{_money(gain)}", f"{gain_pct:+.1f}%")
+    with c4: st.metric("Annualised (XIRR)", irr_str)
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:-4px">'
+        f'Gain is unrealised, marked as of the last rebalance ({val_dt.isoformat()}). '
+        f'XIRR is money-weighted across your contribution dates.'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
 # ── History ledger ─────────────────────────────────────────────
 def _history_table(rows: list):
     cols = ["Date", "Event", "Contribution", "Signal_Line", "Action",
@@ -280,6 +356,9 @@ def _render_tracked():
         f'<div style="color:{due_c};font-size:12px;font-weight:600;margin:2px 0 12px">'
         f'⏱ {due_lbl}</div>', unsafe_allow_html=True,
     )
+
+    # ── Performance summary ────────────────────────────────────
+    _perf_summary(rows)
 
     st.markdown(
         f'<div style="color:{GOLD};font-size:13px;font-weight:700;text-transform:uppercase;'
