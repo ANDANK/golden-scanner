@@ -998,3 +998,66 @@ def get_universe() -> list:
         if rows:
             return rows
     return []
+
+
+# ══════════════════════════════════════════════════════════════════
+# 9SIG PLAN — leveraged 60/40 TQQQ/AGG quarterly tracker
+# ══════════════════════════════════════════════════════════════════
+# One row per plan event. The first row (Event="Setup") seeds the plan;
+# each later row (Event="Rebalance") is a committed quarterly rebalance.
+
+NINESIG_HEADERS = [
+    "Date", "Event", "Contribution",
+    "TQQQ_Before", "AGG_Before", "Signal_Line",
+    "Action", "Trade_Amount",
+    "TQQQ_After", "AGG_After", "Total", "TQQQ_Pct", "Notes",
+]
+NINESIG_CSV = os.path.join(DATA_DIR, "ninesig.csv")
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def get_ninesig() -> list:
+    """Read all 9Sig plan rows (oldest first). Cached 60s — cleared after writes."""
+    ws = _gs_sheet("NineSig")
+    if ws:
+        _ensure_headers(ws, NINESIG_HEADERS)
+        rows = _ws_get_all_records(ws)
+        if rows is not None:
+            return rows
+    return _csv_read(NINESIG_CSV, NINESIG_HEADERS)
+
+
+def add_ninesig_row(row: dict) -> tuple:
+    """Append one plan event row to the NineSig tab (or CSV fallback)."""
+    ws = _gs_sheet("NineSig")
+    if ws:
+        try:
+            _ensure_headers(ws, NINESIG_HEADERS)
+            ws.append_row([str(row.get(h, "")) for h in NINESIG_HEADERS])
+            get_ninesig.clear()
+            return True, "Saved to Google Sheets (NineSig tab)."
+        except Exception as e:
+            return False, f"Sheet error: {e}"
+    else:
+        rows = _csv_read(NINESIG_CSV, NINESIG_HEADERS)
+        rows.append({h: str(row.get(h, "")) for h in NINESIG_HEADERS})
+        _csv_write(NINESIG_CSV, rows, NINESIG_HEADERS)
+        get_ninesig.clear()
+        return True, "Saved to local CSV (NineSig)."
+
+
+def reset_ninesig() -> tuple:
+    """Wipe the entire 9Sig plan (sheet rows + CSV). Headers are kept."""
+    ws = _gs_sheet("NineSig")
+    if ws:
+        try:
+            ws.clear()
+            ws.append_row(NINESIG_HEADERS)
+            get_ninesig.clear()
+            return True, "9Sig plan reset (Google Sheets)."
+        except Exception as e:
+            return False, f"Sheet error: {e}"
+    else:
+        _csv_write(NINESIG_CSV, [], NINESIG_HEADERS)
+        get_ninesig.clear()
+        return True, "9Sig plan reset (local CSV)."

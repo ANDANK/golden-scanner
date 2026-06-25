@@ -744,11 +744,12 @@ def render():
 
     st.markdown(_TAB_CSS, unsafe_allow_html=True)
 
-    tab_qqq, tab_opts, tab_ftf, tab_sr = st.tabs([
+    tab_qqq, tab_opts, tab_ftf, tab_sr, tab_9sig = st.tabs([
         "♟️  QQQ / TQQQ Strategy",
         "💰  Options Strategy",
         "🎯  First Things First",
         "📊  Sector Rotation",
+        "📊  9Sig Plan",
     ])
 
     with tab_qqq:
@@ -764,3 +765,7 @@ def render():
     with tab_sr:
         from scanners.sector_rotation import render_sector_rotation
         render_sector_rotation()
+
+    with tab_9sig:
+        from scanners.ninesig_page import render as _ninesig_render
+        _ninesig_render()
