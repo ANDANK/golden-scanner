@@ -919,6 +919,7 @@ NAV_GROUPS = [
             {"key": "📊  MTPA Scanner",  "label": "MTPA Scanner",  "icon": "📊"},
             {"key": "📈  Strategies",    "label": "Strategies",    "icon": "📈"},
             {"key": "🎯  OverKill Perf", "label": "OverKill Performance", "icon": "🎯"},
+            {"key": "🎓  529 Planner",   "label": "529 Planner",   "icon": "🎓"},
         ],
     },
 ]
@@ -1296,7 +1297,7 @@ elif page == "🎟️  Great Clips Coupons":
 elif page == "ℹ️  About & Guide":
     from scanners.about import render
     render()
-elif page in ("⚙️  Admin Panel", "🔧  Tech Details", "📊  MTPA Scanner", "📈  Strategies", "🎯  OverKill Perf"):
+elif page in ("⚙️  Admin Panel", "🔧  Tech Details", "📊  MTPA Scanner", "📈  Strategies", "🎯  OverKill Perf", "🎓  529 Planner"):
     # Admin pages are only reachable when logged in as admin (_is_admin=True).
     # If a non-admin somehow has an admin nav_page in session state, bounce home.
     if not st.session_state.get("_is_admin", False):
@@ -1316,4 +1317,7 @@ elif page in ("⚙️  Admin Panel", "🔧  Tech Details", "📊  MTPA Scanner",
         render()
     elif page == "🎯  OverKill Perf":
         from scanners.overkill_performance import render
+        render()
+    elif page == "🎓  529 Planner":
+        from scanners.edu529_page import render
         render()
