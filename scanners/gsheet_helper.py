@@ -1046,6 +1046,54 @@ def add_ninesig_row(row: dict) -> tuple:
         return True, "Saved to local CSV (NineSig)."
 
 
+def export_tables(tab_prefix: str, sections: list, date_str: str = "",
+                  meta_cells: list | None = None) -> tuple:
+    """
+    Write multiple titled tables into one dated tab of the connected spreadsheet.
+
+    tab_prefix : base tab name; the date is appended → '{tab_prefix}-YYYY-MM-DD'.
+    sections   : list of (title:str, columns:list[str], rows:list[list]).
+    meta_cells : optional first row (list of cells) for scan metadata.
+
+    If the tab already exists it is cleared and overwritten (safe to re-run same day).
+    Returns (success: bool, message: str).
+    """
+    if not date_str:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+    tab = f"{tab_prefix}-{date_str}"
+
+    sh = _gs_spreadsheet()
+    if sh is None:
+        return False, "Google Sheets not connected — check credentials in Secrets."
+
+    try:
+        try:
+            ws = sh.worksheet(tab)
+            ws.clear()
+        except Exception:
+            ws = sh.add_worksheet(title=tab, rows=3000, cols=30)
+    except Exception as e:
+        return False, f"Could not open/create tab '{tab}': {e}"
+
+    all_rows: list = []
+    if meta_cells:
+        all_rows.append([str(c) for c in meta_cells])
+        all_rows.append([])
+    for title, cols, rows in sections:
+        all_rows.append([str(title)])
+        all_rows.append([str(c) for c in cols])
+        for r in rows:
+            all_rows.append(["" if c is None else str(c) for c in r])
+        all_rows.append([])
+
+    try:
+        ws.update(all_rows, "A1")
+        url = f"https://docs.google.com/spreadsheets/d/{sh.id}"
+        return True, f"Exported to tab '{tab}'  |  {url}"
+    except Exception as e:
+        return False, f"Write failed: {e}"
+
+
 def reset_ninesig() -> tuple:
     """Wipe the entire 9Sig plan (sheet rows + CSV). Headers are kept."""
     ws = _gs_sheet("NineSig")

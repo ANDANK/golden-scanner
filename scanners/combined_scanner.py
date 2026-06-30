@@ -591,6 +591,47 @@ def _render_combined_table(df: pd.DataFrame):
 
 # ── Main render ─────────────────────────────────────────────────
 
+# ── Export all tables → Google Sheets ───────────────────────────
+_EXPORT_COLS = [
+    "Ticker", "Price", "Change %", "Score", "Scanners", "Scanner Count",
+    "Style", "Hold", "Est. Upside %", "RSI", "Vol Ratio", "RS vs SPY", "Signals",
+]
+
+
+def _df_to_rows(sub: pd.DataFrame, cols: list) -> list:
+    return [[("" if pd.isna(r.get(c, "")) else r.get(c, "")) for c in cols]
+            for _, r in sub.iterrows()]
+
+
+def _build_export_sections(df: pd.DataFrame):
+    """Mirror the on-page tables: a Multi-Signal section, then one section per
+    single-signal scanner group (Multi-Factor pinned first, then by priority)."""
+    cols = [c for c in _EXPORT_COLS if c in df.columns]
+    sections = []
+
+    cnt = pd.to_numeric(df.get("Scanner Count", 1), errors="coerce").fillna(1)
+    sort = (lambda d: d.sort_values("Score", ascending=False)) if "Score" in df.columns else (lambda d: d)
+
+    multi = sort(df[cnt >= 2])
+    if not multi.empty:
+        sections.append((f"MULTI-SIGNAL TICKERS ({len(multi)})", cols, _df_to_rows(multi, cols)))
+
+    singles = df[cnt == 1].copy()
+    if not singles.empty and "Scanners" in singles.columns:
+        singles["_key"] = singles["Scanners"].str.split(" + ").str[0].str.strip().map(_ABBREV_TO_KEY)
+        keys = sorted(
+            [k for k in singles["_key"].dropna().unique()],
+            key=lambda n: (0 if n == "Multi-Factor" else 1, SCANNER_PRIORITY.get(n, 99)),
+        )
+        for k in keys:
+            grp = sort(singles[singles["_key"] == k])
+            if grp.empty:
+                continue
+            abbr = SCANNER_ABBREV.get(k, k)
+            sections.append((f"{k.upper()} ({abbr}) — {len(grp)}", cols, _df_to_rows(grp, cols)))
+    return sections
+
+
 def render():
     section_header(
         "✦", "Golden Scan",
@@ -716,6 +757,33 @@ def render():
     with c2: metric_card("Multi-Signal", str(multi_count), color=ACCENT_GREEN)
     with c3: metric_card("Avg Est. Upside", f"{avg_upside:.1f}%", color=ACCENT_BLUE)
     with c4: metric_card("Most Active", top_scanner, color=GOLD)
+
+    # ── Export all tables → Google Sheets (dated tab) ───────────
+    exp_c1, exp_c2 = st.columns([1.6, 4])
+    with exp_c1:
+        do_export = st.button("📤 Export all tables → Google Sheets",
+                              use_container_width=True, key="gs_export_all")
+    with exp_c2:
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:11px;padding:8px 0">'
+            f'Creates a new dated tab (<b>GoldenScan-YYYY-MM-DD</b>) in your Golden Scanner '
+            f'spreadsheet with every table.</div>',
+            unsafe_allow_html=True,
+        )
+    if do_export:
+        from scanners.gsheet_helper import export_tables, using_google_sheets
+        if not using_google_sheets():
+            st.warning("Google Sheets not connected — can't export. Check credentials in Secrets.")
+        else:
+            with st.spinner("Exporting all tables to Google Sheets…"):
+                sections = _build_export_sections(df)
+                meta = [
+                    f"Golden Scan  {pd.Timestamp.now():%Y-%m-%d %H:%M}",
+                    f"Tickers: {len(df)}",
+                    f"Multi-signal: {multi_count}",
+                ]
+                ok, msg = export_tables("GoldenScan", sections, meta_cells=meta)
+            (st.success if ok else st.error)(msg)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
