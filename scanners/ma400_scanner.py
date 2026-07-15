@@ -10,9 +10,10 @@ great businesses rarely trade below it, and when they do it has historically
 marked deep-value accumulation zones.
 
 Output columns per ticker:
-  % vs 400MA (sorted deepest-below first) · D/W RSI · D/W MACD>0 ·
-  D/W MACD crossover · trend state (golden/death cross) · 52-week drawdown ·
-  sentiment · Dip Score /10 · warning flags
+  % vs 400MA · D/W RSI · D/W MACD>0 · D/W MACD crossover ·
+  trend state (golden/death cross) · 52-week drawdown ·
+  Worth-Buying verdict (rule ladder — drives sort order) ·
+  Dip Score /10 · Quality Score /6 · warning flags
 """
 
 import numpy as np
@@ -187,12 +188,96 @@ def _fundamentals(ticker: str) -> dict:
     return out
 
 
-def _sentiment(score: int, stabilizing: bool) -> str:
-    if score >= 7:
-        return "🟢 Accumulate"
-    if score >= 4:
-        return "🟡 Stabilizing" if stabilizing else "🟡 Watch"
-    return "🔴 Falling"
+def _worth_buying(
+    q_score, is_fund, fund_enabled,
+    pct_vs, ma_rising,
+    stabilizing, d_macd, w_macd,
+    w_rsi, w_rsi_rising, d_rsi,
+    golden, dd_52w, knife, heavy_selling,
+) -> tuple[int, str, str]:
+    """
+    'Worth Buying' verdict — a transparent RULE LADDER, not a composite score.
+    First matching rule wins; the returned `why` lists the deciding reasons.
+
+    Returns (rank 1–5, label, why):
+      1 💎 Prime Buy    — quality business, discount vs rising 400MA, turn confirmed D+W
+      2 🟢 Buy          — quality + discount + stabilized, daily momentum turned
+      3 🔵 Turn forming — right stock, turn starting but not confirmed — early
+      4 🟡 Wait         — quality unproven/knife active/no turn evidence yet
+      5 🔴 Avoid        — weak business, or danger without proven quality
+    """
+    deep_break = pct_vs < -DEEP_BREAK_PCT
+    danger     = knife or heavy_selling or deep_break
+
+    # Quality buckets (fundamentals gate). When the gate is off, judge on
+    # technicals alone — quality treated as neutral-pass, never "strong".
+    q_strong = is_fund or (q_score is not None and q_score >= 5)
+    q_good   = (not fund_enabled) or is_fund or (q_score is not None and q_score >= 4)
+    q_weak   = fund_enabled and (q_score is not None and q_score <= 2)
+
+    # Turn evidence
+    d_turn  = d_macd["above_sig"] or d_macd["fresh_cross"]
+    w_turn  = (w_macd["above_sig"] or w_macd["fresh_cross"]
+               or w_macd["hist_rising"] or w_rsi_rising)
+    turning = stabilizing and d_turn
+
+    # ── Reasons (pros/cons drive the printed 'why') ───────────────────────────
+    pros, cons = [], []
+    if is_fund:
+        pros.append("broad fund")
+    elif fund_enabled and q_score is not None:
+        (pros if q_score >= 4 else cons).append(f"Q {q_score}/6")
+    elif fund_enabled:
+        cons.append("fundamentals unknown")
+    if pct_vs < 0:
+        pros.append(f"{pct_vs:.0f}% below 400MA")
+    if not ma_rising:
+        cons.append("400MA falling")
+    if d_macd["fresh_cross"]:
+        pros.append("fresh D-cross")
+    elif d_macd["above_sig"]:
+        pros.append("D-MACD bullish")
+    else:
+        cons.append("D-MACD not turned")
+    if w_macd["fresh_cross"]:
+        pros.append("fresh W-cross")
+    elif w_turn:
+        pros.append("weekly improving")
+    else:
+        cons.append("weekly still falling")
+    if stabilizing:
+        pros.append("above EMA9")
+    else:
+        cons.append("below EMA9")
+    if dd_52w <= -15:
+        pros.append(f"{dd_52w:.0f}% off high")
+    if knife:
+        cons.append("falling knife")
+    if heavy_selling:
+        cons.append("heavy selling")
+    if deep_break:
+        cons.append(f"deep break {pct_vs:.0f}%")
+    if not np.isnan(w_rsi) and w_rsi < 30:
+        cons.append(f"W-RSI {w_rsi:.0f}")
+    if d_rsi < 25:
+        cons.append(f"D-RSI {d_rsi:.0f}")
+    if not golden:
+        cons.append("death cross")
+
+    # ── The ladder — first match wins ─────────────────────────────────────────
+    if q_weak or (danger and not q_strong) or (not ma_rising and not q_strong):
+        rank, label = 5, "🔴 Avoid"
+    elif q_good and ma_rising and not danger and turning and w_turn and pct_vs <= 5:
+        rank, label = 1, "💎 Prime Buy"
+    elif q_good and ma_rising and not danger and (turning or (stabilizing and d_macd["hist_rising"])):
+        rank, label = 2, "🟢 Buy"
+    elif q_good and not danger and (w_turn or d_macd["hist_rising"]):
+        rank, label = 3, "🔵 Turn forming"
+    else:
+        rank, label = 4, "🟡 Wait"
+
+    why = " · ".join((pros if rank <= 2 else cons + pros)[:4])
+    return rank, label, why
 
 
 # ── Main scan ──────────────────────────────────────────────────────────────────
@@ -387,6 +472,15 @@ def scan_ma400(
         if w_macd["fresh_cross"]:
             flags.append("🌟 Fresh WEEKLY MACD cross")
 
+        # ── Worth-Buying verdict (rule ladder — drives the sort order) ────────
+        rank, verdict, why = _worth_buying(
+            q_score, is_fund, fundamentals,
+            pct_vs, ma_rising,
+            stabilizing, d_macd, w_macd,
+            w_rsi, w_rsi_rising, d_rsi,
+            golden, dd_52w, knife, heavy_selling,
+        )
+
         rows.append({
             "Ticker":      ticker,
             "Price":       round(price, 2),
@@ -408,7 +502,9 @@ def scan_ma400(
             "Hist↗ D":     d_macd["hist_rising"],
             "Trend":       "Golden" if golden else "Death",
             "Stabilizing": stabilizing,
-            "Sentiment":   _sentiment(score, stabilizing),
+            "Rank":        rank,
+            "Verdict":     verdict,
+            "Why":         why,
             "Score":       score,
             "Q":           q_score,
             "Q Detail":    q_detail,
@@ -421,6 +517,6 @@ def scan_ma400(
 
     df_out = pd.DataFrame(rows)
     if not df_out.empty:
-        # Deepest below the 400MA on top
-        df_out = df_out.sort_values("% vs 400MA").reset_index(drop=True)
+        # Worth-Buying tier first (💎 → 🔴), deepest below the 400MA within a tier
+        df_out = df_out.sort_values(["Rank", "% vs 400MA"]).reset_index(drop=True)
     return df_out, skipped

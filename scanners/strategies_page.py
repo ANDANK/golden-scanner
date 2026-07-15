@@ -534,7 +534,7 @@ def _render_ma400_table(df: pd.DataFrame):
     _GH = "padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px"
     header_groups = (
         f'<div style="display:grid;grid-template-columns:'
-        f'110px 80px 70px 230px 130px 130px 130px 130px 130px 150px 1fr;gap:0">'
+        f'110px 80px 70px 230px 130px 130px 130px 130px 320px 150px 1fr;gap:0">'
         f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Ticker</div>'
         f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Price</div>'
         f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Chg%</div>'
@@ -543,7 +543,7 @@ def _render_ma400_table(df: pd.DataFrame):
         f'<div style="background:{G}12;{_GH};color:{G};border-bottom:2px solid {G}55">RSI D / W</div>'
         f'<div style="background:#A78BFA18;{_GH};color:#A78BFA;border-bottom:2px solid #A78BFA55">MACD&gt;0 D/W</div>'
         f'<div style="background:#A78BFA18;{_GH};color:#A78BFA;border-bottom:2px solid #A78BFA55">Cross D/W</div>'
-        f'<div style="background:#34D39918;{_GH};color:#34D399;border-bottom:2px solid #34D39955">Sentiment</div>'
+        f'<div style="background:#34D39918;{_GH};color:#34D399;border-bottom:2px solid #34D39955">Worth Buying</div>'
         f'<div style="background:{GL}18;{_GH};color:{GL};border-bottom:2px solid {GL}55">Dip · Quality</div>'
         f'<div style="background:#F9731612;{_GH};color:#F97316;border-bottom:2px solid #F9731655">Flags</div>'
         f'</div>'
@@ -561,7 +561,7 @@ def _render_ma400_table(df: pd.DataFrame):
             "D-RSI", "W-RSI",
             "D", "W",
             "Daily", "Weekly",
-            "Trend", "Sentiment",
+            "Trend", "Verdict · Why",
             "Score", "Q", "Flags",
         ]
     )
@@ -601,8 +601,22 @@ def _render_ma400_table(df: pd.DataFrame):
                       if trend == "Golden" else
                       f'<span style="color:{RD};font-size:10px">💀 Death</span>')
 
-        sent     = str(row["Sentiment"])
-        sent_col = G if "🟢" in sent else GL if "🟡" in sent else RD
+        # Worth-Buying verdict + printed reasons (rule ladder, not a score)
+        verdict = str(row.get("Verdict", "—"))
+        why     = str(row.get("Why", "") or "")
+        v_col   = (G if ("💎" in verdict or "🟢" in verdict) else
+                   BL if "🔵" in verdict else
+                   GL if "🟡" in verdict else
+                   RD if "🔴" in verdict else TEXT_MUTED)
+        verdict_html = (
+            f'<div style="display:flex;flex-direction:column;gap:2px">'
+            f'<span style="background:{v_col}18;color:{v_col};border:1px solid {v_col}44;'
+            f'font-size:10px;font-weight:800;padding:2px 9px;border-radius:12px;'
+            f'white-space:nowrap;width:fit-content">{verdict}</span>'
+            + (f'<span style="color:{TEXT_MUTED};font-size:9px;line-height:1.4;'
+               f'max-width:230px">{why}</span>' if why else '')
+            + f'</div>'
+        )
 
         sc     = int(row["Score"])
         sc_col = G if sc >= 7 else GL if sc >= 4 else TEXT_MUTED
@@ -669,10 +683,9 @@ def _render_ma400_table(df: pd.DataFrame):
             # Crossovers
             f'<td style="{_TD};border-left:1px solid #A78BFA33">{_ma400_xover_cell(str(row["X-over D"]))}</td>'
             f'<td style="{_TD}">{_ma400_xover_cell(str(row["X-over W"]))}</td>'
-            # Trend + sentiment
+            # Trend + Worth-Buying verdict
             f'<td style="{_TD};border-left:1px solid #34D39933;white-space:nowrap">{trend_html}</td>'
-            f'<td style="{_TD};white-space:nowrap">'
-            f'<span style="color:{sent_col};font-size:11px;font-weight:700">{sent}</span></td>'
+            f'<td style="{_TD}">{verdict_html}</td>'
             # Score + Quality
             f'<td style="{_TD};border-left:1px solid {GL}33;text-align:center">'
             f'<span style="color:{sc_col};font-weight:800;font-size:13px">{sc}</span>'
@@ -711,14 +724,27 @@ def _render_ma400_tab():
         f'Quality compounders rarely trade at or below their <b style="color:#fff">400-day moving average</b> — '
         f'when they do, it has historically marked deep-value accumulation zones. '
         f'This scan covers a curated long-term-quality universe (no leveraged/volatility products, '
-        f'no structurally-declining names) and lists everything near or under the line, '
-        f'<b style="color:{GL}">deepest discount first</b>. '
-        f'D/W RSI + MACD columns tell you whether the dip is still falling or already turning.</div>'
+        f'no structurally-declining names) and lists everything near or under the line, sorted by the '
+        f'<b style="color:{GL}">Worth Buying verdict</b> — a transparent rule ladder '
+        f'(💎 Prime Buy → 🟢 Buy → 🔵 Turn forming → 🟡 Wait → 🔴 Avoid) that weighs '
+        f'fundamentals, the 400MA slope, D/W momentum and danger signals, with the deciding '
+        f'reasons printed under each verdict. Deepest discount sorts first within a tier.</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
 
     with st.expander("📋 How to read this scan", expanded=False):
+        st.markdown(
+            "**Worth Buying verdict — the sort order.** A rule ladder, not a score: "
+            "the first matching rule decides, and the deciding reasons are printed under each badge.\n"
+            "- 💎 **Prime Buy** — quality business (Q ≥ 4 or ETF) · rising 400MA · at/below the line (≤5% above) · "
+            "daily turn confirmed (above EMA9 + MACD bullish) · weekly also improving · no danger signals\n"
+            "- 🟢 **Buy** — quality + rising MA + stabilized with daily momentum turned, weekly not yet confirming\n"
+            "- 🔵 **Turn forming** — right stock, early: weekly improving or histogram rising, but price not yet stabilized\n"
+            "- 🟡 **Wait** — no turn evidence yet, or a knife/capitulation on an otherwise strong business\n"
+            "- 🔴 **Avoid** — weak fundamentals (Q ≤ 2), or knife/deep break/falling 400MA without proven quality\n"
+        )
+        st.markdown("---")
         c1, c2 = st.columns(2)
         with c1:
             st.markdown(
@@ -733,7 +759,6 @@ def _render_ma400_tab():
                 "8. Price back above EMA9 (stabilizing)\n"
                 "9. ≥ 15% below 52-week high (real discount)\n"
                 "10. No falling knife / capitulation volume\n\n"
-                "**Sentiment**: 🟢 Accumulate (≥7) · 🟡 Stabilizing/Watch (4–6) · 🔴 Falling (≤3)\n\n"
                 "**Quality Score /6 (Q column)** — business quality, fetched only for zone-passers:\n"
                 "1. ROE ≥ 15%\n"
                 "2. Operating margin ≥ 10%\n"
@@ -855,11 +880,11 @@ def _render_ma400_tab():
                                "Requires the fundamentals gate at scan time.")
     with pf3:
         st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-        hide_falling = st.checkbox("Hide 🔴 Falling", value=True, key="ma400_hide_falling")
+        hide_avoid = st.checkbox("Hide 🔴 Avoid", value=True, key="ma400_hide_avoid")
 
     view = df_out[df_out["Score"] >= min_dip]
-    if hide_falling:
-        view = view[~view["Sentiment"].astype(str).str.contains("🔴")]
+    if hide_avoid and "Verdict" in view.columns:
+        view = view[~view["Verdict"].astype(str).str.contains("🔴")]
     if fund_on and min_q > 0:
         _q = pd.to_numeric(view["Q"], errors="coerce")
         view = view[_q.isna() | (_q >= min_q)]      # ETFs / no-data rows stay visible
@@ -873,9 +898,13 @@ def _render_ma400_tab():
 
     # ── Summary strip ──────────────────────────────────────────────────────────
     n_below = int((view["% vs 400MA"] < 0).sum())
-    n_accum = int((view["Score"] >= 7).sum())
+    _verd   = view["Verdict"].astype(str) if "Verdict" in view.columns else pd.Series(dtype=str)
+    n_prime = int(_verd.str.contains("💎").sum())
+    n_buy   = int(_verd.str.contains("🟢").sum())
+    n_turn  = int(_verd.str.contains("🔵").sum())
+    n_wait  = int(_verd.str.contains("🟡").sum())
     n_fresh = int(((view["X-over D"] == "Fresh ↑") | (view["X-over W"] == "Fresh ↑")).sum())
-    deepest = view.iloc[0]
+    deepest = view.sort_values("% vs 400MA").iloc[0]
     below_df = view[view["% vs 400MA"] < 0]
     avg_disc = float(below_df["% vs 400MA"].mean()) if not below_df.empty else 0.0
     st.markdown(
@@ -888,8 +917,11 @@ def _render_ma400_tab():
         f'<b style="color:{G}">{len(view)}</b></span>'
         f'<span style="color:{RD};font-size:11px;font-weight:600">📉 {n_below} below the 400MA'
         + (f' (avg {avg_disc:.1f}%)' if n_below else '') + '</span>'
-        f'<span style="color:{G};font-size:11px;font-weight:600">🟢 {n_accum} Accumulate (≥7/10)</span>'
-        f'<span style="color:{G};font-size:11px;font-weight:600">✨ {n_fresh} fresh MACD cross</span>'
+        f'<span style="color:{G};font-size:11px;font-weight:700">💎 {n_prime} Prime</span>'
+        f'<span style="color:{G};font-size:11px;font-weight:600">🟢 {n_buy} Buy</span>'
+        f'<span style="color:{ACCENT_BLUE};font-size:11px;font-weight:600">🔵 {n_turn} Turning</span>'
+        f'<span style="color:{GL};font-size:11px;font-weight:600">🟡 {n_wait} Wait</span>'
+        f'<span style="color:{G};font-size:11px;font-weight:600">✨ {n_fresh} fresh cross</span>'
         f'<span style="color:{GL};font-size:11px">Deepest: '
         f'<b>{deepest["Ticker"]}</b> {deepest["% vs 400MA"]:+.1f}%</span>'
         f'<span style="color:{TEXT_MUTED};font-size:10px;margin-left:auto">Scanned {ts}</span>'
