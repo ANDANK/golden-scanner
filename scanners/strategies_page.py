@@ -498,6 +498,356 @@ def _render_options_strategy():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# 400-MA BUY ZONE TAB
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _ma400_rsi_cell(rsi, rising=None):
+    """RSI colored for a DIP scanner: oversold = opportunity (gold/green)."""
+    if rsi is None or (isinstance(rsi, float) and rsi != rsi):
+        return f'<span style="color:{TEXT_MUTED}">—</span>'
+    col = (ACCENT_RED if rsi < 25 else          # extreme — knife risk
+           GOLD if rsi < 40 else                # oversold — opportunity zone
+           ACCENT_GREEN if rsi <= 60 else       # healthy
+           ACCENT_RED)                          # not a dip anymore
+    arrow = ""
+    if rising is True:
+        arrow = f' <span style="color:{ACCENT_GREEN};font-size:9px">↗</span>'
+    elif rising is False:
+        arrow = f' <span style="color:{TEXT_MUTED};font-size:9px">↘</span>'
+    return (f'<span style="color:{col};font-family:\'DM Mono\',monospace;'
+            f'font-weight:700">{rsi:.0f}</span>{arrow}')
+
+
+def _ma400_xover_cell(state: str) -> str:
+    if state == "Fresh ↑":
+        return (f'<span style="background:{ACCENT_GREEN}22;color:{ACCENT_GREEN};'
+                f'border:1px solid {ACCENT_GREEN}55;font-size:9px;font-weight:700;'
+                f'padding:1px 7px;border-radius:10px;white-space:nowrap">✨ Fresh ↑</span>')
+    if state == "Above":
+        return f'<span style="color:{ACCENT_GREEN};font-size:11px">✅</span>'
+    return f'<span style="color:{TEXT_MUTED};font-size:11px">❌</span>'
+
+
+def _render_ma400_table(df: pd.DataFrame):
+    G, GL, BL, RD = ACCENT_GREEN, GOLD, ACCENT_BLUE, ACCENT_RED
+
+    _GH = "padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px"
+    header_groups = (
+        f'<div style="display:grid;grid-template-columns:'
+        f'110px 80px 70px 230px 130px 130px 130px 130px 130px 90px 1fr;gap:0">'
+        f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Ticker</div>'
+        f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Price</div>'
+        f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Chg%</div>'
+        f'<div style="background:{GL}18;{_GH};color:{GL};border-bottom:2px solid {GL}55">400-Day MA Zone</div>'
+        f'<div style="background:{BL}12;{_GH};color:{BL};border-bottom:2px solid {BL}55">52-Week</div>'
+        f'<div style="background:{G}12;{_GH};color:{G};border-bottom:2px solid {G}55">RSI D / W</div>'
+        f'<div style="background:#A78BFA18;{_GH};color:#A78BFA;border-bottom:2px solid #A78BFA55">MACD&gt;0 D/W</div>'
+        f'<div style="background:#A78BFA18;{_GH};color:#A78BFA;border-bottom:2px solid #A78BFA55">Cross D/W</div>'
+        f'<div style="background:#34D39918;{_GH};color:#34D399;border-bottom:2px solid #34D39955">Sentiment</div>'
+        f'<div style="background:{GL}18;{_GH};color:{GL};border-bottom:2px solid {GL}55">Score</div>'
+        f'<div style="background:#F9731612;{_GH};color:#F97316;border-bottom:2px solid #F9731655">Flags</div>'
+        f'</div>'
+    )
+
+    _HD = (f'background:{BG_PANEL};color:{TEXT_MUTED};font-size:9px;font-weight:600;'
+           f'text-transform:uppercase;letter-spacing:0.6px;padding:6px 12px;'
+           f'border-bottom:2px solid {GL}22;white-space:nowrap')
+    hdr = "".join(
+        f'<th style="{_HD};text-align:left">{c}</th>'
+        for c in [
+            "Ticker", "Price", "Chg%",
+            "% vs 400MA", "400MA",
+            "DD from Hi", "Range Pos",
+            "D-RSI", "W-RSI",
+            "D", "W",
+            "Daily", "Weekly",
+            "Trend", "Sentiment",
+            "Score", "Flags",
+        ]
+    )
+
+    rows_html = ""
+    for i, (_, row) in enumerate(df.iterrows()):
+        bg      = BG_CARD if i % 2 == 0 else BG_PANEL
+        chg     = row["Chg%"]
+        chg_col = G if chg >= 0 else RD
+
+        # % vs 400MA — the headline metric, with a mini deviation bar
+        pct   = float(row["% vs 400MA"])
+        p_col = (RD if pct < -25 else GL if pct < 0 else
+                 ACCENT_GREEN if pct <= 3 else TEXT_MUTED)
+        bar_w   = min(abs(pct) / 30 * 50, 50)          # 50px max each side
+        bar_dir = ("margin-left:60px" if pct >= 0
+                   else f"margin-left:{60 - bar_w:.0f}px")
+        pct_cell = (
+            f'<div style="display:flex;align-items:center;gap:8px">'
+            f'<span style="color:{p_col};font-family:\'DM Mono\',monospace;'
+            f'font-weight:800;font-size:13px;min-width:58px">{pct:+.1f}%</span>'
+            f'<div style="width:120px;height:8px;background:{BORDER_COLOR}44;'
+            f'border-radius:4px;position:relative;overflow:hidden">'
+            f'<div style="position:absolute;left:60px;top:0;bottom:0;width:1px;background:{TEXT_MUTED}88"></div>'
+            f'<div style="height:100%;width:{bar_w:.0f}px;{bar_dir};'
+            f'background:{p_col};border-radius:4px;opacity:0.85"></div>'
+            f'</div></div>'
+        )
+
+        dd     = float(row["52w DD%"])
+        dd_col = RD if dd <= -30 else GL if dd <= -15 else TEXT_MUTED
+        rp     = float(row["52w Pos"])
+        rp_col = RD if rp <= 10 else GL if rp <= 35 else TEXT_MUTED
+
+        trend      = str(row["Trend"])
+        trend_html = (f'<span style="color:{G};font-size:10px">🌟 Golden</span>'
+                      if trend == "Golden" else
+                      f'<span style="color:{RD};font-size:10px">💀 Death</span>')
+
+        sent     = str(row["Sentiment"])
+        sent_col = G if "🟢" in sent else GL if "🟡" in sent else RD
+
+        sc     = int(row["Score"])
+        sc_col = G if sc >= 7 else GL if sc >= 4 else TEXT_MUTED
+
+        flags    = str(row["Flags"])
+        flag_col = "#F97316" if flags != "—" else TEXT_MUTED
+
+        _mk_bool = lambda b: (f'<span style="color:{G}">✅</span>' if b
+                              else f'<span style="color:{TEXT_MUTED}">❌</span>')
+
+        _TD = f'padding:8px 12px;border-bottom:1px solid {BORDER_COLOR}22'
+        rows_html += (
+            f'<tr style="background:{bg}">'
+            f'<td style="{_TD};white-space:nowrap">'
+            f'<span style="color:{GL};font-family:\'DM Mono\',monospace;font-weight:700;'
+            f'font-size:13px">{row["Ticker"]}</span></td>'
+            f'<td style="{_TD}"><span style="color:{TEXT_PRIMARY};'
+            f'font-family:\'DM Mono\',monospace">${row["Price"]:.2f}</span></td>'
+            f'<td style="{_TD}"><span style="color:{chg_col};'
+            f'font-family:\'DM Mono\',monospace">{chg:+.2f}%</span></td>'
+            # 400MA zone
+            f'<td style="{_TD};border-left:1px solid {GL}33">{pct_cell}</td>'
+            f'<td style="{_TD}"><span style="color:{TEXT_MUTED};'
+            f'font-family:\'DM Mono\',monospace;font-size:11px">${row["400MA"]:.2f}</span></td>'
+            # 52-week
+            f'<td style="{_TD};border-left:1px solid {BL}33">'
+            f'<span style="color:{dd_col};font-family:\'DM Mono\',monospace">{dd:.1f}%</span></td>'
+            f'<td style="{_TD}"><span style="color:{rp_col};'
+            f'font-family:\'DM Mono\',monospace">{rp:.0f}%</span></td>'
+            # RSI
+            f'<td style="{_TD};border-left:1px solid {G}33">{_ma400_rsi_cell(row["D-RSI"])}</td>'
+            f'<td style="{_TD}">{_ma400_rsi_cell(row["W-RSI"], row["W-RSI ↗"])}</td>'
+            # MACD > 0
+            f'<td style="{_TD};border-left:1px solid #A78BFA33;text-align:center">'
+            f'{_mk_bool(row["MACD>0 D"])}</td>'
+            f'<td style="{_TD};text-align:center">{_mk_bool(row["MACD>0 W"])}</td>'
+            # Crossovers
+            f'<td style="{_TD};border-left:1px solid #A78BFA33">{_ma400_xover_cell(str(row["X-over D"]))}</td>'
+            f'<td style="{_TD}">{_ma400_xover_cell(str(row["X-over W"]))}</td>'
+            # Trend + sentiment
+            f'<td style="{_TD};border-left:1px solid #34D39933;white-space:nowrap">{trend_html}</td>'
+            f'<td style="{_TD};white-space:nowrap">'
+            f'<span style="color:{sent_col};font-size:11px;font-weight:700">{sent}</span></td>'
+            # Score
+            f'<td style="{_TD};border-left:1px solid {GL}33;text-align:center">'
+            f'<span style="color:{sc_col};font-weight:800;font-size:13px">{sc}</span>'
+            f'<span style="color:{TEXT_MUTED};font-size:9px">/10</span></td>'
+            # Flags
+            f'<td style="{_TD};border-left:1px solid #F9731633;font-size:10px;'
+            f'color:{flag_col}">{flags}</td>'
+            f'</tr>'
+        )
+
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:\'Inter\',sans-serif">'
+        f'<thead>{header_groups}<tr>{hdr}</tr></thead>'
+        f'<tbody>{rows_html}</tbody>'
+        f'</table></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_ma400_tab():
+    from scanners.ma400_scanner import (
+        scan_ma400, quality_universe, sp500_universe, full_universe,
+    )
+
+    G, GL, RD = ACCENT_GREEN, GOLD, ACCENT_RED
+
+    # ── Info banner ────────────────────────────────────────────────────────────
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,{BG_CARD},{BG_PANEL});'
+        f'border:1px solid {GL}44;border-radius:12px;padding:18px 24px;margin-bottom:14px">'
+        f'<div style="color:{GL};font-size:15px;font-weight:700;margin-bottom:6px">'
+        f'🛡️ 400-Day MA Buy Zone — Quality at a Discount</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7">'
+        f'Quality compounders rarely trade at or below their <b style="color:#fff">400-day moving average</b> — '
+        f'when they do, it has historically marked deep-value accumulation zones. '
+        f'This scan covers a curated long-term-quality universe (no leveraged/volatility products, '
+        f'no structurally-declining names) and lists everything near or under the line, '
+        f'<b style="color:{GL}">deepest discount first</b>. '
+        f'D/W RSI + MACD columns tell you whether the dip is still falling or already turning.</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("📋 How to read this scan", expanded=False):
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown(
+                "**Dip Score /10 — is the dip buyable NOW?**\n"
+                "1. Price ≤ 2% above the 400MA (in the zone)\n"
+                "2. W-RSI ≤ 50 — long-term pullback confirmed\n"
+                "3. W-RSI ≥ 30 — not collapsing\n"
+                "4. D-RSI ≥ 30 — daily selling exhausted\n"
+                "5. Daily MACD histogram rising\n"
+                "6. Daily MACD above signal (or fresh cross)\n"
+                "7. Weekly MACD above signal or improving\n"
+                "8. Price back above EMA9 (stabilizing)\n"
+                "9. ≥ 15% below 52-week high (real discount)\n"
+                "10. No falling knife / capitulation volume\n\n"
+                "**Sentiment**: 🟢 Accumulate (≥7) · 🟡 Stabilizing/Watch (4–6) · 🔴 Falling (≤3)"
+            )
+        with c2:
+            st.markdown(
+                "**Column guide**\n"
+                "- **% vs 400MA** — negative = below the line. Bar shows deviation (center line = the MA)\n"
+                "- **DD from Hi / Range Pos** — drawdown from 52-w high · position in 52-w range (0% = at low)\n"
+                "- **D-RSI / W-RSI** — gold < 40 = oversold opportunity · red < 25 = knife risk · ↗ = weekly RSI rising\n"
+                "- **MACD>0 D/W** — MACD line above zero (trend regime) on daily / weekly\n"
+                "- **Cross D/W** — ✨ Fresh ↑ = crossed above signal within 10 daily / 4 weekly bars — the classic turn signal\n"
+                "- **Trend** — 🌟 Golden (SMA50>SMA200) · 💀 Death cross\n\n"
+                "**Playbook**: the best entries combine a negative % vs 400MA, "
+                "W-RSI 30–45 turning ↗, and a ✨ fresh cross — quality on sale *and* turning. "
+                "🔪 knives and 🕳️ deep breaks (>25% below) usually mean the story changed — verify fundamentals first."
+            )
+
+    # ── Controls ───────────────────────────────────────────────────────────────
+    u_col, n_col, b_col, run_col = st.columns([1.6, 1.6, 1.1, 1])
+    with u_col:
+        uni_choice = st.selectbox(
+            "Universe", ["🏆 Quality 200 (curated)", "🗂️ S&P 500 + ETFs", "🌐 Full universe (~500)"],
+            key="ma400_uni",
+            help="Quality 200 = MTPA curated long-term list minus leveraged/declining names",
+        )
+    with n_col:
+        near_pct = st.slider("Include up to X% above 400MA", 0, 25, 10, 1, key="ma400_near")
+    with b_col:
+        only_below = st.checkbox("Only below MA", value=False, key="ma400_below")
+    with run_col:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        run_btn = st.button("▶ Run Scan", type="primary",
+                            use_container_width=True, key="ma400_run")
+
+    if run_btn:
+        universe = (quality_universe() if "Quality" in uni_choice else
+                    sp500_universe() if "S&P" in uni_choice else full_universe())
+
+        prog_ph = st.progress(0, text="Starting…")
+        stat_ph = st.empty()
+
+        def _status(i, n, tk):
+            prog_ph.progress((i + 1) / n, text=f"Scanning {tk} ({i+1}/{n})")
+            stat_ph.markdown(
+                f'<div style="color:{TEXT_MUTED};font-size:11px">🔍 {tk}</div>',
+                unsafe_allow_html=True,
+            )
+
+        df_out, skipped = scan_ma400(universe, near_pct=float(near_pct),
+                                     only_below=only_below, status_fn=_status)
+        prog_ph.empty(); stat_ph.empty()
+
+        st.session_state["ma400_df"]      = df_out
+        st.session_state["ma400_skipped"] = skipped
+        st.session_state["ma400_n_uni"]   = len(universe)
+        st.session_state["ma400_ts"]      = pd.Timestamp.now().strftime("%b %d %Y  %I:%M %p")
+        st.rerun()
+
+    # ── Results ────────────────────────────────────────────────────────────────
+    if "ma400_df" not in st.session_state:
+        st.markdown(
+            f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;'
+            f'padding:40px;text-align:center;color:{TEXT_MUTED};margin-top:12px">'
+            f'Press <b style="color:{GL}">▶ Run Scan</b> to find quality stocks '
+            f'near or below their 400-day MA</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    df_out  = st.session_state["ma400_df"]
+    skipped = st.session_state.get("ma400_skipped", [])
+    n_uni   = st.session_state.get("ma400_n_uni", 0)
+    ts      = st.session_state.get("ma400_ts", "")
+
+    if df_out.empty:
+        st.info(
+            f"No stocks within {st.session_state.get('ma400_near', 10)}% of their 400-day MA — "
+            f"the whole quality universe is extended above the line (a bull-market tell in itself). "
+            f"Try a bigger universe or a wider % band."
+        )
+        return
+
+    # ── Summary strip ──────────────────────────────────────────────────────────
+    n_below = int((df_out["% vs 400MA"] < 0).sum())
+    n_accum = int((df_out["Score"] >= 7).sum())
+    n_fresh = int(((df_out["X-over D"] == "Fresh ↑") | (df_out["X-over W"] == "Fresh ↑")).sum())
+    deepest = df_out.iloc[0]
+    below_df = df_out[df_out["% vs 400MA"] < 0]
+    avg_disc = float(below_df["% vs 400MA"].mean()) if not below_df.empty else 0.0
+    st.markdown(
+        f'<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;'
+        f'background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:8px;'
+        f'padding:10px 16px;margin:6px 0 10px 0">'
+        f'<span style="color:{TEXT_MUTED};font-size:11px">Scanned '
+        f'<b style="color:#fff">{n_uni}</b> · in zone '
+        f'<b style="color:{GL}">{len(df_out)}</b></span>'
+        f'<span style="color:{RD};font-size:11px;font-weight:600">📉 {n_below} below the 400MA'
+        + (f' (avg {avg_disc:.1f}%)' if n_below else '') + '</span>'
+        f'<span style="color:{G};font-size:11px;font-weight:600">🟢 {n_accum} Accumulate (≥7/10)</span>'
+        f'<span style="color:{G};font-size:11px;font-weight:600">✨ {n_fresh} fresh MACD cross</span>'
+        f'<span style="color:{GL};font-size:11px">Deepest: '
+        f'<b>{deepest["Ticker"]}</b> {deepest["% vs 400MA"]:+.1f}%</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:10px;margin-left:auto">Scanned {ts}</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    _render_ma400_table(df_out)
+
+    if skipped:
+        st.caption(f"⏭️ Skipped (insufficient history for a 400-day MA / no data): {', '.join(skipped[:25])}"
+                   + (f" +{len(skipped)-25} more" if len(skipped) > 25 else ""))
+
+    # ── Export row ─────────────────────────────────────────────────────────────
+    dl_col, gs_col, _sp = st.columns([1, 1, 4])
+    with dl_col:
+        st.download_button(
+            "⬇ Export CSV", df_out.to_csv(index=False),
+            "ma400_buy_zone.csv", "text/csv",
+            use_container_width=True, key="ma400_dl",
+        )
+    with gs_col:
+        from scanners.gsheet_helper import export_tables, gsheets_configured
+        if gsheets_configured():
+            if st.button("📤 Export to Google Sheets", use_container_width=True, key="ma400_gs"):
+                with st.spinner("Exporting to Google Sheets…"):
+                    cols = list(df_out.columns)
+                    ok, msg = export_tables(
+                        "MA400",
+                        [("400-Day MA Buy Zone", cols, df_out.values.tolist())],
+                        meta_cells=[f"400-MA Buy Zone scan — {ts}",
+                                    f"Universe {n_uni} · In zone {len(df_out)} · Below MA {n_below}"],
+                    )
+                if ok:
+                    st.success(f"✅ {msg}")
+                else:
+                    st.error(f"❌ {msg}")
+        else:
+            st.button("📤 Export to Google Sheets", disabled=True,
+                      help="Google Sheets not configured — add credentials in Streamlit Secrets",
+                      use_container_width=True, key="ma400_gs_dis")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # MAIN RENDER
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -740,14 +1090,15 @@ def _render_ftf_tab():
 
 def render():
     section_header("♟️", "Strategies",
-                   "QQQ / TQQQ weight-of-evidence · Options Strategy screener · First Things First")
+                   "QQQ / TQQQ weight-of-evidence · Options Strategy screener · First Things First · 400-MA Buy Zone")
 
     st.markdown(_TAB_CSS, unsafe_allow_html=True)
 
-    tab_qqq, tab_opts, tab_ftf, tab_sr, tab_9sig = st.tabs([
+    tab_qqq, tab_opts, tab_ftf, tab_ma400, tab_sr, tab_9sig = st.tabs([
         "♟️  QQQ / TQQQ Strategy",
         "💰  Options Strategy",
         "🎯  First Things First",
+        "🛡️  400-MA Buy Zone",
         "📊  Sector Rotation",
         "📊  9Sig Plan",
     ])
@@ -761,6 +1112,9 @@ def render():
 
     with tab_ftf:
         _render_ftf_tab()
+
+    with tab_ma400:
+        _render_ma400_tab()
 
     with tab_sr:
         from scanners.sector_rotation import render_sector_rotation
