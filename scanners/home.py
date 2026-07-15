@@ -1,636 +1,883 @@
-# pages/home.py — Market Overview + Strategy Dashboard
+# scanners/home.py — Market Overview: the one-page command center
+#
+# Layout:
+#   ┌─────────────────────────────────────────────────────────┐
+#   │ REGIME BAR — Risk-On/Mixed/Risk-Off · indices · breadth │
+#   ├────────────────────────────┬────────────────────────────┤
+#   │ 🏆 Top-20 Conviction Picks │ 📰 News (picks + market)   │
+#   ├────────────────────────────┼────────────────────────────┤
+#   │ ⚡ Trade Today · 🔥 High IV │ 🔄 Sector Rotation (RRG)   │
+#   └────────────────────────────┴────────────────────────────┘
+#
+# Design rules:
+#   - NEVER run a scanner on page load. The Top-20 reads the latest
+#     twice-daily Golden Scan JSON committed to data/ (instant).
+#   - Live work is limited to cached, batched fetches (quotes, news, sectors).
+#   - Every section is fail-safe: one broken feed never bricks the page.
 
 from __future__ import annotations
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+import numpy as np
+import yfinance as yf
+import json, glob, os, re, sys
+from datetime import datetime, timezone
 import pytz
-import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import *
-from utils import section_header, calc_sma, calc_ema, calc_rsi, calc_macd, calc_atr
-from data_loader import get_price_history, get_market_overview, get_batch_quotes
+from utils import section_header, calc_sma, calc_ema, calc_rsi
+from data_loader import get_price_history, get_market_overview
+
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+_GH_RAW_BASE = "https://raw.githubusercontent.com/ANDANK/golden-scanner/main/data"
+
+ORANGE = "#F97316"
+PURPLE = "#A78BFA"
+MINT   = "#34D399"
 
 
-# ── Colour helpers ───────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# SMALL HTML HELPERS
+# ══════════════════════════════════════════════════════════════════════════════
 
 def _rgba(hex_color: str, alpha: float) -> str:
     h = hex_color.lstrip("#")
-    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-    return f"rgba({r},{g},{b},{alpha})"
+    return f"rgba({int(h[0:2],16)},{int(h[2:4],16)},{int(h[4:6],16)},{alpha})"
 
 
-def _sig(signal: str) -> str:
-    if signal == "BUY":    color, bg = ACCENT_GREEN, _rgba(ACCENT_GREEN, 0.15)
-    elif signal == "SELL": color, bg = ACCENT_RED,   _rgba(ACCENT_RED,   0.15)
-    elif signal == "HOLD": color, bg = "#FBBF24",    _rgba("#FBBF24",    0.15)
-    else:                  color, bg = TEXT_MUTED,   _rgba("#6B7280",    0.12)
-    s = (f"background:{bg};color:{color};border:1px solid {color}66;"
-         f"padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;"
-         f"letter-spacing:0.5px;white-space:nowrap")
-    return f'<span style="{s}">{signal}</span>'
+def _chip(text: str, color: str, bg_alpha: float = 0.12) -> str:
+    return (f'<span style="background:{_rgba(color, bg_alpha)};color:{color};'
+            f'border:1px solid {color}44;font-size:10px;font-weight:700;'
+            f'padding:2px 9px;border-radius:12px;white-space:nowrap">{text}</span>')
 
 
-def _score_bar(score: int) -> str:
-    color = ACCENT_GREEN if score >= 70 else ("#FBBF24" if score >= 50 else ACCENT_RED)
-    bar_s  = f"background:rgba(107,114,128,0.2);border-radius:3px;height:5px;width:100%;margin:3px 0"
-    fill_s = f"background:{color};height:5px;border-radius:3px;width:{min(score, 100)}%"
-    return (f'<div style="{bar_s}"><div style="{fill_s}"></div></div>'
-            f'<span style="color:{color};font-size:11px;font-weight:700">{score}/100</span>')
-
-
-def _strategy_table(strategies: list) -> str:
-    sep = f"border-bottom:1px solid {_rgba(BORDER_COLOR, 0.6)}"
-    hdr = (f"background:{BG_PANEL};color:{GOLD};font-size:10px;font-weight:600;"
-           f"text-transform:uppercase;letter-spacing:0.8px;padding:8px 12px;{sep}")
-    header = (
-        f'<tr>'
-        f'<th style="{hdr};text-align:center;width:36px">#</th>'
-        f'<th style="{hdr}">Strategy</th>'
-        f'<th style="{hdr};text-align:center;width:80px">Signal</th>'
-        f'<th style="{hdr};width:130px">Score</th>'
-        f'<th class="gs-note-col" style="{hdr}">Current Reading</th>'
-        f'</tr>'
+def _card(title: str, icon: str, color: str, body_html: str,
+          subtitle: str = "", max_height: int = 0) -> str:
+    """Colorful quadrant card with gradient header and optional scroll body."""
+    scroll = (f"max-height:{max_height}px;overflow-y:auto;" if max_height else "")
+    return (
+        f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
+        f'border-radius:14px;overflow:hidden;margin-bottom:14px">'
+        f'<div style="background:linear-gradient(90deg,{_rgba(color,0.22)},{_rgba(color,0.04)});'
+        f'border-bottom:2px solid {color}55;padding:10px 16px;'
+        f'display:flex;align-items:baseline;gap:10px">'
+        f'<span style="font-size:16px">{icon}</span>'
+        f'<span style="color:{color};font-size:13px;font-weight:800;'
+        f'letter-spacing:0.6px;text-transform:uppercase">{title}</span>'
+        + (f'<span style="color:{TEXT_MUTED};font-size:10px;margin-left:auto">{subtitle}</span>'
+           if subtitle else '')
+        + f'</div>'
+        f'<div style="padding:10px 12px;{scroll}">{body_html}</div>'
+        f'</div>'
     )
-    rows = []
-    for i, s in enumerate(strategies):
-        bg = BG_CARD if i % 2 == 0 else BG_PANEL
-        rank_s  = f"background:{bg};color:{TEXT_MUTED};font-size:13px;font-weight:600;padding:10px 12px;{sep};text-align:center;vertical-align:middle"
-        name_s  = f"background:{bg};padding:10px 12px;{sep};vertical-align:middle"
-        sig_s   = f"background:{bg};padding:10px 12px;{sep};text-align:center;vertical-align:middle"
-        score_s = f"background:{bg};padding:10px 12px;{sep};vertical-align:middle"
-        note_s  = f"background:{bg};color:{TEXT_MUTED};font-size:12px;padding:10px 12px;{sep};vertical-align:middle"
-        name_html = (f'<div style="color:{TEXT_PRIMARY};font-size:13px;font-weight:600;margin-bottom:2px">{s["name"]}</div>'
-                     f'<div style="color:{TEXT_MUTED};font-size:11px">{s["description"]}</div>')
-        rows.append(
+
+
+_TD = "padding:6px 8px;border-bottom:1px solid #2A2A3A33;vertical-align:middle"
+_TH = (f"color:{TEXT_MUTED};font-size:9px;font-weight:700;text-transform:uppercase;"
+       f"letter-spacing:0.6px;padding:4px 8px;text-align:left;white-space:nowrap;"
+       f"border-bottom:1px solid #2A2A3A66")
+
+
+def _mono(v: str, color: str = TEXT_PRIMARY, size: int = 12, bold: bool = False) -> str:
+    w = "700" if bold else "500"
+    return (f'<span style="color:{color};font-family:\'DM Mono\',monospace;'
+            f'font-size:{size}px;font-weight:{w}">{v}</span>')
+
+
+def _chg_html(chg: float) -> str:
+    col = ACCENT_GREEN if chg >= 0 else ACCENT_RED
+    return _mono(f"{chg:+.1f}%", col, 11)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# A. MARKET REGIME
+# ══════════════════════════════════════════════════════════════════════════════
+
+_SECTOR_ETFS = ["XLK","XLF","XLV","XLI","XLE","XLY","XLP","XLC","XLB","XLRE","XLU"]
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def _regime_data() -> dict:
+    """SPY/QQQ trend, VIX, and sector breadth. Cached 30 min."""
+    out = {"ok": False}
+    try:
+        spy = get_price_history("SPY", period="1y")["Close"].squeeze()
+        qqq = get_price_history("QQQ", period="1y")["Close"].squeeze()
+        out["spy_v200"] = (float(spy.iloc[-1]) / float(calc_sma(spy, 200).iloc[-1]) - 1) * 100
+        out["qqq_v200"] = (float(qqq.iloc[-1]) / float(calc_sma(qqq, 200).iloc[-1]) - 1) * 100
+        out["spy_chg"]  = (float(spy.iloc[-1]) / float(spy.iloc[-2]) - 1) * 100
+        out["qqq_chg"]  = (float(qqq.iloc[-1]) / float(qqq.iloc[-2]) - 1) * 100
+        out["ok"] = True
+    except Exception:
+        return out
+    try:
+        vix = get_price_history("^VIX", period="3mo")["Close"].squeeze()
+        out["vix"] = float(vix.iloc[-1])
+    except Exception:
+        out["vix"] = 20.0
+    # Breadth: % of the 11 sector ETFs above their SMA50
+    above = total = 0
+    for t in _SECTOR_ETFS:
+        try:
+            c = get_price_history(t, period="1y")["Close"].squeeze()
+            total += 1
+            if float(c.iloc[-1]) > float(calc_sma(c, 50).iloc[-1]):
+                above += 1
+        except Exception:
+            continue
+    out["breadth"] = round(above / total * 100) if total else 50
+    return out
+
+
+def _render_regime_bar():
+    d = _regime_data()
+    try:
+        mkt = get_market_overview()
+    except Exception:
+        mkt = {}
+
+    if not d.get("ok"):
+        st.warning("Market data unavailable right now — sections below still work from cached scans.")
+        return
+
+    vix, breadth = d["vix"], d["breadth"]
+    risk_on  = d["spy_v200"] > 0 and d["qqq_v200"] > 0 and vix < 22 and breadth >= 55
+    risk_off = d["spy_v200"] < 0 or vix > 30 or breadth < 30
+    if risk_on:
+        verdict, v_col, v_note = "🟢 RISK-ON", ACCENT_GREEN, "full size OK"
+    elif risk_off:
+        verdict, v_col, v_note = "🔴 RISK-OFF", ACCENT_RED, "defense — small size, tight stops"
+    else:
+        verdict, v_col, v_note = "🟡 MIXED", GOLD, "half size, be selective"
+
+    def _mini(label, val, chg=None, col=None):
+        c = col or (ACCENT_GREEN if (chg or 0) >= 0 else ACCENT_RED)
+        chg_s = (f'<span style="color:{c};font-size:10px;font-weight:700"> {chg:+.2f}%</span>'
+                 if chg is not None else '')
+        return (f'<span style="white-space:nowrap"><span style="color:{TEXT_MUTED};'
+                f'font-size:10px">{label}</span> '
+                f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;'
+                f'font-size:12px;font-weight:700">{val}</span>{chg_s}</span>')
+
+    chips = [
+        _mini("SPY vs 200MA", f'{d["spy_v200"]:+.1f}%', d["spy_chg"]),
+        _mini("QQQ vs 200MA", f'{d["qqq_v200"]:+.1f}%', d["qqq_chg"]),
+        _mini("VIX", f"{vix:.1f}", col=(ACCENT_GREEN if vix < 20 else GOLD if vix < 28 else ACCENT_RED)),
+        _mini("Breadth", f"{breadth}%",
+              col=(ACCENT_GREEN if breadth >= 55 else GOLD if breadth >= 35 else ACCENT_RED)),
+    ]
+    for name, key in [("Gold", "Gold"), ("10Y", "10Y Yield")]:
+        if key in mkt:
+            chips.append(_mini(name, f'{mkt[key]["value"]:,.1f}', mkt[key]["change"]))
+
+    st.markdown(
+        f'<div style="background:linear-gradient(90deg,{_rgba(v_col,0.16)},{BG_CARD} 55%);'
+        f'border:1px solid {v_col}55;border-radius:14px;padding:12px 18px;'
+        f'display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:14px">'
+        f'<span style="color:{v_col};font-size:17px;font-weight:900;letter-spacing:1px">{verdict}</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:11px;font-style:italic">{v_note}</span>'
+        + "".join(chips)
+        + f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# B. TOP-20 CONVICTION PICKS  (from the latest Golden Scan JSON — no scanning)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Groups drive the forced mix. Golden Scan rows are grouped by which scanners
+# fired (the "Scanners" abbrev field — richer than Style, which collapses to the
+# top-priority scanner). LEAPS/CSP rows from the same sched file add options-flow
+# diversity.
+_GROUP_META = {
+    "Trend":     ("📈 Trend",     ACCENT_GREEN),
+    "Momentum":  ("⚡ Momentum",  ORANGE),
+    "Reversal":  ("🔄 Reversal",  PURPLE),
+    "Confirmed": ("🎯 Multi-Sig", GOLD),
+    "Growth":    ("🌱 Growth",    MINT),
+    "LEAPS":     ("🚀 LEAPS",     ACCENT_BLUE),
+    "CSP":       ("💰 CSP",       GOLD),
+}
+_GROUP_ORDER = ["Trend", "Momentum", "Reversal", "Confirmed", "Growth", "LEAPS", "CSP"]
+_GROUP_CAPS  = {"LEAPS": 3, "CSP": 2}          # options rows season the list, not dominate
+# Scanner abbrev → group; checked in this order so a TC+MRS row counts as Reversal
+_ABBREV_PRIORITY = [("MRS", "Reversal"), ("M", "Momentum"), ("TA", "Momentum"),
+                    ("MF", "Confirmed"), ("G", "Growth"), ("TS", "Trend"), ("TC", "Trend")]
+
+
+def _golden_group(scanners: str) -> str:
+    toks = [t.strip() for t in str(scanners).split("+")]
+    for ab, grp in _ABBREV_PRIORITY:
+        if ab in toks:
+            return grp
+    return "Trend"
+
+
+def _sched_files() -> list[tuple]:
+    """All local sched files as (date_str, slot, path), newest first."""
+    files = []
+    for p in glob.glob(os.path.join(DATA_DIR, "sched_*_*.json")):
+        m = re.match(r"sched_(am|pm)_(\d{4}-\d{2}-\d{2})\.json", os.path.basename(p))
+        if m:
+            files.append((m.group(2), m.group(1), p))
+    # pm sorts after am on the same day
+    files.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    return files
+
+
+def _scan_rows(path_or_dict) -> pd.DataFrame:
+    """All strategy rows (Golden Scan + LEAPS + CSP) from one sched file."""
+    try:
+        if isinstance(path_or_dict, dict):
+            d = path_or_dict
+        else:
+            with open(path_or_dict) as f:
+                d = json.load(f)
+        df = pd.DataFrame(d.get("results", []))
+        if df.empty or "Strategy" not in df.columns:
+            return pd.DataFrame()
+        return df
+    except Exception:
+        return pd.DataFrame()
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def _load_latest_scan() -> tuple[pd.DataFrame, tuple, str]:
+    """
+    Latest sched-scan rows (all strategies) + previous run's tickers (for 🆕
+    badges) + label. Tries today's files on GitHub raw if the repo copy is older.
+    """
+    candidates: list[tuple[str, pd.DataFrame]] = []
+
+    # Today's files via GitHub raw (auto-scan commits may be newer than deploy)
+    today = datetime.now(pytz.timezone("America/Chicago")).date().isoformat()
+    for slot in ("pm", "am"):
+        try:
+            import urllib.request as _ur
+            with _ur.urlopen(f"{_GH_RAW_BASE}/sched_{slot}_{today}.json", timeout=3) as r:
+                d = json.loads(r.read())
+            g = _scan_rows(d)
+            if not g.empty:
+                candidates.append((f"{today}|{slot}", g))
+        except Exception:
+            pass
+
+    for date_s, slot, path in _sched_files()[:14]:
+        g = _scan_rows(path)
+        if not g.empty:
+            candidates.append((f"{date_s}|{slot}", g))
+
+    if not candidates:
+        return pd.DataFrame(), tuple(), ""
+
+    # Dedupe by key, keep newest first
+    seen, ordered = set(), []
+    for key, g in sorted(candidates, key=lambda x: x[0], reverse=True):
+        if key not in seen:
+            seen.add(key)
+            ordered.append((key, g))
+
+    latest_key, latest = ordered[0]
+    prev_tickers = tuple(ordered[1][1]["Ticker"]) if len(ordered) > 1 else tuple()
+    date_s, slot = latest_key.split("|")
+    label = f"{slot.upper()} scan · {datetime.fromisoformat(date_s).strftime('%b %d')}"
+    return latest, prev_tickers, label
+
+
+def _build_top20(df: pd.DataFrame, n: int = 20) -> list[dict]:
+    """
+    Uniform pick records, force-mixed round-robin across groups:
+    Trend / Momentum / Reversal / Multi-Sig / Growth (Golden Scan, grouped by
+    which scanners fired) + LEAPS / CSP rows (capped) from the same scan.
+    """
+    if df.empty:
+        return []
+    picks: dict[str, list[dict]] = {g: [] for g in _GROUP_ORDER}
+
+    golden = df[df["Strategy"] == "Golden Scan"]
+    for _, r in golden.sort_values("Score", ascending=False).iterrows():
+        grp   = _golden_group(r.get("Scanners", ""))
+        n_sc  = r.get("Scanner Count")
+        extra = f" ×{int(n_sc)}" if n_sc and not pd.isna(n_sc) and int(n_sc) >= 2 else ""
+        icon, col = _GROUP_META[grp]
+        picks[grp].append({
+            "ticker": r["Ticker"],
+            "price":  r.get("Price"),
+            "chg":    r.get("Change %", 0.0),
+            "chip":   icon + extra,
+            "color":  col,
+            "hold":   str(r.get("Hold", "—")),
+            "upside": r.get("Est. Upside %"),
+            "score":  r.get("Score"),
+        })
+
+    for strat in ("LEAPS", "CSP"):
+        sub = df[df["Strategy"] == strat]
+        if sub.empty:
+            continue
+        icon, col = _GROUP_META[strat]
+        for _, r in sub.sort_values("Score", ascending=False).iterrows():
+            sc = r.get("Score")
+            if sc is None or pd.isna(sc) or sc < 65:
+                continue
+            dte  = r.get("DTE")
+            hold = ("6–12 mo" if strat == "LEAPS" else
+                    (f"{int(dte)}d (put)" if dte and not pd.isna(dte) else "1–3 wk"))
+            ann  = r.get("Ann. Return%")
+            picks[strat].append({
+                "ticker": r["Ticker"],
+                "price":  r.get("Stock Price", r.get("Price")),
+                "chg":    r.get("Change %", 0.0),
+                "chip":   icon,
+                "color":  col,
+                "hold":   hold,
+                "upside": ann if strat == "CSP" else None,
+                "score":  sc,
+            })
+
+    out, seen, counts = [], set(), {g: 0 for g in _GROUP_ORDER}
+    while len(out) < n and any(picks.values()):
+        progressed = False
+        for g in _GROUP_ORDER:
+            cap = _GROUP_CAPS.get(g)
+            while picks[g]:
+                row = picks[g].pop(0)
+                if row["ticker"] in seen or (cap and counts[g] >= cap):
+                    continue
+                seen.add(row["ticker"])
+                counts[g] += 1
+                out.append(row)
+                progressed = True
+                break
+            if len(out) >= n:
+                break
+        if not progressed:
+            break
+    return out
+
+
+@st.cache_data(ttl=21600, show_spinner=False)
+def _earnings_soon(tickers: tuple, days: int = 7) -> dict:
+    """Ticker → days-until-earnings when within `days`. Best-effort, cached 6 h."""
+    out = {}
+    for t in tickers:
+        try:
+            cal = yf.Ticker(t).calendar
+            dates = None
+            if isinstance(cal, dict):
+                dates = cal.get("Earnings Date") or cal.get("EarningsDate")
+            elif cal is not None and hasattr(cal, "loc"):
+                try:
+                    dates = list(cal.loc["Earnings Date"])
+                except Exception:
+                    dates = None
+            if not dates:
+                continue
+            d0 = dates[0] if isinstance(dates, (list, tuple)) else dates
+            d0 = pd.Timestamp(d0).date()
+            delta = (d0 - datetime.now().date()).days
+            if 0 <= delta <= days:
+                out[t] = delta
+        except Exception:
+            continue
+    return out
+
+
+def _render_top20(live: dict):
+    scan_df, prev_tickers, label = _load_latest_scan()
+
+    if scan_df.empty:
+        st.markdown(_card(
+            "Top 20 Conviction Picks", "🏆", GOLD,
+            f'<div style="color:{TEXT_MUTED};padding:30px;text-align:center">'
+            f'No scan results found yet — run a scheduled scan '
+            f'(Admin → Scheduled Scans) and this list fills automatically.</div>'
+        ), unsafe_allow_html=True)
+        return []
+
+    top = _build_top20(scan_df, 20)
+    tickers = [p["ticker"] for p in top]
+    earn = _earnings_soon(tuple(tickers))
+
+    rows = ""
+    for p in top:
+        t = p["ticker"]
+        lv    = live.get(t, {})
+        price = lv.get("price", p["price"])
+        chg   = lv.get("chg", p["chg"]) or 0.0
+        ups   = p["upside"]
+        score = p["score"]
+
+        badges = ""
+        if prev_tickers and t not in prev_tickers:
+            badges += (f' <span style="background:{ACCENT_BLUE}22;color:{ACCENT_BLUE};'
+                       f'font-size:8px;font-weight:800;padding:1px 5px;'
+                       f'border-radius:8px">NEW</span>')
+        if t in earn:
+            badges += (f' <span title="Earnings in {earn[t]}d" style="background:{ACCENT_RED}22;'
+                       f'color:{ACCENT_RED};font-size:8px;font-weight:800;padding:1px 5px;'
+                       f'border-radius:8px">E-{earn[t]}d</span>')
+
+        try:
+            price_s = "${:,.2f}".format(float(price))
+        except Exception:
+            price_s = "—"
+        ups_html = (_mono("+{:.0f}%".format(float(ups)), ACCENT_GREEN, 11)
+                    if ups is not None and not pd.isna(ups) else
+                    f'<span style="color:{TEXT_MUTED}">—</span>')
+        sc_html  = (f'<span style="color:{GOLD};font-size:10px;font-weight:800">{int(score)}</span>'
+                    if score is not None and not pd.isna(score) else "")
+
+        rows += (
             f'<tr>'
-            f'<td style="{rank_s}">#{s["rank"]}</td>'
-            f'<td style="{name_s}">{name_html}</td>'
-            f'<td style="{sig_s}">{_sig(s["signal"])}</td>'
-            f'<td style="{score_s}">{_score_bar(s["score"])}</td>'
-            f'<td class="gs-note-col" style="{note_s}">{s["note"]}</td>'
+            f'<td style="{_TD};white-space:nowrap">'
+            f'{_mono(t, GOLD, 12, True)}{badges}</td>'
+            f'<td style="{_TD}">{_mono(price_s, TEXT_PRIMARY, 11)}</td>'
+            f'<td style="{_TD}">{_chg_html(float(chg))}</td>'
+            f'<td style="{_TD}">{_chip(p["chip"], p["color"])}</td>'
+            f'<td style="{_TD};white-space:nowrap"><span style="color:{TEXT_PRIMARY};'
+            f'font-size:11px">{p["hold"]}</span></td>'
+            f'<td style="{_TD};text-align:right">{ups_html}</td>'
+            f'<td style="{_TD};text-align:right">{sc_html}</td>'
             f'</tr>'
         )
-    wrap_s = f"overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid {BORDER_COLOR};border-radius:8px;margin-top:8px"
-    tbl_s  = "width:100%;border-collapse:collapse;font-family:'Inter',sans-serif"
-    mobile_css = "<style>@media(max-width:600px){.gs-note-col{display:none!important}}</style>"
-    return f'{mobile_css}<div style="{wrap_s}"><table style="{tbl_s}"><thead>{header}</thead><tbody>{"".join(rows)}</tbody></table></div>'
+
+    body = (
+        f'<table style="width:100%;border-collapse:collapse">'
+        f'<thead><tr>'
+        f'<th style="{_TH}">Ticker</th><th style="{_TH}">Price</th>'
+        f'<th style="{_TH}">Chg</th><th style="{_TH}">Why</th>'
+        f'<th style="{_TH}">Hold</th><th style="{_TH};text-align:right">Upside</th>'
+        f'<th style="{_TH};text-align:right">Sc</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table>'
+        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:6px">'
+        f'Why = which scanner fired (×N = N scanners agree) · mixed across '
+        f'Trend / Momentum / Reversal / Multi-Sig / Growth / LEAPS / CSP · '
+        f'NEW = not in previous scan · E-Nd = earnings within N days · '
+        f'CSP upside = annualized premium</div>'
+    )
+    st.markdown(_card("Top 20 Conviction Picks", "🏆", GOLD, body,
+                      subtitle=label, max_height=560), unsafe_allow_html=True)
+    return tickers
 
 
-# ── Indicator fetching ───────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# C. NEWS — headlines for the picks + general market pulse
+# ══════════════════════════════════════════════════════════════════════════════
 
-def _get_ind(ticker: str) -> dict:
-    try:
-        df = get_price_history(ticker, period="1y")
-        if df is None or df.empty or len(df) < 50:
-            return {}
-        close = df["Close"].squeeze()
-        n = len(close)
-        price  = float(close.iloc[-1])
-        prev   = float(close.iloc[-2]) if n > 1 else price
-        chg    = (price - prev) / prev * 100
-
-        sma200 = float(calc_sma(close, 200).iloc[-1])
-        sma50  = float(calc_sma(close, 50).iloc[-1])
-        ema9   = float(calc_ema(close, 9).iloc[-1])
-        ema21  = float(calc_ema(close, 21).iloc[-1])
-        ema50  = float(calc_ema(close, 50).iloc[-1])
-
-        rsi14      = calc_rsi(close, 14)
-        rsi2       = calc_rsi(close, 2)
-        _, _, mhist, *_ = calc_macd(close)
-        atr_pct    = calc_atr(df) if "High" in df.columns else 0.0
-
-        vol_ratio = 1.0
-        if "Volume" in df.columns:
-            vol = df["Volume"].squeeze()
-            avg = float(vol.iloc[-21:-1].mean()) if n > 21 else float(vol.mean())
-            vol_ratio = float(vol.iloc[-1]) / avg if avg > 0 else 1.0
-
-        high5 = float(df["High"].iloc[-5:].max()) if "High" in df.columns and n >= 5 else price
-
-        return {
-            "price": price, "chg": chg,
-            "sma200": sma200, "sma50": sma50,
-            "ema9": ema9, "ema21": ema21, "ema50": ema50,
-            "rsi14": rsi14, "rsi2": rsi2,
-            "macd_hist": mhist,
-            "atr_pct": atr_pct, "vol_ratio": vol_ratio, "high5": high5,
-        }
-    except Exception:
-        return {}
-
-
-# ── Strategy scoring — TQQQ ──────────────────────────────────────
-
-def _tqqq_strategies(qqq: dict, tqqq: dict, vix: dict) -> list:
-    st_list = []
-    vix_lvl = float(vix.get("price", 20)) if vix else 20.0
-
-    # 1. 200 SMA Trend
-    if qqq:
-        pct = (qqq["price"] - qqq["sma200"]) / qqq["sma200"] * 100
-        if pct > 4:
-            sig, score = "BUY",  min(100, 60 + int(pct * 3))
-            note = f"QQQ {pct:+.1f}% above 200 SMA — bull regime confirmed"
-        elif pct < -1:
-            sig, score = "SELL", max(5, 50 + int(pct * 3))
-            note = f"QQQ {pct:+.1f}% below 200 SMA — bear regime, exit TQQQ"
-        else:
-            sig, score = "HOLD", 48
-            note = f"QQQ {pct:+.1f}% from 200 SMA — borderline, wait for clear signal"
-    else:
-        sig, score, note = "WATCH", 30, "Data unavailable"
-    st_list.append({"name": "200 SMA Trend", "description": "QQQ >4% above 200 SMA = BUY · Below -1% = SELL", "signal": sig, "score": score, "note": note})
-
-    # 2. EMA Momentum Swing
-    if tqqq:
-        c1 = tqqq["ema9"] > tqqq["ema21"]
-        c2 = tqqq["rsi14"] > 50
-        c3 = tqqq["macd_hist"] > 0
-        met = int(c1) + int(c2) + int(c3)
-        if met == 3:
-            sig, score = "BUY", 88
-            note = f"All 3 confirmed — EMA9>EMA21 · RSI {tqqq['rsi14']:.0f} · MACD bull"
-        elif met == 2:
-            miss = [label for cond, label in [(c1, "EMA cross"), (c2, f"RSI>50 ({tqqq['rsi14']:.0f})"), (c3, "MACD bull")] if not cond]
-            sig, score = "HOLD", 55
-            note = f"2/3 conditions met · Missing: {', '.join(miss)}"
-        else:
-            sig, score = "SELL", 22
-            note = f"EMA9 {'>' if c1 else '<'} EMA21 · RSI {tqqq['rsi14']:.0f} · MACD {'▲' if c3 else '▼'}"
-    else:
-        sig, score, note = "WATCH", 30, "Data unavailable"
-    st_list.append({"name": "EMA Momentum Swing", "description": "EMA9 > EMA21 + RSI > 50 + MACD bullish — all 3 required", "signal": sig, "score": score, "note": note})
-
-    # 3. RSI Oversold Bounce
-    if tqqq:
-        r2, r14 = tqqq["rsi2"], tqqq["rsi14"]
-        if r2 < 10 or r14 < 30:
-            sig, score = "BUY", 85
-            note = f"RSI(2)={r2:.0f} · RSI(14)={r14:.0f} — extreme oversold, load TQQQ"
-        elif r2 > 90 or r14 > 72:
-            sig, score = "SELL", 18
-            note = f"RSI(2)={r2:.0f} · RSI(14)={r14:.0f} — overbought, reduce exposure"
-        elif r14 < 45:
-            sig, score = "HOLD", 62
-            note = f"RSI(2)={r2:.0f} · RSI(14)={r14:.0f} — approaching oversold, watch"
-        else:
-            sig, score = "HOLD", 42
-            note = f"RSI(2)={r2:.0f} · RSI(14)={r14:.0f} — neutral zone, no bounce signal yet"
-    else:
-        sig, score, note = "WATCH", 30, "Data unavailable"
-    st_list.append({"name": "RSI Oversold Bounce", "description": "RSI(2) < 10 or RSI(14) < 30 = load TQQQ · RSI(2) > 90 = trim", "signal": sig, "score": score, "note": note})
-
-    # 4. DCA + Profit Taking
-    if qqq:
-        above50 = qqq["price"] > qqq["sma50"]
-        r14 = qqq["rsi14"]
-        if above50 and r14 < 65:
-            sig, score = "BUY", 78
-            note = f"QQQ above SMA50 · RSI {r14:.0f} — DCA into TQQQ is active"
-        elif above50 and r14 >= 65:
-            sig, score = "HOLD", 55
-            note = f"QQQ above SMA50 but RSI {r14:.0f} extended — trim 20–25%"
-        else:
-            sig, score = "HOLD", 32
-            note = f"QQQ below SMA50 · RSI {r14:.0f} — pause DCA, wait for reclaim"
-    else:
-        sig, score, note = "WATCH", 30, "Data unavailable"
-    st_list.append({"name": "DCA + Profit Taking", "description": "QQQ > 50 SMA = DCA active · RSI > 65 = trim partial profits", "signal": sig, "score": score, "note": note})
-
-    # 5. Risk-On / Risk-Off
-    if qqq:
-        above200 = qqq["price"] > qqq["sma200"]
-        pct_from = (qqq["price"] - qqq["sma200"]) / qqq["sma200"] * 100
-        if above200 and vix_lvl < 25:
-            sig, score = "BUY", 90
-            note = f"QQQ above 200 SMA · VIX {vix_lvl:.1f} — risk-on, full TQQQ allocation"
-        elif above200 and vix_lvl < 30:
-            sig, score = "HOLD", 55
-            note = f"QQQ above 200 SMA · VIX {vix_lvl:.1f} elevated — reduce size 50%"
-        elif not above200 and vix_lvl > 30:
-            sig, score = "SELL", 8
-            note = f"QQQ below 200 SMA · VIX {vix_lvl:.1f} spiked — risk-off, exit TQQQ"
-        else:
-            sig, score = "HOLD", 40
-            note = f"QQQ {pct_from:+.1f}% from 200 SMA · VIX {vix_lvl:.1f} — mixed signals"
-    else:
-        sig, score, note = "WATCH", 30, "Data unavailable"
-    st_list.append({"name": "Risk-On / Risk-Off", "description": "QQQ > 200 SMA + VIX < 25 = all-in · VIX > 30 = exit TQQQ", "signal": sig, "score": score, "note": note})
-
-    st_list.sort(key=lambda x: -x["score"])
-    for i, s in enumerate(st_list):
-        s["rank"] = i + 1
-    return st_list
-
-
-# ── Strategy scoring — SPY ───────────────────────────────────────
-
-def _spy_strategies(spy: dict) -> list:
-    st_list = []
-
-    # 1. 50 EMA Pullback
-    if spy:
-        pct = (spy["price"] - spy["ema50"]) / spy["ema50"] * 100
-        r14 = spy["rsi14"]
-        if -2.5 <= pct <= 2.0 and 38 <= r14 <= 55:
-            sig, score = "BUY", 88
-            note = f"SPY {pct:+.1f}% from EMA50 · RSI {r14:.0f} — textbook pullback entry"
-        elif spy["price"] > spy["ema50"] and r14 < 65:
-            sig, score = "HOLD", 58
-            note = f"SPY above EMA50 · RSI {r14:.0f} — trending, wait for pullback"
-        elif spy["price"] < spy["ema50"]:
-            sig, score = "SELL", 22
-            note = f"SPY below EMA50 — wait for reclaim before entering"
-        else:
-            sig, score = "HOLD", 42
-            note = f"SPY {pct:+.1f}% from EMA50 · RSI {r14:.0f}"
-    else:
-        sig, score, note = "WATCH", 30, "Data unavailable"
-    st_list.append({"name": "50 EMA Pullback", "description": "SPY within 2.5% of EMA50 + RSI 38–55 = buy the dip", "signal": sig, "score": score, "note": note})
-
-    # 2. Opening Range Breakout (proxy: 5-day high + volume)
-    if spy:
-        pct5d = (spy["price"] - spy["high5"]) / spy["high5"] * 100
-        vr = spy["vol_ratio"]
-        if pct5d >= -0.3 and vr > 1.2:
-            sig, score = "BUY", 78
-            note = f"SPY at/near 5-day high · Vol {vr:.1f}× — momentum breakout signal"
-        elif pct5d >= -0.3:
-            sig, score = "HOLD", 52
-            note = f"At 5-day high · Vol {vr:.1f}× low — needs volume confirmation"
-        else:
-            sig, score = "HOLD", 38
-            note = f"SPY {pct5d:.1f}% from 5-day high — no breakout yet"
-    else:
-        sig, score, note = "WATCH", 30, "Data unavailable"
-    st_list.append({"name": "Opening Range Breakout", "description": "Price at/above 5-day high + volume confirms momentum", "signal": sig, "score": score, "note": note})
-
-    # 3. VWAP Trend Continuation (EMA proxy)
-    if spy:
-        trend_up = spy["ema9"] > spy["ema21"]
-        vr, r14 = spy["vol_ratio"], spy["rsi14"]
-        if trend_up and vr > 1.1 and r14 > 50:
-            sig, score = "BUY", 76
-            note = f"EMA9 > EMA21 · RSI {r14:.0f} · Vol {vr:.1f}× — trend continuation"
-        elif trend_up and r14 > 50:
-            sig, score = "HOLD", 55
-            note = f"Uptrend intact · RSI {r14:.0f} · Vol {vr:.1f}× light — low conviction"
-        elif trend_up:
-            sig, score = "HOLD", 44
-            note = f"EMA cross bullish · RSI {r14:.0f} weak — wait for RSI > 50"
-        else:
-            sig, score = "SELL", 25
-            note = f"EMA9 < EMA21 · RSI {r14:.0f} — downtrend, avoid longs"
-    else:
-        sig, score, note = "WATCH", 30, "Data unavailable"
-    st_list.append({"name": "VWAP Trend Continuation", "description": "EMA9 > EMA21 + RSI > 50 + volume above average", "signal": sig, "score": score, "note": note})
-
-    # 4. RSI + MA Mean Reversion
-    if spy:
-        r14 = spy["rsi14"]
-        above200 = spy["price"] > spy["sma200"]
-        if r14 < 38 and above200:
-            sig, score = "BUY", 90
-            note = f"RSI {r14:.0f} oversold in uptrend — strong mean reversion buy"
-        elif r14 > 72:
-            sig, score = "SELL", 20
-            note = f"RSI {r14:.0f} overbought — trim positions, take profits"
-        elif 38 <= r14 <= 60 and above200:
-            sig, score = "HOLD", 58
-            note = f"RSI {r14:.0f} neutral · above 200 SMA — hold, wait for edge"
-        else:
-            sig, score = "HOLD", 35
-            note = f"RSI {r14:.0f} · {'above' if above200 else 'below'} 200 SMA"
-    else:
-        sig, score, note = "WATCH", 30, "Data unavailable"
-    st_list.append({"name": "RSI + MA Mean Reversion", "description": "RSI < 38 + above 200 SMA = oversold bounce · RSI > 72 = sell", "signal": sig, "score": score, "note": note})
-
-    # 5. 200 SMA Regime Filter
-    if spy:
-        pct = (spy["price"] - spy["sma200"]) / spy["sma200"] * 100
-        bull_macd = spy["macd_hist"] > 0
-        if pct > 0 and bull_macd:
-            sig, score = "BUY",  min(95, 65 + int(pct * 3))
-            note = f"SPY {pct:+.1f}% above 200 SMA · MACD bull — strong bull regime"
-        elif pct > 0:
-            sig, score = "HOLD", min(72, 55 + int(pct * 2))
-            note = f"SPY {pct:+.1f}% above 200 SMA · MACD bearish — regime intact but weakening"
-        elif pct > -5:
-            sig, score = "SELL", 35
-            note = f"SPY {pct:+.1f}% below 200 SMA — regime broken, be defensive"
-        else:
-            sig, score = "SELL", max(5, 45 + int(pct * 2))
-            note = f"SPY {pct:+.1f}% below 200 SMA — bear regime, cash/hedge"
-    else:
-        sig, score, note = "WATCH", 30, "Data unavailable"
-    st_list.append({"name": "200 SMA Regime Filter", "description": "Above 200 SMA = bull bias · Below = defensive / cash", "signal": sig, "score": score, "note": note})
-
-    st_list.sort(key=lambda x: -x["score"])
-    for i, s in enumerate(st_list):
-        s["rank"] = i + 1
-    return st_list
-
-
-# ── Strategy scoring — TSLA Options ─────────────────────────────
-
-def _tsla_strategies(tsla: dict, vix: dict) -> list:
-    st_list = []
-    vix_lvl = float(vix.get("price", 20)) if vix else 20.0
-
-    if not tsla:
-        for name, desc in [
-            ("Low-Delta Covered Calls", "Delta 0.10–0.20 · 2–6 weeks · sell into RSI 55–72"),
-            ("Protective Collar",       "Buy OTM put + sell OTM call · hedge large TSLA position"),
-            ("Cash-Secured Put",        "Sell OTM put · RSI 30–50 + above 200 SMA = sweet spot"),
-            ("Diagonal Call Spread",    "LEAP call + short near-term call · mild uptrend play"),
-            ("Trend Cash-on-Dip",       "RSI 40–60 + above 200 SMA = high-probability entry"),
-        ]:
-            st_list.append({"name": name, "description": desc, "signal": "WATCH", "score": 30, "note": "Data unavailable"})
-        for i, s in enumerate(st_list):
-            s["rank"] = i + 1
-        return st_list
-
-    r14      = tsla["rsi14"]
-    above200 = tsla["price"] > tsla["sma200"]
-    above50  = tsla["price"] > tsla["sma50"]
-    iv_elev  = tsla["atr_pct"] > 3.0
-
-    # 1. Low-Delta Covered Calls
-    if above50 and 55 <= r14 <= 72 and iv_elev:
-        sig, score = "BUY", 85
-        note = f"RSI {r14:.0f} · ATR {tsla['atr_pct']:.1f}% · above SMA50 — ideal call selling setup"
-    elif above50 and r14 > 72:
-        sig, score = "BUY", 78
-        note = f"RSI {r14:.0f} extended — great time to sell OTM calls (delta 0.10–0.20)"
-    elif above50 and iv_elev:
-        sig, score = "HOLD", 55
-        note = f"Above SMA50 · RSI {r14:.0f} · IV ok — calls viable, wait for RSI 55+"
-    elif above50:
-        sig, score = "HOLD", 40
-        note = f"Above SMA50 · ATR {tsla['atr_pct']:.1f}% low — premiums may be thin"
-    else:
-        sig, score = "SELL", 18
-        note = f"TSLA below SMA50 — risky to sell calls, stock can continue lower"
-    st_list.append({"name": "Low-Delta Covered Calls", "description": "Delta 0.10–0.20 · 2–6 weeks · sell at RSI 55–72", "signal": sig, "score": score, "note": note})
-
-    # 2. Protective Collar
-    if (vix_lvl > 25 or r14 > 68) and above200:
-        sig, score = "BUY", 78
-        note = f"VIX {vix_lvl:.1f} · RSI {r14:.0f} · above 200 SMA — collar your TSLA gains now"
-    elif above200 and 50 < r14 <= 68:
-        sig, score = "HOLD", 48
-        note = f"TSLA trending · RSI {r14:.0f} — collar limits upside unnecessarily"
-    elif not above200:
-        sig, score = "HOLD", 45
-        note = f"Below 200 SMA — collar valid to protect existing position"
-    else:
-        sig, score = "HOLD", 35
-        note = f"Low vol + low RSI — collar cost may outweigh benefit"
-    st_list.append({"name": "Protective Collar", "description": "Buy OTM put + sell OTM call · hedge large TSLA position", "signal": sig, "score": score, "note": note})
-
-    # 3. Cash-Secured Put
-    if above200 and 30 <= r14 <= 50:
-        sig, score = "BUY", 88
-        note = f"RSI {r14:.0f} · above 200 SMA — sweet spot for selling puts"
-    elif above200 and r14 < 30:
-        sig, score = "BUY", 75
-        note = f"RSI {r14:.0f} deeply oversold · above 200 SMA — aggressive CSP entry"
-    elif above200 and r14 > 65:
-        sig, score = "HOLD", 42
-        note = f"RSI {r14:.0f} extended — wait for pullback before selling puts"
-    elif above200:
-        sig, score = "HOLD", 55
-        note = f"RSI {r14:.0f} neutral · above 200 SMA — CSP ok with wider OTM strikes"
-    else:
-        sig, score = "SELL", 18
-        note = f"Below 200 SMA — assignment risk at unfavorable price level"
-    st_list.append({"name": "Cash-Secured Put", "description": "Sell OTM put · RSI 30–50 + above 200 SMA = sweet spot", "signal": sig, "score": score, "note": note})
-
-    # 4. Diagonal Call Spread
-    mild_up = above50 and tsla["ema9"] > tsla["ema21"]
-    if mild_up and 45 <= r14 <= 65:
-        sig, score = "BUY", 80
-        note = f"Mild uptrend · RSI {r14:.0f} — ideal diagonal spread conditions"
-    elif mild_up and r14 > 65:
-        sig, score = "HOLD", 55
-        note = f"Uptrend extended RSI {r14:.0f} — widen strikes, manage carefully"
-    elif above200 and not above50:
-        sig, score = "HOLD", 42
-        note = f"Consolidating · above 200 SMA — diagonal viable at lower conviction"
-    else:
-        sig, score = "SELL", 20
-        note = f"Downtrend — LEAP value at risk, avoid diagonals"
-    st_list.append({"name": "Diagonal Call Spread", "description": "LEAP call + short near-term call · best in mild uptrend", "signal": sig, "score": score, "note": note})
-
-    # 5. Trend Cash-on-Dip
-    if above200 and 40 <= r14 <= 60:
-        sig, score = "BUY", 85
-        note = f"RSI {r14:.0f} sweet zone · above 200 SMA — high-probability dip entry"
-    elif above200 and r14 < 40:
-        sig, score = "BUY", 70
-        note = f"RSI {r14:.0f} approaching oversold · above 200 SMA — scale in carefully"
-    elif above200 and r14 > 60:
-        sig, score = "HOLD", 48
-        note = f"RSI {r14:.0f} elevated — wait for dip to 40–60 zone"
-    else:
-        sig, score = "SELL", 15
-        note = f"Below 200 SMA — not a dip, trend is broken. Wait for reclaim."
-    st_list.append({"name": "Trend Cash-on-Dip", "description": "RSI 40–60 + above 200 SMA = high-probability entry", "signal": sig, "score": score, "note": note})
-
-    st_list.sort(key=lambda x: -x["score"])
-    for i, s in enumerate(st_list):
-        s["rank"] = i + 1
-    return st_list
-
-
-# ── Strategy scoring — Common ────────────────────────────────────
-
-def _common_strategies(all_data: dict) -> list:
-    st_list = []
-    instruments = ["SPY", "QQQ", "TSLA", "NVDA", "AAPL", "AMZN", "META"]
-
-    cfg_list = [
-        ("Cash-Secured Put (CSP)",  "Sell OTM put · needs IV elevation + bullish-neutral underlying",  "csp"),
-        ("Covered Call (CC)",       "Sell OTM call against shares · income in sideways + elevated IV",  "cc"),
-        ("Wheel Strategy",          "CSP → CC cycle · needs premium-rich, range-bound stock",           "wheel"),
-        ("Naked Put",               "Uncovered short put · higher premium · requires margin · higher risk", "naked"),
-    ]
-
-    for name, desc, key in cfg_list:
-        best_tkr, best_score, best_note = "", 0, ""
-        for tkr in instruments:
-            d = all_data.get(tkr, {})
-            if not d:
+@st.cache_data(ttl=900, show_spinner=False)
+def _yf_ticker_news(tickers: tuple, per_ticker: int = 2) -> list[dict]:
+    """yfinance headlines for the pick list. Handles old & new item formats."""
+    from scanners.social_trends import _score_sentiment, _time_ago
+    items = []
+    for t in tickers:
+        try:
+            raw = yf.Ticker(t).news or []
+        except Exception:
+            continue
+        for it in raw[:per_ticker]:
+            try:
+                c = it.get("content", it)
+                title = c.get("title") or ""
+                if not title:
+                    continue
+                link = (c.get("canonicalUrl", {}) or {}).get("url") or it.get("link") or ""
+                src  = ((c.get("provider", {}) or {}).get("displayName")
+                        or it.get("publisher") or "")
+                ts = it.get("providerPublishTime")
+                if ts:
+                    dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+                else:
+                    pub = c.get("pubDate") or c.get("displayTime") or ""
+                    dt  = pd.Timestamp(pub).to_pydatetime() if pub else datetime.now(timezone.utc)
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                sent, _ = _score_sentiment(title)
+                items.append({"ticker": t, "title": title[:120], "link": link,
+                              "src": src, "dt": dt, "ago": _time_ago(dt), "sent": sent})
+            except Exception:
                 continue
-            r14 = d["rsi14"]
-            above200 = d["price"] > d["sma200"]
-            above50  = d["price"] > d["sma50"]
-            iv_ok    = d["atr_pct"] > 2.0
-
-            if key == "csp":
-                if above200 and 28 <= r14 <= 52 and iv_ok: s = 90
-                elif above200 and iv_ok:                    s = 65
-                elif above200:                              s = 45
-                else:                                       s = 20
-            elif key == "cc":
-                if above50 and r14 >= 55 and iv_ok: s = 88
-                elif above50 and iv_ok:             s = 62
-                elif above50:                       s = 40
-                else:                               s = 15
-            elif key == "wheel":
-                if above200 and 32 <= r14 <= 60 and iv_ok: s = 85
-                elif above200 and iv_ok:                    s = 60
-                elif above200:                              s = 38
-                else:                                       s = 18
-            else:  # naked
-                if above200 and r14 < 42 and iv_ok: s = 75
-                elif above200 and iv_ok:             s = 50
-                elif above200:                       s = 35
-                else:                                s = 12
-
-            if s > best_score:
-                best_score = s
-                best_tkr   = tkr
-                best_note  = (f"Best on {tkr} — RSI {d['rsi14']:.0f} · ATR {d['atr_pct']:.1f}% · "
-                              f"{'above' if above200 else 'below'} 200 SMA")
-
-        if not best_tkr:
-            sig, best_score, best_note = "WATCH", 25, "No qualifying instruments found"
-        elif best_score >= 75:
-            sig = "BUY"
-        elif best_score >= 50:
-            sig = "HOLD"
-        else:
-            sig = "SELL"
-
-        st_list.append({"name": name, "description": desc, "signal": sig, "score": best_score, "note": best_note})
-
-    st_list.sort(key=lambda x: -x["score"])
-    for i, s in enumerate(st_list):
-        s["rank"] = i + 1
-    return st_list
+    # newest first, dedupe near-identical titles
+    seen, out = set(), []
+    for it in sorted(items, key=lambda x: x["dt"], reverse=True):
+        k = it["title"][:60].lower()
+        if k not in seen:
+            seen.add(k)
+            out.append(it)
+    return out[:14]
 
 
-# ── Main render ──────────────────────────────────────────────────
+def _sent_dot(sent: str) -> str:
+    col = ACCENT_GREEN if sent == "Bullish" else ACCENT_RED if sent == "Bearish" else TEXT_MUTED
+    return f'<span style="color:{col};font-size:13px;line-height:1">●</span>'
+
+
+def _render_news(pick_tickers: list):
+    # 1. Headlines on the picks
+    tick_items = _yf_ticker_news(tuple(pick_tickers)) if pick_tickers else []
+
+    # 2. General market pulse from the RSS machinery in social_trends
+    try:
+        from scanners.social_trends import _fetch_news
+        market_items = _fetch_news()[:8]
+    except Exception:
+        market_items = []
+
+    rows = ""
+    if tick_items:
+        rows += (f'<div style="color:{ACCENT_BLUE};font-size:10px;font-weight:800;'
+                 f'text-transform:uppercase;letter-spacing:0.8px;margin:2px 0 6px 0">'
+                 f'On your picks</div>')
+        for it in tick_items:
+            link_open  = f'<a href="{it["link"]}" target="_blank" style="text-decoration:none">' if it["link"] else ""
+            link_close = '</a>' if it["link"] else ""
+            rows += (
+                f'<div style="display:flex;gap:8px;align-items:baseline;padding:5px 0;'
+                f'border-bottom:1px solid #2A2A3A33">'
+                f'{_sent_dot(it["sent"])}'
+                f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
+                f'font-size:10px;font-weight:700;min-width:44px">{it["ticker"]}</span>'
+                f'<span style="flex:1;font-size:11px;line-height:1.45">'
+                f'{link_open}<span style="color:{TEXT_PRIMARY}">{it["title"]}</span>{link_close}</span>'
+                f'<span style="color:{TEXT_MUTED};font-size:9px;white-space:nowrap">{it["ago"]}</span>'
+                f'</div>'
+            )
+    else:
+        rows += (f'<div style="color:{TEXT_MUTED};font-size:11px;padding:8px 0">'
+                 f'No ticker headlines right now.</div>')
+
+    if market_items:
+        rows += (f'<div style="color:{PURPLE};font-size:10px;font-weight:800;'
+                 f'text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 6px 0">'
+                 f'Market pulse</div>')
+        for it in market_items:
+            link_open  = f'<a href="{it.get("link","")}" target="_blank" style="text-decoration:none">' if it.get("link") else ""
+            link_close = '</a>' if it.get("link") else ""
+            tks = " ".join(it.get("tickers", [])[:3])
+            rows += (
+                f'<div style="display:flex;gap:8px;align-items:baseline;padding:5px 0;'
+                f'border-bottom:1px solid #2A2A3A33">'
+                f'{_sent_dot(it.get("sentiment", "Neutral"))}'
+                f'<span style="flex:1;font-size:11px;line-height:1.45">'
+                f'{link_open}<span style="color:{TEXT_PRIMARY}">{it.get("title","")[:120]}</span>{link_close}'
+                + (f' <span style="color:{ACCENT_BLUE};font-size:9px">{tks}</span>' if tks else '')
+                + f'</span>'
+                f'<span style="color:{TEXT_MUTED};font-size:9px;white-space:nowrap">'
+                f'{it.get("time_ago","")}</span>'
+                f'</div>'
+            )
+
+    st.markdown(_card("News & Catalysts", "📰", ACCENT_BLUE, rows,
+                      subtitle="● bullish · ● bearish tone", max_height=560),
+                unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# D. TRADE TODAY + HIGH IV  (one batched download powers both + live prices)
+# ══════════════════════════════════════════════════════════════════════════════
+
+_ACTIVE_LIQUID = [
+    "NVDA","TSLA","AAPL","MSFT","AMZN","META","GOOGL","AMD","PLTR","AVGO",
+    "NFLX","MU","COIN","MSTR","HOOD","SMCI","UBER","BA","INTC","SOFI",
+    "SPY","QQQ","IWM","TQQQ","SOXL","SMH","XLE","GLD","TLT","ARKK",
+]
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def _batch_stats(tickers: tuple) -> dict:
+    """
+    One batched 1-y download → per-ticker live stats:
+    price, chg%, RVOL, ATR%, HV30, HV60, vol-rank (HV30 in its 1-y range).
+    """
+    out: dict[str, dict] = {}
+    try:
+        data = yf.download(list(tickers), period="1y", interval="1d",
+                           group_by="ticker", progress=False, auto_adjust=True,
+                           threads=True)
+    except Exception:
+        return out
+    if data is None or data.empty:
+        return out
+
+    for t in tickers:
+        try:
+            df = data[t] if isinstance(data.columns, pd.MultiIndex) else data
+            close = df["Close"].dropna()
+            if len(close) < 40:
+                continue
+            high, low = df["High"].dropna(), df["Low"].dropna()
+            vol = df["Volume"].dropna()
+
+            price = float(close.iloc[-1])
+            chg   = (price / float(close.iloc[-2]) - 1) * 100
+
+            avg_vol = float(vol.iloc[-21:-1].mean()) if len(vol) >= 21 else float(vol.mean())
+            rvol    = float(vol.iloc[-1]) / avg_vol if avg_vol > 0 else 1.0
+
+            tr = pd.concat([high - low, (high - close.shift()).abs(),
+                            (low - close.shift()).abs()], axis=1).max(axis=1)
+            atr_pct = float(tr.rolling(14).mean().iloc[-1]) / price * 100
+
+            rets = close.pct_change().dropna()
+            hv_s = rets.rolling(30).std().dropna() * (252 ** 0.5) * 100
+            hv30 = float(hv_s.iloc[-1]) if len(hv_s) else np.nan
+            hv60 = (float(rets.rolling(60).std().dropna().iloc[-1]) * (252 ** 0.5) * 100
+                    if len(rets) >= 61 else hv30)
+            hi, lo = (float(hv_s.max()), float(hv_s.min())) if len(hv_s) else (np.nan, np.nan)
+            vrank = ((hv30 - lo) / (hi - lo) * 100) if (hi and hi > lo) else 50.0
+
+            out[t] = {"price": round(price, 2), "chg": round(chg, 2),
+                      "rvol": round(rvol, 2), "atr": round(atr_pct, 1),
+                      "hv30": round(hv30, 1) if hv30 == hv30 else None,
+                      "vrank": round(vrank, 0), "expanding": bool(hv30 > hv60)}
+        except Exception:
+            continue
+    return out
+
+
+def _render_today_iv(stats: dict):
+    # ⚡ Trade Today: unusual volume + movement, ranked by RVOL × |chg|
+    cands = [(t, d) for t, d in stats.items() if d["rvol"] >= 1.1]
+    cands.sort(key=lambda x: -(x[1]["rvol"] * (abs(x[1]["chg"]) + 0.5)))
+    day_rows = ""
+    for t, d in cands[:6]:
+        rv_col   = ACCENT_GREEN if d["rvol"] >= 1.5 else GOLD
+        price_s  = "${:,.2f}".format(d["price"])
+        rvol_s   = "{:.1f}×".format(d["rvol"])
+        atr_s    = "{:.1f}%".format(d["atr"])
+        day_rows += (
+            f'<tr><td style="{_TD}">{_mono(t, GOLD, 12, True)}</td>'
+            f'<td style="{_TD}">{_mono(price_s, TEXT_PRIMARY, 11)}</td>'
+            f'<td style="{_TD}">{_chg_html(d["chg"])}</td>'
+            f'<td style="{_TD}">{_mono(rvol_s, rv_col, 11, True)}</td>'
+            f'<td style="{_TD}">{_mono(atr_s, TEXT_MUTED, 11)}</td></tr>'
+        )
+
+    # 🔥 High IV: rich premium (vol-rank), tagged sell vs buy vol regime
+    ivs = [(t, d) for t, d in stats.items()
+           if d.get("vrank") is not None and d.get("hv30") is not None and d["vrank"] >= 40]
+    ivs.sort(key=lambda x: -x[1]["vrank"])
+    iv_rows = ""
+    for t, d in ivs[:6]:
+        play    = "🚀 buy premium" if d["expanding"] else "💰 sell premium"
+        p_col   = ACCENT_BLUE if d["expanding"] else GOLD
+        hv_s    = "{:.0f}%".format(d["hv30"])
+        vrank_s = "{:.0f}".format(d["vrank"])
+        iv_rows += (
+            f'<tr><td style="{_TD}">{_mono(t, GOLD, 12, True)}</td>'
+            f'<td style="{_TD}">{_mono(hv_s, ACCENT_BLUE, 11)}</td>'
+            f'<td style="{_TD}">{_mono(vrank_s, GOLD, 11, True)}</td>'
+            f'<td style="{_TD}"><span style="color:{p_col};font-size:10px;'
+            f'font-weight:700;white-space:nowrap">{play}</span></td></tr>'
+        )
+
+    day_empty = (f'<tr><td colspan="5" style="{_TD};color:{TEXT_MUTED}">'
+                 f'Quiet tape — no unusual volume right now</td></tr>')
+    iv_empty  = (f'<tr><td colspan="4" style="{_TD};color:{TEXT_MUTED}">'
+                 f'No elevated-vol names right now</td></tr>')
+    day_tbl = (
+        f'<div style="color:{ORANGE};font-size:10px;font-weight:800;text-transform:uppercase;'
+        f'letter-spacing:0.8px;margin-bottom:4px">⚡ Trade Today — unusual volume & range</div>'
+        f'<table style="width:100%;border-collapse:collapse;margin-bottom:12px">'
+        f'<thead><tr><th style="{_TH}">Tkr</th><th style="{_TH}">Price</th>'
+        f'<th style="{_TH}">Chg</th><th style="{_TH}">RVOL</th><th style="{_TH}">ATR</th></tr></thead>'
+        f'<tbody>{day_rows or day_empty}</tbody></table>'
+    )
+    iv_tbl = (
+        f'<div style="color:{ACCENT_RED};font-size:10px;font-weight:800;text-transform:uppercase;'
+        f'letter-spacing:0.8px;margin-bottom:4px">🔥 High IV — options premium plays</div>'
+        f'<table style="width:100%;border-collapse:collapse">'
+        f'<thead><tr><th style="{_TH}">Tkr</th><th style="{_TH}">HV30</th>'
+        f'<th style="{_TH}">VRank</th><th style="{_TH}">Play</th></tr></thead>'
+        f'<tbody>{iv_rows or iv_empty}</tbody></table>'
+        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:6px">'
+        f'HV30 = realized-vol IV proxy · VRank = HV30 within its 52-w range · '
+        f'💰 falling vol → CSP/CC selling · 🚀 rising vol → debit/LEAP</div>'
+    )
+    st.markdown(_card("Today's Tape", "⚡", ORANGE, day_tbl + iv_tbl, max_height=560),
+                unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# E. SECTOR ROTATION — where big money is flowing (price + volume, RRG-style)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def _sector_flows() -> list[dict]:
+    from scanners.sector_rotation import SECTORS
+    try:
+        spy = get_price_history("SPY", period="1y")["Close"].squeeze()
+    except Exception:
+        return []
+
+    def _ratio(c, b, n):
+        try:
+            return (float(c.iloc[-1]) / float(c.iloc[-n])) / (float(b.iloc[-1]) / float(b.iloc[-n]))
+        except Exception:
+            return 1.0
+
+    rows = []
+    for tkr, name in SECTORS:
+        try:
+            df = get_price_history(tkr, period="1y")
+            close = df["Close"].squeeze()
+            vol   = df["Volume"].squeeze()
+            if len(close) < 70:
+                continue
+            rs63 = _ratio(close, spy, 63)
+            rs21 = _ratio(close, spy, 21)
+            # $-flow proxy: 5-day avg dollar volume vs 63-day baseline
+            dvol = (close * vol).dropna()
+            flow = float(dvol.iloc[-5:].mean()) / float(dvol.iloc[-63:].mean()) if len(dvol) >= 63 else 1.0
+            quad = ("Leading" if rs63 >= 1 and rs21 >= 1 else
+                    "Weakening" if rs63 >= 1 else
+                    "Improving" if rs21 >= 1 else "Lagging")
+            rows.append({"tkr": tkr, "name": name, "rs63": rs63, "rs21": rs21,
+                         "flow": round(flow, 2), "quad": quad,
+                         "ret1m": round((float(close.iloc[-1]) / float(close.iloc[-21]) - 1) * 100, 1)
+                                  if len(close) >= 21 else 0.0})
+        except Exception:
+            continue
+    return rows
+
+
+def _render_sectors():
+    rows = _sector_flows()
+    if not rows:
+        st.markdown(_card("Sector Rotation", "🔄", MINT,
+                          f'<div style="color:{TEXT_MUTED};padding:20px">Sector data unavailable.</div>'),
+                    unsafe_allow_html=True)
+        return
+
+    q_style = {
+        "Leading":   (ACCENT_GREEN, "💰 Leading — money is here"),
+        "Improving": (ACCENT_BLUE,  "📈 Improving — money arriving"),
+        "Weakening": (GOLD,         "⚠️ Weakening — money slipping out"),
+        "Lagging":   (ACCENT_RED,   "🚪 Lagging — money gone"),
+    }
+
+    def _quad_box(quad: str) -> str:
+        col, title = q_style[quad]
+        etfs  = sorted([r for r in rows if r["quad"] == quad], key=lambda r: -r["rs21"])
+        chips = ""
+        for r in etfs:
+            tip   = "RS-21d {:.2f} · flow {:.2f}× · 1M {:+.1f}%".format(r["rs21"], r["flow"], r["ret1m"])
+            money = " 💰" if r["flow"] >= 1.15 else ""
+            chips += (
+                f'<span title="{tip}" '
+                f'style="background:{_rgba(col, 0.13)};color:{col};border:1px solid {col}44;'
+                f'font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;'
+                f'margin:2px;display:inline-block;cursor:help">{r["tkr"]}{money}</span>'
+            )
+        if not chips:
+            chips = f'<span style="color:{TEXT_MUTED};font-size:10px">—</span>'
+        return (f'<div style="background:{_rgba(col, 0.05)};border:1px solid {col}33;'
+                f'border-radius:10px;padding:8px 10px;min-height:86px">'
+                f'<div style="color:{col};font-size:9px;font-weight:800;'
+                f'text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px">{title}</div>'
+                f'{chips}</div>')
+
+    grid = (
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
+        f'{_quad_box("Improving")}{_quad_box("Leading")}'
+        f'{_quad_box("Lagging")}{_quad_box("Weakening")}'
+        f'</div>'
+    )
+
+    buys  = sorted([r for r in rows if r["quad"] in ("Leading", "Improving")],
+                   key=lambda r: -(r["rs21"] + (0.05 if r["flow"] >= 1.1 else 0)))[:4]
+    sells = sorted([r for r in rows if r["quad"] in ("Lagging", "Weakening")],
+                   key=lambda r: r["rs21"])[:4]
+
+    buy_chips  = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_GREEN) for r in buys)
+    sell_chips = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_RED) for r in sells)
+    summary = (
+        f'<div style="display:flex;flex-direction:column;gap:6px">'
+        f'<div style="font-size:11px"><span style="color:{ACCENT_GREEN};font-weight:800">'
+        f'💰 FOCUS (buy zone): </span>{buy_chips}</div>'
+        f'<div style="font-size:11px"><span style="color:{ACCENT_RED};font-weight:800">'
+        f'🚪 AVOID (money leaving): </span>{sell_chips}</div></div>'
+        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:8px">'
+        f'RRG-style: RS vs SPY 63d (position) × 21d (momentum) · 💰 = dollar-volume surge ≥1.15× '
+        f'— institutional flows show up in price × volume before headlines</div>'
+    )
+
+    st.markdown(_card("Sector Rotation — follow the big money", "🔄", MINT,
+                      grid + summary, max_height=560), unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MAIN RENDER
+# ══════════════════════════════════════════════════════════════════════════════
 
 def render():
-    now_et = datetime.now(pytz.timezone("US/Eastern")).strftime("%A %b %d %Y  %I:%M %p ET")
-    section_header("🏠", "Market Overview", f"Strategy Dashboard · {now_et}")
+    now_et = datetime.now(pytz.timezone("US/Eastern")).strftime("%A %b %d %Y · %I:%M %p ET")
+    section_header("🏠", "Market Overview", f"Command Center · {now_et}")
 
-    col_r, col_b = st.columns([6, 1])
-    with col_b:
+    _, col_btn = st.columns([6, 1])
+    with col_btn:
         if st.button("🔄 Refresh", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
 
-    # ── Market Indices ──────────────────────────────────────────
-    st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Major Indices</div>', unsafe_allow_html=True)
-    with st.spinner("Fetching market data…"):
-        market = get_market_overview()
+    # ── A. Regime bar ──────────────────────────────────────────────────────────
+    with st.spinner("Reading market regime…"):
+        try:
+            _render_regime_bar()
+        except Exception:
+            st.warning("Regime bar unavailable.")
 
-    if market:
-        icons = {"S&P 500": "📈", "NASDAQ": "💹", "DOW": "🏦", "VIX": "⚡", "Gold": "🥇", "10Y Yield": "💵"}
-        cards_html = []
-        for name, data in market.items():
-            val, chg = data["value"], data["change"]
-            color = ACCENT_GREEN if chg >= 0 else ACCENT_RED
-            sign = "+" if chg >= 0 else ""
-            card_s = (f"background:{BG_CARD};border:1px solid {BORDER_COLOR};"
-                      f"border-top:3px solid {color};border-radius:6px;"
-                      f"padding:10px 14px;flex:1 1 120px")
-            cards_html.append(
-                f'<div style="{card_s}">'
-                f'<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">'
-                f'<span style="font-size:14px">{icons.get(name, "📊")}</span>'
-                f'<span style="color:{TEXT_MUTED};font-size:9px;letter-spacing:1.2px;text-transform:uppercase">{name}</span>'
-                f'</div>'
-                f'<div style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;line-height:1.2">{val:,.2f}</div>'
-                f'<div style="color:{color};font-size:12px;font-weight:600;margin-top:2px">{sign}{chg:.2f}%</div>'
-                f'</div>'
-            )
-        st.markdown(
-            f'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px">{"".join(cards_html)}</div>',
-            unsafe_allow_html=True,
-        )
+    # ── Row 1: picks + news ───────────────────────────────────────────────────
+    left1, right1 = st.columns(2)
 
+    with left1:
+        with st.spinner("Loading Golden Scan picks…"):
+            try:
+                pick_tickers = _render_top20(live={})
+            except Exception:
+                pick_tickers = []
+                st.warning("Top-20 picks unavailable.")
+
+    # One batched download powers live prices, Trade-Today and High-IV
+    with st.spinner("Fetching live stats (batched)…"):
+        try:
+            all_tickers = tuple(dict.fromkeys(list(pick_tickers) + _ACTIVE_LIQUID))
+            stats = _batch_stats(all_tickers)
+        except Exception:
+            stats = {}
+
+    with right1:
+        with st.spinner("Pulling headlines…"):
+            try:
+                _render_news(pick_tickers)
+            except Exception:
+                st.warning("News unavailable.")
+
+    # ── Row 2: today's tape + sectors ─────────────────────────────────────────
+    left2, right2 = st.columns(2)
+
+    with left2:
+        try:
+            _render_today_iv(stats)
+        except Exception:
+            st.warning("Today's tape unavailable.")
+
+    with right2:
+        with st.spinner("Computing sector flows…"):
+            try:
+                _render_sectors()
+            except Exception:
+                st.warning("Sector rotation unavailable.")
+
+    # ── Disclaimer ─────────────────────────────────────────────────────────────
     st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:4px;margin-bottom:16px">⚠️ Market data may be delayed up to 15 minutes.</div>',
-        unsafe_allow_html=True,
-    )
-
-    # ── Strategy Analysis ───────────────────────────────────────
-    st.markdown(f'<div style="color:{GOLD};font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Strategy Signals — Live</div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="color:{TEXT_MUTED};font-size:12px;margin-bottom:12px">Ranked by current conditions · 🟢 BUY · 🔴 SELL · 🟡 HOLD</div>', unsafe_allow_html=True)
-
-    with st.spinner("Computing strategy signals…"):
-        qqq_d   = _get_ind("QQQ")
-        tqqq_d  = _get_ind("TQQQ")
-        spy_d   = _get_ind("SPY")
-        tsla_d  = _get_ind("TSLA")
-        vix_d   = _get_ind("^VIX")
-        all_inst = {
-            "SPY":  spy_d,
-            "QQQ":  qqq_d,
-            "TSLA": tsla_d,
-            "NVDA": _get_ind("NVDA"),
-            "AAPL": _get_ind("AAPL"),
-            "AMZN": _get_ind("AMZN"),
-            "META": _get_ind("META"),
-        }
-
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📈  QQQ Strategies",
-        "📊  SPY Strategies",
-        "⚡  TSLA Options",
-        "🔄  Common Strategies",
-    ])
-
-    with tab1:
-        desc_s = f"color:{TEXT_MUTED};font-size:12px;padding:8px 0 4px 0"
-        st.markdown(
-            f'<div style="{desc_s}">5 QQQ strategies scored on live QQQ and VIX readings. '
-            f'<b style="color:{TEXT_PRIMARY}">QQQ</b> is the regime signal; '
-            f'<b style="color:{TEXT_PRIMARY}">TQQQ</b> is the trading vehicle.</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(_strategy_table(_tqqq_strategies(qqq_d, tqqq_d, vix_d)), unsafe_allow_html=True)
-
-    with tab2:
-        st.markdown(
-            f'<div style="color:{TEXT_MUTED};font-size:12px;padding:8px 0 4px 0">'
-            f'5 SPY strategies scored on current price action, moving averages, RSI and volume.</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(_strategy_table(_spy_strategies(spy_d)), unsafe_allow_html=True)
-
-    with tab3:
-        st.markdown(
-            f'<div style="color:{TEXT_MUTED};font-size:12px;padding:8px 0 4px 0">'
-            f'5 TSLA options strategies scored on price, RSI and implied volatility proxy (ATR). '
-            f'<b style="color:{ACCENT_RED}">TSLA is highly volatile — size accordingly.</b></div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(_strategy_table(_tsla_strategies(tsla_d, vix_d)), unsafe_allow_html=True)
-
-    with tab4:
-        st.markdown(
-            f'<div style="color:{TEXT_MUTED};font-size:12px;padding:8px 0 4px 0">'
-            f'CSP, Covered Call, Wheel and Naked Put ranked by best-fit instrument across '
-            f'SPY, QQQ, TSLA, NVDA, AAPL, AMZN, META right now.</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(_strategy_table(_common_strategies(all_inst)), unsafe_allow_html=True)
-
-    # ── Disclaimer ──────────────────────────────────────────────
-    st.markdown("<br>", unsafe_allow_html=True)
-    disc_s = (f"background:{BG_PANEL};border:1px solid {BORDER_COLOR};"
-              f"border-radius:6px;padding:12px 16px;color:{TEXT_MUTED};font-size:11px;text-align:center")
-    st.markdown(
-        f'<div style="{disc_s}">⚠️ <b>Disclaimer:</b> Golden Scanner is for educational and research purposes only. '
-        f'Signals are based on technical indicators and do not constitute financial advice. '
-        f'Always conduct your own due diligence before trading.</div>',
+        f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
+        f'border-radius:6px;padding:10px 16px;color:{TEXT_MUTED};font-size:10px;'
+        f'text-align:center;margin-top:6px">⚠️ <b>Disclaimer:</b> Golden Scanner is for '
+        f'educational and research purposes only. Signals are technical readings, not '
+        f'financial advice. Do your own due diligence.</div>',
         unsafe_allow_html=True,
     )
