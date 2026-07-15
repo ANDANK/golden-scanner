@@ -534,7 +534,7 @@ def _render_ma400_table(df: pd.DataFrame):
     _GH = "padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px"
     header_groups = (
         f'<div style="display:grid;grid-template-columns:'
-        f'110px 80px 70px 230px 130px 130px 130px 130px 130px 90px 1fr;gap:0">'
+        f'110px 80px 70px 230px 130px 130px 130px 130px 130px 150px 1fr;gap:0">'
         f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Ticker</div>'
         f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Price</div>'
         f'<div style="background:{BG_PANEL};{_GH};color:{TEXT_MUTED};border-bottom:1px solid {GL}33">Chg%</div>'
@@ -544,7 +544,7 @@ def _render_ma400_table(df: pd.DataFrame):
         f'<div style="background:#A78BFA18;{_GH};color:#A78BFA;border-bottom:2px solid #A78BFA55">MACD&gt;0 D/W</div>'
         f'<div style="background:#A78BFA18;{_GH};color:#A78BFA;border-bottom:2px solid #A78BFA55">Cross D/W</div>'
         f'<div style="background:#34D39918;{_GH};color:#34D399;border-bottom:2px solid #34D39955">Sentiment</div>'
-        f'<div style="background:{GL}18;{_GH};color:{GL};border-bottom:2px solid {GL}55">Score</div>'
+        f'<div style="background:{GL}18;{_GH};color:{GL};border-bottom:2px solid {GL}55">Dip · Quality</div>'
         f'<div style="background:#F9731612;{_GH};color:#F97316;border-bottom:2px solid #F9731655">Flags</div>'
         f'</div>'
     )
@@ -562,7 +562,7 @@ def _render_ma400_table(df: pd.DataFrame):
             "D", "W",
             "Daily", "Weekly",
             "Trend", "Sentiment",
-            "Score", "Flags",
+            "Score", "Q", "Flags",
         ]
     )
 
@@ -610,6 +610,33 @@ def _render_ma400_table(df: pd.DataFrame):
         flags    = str(row["Flags"])
         flag_col = "#F97316" if flags != "—" else TEXT_MUTED
 
+        # 400MA slope arrow — rising/flat/falling long-term line
+        slope = row.get("MA Slope%", None)
+        if slope is None or (isinstance(slope, float) and slope != slope):
+            slope_html = ""
+        elif slope > 0.5:
+            slope_html = f' <span style="color:{G};font-size:10px" title="400MA {slope:+.1f}% / 40 bars">↗</span>'
+        elif slope >= -0.5:
+            slope_html = f' <span style="color:{TEXT_MUTED};font-size:10px" title="400MA {slope:+.1f}% / 40 bars">→</span>'
+        else:
+            slope_html = f' <span style="color:{RD};font-size:10px" title="400MA {slope:+.1f}% / 40 bars">↘</span>'
+
+        # Quality Score /6 (fundamentals) — None = ETF/fund or unavailable
+        qv       = row.get("Q", None)
+        q_detail = str(row.get("Q Detail", "") or "")
+        if qv is None or (isinstance(qv, float) and qv != qv):
+            if row.get("Is Fund", False):
+                q_html = (f'<span title="{q_detail}" style="background:{BL}18;color:{BL};'
+                          f'border:1px solid {BL}44;font-size:9px;font-weight:700;'
+                          f'padding:1px 7px;border-radius:10px">ETF</span>')
+            else:
+                q_html = f'<span title="{q_detail}" style="color:{TEXT_MUTED}">—</span>'
+        else:
+            q_col  = G if qv >= 5 else GL if qv >= 3 else RD
+            q_html = (f'<span title="{q_detail}" style="color:{q_col};font-weight:800;'
+                      f'font-size:13px;cursor:help">{int(qv)}</span>'
+                      f'<span style="color:{TEXT_MUTED};font-size:9px">/6</span>')
+
         _mk_bool = lambda b: (f'<span style="color:{G}">✅</span>' if b
                               else f'<span style="color:{TEXT_MUTED}">❌</span>')
 
@@ -626,7 +653,7 @@ def _render_ma400_table(df: pd.DataFrame):
             # 400MA zone
             f'<td style="{_TD};border-left:1px solid {GL}33">{pct_cell}</td>'
             f'<td style="{_TD}"><span style="color:{TEXT_MUTED};'
-            f'font-family:\'DM Mono\',monospace;font-size:11px">${row["400MA"]:.2f}</span></td>'
+            f'font-family:\'DM Mono\',monospace;font-size:11px">${row["400MA"]:.2f}</span>{slope_html}</td>'
             # 52-week
             f'<td style="{_TD};border-left:1px solid {BL}33">'
             f'<span style="color:{dd_col};font-family:\'DM Mono\',monospace">{dd:.1f}%</span></td>'
@@ -646,10 +673,11 @@ def _render_ma400_table(df: pd.DataFrame):
             f'<td style="{_TD};border-left:1px solid #34D39933;white-space:nowrap">{trend_html}</td>'
             f'<td style="{_TD};white-space:nowrap">'
             f'<span style="color:{sent_col};font-size:11px;font-weight:700">{sent}</span></td>'
-            # Score
+            # Score + Quality
             f'<td style="{_TD};border-left:1px solid {GL}33;text-align:center">'
             f'<span style="color:{sc_col};font-weight:800;font-size:13px">{sc}</span>'
             f'<span style="color:{TEXT_MUTED};font-size:9px">/10</span></td>'
+            f'<td style="{_TD};text-align:center">{q_html}</td>'
             # Flags
             f'<td style="{_TD};border-left:1px solid #F9731633;font-size:10px;'
             f'color:{flag_col}">{flags}</td>'
@@ -705,12 +733,22 @@ def _render_ma400_tab():
                 "8. Price back above EMA9 (stabilizing)\n"
                 "9. ≥ 15% below 52-week high (real discount)\n"
                 "10. No falling knife / capitulation volume\n\n"
-                "**Sentiment**: 🟢 Accumulate (≥7) · 🟡 Stabilizing/Watch (4–6) · 🔴 Falling (≤3)"
+                "**Sentiment**: 🟢 Accumulate (≥7) · 🟡 Stabilizing/Watch (4–6) · 🔴 Falling (≤3)\n\n"
+                "**Quality Score /6 (Q column)** — business quality, fetched only for zone-passers:\n"
+                "1. ROE ≥ 15%\n"
+                "2. Operating margin ≥ 10%\n"
+                "3. Free cash flow > 0\n"
+                "4. Debt/Equity ≤ 1.5\n"
+                "5. Revenue growth > 0 (TTM)\n"
+                "6. Market cap ≥ $10B\n\n"
+                "Hover the Q value to see each component. ETFs show an ETF badge (N/A). "
+                "**Dip Score = is now the time · Quality Score = is it worth owning at all.**"
             )
         with c2:
             st.markdown(
                 "**Column guide**\n"
                 "- **% vs 400MA** — negative = below the line. Bar shows deviation (center line = the MA)\n"
+                "- **400MA arrow** — ↗ rising · → flat · ↘ falling. A dip below a *rising* MA is a pullback in an uptrend; below a *falling* MA it's just a downtrend (filtered out by default)\n"
                 "- **DD from Hi / Range Pos** — drawdown from 52-w high · position in 52-w range (0% = at low)\n"
                 "- **D-RSI / W-RSI** — gold < 40 = oversold opportunity · red < 25 = knife risk · ↗ = weekly RSI rising\n"
                 "- **MACD>0 D/W** — MACD line above zero (trend regime) on daily / weekly\n"
@@ -722,7 +760,7 @@ def _render_ma400_tab():
             )
 
     # ── Controls ───────────────────────────────────────────────────────────────
-    u_col, n_col, b_col, run_col = st.columns([1.6, 1.6, 1.1, 1])
+    u_col, n_col, run_col = st.columns([1.8, 1.8, 1])
     with u_col:
         uni_choice = st.selectbox(
             "Universe", ["🏆 Quality 200 (curated)", "🗂️ S&P 500 + ETFs", "🌐 Full universe (~500)"],
@@ -731,12 +769,26 @@ def _render_ma400_tab():
         )
     with n_col:
         near_pct = st.slider("Include up to X% above 400MA", 0, 25, 10, 1, key="ma400_near")
-    with b_col:
-        only_below = st.checkbox("Only below MA", value=False, key="ma400_below")
     with run_col:
         st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
         run_btn = st.button("▶ Run Scan", type="primary",
                             use_container_width=True, key="ma400_run")
+
+    cb1, cb2, cb3 = st.columns(3)
+    with cb1:
+        only_below = st.checkbox("Only below MA", value=False, key="ma400_below")
+    with cb2:
+        ma_rising_cb = st.checkbox(
+            "📈 Rising/flat 400MA only", value=True, key="ma400_rising",
+            help="Drop names whose 400-day MA itself is falling — keeps dips in "
+                 "uptrends, removes plain downtrends",
+        )
+    with cb3:
+        fund_cb = st.checkbox(
+            "🏭 Fundamentals quality gate", value=True, key="ma400_fund",
+            help="Fetch ROE / margins / FCF / debt / growth / market cap for "
+                 "zone-passers → Quality Score /6. Adds ~1s per surviving ticker.",
+        )
 
     if run_btn:
         universe = (quality_universe() if "Quality" in uni_choice else
@@ -753,12 +805,16 @@ def _render_ma400_tab():
             )
 
         df_out, skipped = scan_ma400(universe, near_pct=float(near_pct),
-                                     only_below=only_below, status_fn=_status)
+                                     only_below=only_below,
+                                     require_ma_rising=ma_rising_cb,
+                                     fundamentals=fund_cb,
+                                     status_fn=_status)
         prog_ph.empty(); stat_ph.empty()
 
         st.session_state["ma400_df"]      = df_out
         st.session_state["ma400_skipped"] = skipped
         st.session_state["ma400_n_uni"]   = len(universe)
+        st.session_state["ma400_fund_on"] = fund_cb
         st.session_state["ma400_ts"]      = pd.Timestamp.now().strftime("%b %d %Y  %I:%M %p")
         st.rerun()
 
@@ -786,12 +842,41 @@ def _render_ma400_tab():
         )
         return
 
+    # ── Post-scan focus filters (no rescan needed — instant) ──────────────────
+    fund_on = bool(st.session_state.get("ma400_fund_on", False)) and "Q" in df_out.columns
+    pf1, pf2, pf3 = st.columns([1.5, 1.5, 1.2])
+    with pf1:
+        min_dip = st.slider("Min Dip Score", 0, 10, 5, 1, key="ma400_min_dip",
+                            help="Hide setups that aren't buyable yet")
+    with pf2:
+        min_q = st.slider("Min Quality Score", 0, 6, 3, 1, key="ma400_min_q",
+                          disabled=not fund_on,
+                          help="Hide weak businesses (ETFs and missing data always shown). "
+                               "Requires the fundamentals gate at scan time.")
+    with pf3:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        hide_falling = st.checkbox("Hide 🔴 Falling", value=True, key="ma400_hide_falling")
+
+    view = df_out[df_out["Score"] >= min_dip]
+    if hide_falling:
+        view = view[~view["Sentiment"].astype(str).str.contains("🔴")]
+    if fund_on and min_q > 0:
+        _q = pd.to_numeric(view["Q"], errors="coerce")
+        view = view[_q.isna() | (_q >= min_q)]      # ETFs / no-data rows stay visible
+
+    if view.empty:
+        st.warning(
+            f"All {len(df_out)} scanned rows are hidden by the focus filters — "
+            f"lower Min Dip Score / Min Quality or untick 'Hide Falling'."
+        )
+        return
+
     # ── Summary strip ──────────────────────────────────────────────────────────
-    n_below = int((df_out["% vs 400MA"] < 0).sum())
-    n_accum = int((df_out["Score"] >= 7).sum())
-    n_fresh = int(((df_out["X-over D"] == "Fresh ↑") | (df_out["X-over W"] == "Fresh ↑")).sum())
-    deepest = df_out.iloc[0]
-    below_df = df_out[df_out["% vs 400MA"] < 0]
+    n_below = int((view["% vs 400MA"] < 0).sum())
+    n_accum = int((view["Score"] >= 7).sum())
+    n_fresh = int(((view["X-over D"] == "Fresh ↑") | (view["X-over W"] == "Fresh ↑")).sum())
+    deepest = view.iloc[0]
+    below_df = view[view["% vs 400MA"] < 0]
     avg_disc = float(below_df["% vs 400MA"].mean()) if not below_df.empty else 0.0
     st.markdown(
         f'<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;'
@@ -799,7 +884,8 @@ def _render_ma400_tab():
         f'padding:10px 16px;margin:6px 0 10px 0">'
         f'<span style="color:{TEXT_MUTED};font-size:11px">Scanned '
         f'<b style="color:#fff">{n_uni}</b> · in zone '
-        f'<b style="color:{GL}">{len(df_out)}</b></span>'
+        f'<b style="color:{GL}">{len(df_out)}</b> · showing '
+        f'<b style="color:{G}">{len(view)}</b></span>'
         f'<span style="color:{RD};font-size:11px;font-weight:600">📉 {n_below} below the 400MA'
         + (f' (avg {avg_disc:.1f}%)' if n_below else '') + '</span>'
         f'<span style="color:{G};font-size:11px;font-weight:600">🟢 {n_accum} Accumulate (≥7/10)</span>'
@@ -811,7 +897,7 @@ def _render_ma400_tab():
         unsafe_allow_html=True,
     )
 
-    _render_ma400_table(df_out)
+    _render_ma400_table(view)
 
     if skipped:
         st.caption(f"⏭️ Skipped (insufficient history for a 400-day MA / no data): {', '.join(skipped[:25])}"
@@ -821,7 +907,7 @@ def _render_ma400_tab():
     dl_col, gs_col, _sp = st.columns([1, 1, 4])
     with dl_col:
         st.download_button(
-            "⬇ Export CSV", df_out.to_csv(index=False),
+            "⬇ Export CSV", view.to_csv(index=False),
             "ma400_buy_zone.csv", "text/csv",
             use_container_width=True, key="ma400_dl",
         )
@@ -830,12 +916,13 @@ def _render_ma400_tab():
         if gsheets_configured():
             if st.button("📤 Export to Google Sheets", use_container_width=True, key="ma400_gs"):
                 with st.spinner("Exporting to Google Sheets…"):
-                    cols = list(df_out.columns)
+                    cols = list(view.columns)
                     ok, msg = export_tables(
                         "MA400",
-                        [("400-Day MA Buy Zone", cols, df_out.values.tolist())],
+                        [("400-Day MA Buy Zone", cols, view.values.tolist())],
                         meta_cells=[f"400-MA Buy Zone scan — {ts}",
-                                    f"Universe {n_uni} · In zone {len(df_out)} · Below MA {n_below}"],
+                                    f"Universe {n_uni} · In zone {len(df_out)} · "
+                                    f"Shown {len(view)} · Below MA {n_below}"],
                     )
                 if ok:
                     st.success(f"✅ {msg}")

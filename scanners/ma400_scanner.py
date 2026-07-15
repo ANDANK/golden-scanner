@@ -17,12 +17,16 @@ Output columns per ticker:
 
 import numpy as np
 import pandas as pd
+import yfinance as yf
 import time, random
 
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from config import MTPA_200, SP500_SAMPLE, FTF_UNIVERSE
+from config import (
+    MTPA_200, SP500_SAMPLE, FTF_UNIVERSE,
+    OPTIONS_ETF_UNIVERSE, ETF_UNIVERSE,
+)
 from data_loader import get_price_history
 from utils import calc_ema, calc_sma, calc_rsi
 
@@ -67,6 +71,25 @@ DEEP_BREAK_PCT  = 25.0       # > 25% below 400MA = likely broken story
 FRESH_X_DAILY   = 10         # "fresh" daily MACD cross = within 10 bars
 FRESH_X_WEEKLY  = 4          # "fresh" weekly MACD cross = within 4 bars
 
+# 400MA slope — a dip below a RISING long-term MA is a pullback in an uptrend;
+# below a FALLING MA it is just a downtrend.
+MA_SLOPE_BARS     = 40       # measure MA change over ~2 months of bars
+MA_SLOPE_FLAT_TOL = -0.5     # ≥ −0.5% over 40 bars still counts as "flat"
+
+# Fundamentals quality gate (Quality Score /6)
+QUALITY_ROE_MIN    = 0.15    # return on equity ≥ 15%
+QUALITY_MARGIN_MIN = 0.10    # operating margin ≥ 10%
+QUALITY_DE_MAX     = 150.0   # debt/equity ≤ 1.5x (yfinance reports percent)
+QUALITY_MCAP_MIN   = 10e9    # market cap ≥ $10B
+
+# Tickers we already know are funds — skip the fundamentals fetch entirely
+_KNOWN_ETFS = set(OPTIONS_ETF_UNIVERSE) | set(ETF_UNIVERSE) | {
+    "MDY", "RSP", "XLC", "XLB", "XLRE", "XBI", "IEF", "EFA", "VEA",
+}
+
+# Process-level fundamentals cache — .info is one HTTP call per ticker
+_FUND_CACHE: dict[str, dict] = {}
+
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -97,6 +120,73 @@ def _macd_state(close: pd.Series, fresh_bars: int) -> dict:
     return out
 
 
+def _fundamentals(ticker: str) -> dict:
+    """
+    Business-quality check via yfinance .info (cached per process).
+
+    Quality Score /6:
+      ROE ≥ 15% · Operating margin ≥ 10% · FCF > 0 ·
+      D/E ≤ 1.5 · Revenue growth > 0 · Market cap ≥ $10B
+
+    Returns {"q": int|None, "detail": str, "mcap_b": float|None, "is_fund": bool}
+    q is None for ETFs/funds (N/A) or when no data came back.
+    """
+    if ticker in _FUND_CACHE:
+        return _FUND_CACHE[ticker]
+
+    out = {"q": None, "detail": "", "mcap_b": None, "is_fund": False}
+    if ticker in _KNOWN_ETFS:
+        out.update(is_fund=True, detail="ETF/fund — fundamentals N/A")
+        _FUND_CACHE[ticker] = out
+        return out
+
+    try:
+        info = yf.Ticker(ticker).info or {}
+    except Exception:
+        info = {}
+
+    if str(info.get("quoteType", "")).upper() in ("ETF", "MUTUALFUND", "INDEX"):
+        out.update(is_fund=True, detail="ETF/fund — fundamentals N/A")
+        _FUND_CACHE[ticker] = out
+        return out
+
+    roe  = info.get("returnOnEquity")
+    marg = info.get("operatingMargins")
+    fcf  = info.get("freeCashflow")
+    de   = info.get("debtToEquity")        # yfinance reports percent: 150 = 1.5x
+    rg   = info.get("revenueGrowth")
+    mcap = info.get("marketCap")
+
+    checks = [
+        ("ROE≥15%",   None if roe  is None else bool(roe  >= QUALITY_ROE_MIN),
+         "?" if roe  is None else f"{roe*100:.0f}%"),
+        ("Marg≥10%",  None if marg is None else bool(marg >= QUALITY_MARGIN_MIN),
+         "?" if marg is None else f"{marg*100:.0f}%"),
+        ("FCF>0",     None if fcf  is None else bool(fcf > 0),
+         "?" if fcf  is None else f"${fcf/1e9:.1f}B"),
+        ("D/E≤1.5",   None if de   is None else bool(de <= QUALITY_DE_MAX),
+         "?" if de   is None else f"{de/100:.2f}"),
+        ("RevGr>0",   None if rg   is None else bool(rg > 0),
+         "?" if rg   is None else f"{rg*100:+.0f}%"),
+        ("MCap≥$10B", None if mcap is None else bool(mcap >= QUALITY_MCAP_MIN),
+         "?" if mcap is None else f"${mcap/1e9:.0f}B"),
+    ]
+
+    if all(ok is None for _, ok, _ in checks):
+        out["detail"] = "Fundamentals unavailable"
+        _FUND_CACHE[ticker] = out
+        return out
+
+    out["q"] = int(sum(1 for _, ok, _ in checks if ok is True))
+    out["detail"] = " · ".join(
+        f"{name} {val} {'✓' if ok else '✗' if ok is False else '?'}"
+        for name, ok, val in checks
+    )
+    out["mcap_b"] = round(mcap / 1e9, 1) if mcap else None
+    _FUND_CACHE[ticker] = out
+    return out
+
+
 def _sentiment(score: int, stabilizing: bool) -> str:
     if score >= 7:
         return "🟢 Accumulate"
@@ -111,13 +201,19 @@ def scan_ma400(
     tickers: list[str],
     near_pct: float = 10.0,
     only_below: bool = False,
+    require_ma_rising: bool = True,
+    fundamentals: bool = True,
     status_fn=None,
 ) -> tuple[pd.DataFrame, list[str]]:
     """
     Scan `tickers` for price close-to/below the 400-day SMA.
 
-    near_pct   : include stocks up to this % ABOVE the 400MA (below always shown)
-    only_below : include only stocks strictly below the 400MA
+    near_pct          : include stocks up to this % ABOVE the 400MA
+    only_below        : include only stocks strictly below the 400MA
+    require_ma_rising : drop names whose 400MA itself is falling
+                        (dip-in-uptrend only, no downtrends)
+    fundamentals      : fetch business-quality data (Quality Score /6) for
+                        zone-passers only — adds ~1s per surviving ticker
 
     Returns (results_df sorted deepest-below-first, skipped_tickers).
     """
@@ -162,7 +258,8 @@ def scan_ma400(
             continue
 
         # ── 400-day MA and distance ───────────────────────────────────────────
-        ma400_v = float(close.rolling(MA_LEN).mean().iloc[-1])
+        ma_ser  = close.rolling(MA_LEN).mean().dropna()
+        ma400_v = float(ma_ser.iloc[-1]) if len(ma_ser) else np.nan
         if not np.isfinite(ma400_v) or ma400_v <= 0:
             skipped.append(ticker)
             continue
@@ -172,6 +269,15 @@ def scan_ma400(
         if only_below and pct_vs >= 0:
             continue
         if pct_vs > near_pct:
+            continue
+
+        # ── 400MA slope — dip in an uptrend vs plain downtrend ────────────────
+        if len(ma_ser) > MA_SLOPE_BARS:
+            ma_slope = (ma400_v / float(ma_ser.iloc[-1 - MA_SLOPE_BARS]) - 1) * 100
+        else:
+            ma_slope = 0.0
+        ma_rising = ma_slope >= MA_SLOPE_FLAT_TOL
+        if require_ma_rising and not ma_rising:
             continue
 
         # ── Daily indicators ─────────────────────────────────────────────────
@@ -247,8 +353,21 @@ def scan_ma400(
             not knife and not heavy_selling,                  # 10. no active knife/capitulation
         ]))
 
+        # ── Fundamentals quality gate (zone-passers only — keeps scan fast) ──
+        q_score, q_detail, mcap_b, is_fund = None, "", None, False
+        if fundamentals:
+            f = _fundamentals(ticker)
+            q_score, q_detail = f["q"], f["detail"]
+            mcap_b, is_fund   = f["mcap_b"], f["is_fund"]
+
         # ── Flags ─────────────────────────────────────────────────────────────
         flags = []
+        if not ma_rising:
+            flags.append(f"📉 Falling 400MA ({ma_slope:+.1f}%/40d)")
+        if fundamentals and q_score is not None and q_score <= 2:
+            flags.append(f"🏭 Weak fundamentals ({q_score}/6)")
+        if fundamentals and q_score is None and not is_fund:
+            flags.append("❔ Fundamentals unavailable")
         if knife:
             flags.append("🔪 Falling knife (>8% day drop)")
         if heavy_selling:
@@ -273,6 +392,7 @@ def scan_ma400(
             "Price":       round(price, 2),
             "Chg%":        chg,
             "400MA":       round(ma400_v, 2),
+            "MA Slope%":   round(ma_slope, 2),
             "% vs 400MA":  round(pct_vs, 1),
             "52w DD%":     round(dd_52w, 1),
             "52w Pos":     round(range_pos, 0),
@@ -290,6 +410,10 @@ def scan_ma400(
             "Stabilizing": stabilizing,
             "Sentiment":   _sentiment(score, stabilizing),
             "Score":       score,
+            "Q":           q_score,
+            "Q Detail":    q_detail,
+            "MCap $B":     mcap_b,
+            "Is Fund":     is_fund,
             "Flags":       " · ".join(flags) if flags else "—",
         })
 
