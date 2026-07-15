@@ -37,6 +37,38 @@ ORANGE = "#F97316"
 PURPLE = "#A78BFA"
 MINT   = "#34D399"
 
+# Every fund/ETF we know about — the Top-20 is STOCKS ONLY
+_ETF_SET = set(OPTIONS_ETF_UNIVERSE) | set(ETF_UNIVERSE) | set(ETF_3X_UNIVERSE) | {
+    "VTI", "VOO", "MDY", "RSP", "DIA", "XLC", "XLB", "XLRE", "XBI", "IEF",
+    "EFA", "VEA", "VWO", "AGG", "BND", "MUB", "VCIT", "VCSH", "ARKW", "ARKG",
+    "IYR", "XRT", "KRE", "IAT", "SMH", "SOXX", "IBB", "GDX", "GDXJ", "VNQ",
+    "USO", "UNG", "UVXY", "VXX", "NVDL", "3TSL", "JETS", "GLD", "SLV", "TLT",
+}
+
+
+def _is_etf(ticker: str) -> bool:
+    return ticker in _ETF_SET
+
+
+def _adx_val(close: pd.Series, high: pd.Series, low: pd.Series, period: int = 14):
+    """14-period ADX; None on failure."""
+    try:
+        prev = close.shift(1)
+        tr   = pd.concat([high - low, (high - prev).abs(), (low - prev).abs()],
+                         axis=1).max(axis=1)
+        atr  = tr.ewm(com=period - 1, adjust=False).mean()
+        up, down = high.diff(), -low.diff()
+        pdm  = up.where((up > down) & (up > 0), 0.0)
+        ndm  = down.where((down > up) & (down > 0), 0.0)
+        safe = atr.replace(0, np.nan)
+        pdi  = 100 * pdm.ewm(com=period - 1, adjust=False).mean() / safe
+        ndi  = 100 * ndm.ewm(com=period - 1, adjust=False).mean() / safe
+        dx   = (100 * (pdi - ndi).abs() / (pdi + ndi).replace(0, np.nan)).fillna(0)
+        v    = float(dx.ewm(com=period - 1, adjust=False).mean().dropna().iloc[-1])
+        return round(v, 1) if np.isfinite(v) else None
+    except Exception:
+        return None
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SMALL HTML HELPERS
@@ -188,32 +220,20 @@ def _render_regime_bar():
 # B. TOP-20 CONVICTION PICKS  (from the latest Golden Scan JSON — no scanning)
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Groups drive the forced mix. Golden Scan rows are grouped by which scanners
-# fired (the "Scanners" abbrev field — richer than Style, which collapses to the
-# top-priority scanner). LEAPS/CSP rows from the same sched file add options-flow
-# diversity.
-_GROUP_META = {
-    "Trend":     ("📈 Trend",     ACCENT_GREEN),
-    "Momentum":  ("⚡ Momentum",  ORANGE),
-    "Reversal":  ("🔄 Reversal",  PURPLE),
-    "Confirmed": ("🎯 Multi-Sig", GOLD),
-    "Growth":    ("🌱 Growth",    MINT),
-    "LEAPS":     ("🚀 LEAPS",     ACCENT_BLUE),
-    "CSP":       ("💰 CSP",       GOLD),
+# The Top-20 is a TWO-STAGE scan:
+#   Stage 1 — candidates: stock tickers (no ETFs) from the latest twice-daily
+#             sched scans (Golden Scan + LEAPS + CSP rows).
+#   Stage 2 — live conviction re-score: every candidate is re-verified against
+#             fresh technicals (EMA stack, MACD, RSI, ADX, RVOL, RS vs SPY,
+#             not-extended) and ranked. Weak or stale setups drop out even if
+#             the stored scan liked them.
+_SETUP_META = {
+    "Momentum": ("⚡ Momentum", ORANGE,       "10–30d"),
+    "Reversal": ("🔄 Reversal", PURPLE,       "15–45d"),
+    "Trend":    ("📈 Trend",    ACCENT_GREEN, "20–60d"),
 }
-_GROUP_ORDER = ["Trend", "Momentum", "Reversal", "Confirmed", "Growth", "LEAPS", "CSP"]
-_GROUP_CAPS  = {"LEAPS": 3, "CSP": 2}          # options rows season the list, not dominate
-# Scanner abbrev → group; checked in this order so a TC+MRS row counts as Reversal
-_ABBREV_PRIORITY = [("MRS", "Reversal"), ("M", "Momentum"), ("TA", "Momentum"),
-                    ("MF", "Confirmed"), ("G", "Growth"), ("TS", "Trend"), ("TC", "Trend")]
-
-
-def _golden_group(scanners: str) -> str:
-    toks = [t.strip() for t in str(scanners).split("+")]
-    for ab, grp in _ABBREV_PRIORITY:
-        if ab in toks:
-            return grp
-    return "Trend"
+_CONVICTION_MIN = 55     # hard floor — below this a name simply isn't listed
+_TREND_CAP      = 12     # leave room for momentum + reversal setups in the 20
 
 
 def _sched_files() -> list[tuple]:
@@ -287,75 +307,130 @@ def _load_latest_scan() -> tuple[pd.DataFrame, tuple, str]:
     return latest, prev_tickers, label
 
 
-def _build_top20(df: pd.DataFrame, n: int = 20) -> list[dict]:
+def _candidates(df: pd.DataFrame) -> dict[str, dict]:
     """
-    Uniform pick records, force-mixed round-robin across groups:
-    Trend / Momentum / Reversal / Multi-Sig / Growth (Golden Scan, grouped by
-    which scanners fired) + LEAPS / CSP rows (capped) from the same scan.
+    Stage 1: stock candidates (never ETFs) from the sched scan rows.
+    Returns ticker → {"sched": best stored score, "n_sc": scanners agreeing}.
     """
+    cand: dict[str, dict] = {}
     if df.empty:
-        return []
-    picks: dict[str, list[dict]] = {g: [] for g in _GROUP_ORDER}
+        return cand
+    for _, r in df.iterrows():
+        t = str(r.get("Ticker", "")).upper()
+        if not t or _is_etf(t):
+            continue
+        if str(r.get("Universe", "Stock")) != "Stock":
+            continue
+        sc   = r.get("Score")
+        sc   = float(sc) if sc is not None and not pd.isna(sc) else 0.0
+        n_sc = r.get("Scanner Count")
+        n_sc = int(n_sc) if n_sc is not None and not pd.isna(n_sc) else 1
+        prev = cand.get(t, {"sched": 0.0, "n_sc": 1})
+        cand[t] = {"sched": max(prev["sched"], sc), "n_sc": max(prev["n_sc"], n_sc)}
+    return cand
 
-    golden = df[df["Strategy"] == "Golden Scan"]
-    for _, r in golden.sort_values("Score", ascending=False).iterrows():
-        grp   = _golden_group(r.get("Scanners", ""))
-        n_sc  = r.get("Scanner Count")
-        extra = f" ×{int(n_sc)}" if n_sc and not pd.isna(n_sc) and int(n_sc) >= 2 else ""
-        icon, col = _GROUP_META[grp]
-        picks[grp].append({
-            "ticker": r["Ticker"],
-            "price":  r.get("Price"),
-            "chg":    r.get("Change %", 0.0),
-            "chip":   icon + extra,
-            "color":  col,
-            "hold":   str(r.get("Hold", "—")),
-            "upside": r.get("Est. Upside %"),
-            "score":  r.get("Score"),
+
+def _conviction(d: dict, sched_score: float, n_sc: int) -> tuple[int, str, str]:
+    """
+    Stage 2: live conviction /100 from fresh technicals + a capped credit for
+    the stored scan. Returns (score, setup, tooltip).
+
+    Factors (weights):
+      Trend   30 — above SMA200 (10) · EMA 9>21>50 stack (10) · above EMA21 (5) · ADX≥20 (5)
+      Momo    30 — MACD>signal (8) · hist rising (7) · MACD>0 (5) · RSI zone (10)
+      Confirm 20 — RVOL (7) · RS vs SPY 63d (8) · near 20d high (5)
+      Sched   20 — stored score (15) + multi-scanner agreement (up to 8), capped
+    Penalties — extended >8% above EMA21 (−10) · RSI>75 (−8)
+    """
+    rsi, adx = d.get("rsi", 50.0), d.get("adx")
+    rvol, rs63 = d.get("rvol", 1.0), d.get("rs63")
+    ext21, off20h = d.get("ext21", 0.0), d.get("off20h", 99.0)
+
+    pts = 0
+    pts += 10 if d.get("above200") else 0
+    pts += 10 if d.get("stack") else 0
+    pts += 5  if ext21 > 0 else 0
+    pts += 5  if (adx is not None and adx >= 20) else 0
+    pts += 8  if d.get("macd_x") else 0
+    pts += 7  if d.get("hist_up") else 0
+    pts += 5  if d.get("macd_pos") else 0
+    pts += (10 if 50 <= rsi <= 68 else 6 if 40 <= rsi < 50 else 4 if 68 < rsi <= 72 else 0)
+    pts += 7  if rvol >= 1.1 else 4 if rvol >= 0.9 else 0
+    pts += (8 if (rs63 is not None and rs63 >= 1.05) else
+            5 if (rs63 is not None and rs63 >= 1.0) else 0)
+    pts += 5  if off20h <= 5 else 0
+    pts += min(20, int(sched_score / 100 * 15 + (5 if n_sc >= 2 else 0) + (3 if n_sc >= 3 else 0)))
+    if ext21 > 8:
+        pts -= 10
+    if rsi > 75:
+        pts -= 8
+
+    if d.get("stack") and off20h <= 5:
+        setup = "Momentum"
+    elif 3 <= off20h <= 15 and rsi <= 55 and d.get("hist_up"):
+        setup = "Reversal"
+    else:
+        setup = "Trend"
+
+    adx_s  = "{:.0f}".format(adx) if adx is not None else "?"
+    rs_s   = "{:.2f}".format(rs63) if rs63 is not None else "?"
+    tip = ("RSI {:.0f} · ADX {} · RVOL {:.1f}x · RS63 {} · {}{}{}· {:.0f}% off 20d-high"
+           .format(rsi, adx_s, rvol, rs_s,
+                   "stack ✓ " if d.get("stack") else "",
+                   "MACD ✓ " if d.get("macd_x") else "MACD ✗ ",
+                   "hist ↑ " if d.get("hist_up") else "",
+                   off20h))
+    return max(0, min(100, pts)), setup, tip
+
+
+def _build_top20(cand: dict, stats: dict, n: int = 20) -> list[dict]:
+    """Score candidates live, hard-filter, force a momentum/reversal/trend mix."""
+    scored: dict[str, list[dict]] = {"Momentum": [], "Reversal": [], "Trend": []}
+
+    for t, meta in cand.items():
+        d = stats.get(t)
+        if not d:
+            continue
+        # Hard gates: uptrend stocks only, no penny junk
+        if not d.get("above200") or d.get("price", 0) < 10:
+            continue
+        conv, setup, tip = _conviction(d, meta["sched"], meta["n_sc"])
+        if conv < _CONVICTION_MIN:
+            continue
+        icon, col, hold = _SETUP_META[setup]
+        chip = icon + (" ×{}".format(meta["n_sc"]) if meta["n_sc"] >= 2 else "")
+        ups  = d.get("ups52")
+        scored[setup].append({
+            "ticker": t, "price": d["price"], "chg": d["chg"],
+            "chip": chip, "color": col, "hold": hold, "tip": tip,
+            "upside": round(ups, 0) if ups is not None and ups >= 3 else None,
+            "score": conv,
         })
 
-    for strat in ("LEAPS", "CSP"):
-        sub = df[df["Strategy"] == strat]
-        if sub.empty:
-            continue
-        icon, col = _GROUP_META[strat]
-        for _, r in sub.sort_values("Score", ascending=False).iterrows():
-            sc = r.get("Score")
-            if sc is None or pd.isna(sc) or sc < 65:
-                continue
-            dte  = r.get("DTE")
-            hold = ("6–12 mo" if strat == "LEAPS" else
-                    (f"{int(dte)}d (put)" if dte and not pd.isna(dte) else "1–3 wk"))
-            ann  = r.get("Ann. Return%")
-            picks[strat].append({
-                "ticker": r["Ticker"],
-                "price":  r.get("Stock Price", r.get("Price")),
-                "chg":    r.get("Change %", 0.0),
-                "chip":   icon,
-                "color":  col,
-                "hold":   hold,
-                "upside": ann if strat == "CSP" else None,
-                "score":  sc,
-            })
+    for lst in scored.values():
+        lst.sort(key=lambda x: -x["score"])
 
-    out, seen, counts = [], set(), {g: 0 for g in _GROUP_ORDER}
-    while len(out) < n and any(picks.values()):
+    # Selection: round-robin so all three setups appear (Trend capped),
+    # then any remaining seats go to the best leftovers regardless of setup.
+    out, counts = [], {"Momentum": 0, "Reversal": 0, "Trend": 0}
+    order = ["Momentum", "Reversal", "Trend"]
+    while len(out) < n and any(scored.values()):
         progressed = False
-        for g in _GROUP_ORDER:
-            cap = _GROUP_CAPS.get(g)
-            while picks[g]:
-                row = picks[g].pop(0)
-                if row["ticker"] in seen or (cap and counts[g] >= cap):
-                    continue
-                seen.add(row["ticker"])
+        for g in order:
+            if scored[g] and not (g == "Trend" and counts[g] >= _TREND_CAP):
+                out.append(scored[g].pop(0))
                 counts[g] += 1
-                out.append(row)
                 progressed = True
-                break
             if len(out) >= n:
                 break
         if not progressed:
             break
+    if len(out) < n:
+        rest = sorted([r for lst in scored.values() for r in lst],
+                      key=lambda x: -x["score"])
+        out.extend(rest[:n - len(out)])
+
+    out.sort(key=lambda x: -x["score"])
     return out
 
 
@@ -386,10 +461,8 @@ def _earnings_soon(tickers: tuple, days: int = 7) -> dict:
     return out
 
 
-def _render_top20(live: dict):
-    scan_df, prev_tickers, label = _load_latest_scan()
-
-    if scan_df.empty:
+def _render_top20(cand: dict, stats: dict, prev_tickers: tuple, label: str):
+    if not cand:
         st.markdown(_card(
             "Top 20 Conviction Picks", "🏆", GOLD,
             f'<div style="color:{TEXT_MUTED};padding:30px;text-align:center">'
@@ -398,18 +471,24 @@ def _render_top20(live: dict):
         ), unsafe_allow_html=True)
         return []
 
-    top = _build_top20(scan_df, 20)
+    top = _build_top20(cand, stats, 20)
+
+    # Degraded mode: live data unreachable → stored scores, stocks only
+    fallback = False
+    if not top:
+        fallback = True
+        basic = sorted(cand.items(), key=lambda kv: -kv[1]["sched"])[:20]
+        top = [{"ticker": t, "price": None, "chg": 0.0,
+                "chip": "📈 Trend", "color": ACCENT_GREEN, "hold": "20–60d",
+                "tip": "stored scan score — live re-check unavailable",
+                "upside": None, "score": int(m["sched"])} for t, m in basic]
+
     tickers = [p["ticker"] for p in top]
     earn = _earnings_soon(tuple(tickers))
 
     rows = ""
     for p in top:
         t = p["ticker"]
-        lv    = live.get(t, {})
-        price = lv.get("price", p["price"])
-        chg   = lv.get("chg", p["chg"]) or 0.0
-        ups   = p["upside"]
-        score = p["score"]
 
         badges = ""
         if prev_tickers and t not in prev_tickers:
@@ -422,22 +501,26 @@ def _render_top20(live: dict):
                        f'border-radius:8px">E-{earn[t]}d</span>')
 
         try:
-            price_s = "${:,.2f}".format(float(price))
+            price_s = "${:,.2f}".format(float(p["price"]))
         except Exception:
             price_s = "—"
+        ups = p["upside"]
         ups_html = (_mono("+{:.0f}%".format(float(ups)), ACCENT_GREEN, 11)
                     if ups is not None and not pd.isna(ups) else
                     f'<span style="color:{TEXT_MUTED}">—</span>')
-        sc_html  = (f'<span style="color:{GOLD};font-size:10px;font-weight:800">{int(score)}</span>'
-                    if score is not None and not pd.isna(score) else "")
+        sc    = int(p["score"])
+        sc_col = ACCENT_GREEN if sc >= 75 else GOLD if sc >= 65 else TEXT_MUTED
+        sc_html = (f'<span style="color:{sc_col};font-size:11px;font-weight:800">{sc}</span>')
+        chip_html = (f'<span title="{p.get("tip", "")}" style="cursor:help">'
+                     f'{_chip(p["chip"], p["color"])}</span>')
 
         rows += (
             f'<tr>'
             f'<td style="{_TD};white-space:nowrap">'
             f'{_mono(t, GOLD, 12, True)}{badges}</td>'
             f'<td style="{_TD}">{_mono(price_s, TEXT_PRIMARY, 11)}</td>'
-            f'<td style="{_TD}">{_chg_html(float(chg))}</td>'
-            f'<td style="{_TD}">{_chip(p["chip"], p["color"])}</td>'
+            f'<td style="{_TD}">{_chg_html(float(p["chg"] or 0.0))}</td>'
+            f'<td style="{_TD}">{chip_html}</td>'
             f'<td style="{_TD};white-space:nowrap"><span style="color:{TEXT_PRIMARY};'
             f'font-size:11px">{p["hold"]}</span></td>'
             f'<td style="{_TD};text-align:right">{ups_html}</td>'
@@ -445,19 +528,21 @@ def _render_top20(live: dict):
             f'</tr>'
         )
 
+    note = ("⚠️ Live re-score unavailable — showing stored scan scores. "
+            if fallback else "")
     body = (
         f'<table style="width:100%;border-collapse:collapse">'
         f'<thead><tr>'
         f'<th style="{_TH}">Ticker</th><th style="{_TH}">Price</th>'
         f'<th style="{_TH}">Chg</th><th style="{_TH}">Why</th>'
-        f'<th style="{_TH}">Hold</th><th style="{_TH};text-align:right">Upside</th>'
-        f'<th style="{_TH};text-align:right">Sc</th>'
+        f'<th style="{_TH}">Hold</th><th style="{_TH};text-align:right">To 52w-Hi</th>'
+        f'<th style="{_TH};text-align:right">Conv</th>'
         f'</tr></thead><tbody>{rows}</tbody></table>'
-        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:6px">'
-        f'Why = which scanner fired (×N = N scanners agree) · mixed across '
-        f'Trend / Momentum / Reversal / Multi-Sig / Growth / LEAPS / CSP · '
-        f'NEW = not in previous scan · E-Nd = earnings within N days · '
-        f'CSP upside = annualized premium</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:6px">{note}'
+        f'Stocks only — no ETFs. Conv /100 = live re-score of scan candidates on '
+        f'EMA stack · MACD · RSI · ADX · RVOL · RS vs SPY · not-extended '
+        f'(hover the Why chip for the readings). ×N = N scanners agreed · '
+        f'NEW = not in previous scan · E-Nd = earnings within N days</div>'
     )
     st.markdown(_card("Top 20 Conviction Picks", "🏆", GOLD, body,
                       subtitle=label, max_height=560), unsafe_allow_html=True)
@@ -589,8 +674,10 @@ _ACTIVE_LIQUID = [
 @st.cache_data(ttl=1800, show_spinner=False)
 def _batch_stats(tickers: tuple) -> dict:
     """
-    One batched 1-y download → per-ticker live stats:
-    price, chg%, RVOL, ATR%, HV30, HV60, vol-rank (HV30 in its 1-y range).
+    One batched 1-y download → per-ticker live stats.
+    Tape fields: price, chg%, RVOL, ATR%, HV30, vol-rank, expanding.
+    Conviction fields: RSI, ADX, MACD state, EMA stack, SMA200, extension vs
+    EMA21, % off 20-day high, upside to 52-w high, RS vs SPY (63d).
     """
     out: dict[str, dict] = {}
     try:
@@ -602,11 +689,19 @@ def _batch_stats(tickers: tuple) -> dict:
     if data is None or data.empty:
         return out
 
+    def _tdf(t):
+        return data[t] if isinstance(data.columns, pd.MultiIndex) else data
+
+    try:
+        spy_close = _tdf("SPY")["Close"].dropna()
+    except Exception:
+        spy_close = pd.Series(dtype=float)
+
     for t in tickers:
         try:
-            df = data[t] if isinstance(data.columns, pd.MultiIndex) else data
+            df = _tdf(t)
             close = df["Close"].dropna()
-            if len(close) < 40:
+            if len(close) < 60:
                 continue
             high, low = df["High"].dropna(), df["Low"].dropna()
             vol = df["Volume"].dropna()
@@ -629,10 +724,52 @@ def _batch_stats(tickers: tuple) -> dict:
             hi, lo = (float(hv_s.max()), float(hv_s.min())) if len(hv_s) else (np.nan, np.nan)
             vrank = ((hv30 - lo) / (hi - lo) * 100) if (hi and hi > lo) else 50.0
 
-            out[t] = {"price": round(price, 2), "chg": round(chg, 2),
-                      "rvol": round(rvol, 2), "atr": round(atr_pct, 1),
-                      "hv30": round(hv30, 1) if hv30 == hv30 else None,
-                      "vrank": round(vrank, 0), "expanding": bool(hv30 > hv60)}
+            # ── Conviction factors ────────────────────────────────────────────
+            ema9   = float(close.ewm(span=9,  adjust=False).mean().iloc[-1])
+            ema21  = float(close.ewm(span=21, adjust=False).mean().iloc[-1])
+            ema50  = float(close.ewm(span=50, adjust=False).mean().iloc[-1])
+            sma200 = float(close.rolling(min(200, len(close))).mean().iloc[-1])
+
+            macd_l = (close.ewm(span=12, adjust=False).mean()
+                      - close.ewm(span=26, adjust=False).mean())
+            sig_l  = macd_l.ewm(span=9, adjust=False).mean()
+            hist   = (macd_l - sig_l).dropna()
+
+            delta = close.diff().dropna()
+            gain  = delta.clip(lower=0).ewm(alpha=1/14, adjust=False).mean()
+            loss  = (-delta.clip(upper=0)).ewm(alpha=1/14, adjust=False).mean()
+            rsi   = float((100 - 100 / (1 + gain / loss.replace(0, np.nan))).fillna(50).iloc[-1])
+
+            hi20 = float(close.iloc[-20:].max())
+            hi52 = float(close.max())
+
+            rs63 = None
+            if len(spy_close) >= 64 and len(close) >= 64:
+                try:
+                    rs63 = ((price / float(close.iloc[-64]))
+                            / (float(spy_close.iloc[-1]) / float(spy_close.iloc[-64])))
+                except Exception:
+                    rs63 = None
+
+            out[t] = {
+                # tape
+                "price": round(price, 2), "chg": round(chg, 2),
+                "rvol": round(rvol, 2), "atr": round(atr_pct, 1),
+                "hv30": round(hv30, 1) if hv30 == hv30 else None,
+                "vrank": round(vrank, 0), "expanding": bool(hv30 > hv60),
+                # conviction
+                "rsi":      round(rsi, 1),
+                "adx":      _adx_val(close, high, low),
+                "macd_pos": bool(float(macd_l.iloc[-1]) > 0),
+                "macd_x":   bool(float(macd_l.iloc[-1]) > float(sig_l.iloc[-1])),
+                "hist_up":  bool(len(hist) >= 2 and float(hist.iloc[-1]) > float(hist.iloc[-2])),
+                "stack":    bool(price > ema9 > ema21 > ema50),
+                "above200": bool(price > sma200),
+                "ext21":    round((price / ema21 - 1) * 100, 1) if ema21 > 0 else 0.0,
+                "off20h":   round((hi20 - price) / hi20 * 100, 1) if hi20 > 0 else 99.0,
+                "ups52":    round((hi52 / price - 1) * 100, 1) if price > 0 else None,
+                "rs63":     round(rs63, 3) if rs63 is not None else None,
+            }
         except Exception:
             continue
     return out
@@ -830,24 +967,31 @@ def render():
         except Exception:
             st.warning("Regime bar unavailable.")
 
+    # ── Stage 1: candidates from the latest sched scan (instant, no scanning) ─
+    with st.spinner("Loading scan candidates…"):
+        try:
+            scan_df, prev_tickers, label = _load_latest_scan()
+            cand = _candidates(scan_df)
+        except Exception:
+            prev_tickers, label, cand = tuple(), "", {}
+
+    # ── Stage 2: one batched download → conviction re-score + tape stats ─────
+    with st.spinner("Re-scoring candidates on live technicals (batched)…"):
+        try:
+            all_tickers = tuple(dict.fromkeys(list(cand) + _ACTIVE_LIQUID))
+            stats = _batch_stats(all_tickers)
+        except Exception:
+            stats = {}
+
     # ── Row 1: picks + news ───────────────────────────────────────────────────
     left1, right1 = st.columns(2)
 
     with left1:
-        with st.spinner("Loading Golden Scan picks…"):
-            try:
-                pick_tickers = _render_top20(live={})
-            except Exception:
-                pick_tickers = []
-                st.warning("Top-20 picks unavailable.")
-
-    # One batched download powers live prices, Trade-Today and High-IV
-    with st.spinner("Fetching live stats (batched)…"):
         try:
-            all_tickers = tuple(dict.fromkeys(list(pick_tickers) + _ACTIVE_LIQUID))
-            stats = _batch_stats(all_tickers)
+            pick_tickers = _render_top20(cand, stats, prev_tickers, label)
         except Exception:
-            stats = {}
+            pick_tickers = []
+            st.warning("Top-20 picks unavailable.")
 
     with right1:
         with st.spinner("Pulling headlines…"):
