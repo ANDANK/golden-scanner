@@ -1,73 +1,33 @@
-# scanners/home.py — Market Overview: the one-page command center
+# scanners/home.py — Market Overview (rewritten 2026-07-23)
 #
 # Layout:
-#   ┌─────────────────────────────────────────────────────────┐
-#   │ REGIME BAR — Risk-On/Mixed/Risk-Off · indices · breadth │
-#   ├────────────────────────────┬────────────────────────────┤
-#   │ 🏆 Top-20 Conviction Picks │ 📰 News (picks + market)   │
-#   ├────────────────────────────┼────────────────────────────┤
-#   │ ⚡ Trade Today · 🔥 High IV │ 🔄 Sector Rotation (RRG)   │
-#   └────────────────────────────┴────────────────────────────┘
+#   ┌─ Market-regime header (Risk-On/Mixed/Off · indices · breadth) ─┐
+#   ├─ Tab 1  🎯 Best Scanners  — the 6 keeper scanners over a universe
+#   ├─ Tab 2  📺 OverKill Shorts — curated watch-list from the YouTube shorts
+#   └─ Tab 3  🔄 Sector Rotation — RRG-style flows (preserved from the old page)
 #
-# Design rules:
-#   - NEVER run a scanner on page load. The Top-20 reads the latest
-#     twice-daily Golden Scan JSON committed to data/ (instant).
-#   - Live work is limited to cached, batched fetches (quotes, news, sectors).
-#   - Every section is fail-safe: one broken feed never bricks the page.
+# The Fear & Greed gauge and the whole sidebar live in app.py — untouched here.
+# Backup of the previous command-center page: scanners/home_backup_2026-07-23.py
 
 from __future__ import annotations
 import streamlit as st
 import pandas as pd
 import numpy as np
-import yfinance as yf
-import json, glob, os, re, sys
-from datetime import datetime, timezone
+import json, os, sys
+from datetime import datetime
 import pytz
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import *
-from utils import section_header, calc_sma, calc_ema, calc_rsi
-from data_loader import get_price_history, get_market_overview
+from utils import section_header, calc_sma
+from data_loader import get_price_history, get_market_overview, prefetch_tickers
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
-_GH_RAW_BASE = "https://raw.githubusercontent.com/ANDANK/golden-scanner/main/data"
 
 ORANGE = "#F97316"
 PURPLE = "#A78BFA"
 MINT   = "#34D399"
-
-# Every fund/ETF we know about — the Top-20 is STOCKS ONLY
-_ETF_SET = set(OPTIONS_ETF_UNIVERSE) | set(ETF_UNIVERSE) | set(ETF_3X_UNIVERSE) | {
-    "VTI", "VOO", "MDY", "RSP", "DIA", "XLC", "XLB", "XLRE", "XBI", "IEF",
-    "EFA", "VEA", "VWO", "AGG", "BND", "MUB", "VCIT", "VCSH", "ARKW", "ARKG",
-    "IYR", "XRT", "KRE", "IAT", "SMH", "SOXX", "IBB", "GDX", "GDXJ", "VNQ",
-    "USO", "UNG", "UVXY", "VXX", "NVDL", "3TSL", "JETS", "GLD", "SLV", "TLT",
-}
-
-
-def _is_etf(ticker: str) -> bool:
-    return ticker in _ETF_SET
-
-
-def _adx_val(close: pd.Series, high: pd.Series, low: pd.Series, period: int = 14):
-    """14-period ADX; None on failure."""
-    try:
-        prev = close.shift(1)
-        tr   = pd.concat([high - low, (high - prev).abs(), (low - prev).abs()],
-                         axis=1).max(axis=1)
-        atr  = tr.ewm(com=period - 1, adjust=False).mean()
-        up, down = high.diff(), -low.diff()
-        pdm  = up.where((up > down) & (up > 0), 0.0)
-        ndm  = down.where((down > up) & (down > 0), 0.0)
-        safe = atr.replace(0, np.nan)
-        pdi  = 100 * pdm.ewm(com=period - 1, adjust=False).mean() / safe
-        ndi  = 100 * ndm.ewm(com=period - 1, adjust=False).mean() / safe
-        dx   = (100 * (pdi - ndi).abs() / (pdi + ndi).replace(0, np.nan)).fillna(0)
-        v    = float(dx.ewm(com=period - 1, adjust=False).mean().dropna().iloc[-1])
-        return round(v, 1) if np.isfinite(v) else None
-    except Exception:
-        return None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -87,7 +47,6 @@ def _chip(text: str, color: str, bg_alpha: float = 0.12) -> str:
 
 def _card(title: str, icon: str, color: str, body_html: str,
           subtitle: str = "", max_height: int = 0) -> str:
-    """Colorful quadrant card with gradient header and optional scroll body."""
     scroll = (f"max-height:{max_height}px;overflow-y:auto;" if max_height else "")
     return (
         f'<div style="background:{BG_CARD};border:1px solid {BORDER_COLOR};'
@@ -106,10 +65,10 @@ def _card(title: str, icon: str, color: str, body_html: str,
     )
 
 
-_TD = "padding:6px 8px;border-bottom:1px solid #2A2A3A33;vertical-align:middle"
+_TD = "padding:7px 10px;border-bottom:1px solid #2A2A3A33;vertical-align:middle;white-space:nowrap"
 _TH = (f"color:{TEXT_MUTED};font-size:9px;font-weight:700;text-transform:uppercase;"
-       f"letter-spacing:0.6px;padding:4px 8px;text-align:left;white-space:nowrap;"
-       f"border-bottom:1px solid #2A2A3A66")
+       f"letter-spacing:0.6px;padding:6px 10px;text-align:left;white-space:nowrap;"
+       f"border-bottom:1.5px solid #2A2A3A66;position:sticky;top:0;background:{BG_PANEL}")
 
 
 def _mono(v: str, color: str = TEXT_PRIMARY, size: int = 12, bold: bool = False) -> str:
@@ -123,8 +82,13 @@ def _chg_html(chg: float) -> str:
     return _mono(f"{chg:+.1f}%", col, 11)
 
 
+def _bool_cell(b: bool) -> str:
+    return (f'<span style="color:{ACCENT_GREEN}">✅</span>' if b
+            else f'<span style="color:{TEXT_MUTED}">❌</span>')
+
+
 # ══════════════════════════════════════════════════════════════════════════════
-# A. MARKET REGIME
+# MARKET-REGIME HEADER  (kept from the original command center)
 # ══════════════════════════════════════════════════════════════════════════════
 
 _SECTOR_ETFS = ["XLK","XLF","XLV","XLI","XLE","XLY","XLP","XLC","XLB","XLRE","XLU"]
@@ -149,7 +113,6 @@ def _regime_data() -> dict:
         out["vix"] = float(vix.iloc[-1])
     except Exception:
         out["vix"] = 20.0
-    # Breadth: % of the 11 sector ETFs above their SMA50
     above = total = 0
     for t in _SECTOR_ETFS:
         try:
@@ -171,7 +134,7 @@ def _render_regime_bar():
         mkt = {}
 
     if not d.get("ok"):
-        st.warning("Market data unavailable right now — sections below still work from cached scans.")
+        st.warning("Market data unavailable right now — the tabs below still work.")
         return
 
     vix, breadth = d["vix"], d["breadth"]
@@ -217,629 +180,439 @@ def _render_regime_bar():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# B. TOP-20 CONVICTION PICKS  (from the latest Golden Scan JSON — no scanning)
+# TAB 1 — BEST SCANNERS  (the 6 keepers, one merged table)
 # ══════════════════════════════════════════════════════════════════════════════
+#
+# Self-contained engine: one prefetch of 2-yr daily bars, weekly resampled
+# in-memory, then each ticker is tested against all six scanners at the latest
+# bar. Logic mirrors the app's own engines (validated against them).
 
-# The Top-20 is a TWO-STAGE scan:
-#   Stage 1 — candidates: stock tickers (no ETFs) from the latest twice-daily
-#             sched scans (Golden Scan + LEAPS + CSP rows).
-#   Stage 2 — live conviction re-score: every candidate is re-verified against
-#             fresh technicals (EMA stack, MACD, RSI, ADX, RVOL, RS vs SPY,
-#             not-extended) and ranked. Weak or stale setups drop out even if
-#             the stored scan liked them.
-_SETUP_META = {
-    "Momentum": ("⚡ Momentum", ORANGE,       "10–30d"),
-    "Reversal": ("🔄 Reversal", PURPLE,       "15–45d"),
-    "Trend":    ("📈 Trend",    ACCENT_GREEN, "20–60d"),
-}
-_CONVICTION_MIN = 55     # hard floor — below this a name simply isn't listed
-_TREND_CAP      = 12     # leave room for momentum + reversal setups in the 20
+_LABELS = ["1Mom", "2TC", "3MF", "4TS", "5RB", "6Prime"]
 
-
-def _sched_files() -> list[tuple]:
-    """All local sched files as (date_str, slot, path), newest first."""
-    files = []
-    for p in glob.glob(os.path.join(DATA_DIR, "sched_*_*.json")):
-        m = re.match(r"sched_(am|pm)_(\d{4}-\d{2}-\d{2})\.json", os.path.basename(p))
-        if m:
-            files.append((m.group(2), m.group(1), p))
-    # pm sorts after am on the same day
-    files.sort(key=lambda x: (x[0], x[1]), reverse=True)
-    return files
-
-
-def _scan_rows(path_or_dict) -> pd.DataFrame:
-    """All strategy rows (Golden Scan + LEAPS + CSP) from one sched file."""
-    try:
-        if isinstance(path_or_dict, dict):
-            d = path_or_dict
-        else:
-            with open(path_or_dict) as f:
-                d = json.load(f)
-        df = pd.DataFrame(d.get("results", []))
-        if df.empty or "Strategy" not in df.columns:
-            return pd.DataFrame()
-        return df
-    except Exception:
-        return pd.DataFrame()
-
-
-@st.cache_data(ttl=900, show_spinner=False)
-def _load_latest_scan() -> tuple[pd.DataFrame, tuple, str]:
-    """
-    Latest sched-scan rows (all strategies) + previous run's tickers (for 🆕
-    badges) + label. Tries today's files on GitHub raw if the repo copy is older.
-    """
-    candidates: list[tuple[str, pd.DataFrame]] = []
-
-    # Today's files via GitHub raw (auto-scan commits may be newer than deploy)
-    today = datetime.now(pytz.timezone("America/Chicago")).date().isoformat()
-    for slot in ("pm", "am"):
-        try:
-            import urllib.request as _ur
-            with _ur.urlopen(f"{_GH_RAW_BASE}/sched_{slot}_{today}.json", timeout=3) as r:
-                d = json.loads(r.read())
-            g = _scan_rows(d)
-            if not g.empty:
-                candidates.append((f"{today}|{slot}", g))
-        except Exception:
-            pass
-
-    for date_s, slot, path in _sched_files()[:14]:
-        g = _scan_rows(path)
-        if not g.empty:
-            candidates.append((f"{date_s}|{slot}", g))
-
-    if not candidates:
-        return pd.DataFrame(), tuple(), ""
-
-    # Dedupe by key, keep newest first
-    seen, ordered = set(), []
-    for key, g in sorted(candidates, key=lambda x: x[0], reverse=True):
-        if key not in seen:
-            seen.add(key)
-            ordered.append((key, g))
-
-    latest_key, latest = ordered[0]
-    prev_tickers = tuple(ordered[1][1]["Ticker"]) if len(ordered) > 1 else tuple()
-    date_s, slot = latest_key.split("|")
-    label = f"{slot.upper()} scan · {datetime.fromisoformat(date_s).strftime('%b %d')}"
-    return latest, prev_tickers, label
-
-
-def _candidates(df: pd.DataFrame) -> dict[str, dict]:
-    """
-    Stage 1: stock candidates (never ETFs) from the sched scan rows.
-    Returns ticker → {"sched": best stored score, "n_sc": scanners agreeing}.
-    """
-    cand: dict[str, dict] = {}
-    if df.empty:
-        return cand
-    for _, r in df.iterrows():
-        t = str(r.get("Ticker", "")).upper()
-        if not t or _is_etf(t):
-            continue
-        if str(r.get("Universe", "Stock")) != "Stock":
-            continue
-        sc   = r.get("Score")
-        sc   = float(sc) if sc is not None and not pd.isna(sc) else 0.0
-        n_sc = r.get("Scanner Count")
-        n_sc = int(n_sc) if n_sc is not None and not pd.isna(n_sc) else 1
-        prev = cand.get(t, {"sched": 0.0, "n_sc": 1})
-        cand[t] = {"sched": max(prev["sched"], sc), "n_sc": max(prev["n_sc"], n_sc)}
-    return cand
-
-
-def _conviction(d: dict, sched_score: float, n_sc: int) -> tuple[int, str, str]:
-    """
-    Stage 2: live conviction /100 from fresh technicals + a capped credit for
-    the stored scan. Returns (score, setup, tooltip).
-
-    Factors (weights):
-      Trend   30 — above SMA200 (10) · EMA 9>21>50 stack (10) · above EMA21 (5) · ADX≥20 (5)
-      Momo    30 — MACD>signal (8) · hist rising (7) · MACD>0 (5) · RSI zone (10)
-      Confirm 20 — RVOL (7) · RS vs SPY 63d (8) · near 20d high (5)
-      Sched   20 — stored score (15) + multi-scanner agreement (up to 8), capped
-    Penalties — extended >8% above EMA21 (−10) · RSI>75 (−8)
-    """
-    rsi, adx = d.get("rsi", 50.0), d.get("adx")
-    rvol, rs63 = d.get("rvol", 1.0), d.get("rs63")
-    ext21, off20h = d.get("ext21", 0.0), d.get("off20h", 99.0)
-
-    pts = 0
-    pts += 10 if d.get("above200") else 0
-    pts += 10 if d.get("stack") else 0
-    pts += 5  if ext21 > 0 else 0
-    pts += 5  if (adx is not None and adx >= 20) else 0
-    pts += 8  if d.get("macd_x") else 0
-    pts += 7  if d.get("hist_up") else 0
-    pts += 5  if d.get("macd_pos") else 0
-    pts += (10 if 50 <= rsi <= 68 else 6 if 40 <= rsi < 50 else 4 if 68 < rsi <= 72 else 0)
-    pts += 7  if rvol >= 1.1 else 4 if rvol >= 0.9 else 0
-    pts += (8 if (rs63 is not None and rs63 >= 1.05) else
-            5 if (rs63 is not None and rs63 >= 1.0) else 0)
-    pts += 5  if off20h <= 5 else 0
-    pts += min(20, int(sched_score / 100 * 15 + (5 if n_sc >= 2 else 0) + (3 if n_sc >= 3 else 0)))
-    if ext21 > 8:
-        pts -= 10
-    if rsi > 75:
-        pts -= 8
-
-    if d.get("stack") and off20h <= 5:
-        setup = "Momentum"
-    elif 3 <= off20h <= 15 and rsi <= 55 and d.get("hist_up"):
-        setup = "Reversal"
-    else:
-        setup = "Trend"
-
-    adx_s  = "{:.0f}".format(adx) if adx is not None else "?"
-    rs_s   = "{:.2f}".format(rs63) if rs63 is not None else "?"
-    tip = ("RSI {:.0f} · ADX {} · RVOL {:.1f}x · RS63 {} · {}{}{}· {:.0f}% off 20d-high"
-           .format(rsi, adx_s, rvol, rs_s,
-                   "stack ✓ " if d.get("stack") else "",
-                   "MACD ✓ " if d.get("macd_x") else "MACD ✗ ",
-                   "hist ↑ " if d.get("hist_up") else "",
-                   off20h))
-    return max(0, min(100, pts)), setup, tip
-
-
-def _build_top20(cand: dict, stats: dict, n: int = 20) -> list[dict]:
-    """Score candidates live, hard-filter, force a momentum/reversal/trend mix."""
-    scored: dict[str, list[dict]] = {"Momentum": [], "Reversal": [], "Trend": []}
-
-    for t, meta in cand.items():
-        d = stats.get(t)
-        if not d:
-            continue
-        # Hard gates: uptrend stocks only, no penny junk
-        if not d.get("above200") or d.get("price", 0) < 10:
-            continue
-        conv, setup, tip = _conviction(d, meta["sched"], meta["n_sc"])
-        if conv < _CONVICTION_MIN:
-            continue
-        icon, col, hold = _SETUP_META[setup]
-        chip = icon + (" ×{}".format(meta["n_sc"]) if meta["n_sc"] >= 2 else "")
-        ups  = d.get("ups52")
-        scored[setup].append({
-            "ticker": t, "price": d["price"], "chg": d["chg"],
-            "chip": chip, "color": col, "hold": hold, "tip": tip,
-            "upside": round(ups, 0) if ups is not None and ups >= 3 else None,
-            "score": conv,
-        })
-
-    for lst in scored.values():
-        lst.sort(key=lambda x: -x["score"])
-
-    # Selection: round-robin so all three setups appear (Trend capped),
-    # then any remaining seats go to the best leftovers regardless of setup.
-    out, counts = [], {"Momentum": 0, "Reversal": 0, "Trend": 0}
-    order = ["Momentum", "Reversal", "Trend"]
-    while len(out) < n and any(scored.values()):
-        progressed = False
-        for g in order:
-            if scored[g] and not (g == "Trend" and counts[g] >= _TREND_CAP):
-                out.append(scored[g].pop(0))
-                counts[g] += 1
-                progressed = True
-            if len(out) >= n:
-                break
-        if not progressed:
-            break
-    if len(out) < n:
-        rest = sorted([r for lst in scored.values() for r in lst],
-                      key=lambda x: -x["score"])
-        out.extend(rest[:n - len(out)])
-
-    out.sort(key=lambda x: -x["score"])
-    return out
-
-
-@st.cache_data(ttl=21600, show_spinner=False)
-def _earnings_soon(tickers: tuple, days: int = 7) -> dict:
-    """Ticker → days-until-earnings when within `days`. Best-effort, cached 6 h."""
-    out = {}
-    for t in tickers:
-        try:
-            cal = yf.Ticker(t).calendar
-            dates = None
-            if isinstance(cal, dict):
-                dates = cal.get("Earnings Date") or cal.get("EarningsDate")
-            elif cal is not None and hasattr(cal, "loc"):
-                try:
-                    dates = list(cal.loc["Earnings Date"])
-                except Exception:
-                    dates = None
-            if not dates:
-                continue
-            d0 = dates[0] if isinstance(dates, (list, tuple)) else dates
-            d0 = pd.Timestamp(d0).date()
-            delta = (d0 - datetime.now().date()).days
-            if 0 <= delta <= days:
-                out[t] = delta
-        except Exception:
-            continue
-    return out
-
-
-def _render_top20(cand: dict, stats: dict, prev_tickers: tuple, label: str):
-    if not cand:
-        st.markdown(_card(
-            "Top 20 Conviction Picks", "🏆", GOLD,
-            f'<div style="color:{TEXT_MUTED};padding:30px;text-align:center">'
-            f'No scan results found yet — run a scheduled scan '
-            f'(Admin → Scheduled Scans) and this list fills automatically.</div>'
-        ), unsafe_allow_html=True)
-        return []
-
-    top = _build_top20(cand, stats, 20)
-
-    # Degraded mode: live data unreachable → stored scores, stocks only
-    fallback = False
-    if not top:
-        fallback = True
-        basic = sorted(cand.items(), key=lambda kv: -kv[1]["sched"])[:20]
-        top = [{"ticker": t, "price": None, "chg": 0.0,
-                "chip": "📈 Trend", "color": ACCENT_GREEN, "hold": "20–60d",
-                "tip": "stored scan score — live re-check unavailable",
-                "upside": None, "score": int(m["sched"])} for t, m in basic]
-
-    tickers = [p["ticker"] for p in top]
-    earn = _earnings_soon(tuple(tickers))
-
-    rows = ""
-    for p in top:
-        t = p["ticker"]
-
-        badges = ""
-        if prev_tickers and t not in prev_tickers:
-            badges += (f' <span style="background:{ACCENT_BLUE}22;color:{ACCENT_BLUE};'
-                       f'font-size:8px;font-weight:800;padding:1px 5px;'
-                       f'border-radius:8px">NEW</span>')
-        if t in earn:
-            badges += (f' <span title="Earnings in {earn[t]}d" style="background:{ACCENT_RED}22;'
-                       f'color:{ACCENT_RED};font-size:8px;font-weight:800;padding:1px 5px;'
-                       f'border-radius:8px">E-{earn[t]}d</span>')
-
-        try:
-            price_s = "${:,.2f}".format(float(p["price"]))
-        except Exception:
-            price_s = "—"
-        ups = p["upside"]
-        ups_html = (_mono("+{:.0f}%".format(float(ups)), ACCENT_GREEN, 11)
-                    if ups is not None and not pd.isna(ups) else
-                    f'<span style="color:{TEXT_MUTED}">—</span>')
-        sc    = int(p["score"])
-        sc_col = ACCENT_GREEN if sc >= 75 else GOLD if sc >= 65 else TEXT_MUTED
-        sc_html = (f'<span style="color:{sc_col};font-size:11px;font-weight:800">{sc}</span>')
-        chip_html = (f'<span title="{p.get("tip", "")}" style="cursor:help">'
-                     f'{_chip(p["chip"], p["color"])}</span>')
-
-        rows += (
-            f'<tr>'
-            f'<td style="{_TD};white-space:nowrap">'
-            f'{_mono(t, GOLD, 12, True)}{badges}</td>'
-            f'<td style="{_TD}">{_mono(price_s, TEXT_PRIMARY, 11)}</td>'
-            f'<td style="{_TD}">{_chg_html(float(p["chg"] or 0.0))}</td>'
-            f'<td style="{_TD}">{chip_html}</td>'
-            f'<td style="{_TD};white-space:nowrap"><span style="color:{TEXT_PRIMARY};'
-            f'font-size:11px">{p["hold"]}</span></td>'
-            f'<td style="{_TD};text-align:right">{ups_html}</td>'
-            f'<td style="{_TD};text-align:right">{sc_html}</td>'
-            f'</tr>'
-        )
-
-    note = ("⚠️ Live re-score unavailable — showing stored scan scores. "
-            if fallback else "")
-    body = (
-        f'<table style="width:100%;border-collapse:collapse">'
-        f'<thead><tr>'
-        f'<th style="{_TH}">Ticker</th><th style="{_TH}">Price</th>'
-        f'<th style="{_TH}">Chg</th><th style="{_TH}">Why</th>'
-        f'<th style="{_TH}">Hold</th><th style="{_TH};text-align:right">To 52w-Hi</th>'
-        f'<th style="{_TH};text-align:right">Conv</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table>'
-        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:6px">{note}'
-        f'Stocks only — no ETFs. Conv /100 = live re-score of scan candidates on '
-        f'EMA stack · MACD · RSI · ADX · RVOL · RS vs SPY · not-extended '
-        f'(hover the Why chip for the readings). ×N = N scanners agreed · '
-        f'NEW = not in previous scan · E-Nd = earnings within N days</div>'
-    )
-    st.markdown(_card("Top 20 Conviction Picks", "🏆", GOLD, body,
-                      subtitle=label, max_height=560), unsafe_allow_html=True)
-    return tickers
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# C. NEWS — headlines for the picks + general market pulse
-# ══════════════════════════════════════════════════════════════════════════════
-
-@st.cache_data(ttl=900, show_spinner=False)
-def _yf_ticker_news(tickers: tuple, per_ticker: int = 2) -> list[dict]:
-    """yfinance headlines for the pick list. Handles old & new item formats."""
-    from scanners.social_trends import _score_sentiment, _time_ago
-    items = []
-    for t in tickers:
-        try:
-            raw = yf.Ticker(t).news or []
-        except Exception:
-            continue
-        for it in raw[:per_ticker]:
-            try:
-                c = it.get("content", it)
-                title = c.get("title") or ""
-                if not title:
-                    continue
-                link = (c.get("canonicalUrl", {}) or {}).get("url") or it.get("link") or ""
-                src  = ((c.get("provider", {}) or {}).get("displayName")
-                        or it.get("publisher") or "")
-                ts = it.get("providerPublishTime")
-                if ts:
-                    dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
-                else:
-                    pub = c.get("pubDate") or c.get("displayTime") or ""
-                    dt  = pd.Timestamp(pub).to_pydatetime() if pub else datetime.now(timezone.utc)
-                    if dt.tzinfo is None:
-                        dt = dt.replace(tzinfo=timezone.utc)
-                sent, _ = _score_sentiment(title)
-                items.append({"ticker": t, "title": title[:120], "link": link,
-                              "src": src, "dt": dt, "ago": _time_ago(dt), "sent": sent})
-            except Exception:
-                continue
-    # newest first, dedupe near-identical titles
-    seen, out = set(), []
-    for it in sorted(items, key=lambda x: x["dt"], reverse=True):
-        k = it["title"][:60].lower()
-        if k not in seen:
-            seen.add(k)
-            out.append(it)
-    return out[:14]
-
-
-def _sent_dot(sent: str) -> str:
-    col = ACCENT_GREEN if sent == "Bullish" else ACCENT_RED if sent == "Bearish" else TEXT_MUTED
-    return f'<span style="color:{col};font-size:13px;line-height:1">●</span>'
-
-
-def _render_news(pick_tickers: list):
-    # 1. Headlines on the picks
-    tick_items = _yf_ticker_news(tuple(pick_tickers)) if pick_tickers else []
-
-    # 2. General market pulse from the RSS machinery in social_trends
-    try:
-        from scanners.social_trends import _fetch_news
-        market_items = _fetch_news()[:8]
-    except Exception:
-        market_items = []
-
-    rows = ""
-    if tick_items:
-        rows += (f'<div style="color:{ACCENT_BLUE};font-size:10px;font-weight:800;'
-                 f'text-transform:uppercase;letter-spacing:0.8px;margin:2px 0 6px 0">'
-                 f'On your picks</div>')
-        for it in tick_items:
-            link_open  = f'<a href="{it["link"]}" target="_blank" style="text-decoration:none">' if it["link"] else ""
-            link_close = '</a>' if it["link"] else ""
-            rows += (
-                f'<div style="display:flex;gap:8px;align-items:baseline;padding:5px 0;'
-                f'border-bottom:1px solid #2A2A3A33">'
-                f'{_sent_dot(it["sent"])}'
-                f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
-                f'font-size:10px;font-weight:700;min-width:44px">{it["ticker"]}</span>'
-                f'<span style="flex:1;font-size:11px;line-height:1.45">'
-                f'{link_open}<span style="color:{TEXT_PRIMARY}">{it["title"]}</span>{link_close}</span>'
-                f'<span style="color:{TEXT_MUTED};font-size:9px;white-space:nowrap">{it["ago"]}</span>'
-                f'</div>'
-            )
-    else:
-        rows += (f'<div style="color:{TEXT_MUTED};font-size:11px;padding:8px 0">'
-                 f'No ticker headlines right now.</div>')
-
-    if market_items:
-        rows += (f'<div style="color:{PURPLE};font-size:10px;font-weight:800;'
-                 f'text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 6px 0">'
-                 f'Market pulse</div>')
-        for it in market_items:
-            link_open  = f'<a href="{it.get("link","")}" target="_blank" style="text-decoration:none">' if it.get("link") else ""
-            link_close = '</a>' if it.get("link") else ""
-            tks = " ".join(it.get("tickers", [])[:3])
-            rows += (
-                f'<div style="display:flex;gap:8px;align-items:baseline;padding:5px 0;'
-                f'border-bottom:1px solid #2A2A3A33">'
-                f'{_sent_dot(it.get("sentiment", "Neutral"))}'
-                f'<span style="flex:1;font-size:11px;line-height:1.45">'
-                f'{link_open}<span style="color:{TEXT_PRIMARY}">{it.get("title","")[:120]}</span>{link_close}'
-                + (f' <span style="color:{ACCENT_BLUE};font-size:9px">{tks}</span>' if tks else '')
-                + f'</span>'
-                f'<span style="color:{TEXT_MUTED};font-size:9px;white-space:nowrap">'
-                f'{it.get("time_ago","")}</span>'
-                f'</div>'
-            )
-
-    st.markdown(_card("News & Catalysts", "📰", ACCENT_BLUE, rows,
-                      subtitle="● bullish · ● bearish tone", max_height=560),
-                unsafe_allow_html=True)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# D. TRADE TODAY + HIGH IV  (one batched download powers both + live prices)
-# ══════════════════════════════════════════════════════════════════════════════
-
-_ACTIVE_LIQUID = [
-    "NVDA","TSLA","AAPL","MSFT","AMZN","META","GOOGL","AMD","PLTR","AVGO",
-    "NFLX","MU","COIN","MSTR","HOOD","SMCI","UBER","BA","INTC","SOFI",
-    "SPY","QQQ","IWM","TQQQ","SOXL","SMH","XLE","GLD","TLT","ARKK",
+_SCANNER_NOTES = [
+    ("1Mom",   "MACD Momentum (MTPA Table 4)", "Weekly + Daily",
+     "Weekly MACD line >0 + histogram >0 and rising, AND daily MACD line >0 + histogram >0. Momentum confirmed on both timeframes."),
+    ("2TC",    "Trend Continuation", "Weekly",
+     "Price > rising 30-wk SMA · 10-wk SMA > 30-wk SMA · weekly RSI 60–75 · base breakout or close near weekly high · weekly volume ≥1.5×. Hold 20–60d."),
+    ("3MF",    "Multi-Factor", "Daily",
+     "Price > 50-SMA > 200-SMA · RSI 50–72 · MACD hist >0 · vol ≥1.1× · ATR expanding · within 2% of 20-day high · RS ≥1.0. Hold 10–30d."),
+    ("4TS",    "Trend Stack", "Daily",
+     "Price > EMA20 > SMA50 > SMA200 (200 rising) · RSI 55–70 · within 3% of 20-day high · vol ≥1.3× · RS ≥1.03. Hold 20–60d."),
+    ("5RB",    "Reset Bounce", "Weekly",
+     "Price > rising 30-wk SMA · pulled back to the 10/21-wk EMA · weekly RSI 48–62 and rising · weekly MACD turning up · reversal candle or rising volume. Hold 10–30d."),
+    ("6Prime", "PRIME (MTPA Table 1)", "Weekly + Daily",
+     "Weekly HH/HL or tight base · not extended · daily RSI GREEN/YELLOW · MACD > signal · vol >0.7× · price > SMA20 · |MACD| ≤1% of price (fresh cross)."),
 ]
 
+_UNIVERSE_CHOICES = {
+    "FTF Universe (~480 · full S&P 500 + ETFs)": "FTF",
+    "MTPA 200 (stock-heavy)": "MTPA",
+    "S&P 500 sample (200)": "SP500",
+}
 
-@st.cache_data(ttl=1800, show_spinner=False)
-def _batch_stats(tickers: tuple) -> dict:
-    """
-    One batched 1-y download → per-ticker live stats.
-    Tape fields: price, chg%, RVOL, ATR%, HV30, vol-rank, expanding.
-    Conviction fields: RSI, ADX, MACD state, EMA stack, SMA200, extension vs
-    EMA21, % off 20-day high, upside to 52-w high, RS vs SPY (63d).
-    """
-    out: dict[str, dict] = {}
+
+def _ema(s, n): return s.ewm(span=n, adjust=False).mean()
+def _sma(s, n): return s.rolling(n, min_periods=1).mean()
+
+
+def _rsi(s, n=14):
+    d = s.diff()
+    g = d.clip(lower=0); l = (-d.clip(upper=0))
+    ag = g.ewm(alpha=1/n, adjust=False).mean(); al = l.ewm(alpha=1/n, adjust=False).mean()
+    return (100 - 100 / (1 + ag / al.replace(0, np.nan))).fillna(50)
+
+
+def _macd(s):
+    m = _ema(s, 12) - _ema(s, 26); sig = _ema(m, 9)
+    return m, sig, m - sig
+
+
+def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
+    """Return {labels, snapshot} if any of the 6 scanners fire on the last bar, else None."""
     try:
-        data = yf.download(list(tickers), period="1y", interval="1d",
-                           group_by="ticker", progress=False, auto_adjust=True,
-                           threads=True)
+        if isinstance(df.columns, pd.MultiIndex):
+            df = df.copy(); df.columns = df.columns.get_level_values(0)
+        c = df["Close"].dropna()
+        if len(c) < 210:
+            return None
+        h, l, v = df["High"], df["Low"], df["Volume"]
+        px = float(c.iloc[-1])
+
+        sma9, sma20, sma50 = _sma(c, 9), _sma(c, 20), _sma(c, 50)
+        sma200, ema20 = _sma(c, 200), _ema(c, 20)
+        macd, sig, hist = _macd(c)
+        rsi = _rsi(c)
+        volr = float((v / v.shift(1).rolling(20).mean()).iloc[-1])
+        atr_tr = pd.concat([h - l, (h - c.shift()).abs(), (l - c.shift()).abs()], axis=1).max(axis=1)
+        atr = atr_tr.rolling(14).mean()
+        atr_exp = float(atr.iloc[-1]) > float(atr.rolling(20).mean().iloc[-1])
+        r20max = float(c.rolling(20).max().iloc[-1])
+        within2 = px >= r20max * 0.98
+        within3 = px >= r20max * 0.97
+        is20h = px >= r20max
+        s200_rise = float(sma200.iloc[-1]) > float(sma200.iloc[-11])
+        sp = spy_close.reindex(c.index).ffill()
+        try:
+            rs = (float((c.iloc[-1] / c.iloc[-64]) / (sp.iloc[-1] / sp.iloc[-64]))
+                  if len(c) >= 64 and pd.notna(sp.iloc[-1]) and pd.notna(sp.iloc[-64]) else 1.0)
+        except Exception:
+            rs = 1.0
+        macd_v, hist_v = float(macd.iloc[-1]), float(hist.iloc[-1])
+        rsi_d = float(rsi.iloc[-1])
+
+        # ── Weekly resample ──
+        wk = df.resample("W-FRI").agg({"Open": "first", "High": "max", "Low": "min",
+                                       "Close": "last", "Volume": "sum"}).dropna(subset=["Close"])
+        if len(wk) < 34:
+            return None
+        wc, wh, wl, wo, wv = wk["Close"], wk["High"], wk["Low"], wk["Open"], wk["Volume"]
+        wsma30, wsma10 = _sma(wc, 30), _sma(wc, 10)
+        wema10, wema21, wema20 = _ema(wc, 10), _ema(wc, 21), _ema(wc, 20)
+        wrsi = _rsi(wc)
+        wmacd, wsig, whist = _macd(wc)
+        wpx = float(wc.iloc[-1])
+        w30 = float(wsma30.iloc[-1]); w30_rise = w30 > float(wsma30.iloc[-5])
+        w10_30 = float(wsma10.iloc[-1]) > w30
+        w_ext = wpx > float(wema20.iloc[-1]) * 1.10
+        wrsi_v = float(wrsi.iloc[-1])
+        whist_v = float(whist.iloc[-1]); whist_p = float(whist.iloc[-2])
+        wmacd_v = float(wmacd.iloc[-1])
+        # patterns
+        hh6 = all(float(wh.iloc[-i]) > float(wh.iloc[-i-1]) for i in range(1, 6))
+        ll6 = all(float(wl.iloc[-i]) > float(wl.iloc[-i-1]) for i in range(1, 6))
+        watr = (wh - wl) / wc * 100
+        tight5 = float(watr.iloc[-5:].mean()) < 4.5
+        pattern = (hh6 and ll6) or tight5
+        res8 = wpx > float(wc.iloc[-9:-1].max())
+        w20 = wc.iloc[-21:-1]
+        consol = wpx > float(w20.max()) and (float(w20.max()) - float(w20.min())) / float(w20.min()) <= 0.15 if len(w20) else False
+        near_hi = wpx >= float(wh.iloc[-1]) * 0.96
+        e10, e21 = float(wema10.iloc[-1]), float(wema21.iloc[-1])
+        t10 = float(wl.iloc[-1]) <= e10 * 1.025 and wpx >= e10 * 0.975
+        t21 = float(wl.iloc[-1]) <= e21 * 1.025 and wpx >= e21 * 0.975
+        rsi_reset = 48 <= wrsi_v <= 62 and wrsi_v > float(wrsi.iloc[-4])
+        macd_turn = (whist_p < 0 and whist_v >= 0) or (whist_v > 0)
+        rev = wpx > float(wo.iloc[-1]) and (float(wh.iloc[-1]) - float(wl.iloc[-1])) > 0 and \
+            (wpx - float(wl.iloc[-1])) / (float(wh.iloc[-1]) - float(wl.iloc[-1])) >= 0.6
+        volup = float(wv.iloc[-1]) > float(wv.iloc[-2])
+        wvolr = float(wv.iloc[-1]) / float(wv.iloc[-21:-1].mean()) if len(wv) >= 21 else 1.0
+        macdmom_w = wmacd_v > 0 and whist_v > 0 and whist_v > whist_p
+
+        # ── daily helpers for gates ──
+        c_sma50, c_sma200 = float(sma50.iloc[-1]), float(sma200.iloc[-1])
+        c_ema20, c_sma20, c_sma9 = float(ema20.iloc[-1]), float(sma20.iloc[-1]), float(sma9.iloc[-1])
+        rsi_rise3 = rsi_d > float(rsi.iloc[-4])
+        gy = (50 <= rsi_d <= 70 and rsi_rise3) or (40 <= rsi_d < 50 and rsi_rise3)
+
+        # ── the 6 scanners ──
+        labels = []
+        if macdmom_w and macd_v > 0 and hist_v > 0:
+            labels.append("1Mom")
+        if (wpx > w30 and w30_rise and w10_30 and 60 <= wrsi_v <= 75
+                and (consol or near_hi) and wvolr >= 1.5):
+            labels.append("2TC")
+        if (px > c_sma50 > c_sma200 and 50 <= rsi_d <= 72 and hist_v > 0
+                and volr >= 1.1 and atr_exp and within2 and rs >= 1.0):
+            labels.append("3MF")
+        if (px > c_ema20 > c_sma50 > c_sma200 and s200_rise and 55 <= rsi_d <= 70
+                and within3 and volr >= 1.3 and rs >= 1.03):
+            labels.append("4TS")
+        if (wpx > w30 and w30_rise and (t10 or t21) and rsi_reset
+                and macd_turn and (rev or volup)):
+            labels.append("5RB")
+        if (pattern and not w_ext and gy and hist_v > 0 and volr > 0.7
+                and px > c_sma20 and abs(macd_v) <= px * 0.01):
+            labels.append("6Prime")
+
+        if not labels:
+            return None
+
+        zone = ("Positive" if macd_v > px * 0.005 else
+                "Negative" if macd_v < -px * 0.005 else "Near Zero")
+        flags = []
+        if px >= float(c.max()) * 0.97: flags.append("Near 52W Hi")
+        if volr >= 1.5:                 flags.append("Vol Spike")
+        if w_ext:                       flags.append("Extended")
+        if is20h:                       flags.append("20D High")
+
+        chg = (px / float(c.iloc[-2]) - 1) * 100
+        return {
+            "labels": labels,
+            "snap": {
+                "Ticker": None, "Price": round(px, 2), "Chg": round(chg, 2),
+                "RSI_W": round(wrsi_v, 0), "RSI_D": round(rsi_d, 0),
+                "MACD>Sig": hist_v > 0, "MACD Zone": zone,
+                ">SMA9": px > c_sma9, ">SMA20": px > c_sma20,
+                "Vol Ratio": round(volr, 2), "RS vs SPY": round(rs, 3),
+                "Flags": flags,
+            },
+        }
     except Exception:
-        return out
-    if data is None or data.empty:
-        return out
+        return None
 
-    def _tdf(t):
-        return data[t] if isinstance(data.columns, pd.MultiIndex) else data
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def _resolve_universe(kind: str) -> list:
+    if kind == "MTPA":
+        return list(MTPA_200)
+    if kind == "SP500":
+        return list(SP500_SAMPLE[:200])
     try:
-        spy_close = _tdf("SPY")["Close"].dropna()
+        return list(FTF_UNIVERSE)
+    except Exception:
+        return list(SP500_SAMPLE)
+
+
+def _run_best_scanners(universe: list) -> pd.DataFrame:
+    """Run all 6 keepers over the universe. Returns one row per flagged ticker."""
+    prog = st.progress(0.0, text="Prefetching 2-yr daily bars…")
+    prefetch_tickers(universe + ["SPY"], "2y", "1d")
+    try:
+        spy_close = get_price_history("SPY", period="2y")["Close"].squeeze()
     except Exception:
         spy_close = pd.Series(dtype=float)
 
-    for t in tickers:
+    rows = []
+    n = len(universe)
+    for i, t in enumerate(universe):
+        if i % 5 == 0 or i == n - 1:
+            prog.progress((i + 1) / n, text=f"Scanning {t} ({i+1}/{n})")
         try:
-            df = _tdf(t)
-            close = df["Close"].dropna()
-            if len(close) < 60:
+            df = get_price_history(t, period="2y")
+            if df is None or df.empty:
                 continue
-            high, low = df["High"].dropna(), df["Low"].dropna()
-            vol = df["Volume"].dropna()
-
-            price = float(close.iloc[-1])
-            chg   = (price / float(close.iloc[-2]) - 1) * 100
-
-            avg_vol = float(vol.iloc[-21:-1].mean()) if len(vol) >= 21 else float(vol.mean())
-            rvol    = float(vol.iloc[-1]) / avg_vol if avg_vol > 0 else 1.0
-
-            tr = pd.concat([high - low, (high - close.shift()).abs(),
-                            (low - close.shift()).abs()], axis=1).max(axis=1)
-            atr_pct = float(tr.rolling(14).mean().iloc[-1]) / price * 100
-
-            rets = close.pct_change().dropna()
-            hv_s = rets.rolling(30).std().dropna() * (252 ** 0.5) * 100
-            hv30 = float(hv_s.iloc[-1]) if len(hv_s) else np.nan
-            hv60 = (float(rets.rolling(60).std().dropna().iloc[-1]) * (252 ** 0.5) * 100
-                    if len(rets) >= 61 else hv30)
-            hi, lo = (float(hv_s.max()), float(hv_s.min())) if len(hv_s) else (np.nan, np.nan)
-            vrank = ((hv30 - lo) / (hi - lo) * 100) if (hi and hi > lo) else 50.0
-
-            # ── Conviction factors ────────────────────────────────────────────
-            ema9   = float(close.ewm(span=9,  adjust=False).mean().iloc[-1])
-            ema21  = float(close.ewm(span=21, adjust=False).mean().iloc[-1])
-            ema50  = float(close.ewm(span=50, adjust=False).mean().iloc[-1])
-            sma200 = float(close.rolling(min(200, len(close))).mean().iloc[-1])
-
-            macd_l = (close.ewm(span=12, adjust=False).mean()
-                      - close.ewm(span=26, adjust=False).mean())
-            sig_l  = macd_l.ewm(span=9, adjust=False).mean()
-            hist   = (macd_l - sig_l).dropna()
-
-            delta = close.diff().dropna()
-            gain  = delta.clip(lower=0).ewm(alpha=1/14, adjust=False).mean()
-            loss  = (-delta.clip(upper=0)).ewm(alpha=1/14, adjust=False).mean()
-            rsi   = float((100 - 100 / (1 + gain / loss.replace(0, np.nan))).fillna(50).iloc[-1])
-
-            hi20 = float(close.iloc[-20:].max())
-            hi52 = float(close.max())
-
-            rs63 = None
-            if len(spy_close) >= 64 and len(close) >= 64:
-                try:
-                    rs63 = ((price / float(close.iloc[-64]))
-                            / (float(spy_close.iloc[-1]) / float(spy_close.iloc[-64])))
-                except Exception:
-                    rs63 = None
-
-            out[t] = {
-                # tape
-                "price": round(price, 2), "chg": round(chg, 2),
-                "rvol": round(rvol, 2), "atr": round(atr_pct, 1),
-                "hv30": round(hv30, 1) if hv30 == hv30 else None,
-                "vrank": round(vrank, 0), "expanding": bool(hv30 > hv60),
-                # conviction
-                "rsi":      round(rsi, 1),
-                "adx":      _adx_val(close, high, low),
-                "macd_pos": bool(float(macd_l.iloc[-1]) > 0),
-                "macd_x":   bool(float(macd_l.iloc[-1]) > float(sig_l.iloc[-1])),
-                "hist_up":  bool(len(hist) >= 2 and float(hist.iloc[-1]) > float(hist.iloc[-2])),
-                "stack":    bool(price > ema9 > ema21 > ema50),
-                "above200": bool(price > sma200),
-                "ext21":    round((price / ema21 - 1) * 100, 1) if ema21 > 0 else 0.0,
-                "off20h":   round((hi20 - price) / hi20 * 100, 1) if hi20 > 0 else 99.0,
-                "ups52":    round((hi52 / price - 1) * 100, 1) if price > 0 else None,
-                "rs63":     round(rs63, 3) if rs63 is not None else None,
-            }
+            res = _evaluate(df, spy_close)
+            if res:
+                snap = res["snap"]; snap["Ticker"] = t
+                snap["Scanners"] = " · ".join(sorted(res["labels"], key=lambda x: _LABELS.index(x)))
+                snap["_count"] = len(res["labels"])
+                rows.append(snap)
         except Exception:
             continue
-    return out
+    prog.empty()
+
+    df_out = pd.DataFrame(rows)
+    if not df_out.empty:
+        # multi-signal first, then more scanners, then higher weekly RSI
+        df_out = df_out.sort_values(["_count", "RS vs SPY"], ascending=[False, False]).reset_index(drop=True)
+    return df_out
 
 
-def _render_today_iv(stats: dict):
-    # ⚡ Trade Today: unusual volume + movement, ranked by RVOL × |chg|
-    cands = [(t, d) for t, d in stats.items() if d["rvol"] >= 1.1]
-    cands.sort(key=lambda x: -(x[1]["rvol"] * (abs(x[1]["chg"]) + 0.5)))
-    day_rows = ""
-    for t, d in cands[:6]:
-        rv_col   = ACCENT_GREEN if d["rvol"] >= 1.5 else GOLD
-        price_s  = "${:,.2f}".format(d["price"])
-        rvol_s   = "{:.1f}×".format(d["rvol"])
-        atr_s    = "{:.1f}%".format(d["atr"])
-        day_rows += (
-            f'<tr><td style="{_TD}">{_mono(t, GOLD, 12, True)}</td>'
-            f'<td style="{_TD}">{_mono(price_s, TEXT_PRIMARY, 11)}</td>'
-            f'<td style="{_TD}">{_chg_html(d["chg"])}</td>'
-            f'<td style="{_TD}">{_mono(rvol_s, rv_col, 11, True)}</td>'
-            f'<td style="{_TD}">{_mono(atr_s, TEXT_MUTED, 11)}</td></tr>'
+def _render_best_table(df: pd.DataFrame):
+    def _flag_html(flags):
+        if not flags:
+            return f'<span style="color:{TEXT_MUTED}">—</span>'
+        return " ".join(_chip(f, GOLD if f != "Extended" else ACCENT_RED, 0.10) for f in flags)
+
+    def _zone_html(z):
+        col = ACCENT_GREEN if z == "Positive" else ACCENT_RED if z == "Negative" else GOLD
+        icon = "📈" if z == "Positive" else "📉" if z == "Negative" else "🎯"
+        return f'<span style="color:{col};font-size:11px">{icon} {z}</span>'
+
+    hdr = "".join(f'<th style="{_TH}">{h}</th>' for h in
+                  ["Ticker", "Price", "Chg", "Scanners", "RSI W/D", "MACD>Sig",
+                   "MACD Zone", ">SMA9", ">SMA20", "Vol×", "RS·SPY", "Flags"])
+    rows = ""
+    for _, r in df.iterrows():
+        price_s = "${:,.2f}".format(float(r["Price"]))
+        volr_s  = "{:.2f}x".format(float(r["Vol Ratio"]))
+        rs_s    = "{:.2f}".format(float(r["RS vs SPY"]))
+        rsi_w_s = "{:.0f}".format(float(r["RSI_W"]))
+        rsi_d_s = "{:.0f}".format(float(r["RSI_D"]))
+        count   = int(r["_count"])
+        sc_col  = ACCENT_GREEN if count >= 2 else ACCENT_BLUE
+        wlab = f'<span style="color:{TEXT_MUTED};font-size:9px">W</span> '
+        dlab = f' <span style="color:{TEXT_MUTED};font-size:9px">D</span> '
+        rsi_cell = wlab + _mono(rsi_w_s, TEXT_PRIMARY, 11) + dlab + _mono(rsi_d_s, TEXT_PRIMARY, 11)
+        rows += (
+            "<tr>"
+            + f'<td style="{_TD}">' + _mono(str(r["Ticker"]), GOLD, 13, True) + "</td>"
+            + f'<td style="{_TD}">' + _mono(price_s, TEXT_PRIMARY, 11) + "</td>"
+            + f'<td style="{_TD}">' + _chg_html(float(r["Chg"])) + "</td>"
+            + f'<td style="{_TD}">' + _chip(str(r["Scanners"]), sc_col, 0.10) + "</td>"
+            + f'<td style="{_TD}">' + rsi_cell + "</td>"
+            + f'<td style="{_TD};text-align:center">' + _bool_cell(bool(r["MACD>Sig"])) + "</td>"
+            + f'<td style="{_TD}">' + _zone_html(str(r["MACD Zone"])) + "</td>"
+            + f'<td style="{_TD};text-align:center">' + _bool_cell(bool(r[">SMA9"])) + "</td>"
+            + f'<td style="{_TD};text-align:center">' + _bool_cell(bool(r[">SMA20"])) + "</td>"
+            + f'<td style="{_TD}">' + _mono(volr_s, TEXT_PRIMARY, 11) + "</td>"
+            + f'<td style="{_TD}">' + _mono(rs_s, TEXT_PRIMARY, 11) + "</td>"
+            + f'<td style="{_TD}">' + _flag_html(list(r["Flags"])) + "</td>"
+            + "</tr>"
         )
-
-    # 🔥 High IV: rich premium (vol-rank), tagged sell vs buy vol regime
-    ivs = [(t, d) for t, d in stats.items()
-           if d.get("vrank") is not None and d.get("hv30") is not None and d["vrank"] >= 40]
-    ivs.sort(key=lambda x: -x[1]["vrank"])
-    iv_rows = ""
-    for t, d in ivs[:6]:
-        play    = "🚀 buy premium" if d["expanding"] else "💰 sell premium"
-        p_col   = ACCENT_BLUE if d["expanding"] else GOLD
-        hv_s    = "{:.0f}%".format(d["hv30"])
-        vrank_s = "{:.0f}".format(d["vrank"])
-        iv_rows += (
-            f'<tr><td style="{_TD}">{_mono(t, GOLD, 12, True)}</td>'
-            f'<td style="{_TD}">{_mono(hv_s, ACCENT_BLUE, 11)}</td>'
-            f'<td style="{_TD}">{_mono(vrank_s, GOLD, 11, True)}</td>'
-            f'<td style="{_TD}"><span style="color:{p_col};font-size:10px;'
-            f'font-weight:700;white-space:nowrap">{play}</span></td></tr>'
-        )
-
-    day_empty = (f'<tr><td colspan="5" style="{_TD};color:{TEXT_MUTED}">'
-                 f'Quiet tape — no unusual volume right now</td></tr>')
-    iv_empty  = (f'<tr><td colspan="4" style="{_TD};color:{TEXT_MUTED}">'
-                 f'No elevated-vol names right now</td></tr>')
-    day_tbl = (
-        f'<div style="color:{ORANGE};font-size:10px;font-weight:800;text-transform:uppercase;'
-        f'letter-spacing:0.8px;margin-bottom:4px">⚡ Trade Today — unusual volume & range</div>'
-        f'<table style="width:100%;border-collapse:collapse;margin-bottom:12px">'
-        f'<thead><tr><th style="{_TH}">Tkr</th><th style="{_TH}">Price</th>'
-        f'<th style="{_TH}">Chg</th><th style="{_TH}">RVOL</th><th style="{_TH}">ATR</th></tr></thead>'
-        f'<tbody>{day_rows or day_empty}</tbody></table>'
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px;max-height:640px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>{hdr}</tr></thead><tbody>{rows}</tbody></table></div>',
+        unsafe_allow_html=True,
     )
-    iv_tbl = (
-        f'<div style="color:{ACCENT_RED};font-size:10px;font-weight:800;text-transform:uppercase;'
-        f'letter-spacing:0.8px;margin-bottom:4px">🔥 High IV — options premium plays</div>'
+
+
+def _render_scanner_notes():
+    items = "".join(
+        f'<tr><td style="{_TD}">{_chip(lbl, GOLD, 0.12)}</td>'
+        f'<td style="{_TD};white-space:normal"><b style="color:{TEXT_PRIMARY}">{name}</b> '
+        f'<span style="color:{ACCENT_BLUE};font-size:9px">· {tf}</span></td>'
+        f'<td style="{_TD};white-space:normal;color:{TEXT_MUTED};font-size:11px">{desc}</td></tr>'
+        for lbl, name, tf, desc in _SCANNER_NOTES
+    )
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:11px;margin:14px 0 4px">What each scanner means:</div>'
+        f'<div style="border:1px solid {BORDER_COLOR};border-radius:10px;overflow:hidden">'
         f'<table style="width:100%;border-collapse:collapse">'
-        f'<thead><tr><th style="{_TH}">Tkr</th><th style="{_TH}">HV30</th>'
-        f'<th style="{_TH}">VRank</th><th style="{_TH}">Play</th></tr></thead>'
-        f'<tbody>{iv_rows or iv_empty}</tbody></table>'
-        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:6px">'
-        f'HV30 = realized-vol IV proxy · VRank = HV30 within its 52-w range · '
-        f'💰 falling vol → CSP/CC selling · 🚀 rising vol → debit/LEAP</div>'
+        f'<tbody>{items}</tbody></table></div>',
+        unsafe_allow_html=True,
     )
-    st.markdown(_card("Today's Tape", "⚡", ORANGE, day_tbl + iv_tbl, max_height=560),
-                unsafe_allow_html=True)
+
+
+def _upload_best_to_sheet(df: pd.DataFrame):
+    from scanners.gsheet_helper import export_tables, gsheets_configured
+    if not gsheets_configured():
+        st.warning("Google Sheets not connected — add `[gsheets]` credentials in Secrets to enable upload.")
+        return
+    cols = ["Ticker", "Price", "Chg", "Scanners", "RSI_W", "RSI_D", "MACD>Sig",
+            "MACD Zone", ">SMA9", ">SMA20", "Vol Ratio", "RS vs SPY", "Flags"]
+    vals = [[("; ".join(r["Flags"]) if c == "Flags" else
+             ("✅" if r[c] else "❌") if c in (">SMA9", ">SMA20", "MACD>Sig") else r[c])
+             for c in cols] for _, r in df.iterrows()]
+    meta = [f"Best Scanners  {datetime.now():%Y-%m-%d %H:%M}", f"Tickers: {len(df)}",
+            "Scanners: 1Mom · 2TC · 3MF · 4TS · 5RB · 6Prime"]
+    with st.spinner("Uploading to Google Sheets…"):
+        ok, msg = export_tables("HomeBest", [("BEST SCANNERS", cols, vals)], meta_cells=meta)
+    (st.success if ok else st.error)(msg)
+
+
+def _render_best_scanners_tab():
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
+        f'The six keeper scanners (from the July 2026 performance review) run over one universe '
+        f'and merged into a single table. The <b>Scanners</b> column shows every scanner that '
+        f'flagged the ticker — <b style="color:{ACCENT_GREEN}">2+ = confluence</b> (rows sorted '
+        f'that way).</div>',
+        unsafe_allow_html=True,
+    )
+    c1, c2, c3 = st.columns([2.4, 1, 1])
+    with c1:
+        uni_label = st.selectbox("Universe", list(_UNIVERSE_CHOICES.keys()), index=0, key="home_best_uni")
+    with c2:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        run = st.button("▶ Run Scan", type="primary", use_container_width=True, key="home_best_run")
+    with c3:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        clear = st.button("🔄 Clear", use_container_width=True, key="home_best_clear")
+
+    if clear:
+        st.session_state.pop("home_best_df", None)
+        st.session_state.pop("home_best_ts", None)
+        st.rerun()
+
+    if run:
+        universe = _resolve_universe(_UNIVERSE_CHOICES[uni_label])
+        st.info(f"Scanning {len(universe)} tickers across 6 scanners — this takes a few minutes.")
+        df = _run_best_scanners(universe)
+        st.session_state["home_best_df"] = df
+        st.session_state["home_best_ts"] = datetime.now().strftime("%b %d %Y · %I:%M %p")
+        st.rerun()
+
+    df = st.session_state.get("home_best_df")
+    if df is None:
+        st.markdown(
+            f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;padding:36px;'
+            f'text-align:center;color:{TEXT_MUTED}">Press <b style="color:{GOLD}">▶ Run Scan</b> '
+            f'to score the universe against all six scanners.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+    if df.empty:
+        st.info("No tickers passed any of the six scanners in this universe right now.")
+        return
+
+    ts = st.session_state.get("home_best_ts", "")
+    n_multi = int((df["_count"] >= 2).sum())
+    st.markdown(
+        f'<div style="display:flex;gap:20px;flex-wrap:wrap;background:{BG_CARD};'
+        f'border:1px solid {BORDER_COLOR};border-radius:8px;padding:9px 16px;margin:4px 0 10px">'
+        f'<span style="color:{TEXT_MUTED};font-size:11px">Found <b style="color:{GOLD}">{len(df)}</b> tickers</span>'
+        f'<span style="color:{ACCENT_GREEN};font-size:11px;font-weight:700">⭐ {n_multi} multi-signal (2+)</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:10px;margin-left:auto">Scanned {ts}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    up_col, dl_col, _ = st.columns([1.4, 1, 3])
+    with up_col:
+        if st.button("📤 Upload to Google Sheet", use_container_width=True, key="home_best_upload"):
+            _upload_best_to_sheet(df)
+    with dl_col:
+        exp = df.drop(columns=["_count"], errors="ignore").copy()
+        exp["Flags"] = exp["Flags"].apply(lambda x: "; ".join(x) if isinstance(x, list) else x)
+        st.download_button("⬇ CSV", exp.to_csv(index=False), "best_scanners.csv",
+                           "text/csv", use_container_width=True, key="home_best_csv")
+
+    _render_best_table(df)
+    _render_scanner_notes()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# E. SECTOR ROTATION — where big money is flowing (price + volume, RRG-style)
+# TAB 2 — OVERKILL SHORTS  (curated watch-list, refreshed on request)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _render_overkill_tab():
+    path = os.path.join(DATA_DIR, "overkill_shorts.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        st.info("No OverKill Shorts summary stored yet.")
+        return
+
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
+        f'Latest stock picks from <b>{data.get("channel","@overkilltrading")}</b> Shorts '
+        f'(crypto skipped). <b>Dot</b> = his wave-indicator call <i>as stated in the video</i> '
+        f'(🟢 Green = buy · 🔴 Red = sell/trim · — = not formed). '
+        f'Updated <b>{data.get("updated","")}</b> · not financial advice.</div>',
+        unsafe_allow_html=True,
+    )
+
+    def _bias_html(b):
+        col = ACCENT_GREEN if b == "Bullish" else ACCENT_RED if b == "Bearish" else TEXT_MUTED
+        return f'<span style="color:{col};font-weight:700;font-size:11px">{b}</span>'
+
+    def _dot_html(d):
+        if d == "Green":
+            return '<span style="color:#34D399;font-size:13px">🟢 Green</span>'
+        if d == "Red":
+            return '<span style="color:#F87171;font-size:13px">🔴 Red</span>'
+        return f'<span style="color:{TEXT_MUTED};font-size:11px">— none</span>'
+
+    for vid in data.get("videos", []):
+        rows = ""
+        for p in vid.get("picks", []):
+            rows += (
+                f'<tr>'
+                f'<td style="{_TD}">{_mono(p.get("ticker",""), GOLD, 13, True)}</td>'
+                f'<td style="{_TD}">{_bias_html(p.get("bias","Neutral"))}</td>'
+                f'<td style="{_TD}">{_dot_html(p.get("dot","None"))}</td>'
+                f'<td style="{_TD};white-space:normal;color:{TEXT_PRIMARY};font-size:11px;'
+                f'line-height:1.5">{p.get("notes","")}</td>'
+                f'</tr>'
+            )
+        hdr = "".join(f'<th style="{_TH}">{h}</th>' for h in ["Ticker", "Bias", "Dot", "Notes"])
+        title = vid.get("title", "")
+        url = vid.get("url", "")
+        title_html = (f'<a href="{url}" target="_blank" style="color:{GOLD};text-decoration:none">{title} ↗</a>'
+                      if url else title)
+        body = (f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+                f'<thead><tr>{hdr}</tr></thead><tbody>{rows}</tbody></table>')
+        st.markdown(_card(title_html, "📺", ORANGE, body, subtitle=vid.get("date", "")),
+                    unsafe_allow_html=True)
+
+    st.caption("This tab shows a stored summary that's refreshed on request (a live in-app "
+               "pull isn't free/reliable on the hosted app). Ask to refresh it for the latest day.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 3 — SECTOR ROTATION  (preserved from the original page)
 # ══════════════════════════════════════════════════════════════════════════════
 
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -866,7 +639,6 @@ def _sector_flows() -> list[dict]:
                 continue
             rs63 = _ratio(close, spy, 63)
             rs21 = _ratio(close, spy, 21)
-            # $-flow proxy: 5-day avg dollar volume vs 63-day baseline
             dvol = (close * vol).dropna()
             flow = float(dvol.iloc[-5:].mean()) / float(dvol.iloc[-63:].mean()) if len(dvol) >= 63 else 1.0
             quad = ("Leading" if rs63 >= 1 and rs21 >= 1 else
@@ -943,7 +715,7 @@ def _render_sectors():
     )
 
     st.markdown(_card("Sector Rotation — follow the big money", "🔄", MINT,
-                      grid + summary, max_height=560), unsafe_allow_html=True)
+                      grid + summary), unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -960,63 +732,33 @@ def render():
             st.cache_data.clear()
             st.rerun()
 
-    # ── A. Regime bar ──────────────────────────────────────────────────────────
     with st.spinner("Reading market regime…"):
         try:
             _render_regime_bar()
         except Exception:
             st.warning("Regime bar unavailable.")
 
-    # ── Stage 1: candidates from the latest sched scan (instant, no scanning) ─
-    with st.spinner("Loading scan candidates…"):
+    tab1, tab2, tab3 = st.tabs(["🎯  Best Scanners", "📺  OverKill Shorts", "🔄  Sector Rotation"])
+
+    with tab1:
         try:
-            scan_df, prev_tickers, label = _load_latest_scan()
-            cand = _candidates(scan_df)
-        except Exception:
-            prev_tickers, label, cand = tuple(), "", {}
+            _render_best_scanners_tab()
+        except Exception as e:
+            st.error(f"Best-scanners tab error: {e}")
 
-    # ── Stage 2: one batched download → conviction re-score + tape stats ─────
-    with st.spinner("Re-scoring candidates on live technicals (batched)…"):
+    with tab2:
         try:
-            all_tickers = tuple(dict.fromkeys(list(cand) + _ACTIVE_LIQUID))
-            stats = _batch_stats(all_tickers)
-        except Exception:
-            stats = {}
+            _render_overkill_tab()
+        except Exception as e:
+            st.error(f"OverKill tab error: {e}")
 
-    # ── Row 1: picks + news ───────────────────────────────────────────────────
-    left1, right1 = st.columns(2)
-
-    with left1:
-        try:
-            pick_tickers = _render_top20(cand, stats, prev_tickers, label)
-        except Exception:
-            pick_tickers = []
-            st.warning("Top-20 picks unavailable.")
-
-    with right1:
-        with st.spinner("Pulling headlines…"):
-            try:
-                _render_news(pick_tickers)
-            except Exception:
-                st.warning("News unavailable.")
-
-    # ── Row 2: today's tape + sectors ─────────────────────────────────────────
-    left2, right2 = st.columns(2)
-
-    with left2:
-        try:
-            _render_today_iv(stats)
-        except Exception:
-            st.warning("Today's tape unavailable.")
-
-    with right2:
+    with tab3:
         with st.spinner("Computing sector flows…"):
             try:
                 _render_sectors()
             except Exception:
                 st.warning("Sector rotation unavailable.")
 
-    # ── Disclaimer ─────────────────────────────────────────────────────────────
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
         f'border-radius:6px;padding:10px 16px;color:{TEXT_MUTED};font-size:10px;'

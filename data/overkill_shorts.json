@@ -1,0 +1,38 @@
+{
+  "updated": "2026-07-22",
+  "channel": "@overkilltrading",
+  "note": "Non-crypto Shorts only. Curated from video captions; refreshed on request. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
+  "videos": [
+    {
+      "title": "3 HUGE STOCKS REPORTING EARNINGS AFTER THE BELL",
+      "date": "2026-07-22",
+      "url": "https://www.youtube.com/shorts/fOpnkuG3M7s",
+      "picks": [
+        {"ticker": "GOOGL", "bias": "Bearish", "dot": "Red", "notes": "Reports earnings 7/22. Trading at a premium (~$340 vs 4-yr avg ~$211). Sell signal fired May 26. Would sell into earnings; only buy near/below the 4-yr average."},
+        {"ticker": "NOW", "bias": "Neutral", "dot": "Red", "notes": "Red dot into earnings. Big AI play, choppy. Plan: average down if it sells off hard after earnings."},
+        {"ticker": "TSLA", "bias": "Bearish", "dot": "Red", "notes": "Chart weak, sitting at its yearly MA. Would prefer to buy nearer ~$300."}
+      ]
+    },
+    {
+      "title": "4 STOCKS",
+      "date": "2026-07-22",
+      "url": "https://www.youtube.com/shorts/8gew6LUe-EU",
+      "picks": [
+        {"ticker": "SNOW", "bias": "Bullish", "dot": "None", "notes": "Up +110% off the April $134 buy. Extended — take profits/trim ~50%. Needs to clear $280 resistance; stop $259."},
+        {"ticker": "RBLX", "bias": "Neutral", "dot": "None", "notes": "Wait for a MONTHLY green dot; $40 is the key support/signal level. No trade until confirmation."},
+        {"ticker": "AMZN", "bias": "Bullish", "dot": "Green", "notes": "Green dot, but prefers buying closer to the 4-yr average (~$200). Earnings next day; stop $226."},
+        {"ticker": "CLSK", "bias": "Bullish", "dot": "Green", "notes": "+100% off the $9 signal. Likes it above $12."}
+      ]
+    },
+    {
+      "title": "THESE 3 STOCKS LOOK CHEAP",
+      "date": "2026-07-22",
+      "url": "https://www.youtube.com/shorts/TtUZJ7i9BGo",
+      "picks": [
+        {"ticker": "PSKY", "bias": "Bullish", "dot": "None", "notes": "His favorite. Bought UFC; earnings Aug 4. Down $100→$8 (all-time low $3). Starting a ~2% dividend Sept 15. Waiting for a green dot near the lows."},
+        {"ticker": "NFLX", "bias": "Neutral", "dot": "None", "notes": "Reported earnings (slight revenue miss), ~$64 trying to bottom. Wait for a green dot; $48–56 would be a big opportunity."},
+        {"ticker": "DIS", "bias": "Bullish", "dot": "None", "notes": "~$95 (was $200). Owns ESPN/Hulu/Disney+. Interesting into year-end; watching for a green dot."}
+      ]
+    }
+  ]
+}
