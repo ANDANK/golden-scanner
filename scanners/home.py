@@ -208,6 +208,29 @@ _SCANNER_NOTES = [
      "EMA20 crossed above EMA50 in the last ~6 bars, or is within 1% and closing in (price > SMA200). A ·W suffix means the WEEKLY EMA20/50 is also crossing or about to — higher-timeframe confirmation."),
 ]
 
+# Star rating — flags rare, high-conviction label combos. A combo matches if the
+# ticker's labels are a SUPERSET of the required set; rules are checked highest
+# tier first, so a ticker matching more than one tier gets the best one.
+_STAR_RULES = [
+    (frozenset({"1Mom", "4TS", "3MF"}), 4),
+    (frozenset({"4TS", "6Prime"}), 3),
+    (frozenset({"1Mom", "6Prime"}), 3),
+    (frozenset({"1Mom", "2TC", "3MF"}), 2),
+    (frozenset({"1Mom", "5RB"}), 2),
+    (frozenset({"4TS", "3MF"}), 1),
+    (frozenset({"2TC", "5RB"}), 1),
+    (frozenset({"2TC", "1Mom"}), 1),
+]
+
+
+def _star_rating(labels: list) -> int:
+    label_set = set(labels)
+    for required, stars in _STAR_RULES:
+        if required <= label_set:
+            return stars
+    return 0
+
+
 _UNIVERSE_CHOICES = {
     "FTF Universe (~480 · full S&P 500 + ETFs)": "FTF",
     "MTPA 200 (stock-heavy)": "MTPA",
@@ -426,6 +449,7 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
                     scan_s = scan_s.replace("8Cross", "8Cross·W")
                 snap["Scanners"] = scan_s
                 snap["_count"] = len(res["labels"])
+                snap["_stars"] = _star_rating(res["labels"])
                 rows.append(snap)
         except Exception:
             continue
@@ -473,13 +497,18 @@ def _render_best_table(df: pd.DataFrame):
         rsi_w_s = "{:.0f}".format(float(r["RSI_W"]))
         rsi_d_s = "{:.0f}".format(float(r["RSI_D"]))
         count   = int(r["_count"])
+        stars   = int(r.get("_stars", 0))
         sc_col  = ACCENT_GREEN if count >= 2 else ACCENT_BLUE
         wlab = f'<span style="color:{TEXT_MUTED};font-size:9px">W</span> '
         dlab = f' <span style="color:{TEXT_MUTED};font-size:9px">D</span> '
         rsi_cell = wlab + _mono(rsi_w_s, TEXT_PRIMARY, 11) + dlab + _mono(rsi_d_s, TEXT_PRIMARY, 11)
+        ticker_cell = _mono(str(r["Ticker"]), GOLD, 13, True)
+        if stars:
+            ticker_cell += (f' <span style="color:{GOLD};font-size:10px" '
+                             f'title="{stars}-star combo">{"★" * stars}</span>')
         rows += (
             "<tr>"
-            + f'<td style="{_TD}">' + _mono(str(r["Ticker"]), GOLD, 13, True) + "</td>"
+            + f'<td style="{_TD}">' + ticker_cell + "</td>"
             + f'<td style="{_TD}">' + _mono(price_s, TEXT_PRIMARY, 11) + "</td>"
             + f'<td style="{_TD}">' + _chg_html(float(r["Chg"])) + "</td>"
             + f'<td style="{_TD}">' + _chip(str(r["Scanners"]), sc_col, 0.10) + "</td>"
@@ -497,6 +526,29 @@ def _render_best_table(df: pd.DataFrame):
         f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px;max-height:640px">'
         f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
         f'<thead><tr>{hdr}</tr></thead><tbody>{rows}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
+
+
+_STAR_LEGEND = [
+    (4, "1Mom + 4TS + 3MF"),
+    (3, "4TS+6Prime · 1Mom+6Prime"),
+    (2, "1Mom+2TC+3MF · 1Mom+5RB"),
+    (1, "4TS+3MF · 2TC+5RB · 2TC+1Mom"),
+]
+
+
+def _render_star_legend():
+    items = "".join(
+        f'<tr><td style="{_TD};color:{GOLD};white-space:nowrap">{"★" * n}</td>'
+        f'<td style="{_TD};color:{TEXT_MUTED};font-size:11px">{combo}</td></tr>'
+        for n, combo in _STAR_LEGEND
+    )
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:11px;margin:14px 0 4px">Star rating (next to Ticker) — highest matching combo wins:</div>'
+        f'<div style="border:1px solid {BORDER_COLOR};border-radius:10px;overflow:hidden">'
+        f'<table style="width:100%;border-collapse:collapse">'
+        f'<tbody>{items}</tbody></table></div>',
         unsafe_allow_html=True,
     )
 
@@ -602,6 +654,7 @@ def _render_best_scanners_tab():
                            "text/csv", use_container_width=True, key="home_best_csv")
 
     _render_best_table(df)
+    _render_star_legend()
     _render_scanner_notes()
 
 
