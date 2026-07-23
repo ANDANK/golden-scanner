@@ -187,7 +187,7 @@ def _render_regime_bar():
 # in-memory, then each ticker is tested against all six scanners at the latest
 # bar. Logic mirrors the app's own engines (validated against them).
 
-_LABELS = ["1Mom", "2TC", "3MF", "4TS", "5RB", "6Prime"]
+_LABELS = ["1Mom", "2TC", "3MF", "4TS", "5RB", "6Prime", "7Square", "8Cross"]
 
 _SCANNER_NOTES = [
     ("1Mom",   "MACD Momentum (MTPA Table 4)", "Weekly + Daily",
@@ -202,6 +202,10 @@ _SCANNER_NOTES = [
      "Price > rising 30-wk SMA · pulled back to the 10/21-wk EMA · weekly RSI 48–62 and rising · weekly MACD turning up · reversal candle or rising volume. Hold 10–30d."),
     ("6Prime", "PRIME (MTPA Table 1)", "Weekly + Daily",
      "Weekly HH/HL or tight base · not extended · daily RSI GREEN/YELLOW · MACD > signal · vol >0.7× · price > SMA20 · |MACD| ≤1% of price (fresh cross)."),
+    ("7Square", "MACD Bull ×0 — the TradingView 'green square'", "Daily · watch",
+     "Fresh MACD cross above signal while the MACD line is near zero (|MACD| ≤0.5% of price), price > SMA200. Early/aggressive — weak on its own in testing, treat as a watch, not a signal."),
+    ("8Cross", "EMA20 × EMA50 cross", "Daily · ·W = weekly too",
+     "EMA20 crossed above EMA50 in the last ~6 bars, or is within 1% and closing in (price > SMA200). A ·W suffix means the WEEKLY EMA20/50 is also crossing or about to — higher-timeframe confirmation."),
 ]
 
 _UNIVERSE_CHOICES = {
@@ -232,6 +236,15 @@ def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
     try:
         if isinstance(df.columns, pd.MultiIndex):
             df = df.copy(); df.columns = df.columns.get_level_values(0)
+        # Drop today's still-forming bar during market hours — its partial volume
+        # and price would otherwise suppress the volume-gated and weekly scanners.
+        try:
+            now_et = datetime.now(pytz.timezone("US/Eastern"))
+            if (pd.Timestamp(df.index[-1]).date() == now_et.date()
+                    and now_et.weekday() < 5 and now_et.hour < 16):
+                df = df.iloc[:-1]
+        except Exception:
+            pass
         c = df["Close"].dropna()
         if len(c) < 210:
             return None
@@ -239,7 +252,7 @@ def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
         px = float(c.iloc[-1])
 
         sma9, sma20, sma50 = _sma(c, 9), _sma(c, 20), _sma(c, 50)
-        sma200, ema20 = _sma(c, 200), _ema(c, 20)
+        sma200, ema20, ema50d = _sma(c, 200), _ema(c, 20), _ema(c, 50)
         macd, sig, hist = _macd(c)
         rsi = _rsi(c)
         volr = float((v / v.shift(1).rolling(20).mean()).iloc[-1])
@@ -267,7 +280,7 @@ def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
             return None
         wc, wh, wl, wo, wv = wk["Close"], wk["High"], wk["Low"], wk["Open"], wk["Volume"]
         wsma30, wsma10 = _sma(wc, 30), _sma(wc, 10)
-        wema10, wema21, wema20 = _ema(wc, 10), _ema(wc, 21), _ema(wc, 20)
+        wema10, wema21, wema20, wema50 = _ema(wc, 10), _ema(wc, 21), _ema(wc, 20), _ema(wc, 50)
         wrsi = _rsi(wc)
         wmacd, wsig, whist = _macd(wc)
         wpx = float(wc.iloc[-1])
@@ -301,6 +314,7 @@ def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
         # ── daily helpers for gates ──
         c_sma50, c_sma200 = float(sma50.iloc[-1]), float(sma200.iloc[-1])
         c_ema20, c_sma20, c_sma9 = float(ema20.iloc[-1]), float(sma20.iloc[-1]), float(sma9.iloc[-1])
+        c_ema50d = float(ema50d.iloc[-1])
         rsi_rise3 = rsi_d > float(rsi.iloc[-4])
         gy = (50 <= rsi_d <= 70 and rsi_rise3) or (40 <= rsi_d < 50 and rsi_rise3)
 
@@ -324,6 +338,27 @@ def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
                 and px > c_sma20 and abs(macd_v) <= px * 0.01):
             labels.append("6Prime")
 
+        # 7Square — MACD bull cross above signal near zero (TradingView "green square")
+        cross_recent = hist_v > 0 and float(hist.iloc[-4:-1].min()) <= 0
+        if cross_recent and abs(macd_v) <= px * 0.005 and px > c_sma200:
+            labels.append("7Square")
+
+        # 8Cross — daily EMA20 crossing above EMA50 (crossed in last ~6 bars OR about to);
+        # x8_weekly flags the same event on the weekly EMA20/50 (shown as ·W).
+        diffD = ema20 - ema50d
+        d_now = float(diffD.iloc[-1])
+        crossedD = d_now > 0 and float(diffD.iloc[-7:-1].min()) <= 0
+        aboutD = (d_now < 0 and c_ema50d > 0 and abs(d_now) / c_ema50d <= 0.01
+                  and d_now > float(diffD.iloc[-4]))
+        diffW = wema20 - wema50
+        w_now = float(diffW.iloc[-1]); w_e50 = float(wema50.iloc[-1])
+        crossedW = w_now > 0 and float(diffW.iloc[-4:-1].min()) <= 0
+        aboutW = (w_now < 0 and w_e50 > 0 and abs(w_now) / w_e50 <= 0.01
+                  and w_now > float(diffW.iloc[-3]))
+        x8_weekly = crossedW or aboutW
+        if (crossedD or aboutD) and px > c_sma200:
+            labels.append("8Cross")
+
         if not labels:
             return None
 
@@ -332,7 +367,9 @@ def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
         flags = []
         if px >= float(c.max()) * 0.97: flags.append("Near 52W Hi")
         if volr >= 1.5:                 flags.append("Vol Spike")
-        if w_ext:                       flags.append("Extended")
+        _wema20v = float(wema20.iloc[-1])
+        ext_pct_w = (wpx / _wema20v - 1) * 100 if _wema20v > 0 else 0.0
+        if ext_pct_w > 5:               flags.append(f"Ext +{ext_pct_w:.0f}%")
         if is20h:                       flags.append("20D High")
 
         chg = (px / float(c.iloc[-2]) - 1) * 100
@@ -344,7 +381,7 @@ def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
                 "MACD>Sig": hist_v > 0, "MACD Zone": zone,
                 ">SMA9": px > c_sma9, ">SMA20": px > c_sma20,
                 "Vol Ratio": round(volr, 2), "RS vs SPY": round(rs, 3),
-                "Flags": flags,
+                "Flags": flags, "x8_weekly": bool(x8_weekly),
             },
         }
     except Exception:
@@ -384,7 +421,10 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
             res = _evaluate(df, spy_close)
             if res:
                 snap = res["snap"]; snap["Ticker"] = t
-                snap["Scanners"] = " · ".join(sorted(res["labels"], key=lambda x: _LABELS.index(x)))
+                scan_s = " · ".join(sorted(res["labels"], key=lambda x: _LABELS.index(x)))
+                if snap.get("x8_weekly") and "8Cross" in res["labels"]:
+                    scan_s = scan_s.replace("8Cross", "8Cross·W")
+                snap["Scanners"] = scan_s
                 snap["_count"] = len(res["labels"])
                 rows.append(snap)
         except Exception:
@@ -399,10 +439,23 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
 
 
 def _render_best_table(df: pd.DataFrame):
+    def _flag_color(f):
+        if f.startswith("Ext"):
+            try:
+                pv = float(f.split("+")[1].rstrip("%"))
+            except Exception:
+                pv = 6.0
+            return ACCENT_RED if pv >= 10 else GOLD
+        if f == "Near 52W Hi":
+            return ACCENT_BLUE
+        if f == "Vol Spike":
+            return GOLD
+        return ACCENT_GREEN
+
     def _flag_html(flags):
         if not flags:
             return f'<span style="color:{TEXT_MUTED}">—</span>'
-        return " ".join(_chip(f, GOLD if f != "Extended" else ACCENT_RED, 0.10) for f in flags)
+        return " ".join(_chip(f, _flag_color(f), 0.10) for f in flags)
 
     def _zone_html(z):
         col = ACCENT_GREEN if z == "Positive" else ACCENT_RED if z == "Negative" else GOLD
@@ -485,10 +538,10 @@ def _upload_best_to_sheet(df: pd.DataFrame):
 def _render_best_scanners_tab():
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
-        f'The six keeper scanners (from the July 2026 performance review) run over one universe '
-        f'and merged into a single table. The <b>Scanners</b> column shows every scanner that '
-        f'flagged the ticker — <b style="color:{ACCENT_GREEN}">2+ = confluence</b> (rows sorted '
-        f'that way).</div>',
+        f'The six keeper scanners plus two early-signal add-ons (<b>7Square</b> · <b>8Cross</b>) '
+        f'run over one universe and merge into a single table. The <b>Scanners</b> column lists '
+        f'every scanner that flagged the ticker — <b style="color:{ACCENT_GREEN}">2+ = confluence</b> '
+        f'(sorted first). <b>8Cross·W</b> = the EMA20/50 cross also shows on the weekly.</div>',
         unsafe_allow_html=True,
     )
     c1, c2, c3 = st.columns([2.4, 1, 1])
@@ -543,7 +596,7 @@ def _render_best_scanners_tab():
         if st.button("📤 Upload to Google Sheet", use_container_width=True, key="home_best_upload"):
             _upload_best_to_sheet(df)
     with dl_col:
-        exp = df.drop(columns=["_count"], errors="ignore").copy()
+        exp = df.drop(columns=["_count", "x8_weekly"], errors="ignore").copy()
         exp["Flags"] = exp["Flags"].apply(lambda x: "; ".join(x) if isinstance(x, list) else x)
         st.download_button("⬇ CSV", exp.to_csv(index=False), "best_scanners.csv",
                            "text/csv", use_container_width=True, key="home_best_csv")
@@ -585,30 +638,44 @@ def _render_overkill_tab():
             return '<span style="color:#F87171;font-size:13px">🔴 Red</span>'
         return f'<span style="color:{TEXT_MUTED};font-size:11px">— none</span>'
 
+    flat = []
     for vid in data.get("videos", []):
-        rows = ""
         for p in vid.get("picks", []):
-            rows += (
-                f'<tr>'
-                f'<td style="{_TD}">{_mono(p.get("ticker",""), GOLD, 13, True)}</td>'
-                f'<td style="{_TD}">{_bias_html(p.get("bias","Neutral"))}</td>'
-                f'<td style="{_TD}">{_dot_html(p.get("dot","None"))}</td>'
-                f'<td style="{_TD};white-space:normal;color:{TEXT_PRIMARY};font-size:11px;'
-                f'line-height:1.5">{p.get("notes","")}</td>'
-                f'</tr>'
-            )
-        hdr = "".join(f'<th style="{_TH}">{h}</th>' for h in ["Ticker", "Bias", "Dot", "Notes"])
-        title = vid.get("title", "")
-        url = vid.get("url", "")
-        title_html = (f'<a href="{url}" target="_blank" style="color:{GOLD};text-decoration:none">{title} ↗</a>'
-                      if url else title)
-        body = (f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
-                f'<thead><tr>{hdr}</tr></thead><tbody>{rows}</tbody></table>')
-        st.markdown(_card(title_html, "📺", ORANGE, body, subtitle=vid.get("date", "")),
-                    unsafe_allow_html=True)
+            row = dict(p)
+            row["date"]  = vid.get("date", "")
+            row["video"] = vid.get("title", "")
+            row["url"]   = vid.get("url", "")
+            flat.append(row)
+    flat.sort(key=lambda r: (r.get("date", ""), r.get("ticker", "")), reverse=True)
 
-    st.caption("This tab shows a stored summary that's refreshed on request (a live in-app "
-               "pull isn't free/reliable on the hosted app). Ask to refresh it for the latest day.")
+    hdr = "".join(f'<th style="{_TH}">{h}</th>' for h in ["Date", "Ticker", "Bias", "Dot", "Notes"])
+    rows = ""
+    for r in flat:
+        url = r.get("url", "")
+        if url:
+            date_cell = ('<a href="' + url + '" target="_blank" title="' + str(r.get("video", "")) +
+                         '" style="color:' + TEXT_MUTED + ';text-decoration:none;font-size:10px">' +
+                         str(r.get("date", "")) + ' ↗</a>')
+        else:
+            date_cell = f'<span style="color:{TEXT_MUTED};font-size:10px">' + str(r.get("date", "")) + '</span>'
+        rows += (
+            "<tr>"
+            + f'<td style="{_TD}">' + date_cell + "</td>"
+            + f'<td style="{_TD}">' + _mono(str(r.get("ticker", "")), GOLD, 13, True) + "</td>"
+            + f'<td style="{_TD}">' + _bias_html(r.get("bias", "Neutral")) + "</td>"
+            + f'<td style="{_TD}">' + _dot_html(r.get("dot", "None")) + "</td>"
+            + f'<td style="{_TD};white-space:normal;color:{TEXT_PRIMARY};font-size:11px;line-height:1.5">'
+            + str(r.get("notes", "")) + "</td>"
+            + "</tr>"
+        )
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px;max-height:640px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>{hdr}</tr></thead><tbody>{rows}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
+    st.caption("One row per pick across all captured days. Stored summary refreshed on request "
+               "(a live in-app pull isn't free/reliable on the hosted app) — ask to refresh for the latest.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -661,61 +728,75 @@ def _render_sectors():
                     unsafe_allow_html=True)
         return
 
-    q_style = {
-        "Leading":   (ACCENT_GREEN, "💰 Leading — money is here"),
-        "Improving": (ACCENT_BLUE,  "📈 Improving — money arriving"),
-        "Weakening": (GOLD,         "⚠️ Weakening — money slipping out"),
-        "Lagging":   (ACCENT_RED,   "🚪 Lagging — money gone"),
-    }
+    q_col = {"Leading": ACCENT_GREEN, "Improving": ACCENT_BLUE, "Weakening": GOLD, "Lagging": ACCENT_RED}
+    q_ic  = {"Leading": "💰", "Improving": "📈", "Weakening": "⚠️", "Lagging": "🚪"}
 
-    def _quad_box(quad: str) -> str:
-        col, title = q_style[quad]
-        etfs  = sorted([r for r in rows if r["quad"] == quad], key=lambda r: -r["rs21"])
-        chips = ""
-        for r in etfs:
-            tip   = "RS-21d {:.2f} · flow {:.2f}× · 1M {:+.1f}%".format(r["rs21"], r["flow"], r["ret1m"])
-            money = " 💰" if r["flow"] >= 1.15 else ""
-            chips += (
-                f'<span title="{tip}" '
-                f'style="background:{_rgba(col, 0.13)};color:{col};border:1px solid {col}44;'
-                f'font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;'
-                f'margin:2px;display:inline-block;cursor:help">{r["tkr"]}{money}</span>'
-            )
-        if not chips:
-            chips = f'<span style="color:{TEXT_MUTED};font-size:10px">—</span>'
-        return (f'<div style="background:{_rgba(col, 0.05)};border:1px solid {col}33;'
-                f'border-radius:10px;padding:8px 10px;min-height:86px">'
-                f'<div style="color:{col};font-size:9px;font-weight:800;'
-                f'text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px">{title}</div>'
-                f'{chips}</div>')
+    ranked = sorted(rows, key=lambda r: -r["rs63"])
+    max_dev = max((abs(r["rs63"] - 1) for r in ranked), default=0.01) or 0.01
+    GRID = "grid-template-columns:132px 132px 50px 24px 58px 62px"
 
-    grid = (
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
-        f'{_quad_box("Improving")}{_quad_box("Leading")}'
-        f'{_quad_box("Lagging")}{_quad_box("Weakening")}'
-        f'</div>'
-    )
+    bar_rows = ""
+    for r in ranked:
+        col = q_col.get(r["quad"], TEXT_MUTED)
+        dev = r["rs63"] - 1.0
+        w = min(abs(dev) / max_dev * 58, 58)
+        left = 62 if dev >= 0 else 62 - w
+        bar = (f'<div style="position:absolute;left:{left:.0f}px;top:0;bottom:0;'
+               f'width:{max(w,1):.0f}px;background:{col};border-radius:3px;opacity:0.9"></div>')
+        mom = r["rs21"] - r["rs63"]
+        if mom > 0.005:
+            m_arrow, m_col = "▲", ACCENT_GREEN
+        elif mom < -0.005:
+            m_arrow, m_col = "▼", ACCENT_RED
+        else:
+            m_arrow, m_col = "▬", TEXT_MUTED
+        ret = r["ret1m"]; ret_col = ACCENT_GREEN if ret >= 0 else ACCENT_RED
+        if r["flow"] >= 1.15:
+            flow_badge = f'<span style="color:{GOLD};font-size:10px;font-weight:700">💰{r["flow"]:.1f}x</span>'
+        else:
+            flow_badge = f'<span style="color:{TEXT_MUTED};font-size:10px">{r["flow"]:.1f}x</span>'
+        name = str(r["name"])[:12]
+        bar_rows += (
+            f'<div style="display:grid;{GRID};align-items:center;gap:6px;padding:3px 0;'
+            f'border-bottom:1px solid #2A2A3A22">'
+            + f'<span style="color:{col};font-family:\'DM Mono\',monospace;font-size:11px;'
+            + f'font-weight:700">' + q_ic.get(r["quad"], "") + " " + str(r["tkr"])
+            + f'<span style="color:{TEXT_MUTED};font-weight:400"> ' + name + "</span></span>"
+            + f'<div style="position:relative;height:12px;background:#2A2A3A33;border-radius:3px">'
+            + f'<div style="position:absolute;left:62px;top:-2px;bottom:-2px;width:1px;'
+            + f'background:{TEXT_MUTED}66"></div>' + bar + "</div>"
+            + f'<span style="color:{col};font-family:\'DM Mono\',monospace;font-size:11px;'
+            + f'font-weight:700">' + "{:.3f}".format(r["rs63"]) + "</span>"
+            + f'<span style="color:{m_col};font-size:11px">' + m_arrow + "</span>"
+            + f'<span style="color:{ret_col};font-family:\'DM Mono\',monospace;font-size:11px">'
+            + "{:+.1f}%".format(ret) + "</span>"
+            + flow_badge + "</div>"
+        )
 
-    buys  = sorted([r for r in rows if r["quad"] in ("Leading", "Improving")],
-                   key=lambda r: -(r["rs21"] + (0.05 if r["flow"] >= 1.1 else 0)))[:4]
-    sells = sorted([r for r in rows if r["quad"] in ("Lagging", "Weakening")],
-                   key=lambda r: r["rs21"])[:4]
+    header = (f'<div style="display:grid;{GRID};gap:6px;padding:0 0 4px;color:{TEXT_MUTED};'
+              f'font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">'
+              f'<span>Sector</span><span>RS vs SPY 63d</span><span>RS</span><span>Mom</span>'
+              f'<span>1M</span><span>Flow</span></div>')
 
-    buy_chips  = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_GREEN) for r in buys)
-    sell_chips = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_RED) for r in sells)
+    buys  = [r for r in ranked if r["quad"] in ("Leading", "Improving")][:4]
+    sells = sorted([r for r in ranked if r["quad"] in ("Lagging", "Weakening")],
+                   key=lambda r: r["rs63"])[:4]
+    buy_chips  = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_GREEN) for r in buys) or "—"
+    sell_chips = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_RED) for r in sells) or "—"
     summary = (
-        f'<div style="display:flex;flex-direction:column;gap:6px">'
+        f'<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">'
         f'<div style="font-size:11px"><span style="color:{ACCENT_GREEN};font-weight:800">'
-        f'💰 FOCUS (buy zone): </span>{buy_chips}</div>'
+        f'💰 FOCUS: </span>{buy_chips}</div>'
         f'<div style="font-size:11px"><span style="color:{ACCENT_RED};font-weight:800">'
-        f'🚪 AVOID (money leaving): </span>{sell_chips}</div></div>'
-        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:8px">'
-        f'RRG-style: RS vs SPY 63d (position) × 21d (momentum) · 💰 = dollar-volume surge ≥1.15× '
-        f'— institutional flows show up in price × volume before headlines</div>'
+        f'🚪 AVOID: </span>{sell_chips}</div></div>'
+        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:8px">Bars diverge from the '
+        f'center line (= SPY): green/blue = leading/improving · gold/red = weakening/lagging. '
+        f'▲ = momentum accelerating (21d RS &gt; 63d) · 💰 = dollar-volume surge ≥1.15×. '
+        f'Flows show up in price × volume before headlines.</div>'
     )
 
     st.markdown(_card("Sector Rotation — follow the big money", "🔄", MINT,
-                      grid + summary), unsafe_allow_html=True)
+                      header + bar_rows + summary), unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
