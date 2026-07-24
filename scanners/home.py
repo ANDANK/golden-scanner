@@ -872,7 +872,7 @@ def render():
         except Exception:
             st.warning("Regime bar unavailable.")
 
-    tab1, tab2, tab3 = st.tabs(["🎯  Best Scanners", "📺  OverKill Shorts", "🔄  Sector Rotation"])
+    tab1, tab2, tab3 = st.tabs(["🎯  Best Scanners", "📺  Over Kill", "🔄  Sector Rotation"])
 
     with tab1:
         try:

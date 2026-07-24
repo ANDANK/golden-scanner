@@ -1,8 +1,28 @@
 {
-  "updated": "2026-07-22",
+  "updated": "2026-07-23",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. Curated from video captions; refreshed on request. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "title": "BIG TECH SELLING OFF 📉 JULY 23",
+      "date": "2026-07-23",
+      "url": "https://www.youtube.com/shorts/YSWQOW9SCqs",
+      "picks": [
+        {"ticker": "TSLA", "bias": "Bearish", "dot": "Red", "notes": "Down 15% post-earnings; already short from ~$380 and riding it lower. Approaching the 4-yr MA. Will flip bullish only on a green dot (past ones: $109→$300, $160→$500, bounced off $230 in 2025)."},
+        {"ticker": "GOOGL", "bias": "Bearish", "dot": "Red", "notes": "Down 6–7% this week after a huge run. Support near $300 (yearly MA) — a break sends it toward the $200–220 4-yr average zone. Waiting for a green dot before buying."},
+        {"ticker": "INTC", "bias": "Bearish", "dot": "Red", "notes": "Short since the red dot in May at $120 (down ~20% since). Bought originally at $20 last year; won't chase it back at $140. Reports earnings after the bell."}
+      ]
+    },
+    {
+      "title": "3 STOCKS TO WATCH NOW 📈 JULY 23 $HOOD",
+      "date": "2026-07-23",
+      "url": "https://www.youtube.com/shorts/fGHZ3dPFCT0",
+      "picks": [
+        {"ticker": "HOOD", "bias": "Neutral", "dot": "Red", "notes": "Take-profit/trim signal fired July 13. Buy signal was March at $70, ran to $120 (sold half there). Stop loss at $90 (June 22 low) for the rest. Earnings next week could add volatility."},
+        {"ticker": "ONDS", "bias": "Bullish", "dot": "None", "notes": "Drone maker with a new Australian DoD contract. Pulled back from a $15 high to ~$7–8; wave still down, no green dot yet. A similar setup ripped from $0.78→$15 starting May 2025. Bullish as long as it holds $6 (his stop level)."},
+        {"ticker": "SOFI", "bias": "Bearish", "dot": "Red", "notes": "Red dot; stop set at the prior low from May (~$15) and letting the short play out from there."}
+      ]
+    },
     {
       "title": "3 HUGE STOCKS REPORTING EARNINGS AFTER THE BELL",
       "date": "2026-07-22",
