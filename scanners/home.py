@@ -13,6 +13,7 @@ from __future__ import annotations
 import streamlit as st
 import pandas as pd
 import numpy as np
+import requests
 import json, os, sys
 from datetime import datetime
 import pytz
@@ -662,6 +663,94 @@ def _render_best_scanners_tab():
 # TAB 2 — OVERKILL SHORTS  (curated watch-list, refreshed on request)
 # ══════════════════════════════════════════════════════════════════════════════
 
+_GH_OWNER = "ANDANK"
+_GH_REPO = "golden-scanner"
+_GH_WORKFLOW_FILE = "refresh_overkill.yml"
+
+
+def _get_github_token() -> str:
+    """Read a GitHub PAT (repo/actions:write scope) from Streamlit secrets."""
+    try:
+        return str(st.secrets["GITHUB_TOKEN"]).strip()
+    except (KeyError, FileNotFoundError):
+        pass
+    except Exception:
+        try:
+            val = st.secrets.get("GITHUB_TOKEN")
+            if val:
+                return str(val).strip()
+        except Exception:
+            pass
+    return ""
+
+
+def _gh_headers(token: str) -> dict:
+    return {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+
+def _trigger_overkill_workflow() -> tuple:
+    """POST a workflow_dispatch event. Returns (ok, message)."""
+    token = _get_github_token()
+    if not token:
+        return False, ("No GitHub token configured. Add **GITHUB_TOKEN** (a PAT with `actions:write` "
+                        "or `repo` scope on this repo) to your Streamlit secrets to enable this button.")
+    url = (f"https://api.github.com/repos/{_GH_OWNER}/{_GH_REPO}/actions/workflows/"
+           f"{_GH_WORKFLOW_FILE}/dispatches")
+    try:
+        r = requests.post(url, headers=_gh_headers(token), json={"ref": "main"}, timeout=15)
+    except Exception as e:
+        return False, f"Request failed: {e}"
+    if r.status_code == 204:
+        return True, "Triggered — the run usually finishes in a minute or two. Use *Check status* below."
+    if r.status_code == 401:
+        return False, "GitHub rejected the token (401) — GITHUB_TOKEN may be invalid or expired."
+    if r.status_code == 404:
+        return False, "Workflow or repo not found (404) — check the token has access to this repo."
+    return False, f"GitHub API error {r.status_code}: {r.text[:200]}"
+
+
+def _latest_overkill_run():
+    """Fetch the most recent run of the refresh workflow, or None on failure."""
+    token = _get_github_token()
+    if not token:
+        return None
+    url = (f"https://api.github.com/repos/{_GH_OWNER}/{_GH_REPO}/actions/workflows/"
+           f"{_GH_WORKFLOW_FILE}/runs")
+    try:
+        r = requests.get(url, headers=_gh_headers(token), params={"per_page": 1}, timeout=15)
+        r.raise_for_status()
+        runs = r.json().get("workflow_runs", [])
+        return runs[0] if runs else None
+    except Exception:
+        return None
+
+
+def _render_overkill_trigger():
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        if st.button("🔄 Refresh Now", key="overkill_trigger_btn",
+                      help="Runs the GitHub Action that pulls new Shorts, right from here"):
+            with st.spinner("Triggering GitHub Action…"):
+                ok, msg = _trigger_overkill_workflow()
+            (st.success if ok else st.error)(msg)
+    with c2:
+        if st.button("Check latest run status", key="overkill_status_btn"):
+            with st.spinner("Checking…"):
+                run = _latest_overkill_run()
+            if run is None:
+                st.info("Couldn't fetch run status — check GITHUB_TOKEN in secrets.")
+            else:
+                label = run.get("conclusion") or run.get("status") or "unknown"
+                icon = {"success": "✅", "failure": "❌", "in_progress": "⏳",
+                        "queued": "⏳", "cancelled": "🚫"}.get(label, "ℹ️")
+                st.info(f"{icon} Latest run: **{label}** · started "
+                        f"{run.get('run_started_at', '?')[:16].replace('T', ' ')} UTC")
+
+
 def _render_overkill_tab():
     path = os.path.join(DATA_DIR, "overkill_shorts.json")
     try:
@@ -679,6 +768,8 @@ def _render_overkill_tab():
         f'Updated <b>{data.get("updated","")}</b> · not financial advice.</div>',
         unsafe_allow_html=True,
     )
+
+    _render_overkill_trigger()
 
     def _bias_html(b):
         col = ACCENT_GREEN if b == "Bullish" else ACCENT_RED if b == "Bearish" else TEXT_MUTED
@@ -728,7 +819,7 @@ def _render_overkill_tab():
         unsafe_allow_html=True,
     )
     st.caption("One row per pick across all captured days. Auto-refreshed twice daily (~8am/7pm CT) "
-               "via GitHub Actions — ask to force a refresh sooner if needed.")
+               "via GitHub Actions — or hit “Refresh Now” above to run it on demand.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
