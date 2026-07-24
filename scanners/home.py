@@ -750,6 +750,21 @@ def _render_overkill_trigger():
                 st.info(f"{icon} Latest run: **{label}** · started "
                         f"{run.get('run_started_at', '?')[:16].replace('T', ' ')} UTC")
 
+    # Always-visible debug so token problems are self-diagnosable without asking Claude
+    token = _get_github_token()
+    with st.expander("🔧 Debug — GitHub token status", expanded=not token):
+        if token:
+            preview = token[:12] + "…" if len(token) > 12 else token
+            st.markdown(f"**Token read:** `{preview}` (length {len(token)})")
+            st.caption("If buttons still error with 401, the token is invalid/expired — regenerate it. "
+                       "If 404, its repo access or Actions permission isn't set on golden-scanner.")
+        else:
+            st.markdown("**Token read:** *(not found)* — `st.secrets[\"GITHUB_TOKEN\"]` returned nothing.")
+            st.caption("On Streamlit Cloud: Settings → Secrets must contain a top-level line "
+                       "`GITHUB_TOKEN = \"github_pat_...\"` (exact key name, not nested under a section). "
+                       "After saving, the app should auto-reboot — if this still shows 'not found' after "
+                       "a minute, use 'Reboot app' from the Cloud menu to force it.")
+
 
 def _render_overkill_tab():
     path = os.path.join(DATA_DIR, "overkill_shorts.json")
