@@ -727,8 +727,8 @@ def _render_overkill_tab():
         f'<thead><tr>{hdr}</tr></thead><tbody>{rows}</tbody></table></div>',
         unsafe_allow_html=True,
     )
-    st.caption("One row per pick across all captured days. Stored summary refreshed on request "
-               "(a live in-app pull isn't free/reliable on the hosted app) — ask to refresh for the latest.")
+    st.caption("One row per pick across all captured days. Auto-refreshed twice daily (~8am/7pm CT) "
+               "via GitHub Actions — ask to force a refresh sooner if needed.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
