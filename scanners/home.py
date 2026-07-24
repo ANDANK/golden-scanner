@@ -729,6 +729,44 @@ def _latest_overkill_run():
         return None
 
 
+def _to_ct(iso_utc: str) -> str:
+    """Format a GitHub UTC timestamp (e.g. 2026-07-24T14:39:12Z) as US/Central."""
+    if not iso_utc:
+        return "?"
+    try:
+        dt = datetime.strptime(iso_utc, "%Y-%m-%dT%H:%M:%SZ")
+        dt = pytz.utc.localize(dt).astimezone(pytz.timezone("US/Central"))
+        return dt.strftime("%Y-%m-%d %I:%M %p %Z")
+    except Exception:
+        return iso_utc
+
+
+def _failed_job_log_tail(run_id: int, lines: int = 60) -> str:
+    """Return the tail of the failing job's log for a run, or an error string."""
+    token = _get_github_token()
+    if not token:
+        return ""
+    try:
+        jr = requests.get(
+            f"https://api.github.com/repos/{_GH_OWNER}/{_GH_REPO}/actions/runs/{run_id}/jobs",
+            headers=_gh_headers(token), timeout=15,
+        )
+        jr.raise_for_status()
+        jobs = jr.json().get("jobs", [])
+        failed = next((j for j in jobs if j.get("conclusion") == "failure"), None)
+        if not failed:
+            return "(no failed job found on this run)"
+        lr = requests.get(
+            f"https://api.github.com/repos/{_GH_OWNER}/{_GH_REPO}/actions/jobs/{failed['id']}/logs",
+            headers=_gh_headers(token), timeout=20,
+        )
+        lr.raise_for_status()
+        log_lines = lr.text.splitlines()
+        return "\n".join(log_lines[-lines:])
+    except Exception as e:
+        return f"(couldn't fetch logs: {e})"
+
+
 def _render_overkill_trigger():
     c1, c2 = st.columns([1, 1])
     with c1:
@@ -748,7 +786,12 @@ def _render_overkill_trigger():
                 icon = {"success": "✅", "failure": "❌", "in_progress": "⏳",
                         "queued": "⏳", "cancelled": "🚫"}.get(label, "ℹ️")
                 st.info(f"{icon} Latest run: **{label}** · started "
-                        f"{run.get('run_started_at', '?')[:16].replace('T', ' ')} UTC")
+                        f"{_to_ct(run.get('run_started_at', ''))}")
+                if label == "failure":
+                    with st.spinner("Fetching failure log…"):
+                        tail = _failed_job_log_tail(run["id"])
+                    with st.expander("🪵 Failure log (last 60 lines)", expanded=True):
+                        st.code(tail or "(empty log)", language="text")
 
     # Always-visible debug so token problems are self-diagnosable without asking Claude
     token = _get_github_token()
