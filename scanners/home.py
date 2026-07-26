@@ -1258,8 +1258,12 @@ def render():
         except Exception:
             st.warning("Regime bar unavailable.")
 
-    tab1, tab2, tab3, tab4 = st.tabs(
-        ["🎯  Best Scanners", "📺  Over Kill", "🔄  Sector Rotation", "🔍  OverKill"]
+    # "📺 Over Kill" (curated YouTube-Shorts watchlist, with its Refresh/Check-
+    # latest-run-status buttons) is hidden per request — code kept intact
+    # (_render_overkill_tab below) in case it's wanted back; just re-add its
+    # label + a `with` block below to restore it.
+    tab1, tab3, tab4 = st.tabs(
+        ["🎯  Best Scanners", "🔄  Sector Rotation", "🔍  OverKill"]
     )
 
     with tab1:
@@ -1267,12 +1271,6 @@ def render():
             _render_best_scanners_tab()
         except Exception as e:
             st.error(f"Best-scanners tab error: {e}")
-
-    with tab2:
-        try:
-            _render_overkill_tab()
-        except Exception as e:
-            st.error(f"OverKill tab error: {e}")
 
     with tab3:
         with st.spinner("Computing sector flows…"):
