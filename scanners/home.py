@@ -558,23 +558,27 @@ def _render_best_table(df: pd.DataFrame):
     for c, label in zip(hdr_cols, _ROW_HEADERS):
         c.markdown(f'<div style="{_TH}">{label}</div>', unsafe_allow_html=True)
 
-    for _, r in view.iterrows():
-        ticker = r["Ticker"]
-        cols = st.columns(_ROW_COL_RATIOS)
-        cols[0].checkbox("select", key=f"home_best_chk_{ticker}", label_visibility="collapsed",
-                         on_change=_select_ticker_cb, args=(ticker, all_tickers))
-        tk_style = f"color:{GOLD};font-weight:700" + (";text-decoration:underline" if ticker == selected else "")
-        cols[1].markdown(f'<span style="color:{GOLD}">{r["★"]}</span>', unsafe_allow_html=True)
-        cols[2].markdown(f'<span style="{tk_style}">{ticker}</span>', unsafe_allow_html=True)
-        cols[3].markdown(f'${r["Price"]:,.2f}')
-        cols[4].markdown(_chg_html(r["Chg %"]), unsafe_allow_html=True)
-        cols[5].markdown(f'<span style="font-size:11.5px">{r["Scanners"]}</span>', unsafe_allow_html=True)
-        cols[6].markdown(f'W{r["RSI W"]:.0f} / D{r["RSI D"]:.0f}')
-        cols[7].markdown(f'{_b(r["MACD>Sig"])} {r["MACD Zone"]}')
-        cols[8].markdown(f'{_b(r[">SMA9"])} / {_b(r[">SMA20"])}')
-        cols[9].markdown(f'{r["Vol×"]:.2f}x / {r["RS·SPY"]:.2f}')
-        cols[10].markdown(f'<span style="color:{TEXT_MUTED};font-size:11px">{r["Flags"] or "—"}</span>',
-                          unsafe_allow_html=True)
+    # st.container(height=...) gives native widgets (checkboxes included) a real
+    # scrollable area — ~6-7 rows visible, header stays fixed above since it's
+    # rendered outside this container.
+    with st.container(height=500):
+        for _, r in view.iterrows():
+            ticker = r["Ticker"]
+            cols = st.columns(_ROW_COL_RATIOS)
+            cols[0].checkbox("select", key=f"home_best_chk_{ticker}", label_visibility="collapsed",
+                             on_change=_select_ticker_cb, args=(ticker, all_tickers))
+            tk_style = f"color:{GOLD};font-weight:700" + (";text-decoration:underline" if ticker == selected else "")
+            cols[1].markdown(f'<span style="color:{GOLD}">{r["★"]}</span>', unsafe_allow_html=True)
+            cols[2].markdown(f'<span style="{tk_style}">{ticker}</span>', unsafe_allow_html=True)
+            cols[3].markdown(f'${r["Price"]:,.2f}')
+            cols[4].markdown(_chg_html(r["Chg %"]), unsafe_allow_html=True)
+            cols[5].markdown(f'<span style="font-size:11.5px">{r["Scanners"]}</span>', unsafe_allow_html=True)
+            cols[6].markdown(f'W{r["RSI W"]:.0f} / D{r["RSI D"]:.0f}')
+            cols[7].markdown(f'{_b(r["MACD>Sig"])} {r["MACD Zone"]}')
+            cols[8].markdown(f'{_b(r[">SMA9"])} / {_b(r[">SMA20"])}')
+            cols[9].markdown(f'{r["Vol×"]:.2f}x / {r["RS·SPY"]:.2f}')
+            cols[10].markdown(f'<span style="color:{TEXT_MUTED};font-size:11px">{r["Flags"] or "—"}</span>',
+                              unsafe_allow_html=True)
 
     return st.session_state.get("home_best_selected_ticker", selected)
 
