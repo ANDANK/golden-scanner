@@ -457,12 +457,31 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
     return df_out
 
 
+_SORT_COLUMNS = {
+    "★ Stars": "_stars_n",
+    "Ticker": "Ticker",
+    "Price": "Price",
+    "Chg %": "Chg %",
+    "RSI D": "RSI D",
+    "Vol×": "Vol×",
+    "RS·SPY": "RS·SPY",
+}
+
+
 def _render_best_table(df: pd.DataFrame):
-    """Sortable, single-row-selectable results table. Click a header to sort
-    (including by ★), click a row to pick the ticker charted below.
-    Returns the selected ticker (defaults to the top row if none clicked yet)."""
+    """Sortable table + a ticker picker for the chart below.
+
+    Streamlit's interactive st.dataframe grid renders on an HTML5 canvas;
+    on this app's Streamlit Cloud deployment that canvas never paints
+    (confirmed: double-clicking a cell still opens the real value in an
+    editor, so data/interaction work — only the paint step doesn't,
+    consistently across browsers). Rather than depend on that component,
+    sorting and ticker selection are done with plain selectboxes over a
+    plain HTML table, the same primitives the original table used.
+    """
     view = pd.DataFrame({
         "★": df["_stars"].apply(lambda n: "★" * int(n) if n else ""),
+        "_stars_n": pd.to_numeric(df["_stars"], errors="coerce").fillna(0),
         "Ticker": df["Ticker"].astype(str),
         "Price": pd.to_numeric(df["Price"], errors="coerce"),
         "Chg %": pd.to_numeric(df["Chg"], errors="coerce"),
@@ -480,34 +499,61 @@ def _render_best_table(df: pd.DataFrame):
     # A NaN gap in the underlying price data (same root cause as the earlier chart
     # bug) can otherwise leave a row with no usable Price — drop those defensively.
     view = view.dropna(subset=["Price"]).reset_index(drop=True)
+    if view.empty:
+        st.info("No rows to show.")
+        return None
 
-    st.caption(f"Streamlit {st.__version__} · {len(view)} row(s)")  # temp diagnostic — remove once table issue is confirmed fixed
+    c1, c2, c3 = st.columns([1.3, 0.7, 1.6])
+    with c1:
+        sort_label = st.selectbox("Sort by", list(_SORT_COLUMNS.keys()), index=0, key="home_best_sort_col")
+    with c2:
+        descending = st.selectbox("Order", ["↓ High-Low", "↑ Low-High"], index=0, key="home_best_sort_dir") \
+            .startswith("↓")
+    view = view.sort_values(_SORT_COLUMNS[sort_label], ascending=not descending).reset_index(drop=True)
+    with c3:
+        selected = st.selectbox("Chart ticker", view["Ticker"].tolist(), index=0, key="home_best_chart_ticker")
 
-    event = st.dataframe(
-        view,
-        use_container_width=True,
-        hide_index=True,
-        height=370,   # ~9 rows visible; rest scrolls
-        on_select="rerun",
-        selection_mode="single-row",
-        key="home_best_df_view",
-        column_config={
-            "★":        st.column_config.TextColumn("★", width="small", help="Highest-tier scanner combo — click to sort"),
-            "Price":    st.column_config.NumberColumn(format="$%.2f"),
-            "Chg %":    st.column_config.NumberColumn(format="%.1f%%"),
-            "RSI W":    st.column_config.NumberColumn(format="%d"),
-            "RSI D":    st.column_config.NumberColumn(format="%d"),
-            "Vol×":     st.column_config.NumberColumn(format="%.2fx"),
-            "RS·SPY":   st.column_config.NumberColumn(format="%.2f"),
-        },
+    def _bool_html(b):
+        return (f'<span style="color:{ACCENT_GREEN}">✅</span>' if b
+                else f'<span style="color:{TEXT_MUTED}">—</span>')
+
+    def _chg_html(v):
+        col = ACCENT_GREEN if v >= 0 else ACCENT_RED
+        return f'<span style="color:{col}">{v:+.1f}%</span>'
+
+    hdr = "".join(f'<th style="{_TH}">{h}</th>' for h in
+                  ["★", "Ticker", "Price", "Chg %", "Scanners", "RSI W", "RSI D",
+                   "MACD>Sig", "MACD Zone", ">SMA9", ">SMA20", "Vol×", "RS·SPY", "Flags"])
+    rows_html = ""
+    for _, r in view.iterrows():
+        hl = f'background:{_rgba(GOLD, 0.10)}' if r["Ticker"] == selected else ""
+        rows_html += (
+            f'<tr style="{hl}">'
+            + f'<td style="{_TD};color:{GOLD}">{r["★"]}</td>'
+            + f'<td style="{_TD};color:{GOLD};font-weight:700">{r["Ticker"]}</td>'
+            + f'<td style="{_TD}">${r["Price"]:,.2f}</td>'
+            + f'<td style="{_TD}">{_chg_html(r["Chg %"])}</td>'
+            + f'<td style="{_TD};white-space:normal">{r["Scanners"]}</td>'
+            + f'<td style="{_TD}">{r["RSI W"]:.0f}</td>'
+            + f'<td style="{_TD}">{r["RSI D"]:.0f}</td>'
+            + f'<td style="{_TD};text-align:center">{_bool_html(r["MACD>Sig"])}</td>'
+            + f'<td style="{_TD}">{r["MACD Zone"]}</td>'
+            + f'<td style="{_TD};text-align:center">{_bool_html(r[">SMA9"])}</td>'
+            + f'<td style="{_TD};text-align:center">{_bool_html(r[">SMA20"])}</td>'
+            + f'<td style="{_TD}">{r["Vol×"]:.2f}x</td>'
+            + f'<td style="{_TD}">{r["RS·SPY"]:.2f}</td>'
+            + f'<td style="{_TD};white-space:normal;color:{TEXT_MUTED}">{r["Flags"] or "—"}</td>'
+            + "</tr>"
+        )
+    st.markdown(
+        f'<div style="overflow:auto;max-height:370px;border:1px solid {BORDER_COLOR};border-radius:10px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif;font-size:12.5px">'
+        f'<thead style="position:sticky;top:0;background:{BG_PANEL}"><tr>{hdr}</tr></thead>'
+        f'<tbody>{rows_html}</tbody></table></div>',
+        unsafe_allow_html=True,
     )
 
-    rows = event.selection.rows if event and event.selection else []
-    if rows:
-        return str(view.iloc[rows[0]]["Ticker"])
-    if not view.empty:
-        return str(view.iloc[0]["Ticker"])
-    return None
+    return selected
 
 
 def _pivot_levels(df: pd.DataFrame, order: int = 5, max_levels: int = 2):
