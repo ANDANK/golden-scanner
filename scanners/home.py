@@ -14,6 +14,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import json, os, sys
 from datetime import datetime
 import pytz
@@ -78,14 +80,6 @@ def _mono(v: str, color: str = TEXT_PRIMARY, size: int = 12, bold: bool = False)
             f'font-size:{size}px;font-weight:{w}">{v}</span>')
 
 
-def _chg_html(chg: float) -> str:
-    col = ACCENT_GREEN if chg >= 0 else ACCENT_RED
-    return _mono(f"{chg:+.1f}%", col, 11)
-
-
-def _bool_cell(b: bool) -> str:
-    return (f'<span style="color:{ACCENT_GREEN}">✅</span>' if b
-            else f'<span style="color:{TEXT_MUTED}">❌</span>')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -464,71 +458,171 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
 
 
 def _render_best_table(df: pd.DataFrame):
-    def _flag_color(f):
-        if f.startswith("Ext"):
-            try:
-                pv = float(f.split("+")[1].rstrip("%"))
-            except Exception:
-                pv = 6.0
-            return ACCENT_RED if pv >= 10 else GOLD
-        if f == "Near 52W Hi":
-            return ACCENT_BLUE
-        if f == "Vol Spike":
-            return GOLD
-        return ACCENT_GREEN
+    """Sortable, single-row-selectable results table. Click a header to sort
+    (including by ★), click a row to pick the ticker charted below.
+    Returns the selected ticker (defaults to the top row if none clicked yet)."""
+    view = pd.DataFrame({
+        "★": df["_stars"].apply(lambda n: "★" * int(n) if n else ""),
+        "Ticker": df["Ticker"].astype(str),
+        "Price": pd.to_numeric(df["Price"], errors="coerce"),
+        "Chg %": pd.to_numeric(df["Chg"], errors="coerce"),
+        "Scanners": df["Scanners"].astype(str),
+        "RSI W": pd.to_numeric(df["RSI_W"], errors="coerce"),
+        "RSI D": pd.to_numeric(df["RSI_D"], errors="coerce"),
+        "MACD>Sig": df["MACD>Sig"].astype(bool),
+        "MACD Zone": df["MACD Zone"].astype(str),
+        ">SMA9": df[">SMA9"].astype(bool),
+        ">SMA20": df[">SMA20"].astype(bool),
+        "Vol×": pd.to_numeric(df["Vol Ratio"], errors="coerce"),
+        "RS·SPY": pd.to_numeric(df["RS vs SPY"], errors="coerce"),
+        "Flags": df["Flags"].apply(lambda x: "; ".join(x) if isinstance(x, list) else (x or "")),
+    }).reset_index(drop=True)
 
-    def _flag_html(flags):
-        if not flags:
-            return f'<span style="color:{TEXT_MUTED}">—</span>'
-        return " ".join(_chip(f, _flag_color(f), 0.10) for f in flags)
+    event = st.dataframe(
+        view,
+        use_container_width=True,
+        hide_index=True,
+        height=370,   # ~9 rows visible; rest scrolls
+        on_select="rerun",
+        selection_mode="single-row",
+        key="home_best_df_view",
+        column_config={
+            "★":        st.column_config.TextColumn("★", width="small", help="Highest-tier scanner combo — click to sort"),
+            "Price":    st.column_config.NumberColumn(format="$%.2f"),
+            "Chg %":    st.column_config.NumberColumn(format="%.1f%%"),
+            "RSI W":    st.column_config.NumberColumn(format="%d"),
+            "RSI D":    st.column_config.NumberColumn(format="%d"),
+            "Vol×":     st.column_config.NumberColumn(format="%.2fx"),
+            "RS·SPY":   st.column_config.NumberColumn(format="%.2f"),
+        },
+    )
 
-    def _zone_html(z):
-        col = ACCENT_GREEN if z == "Positive" else ACCENT_RED if z == "Negative" else GOLD
-        icon = "📈" if z == "Positive" else "📉" if z == "Negative" else "🎯"
-        return f'<span style="color:{col};font-size:11px">{icon} {z}</span>'
+    rows = event.selection.rows if event and event.selection else []
+    if rows:
+        return str(view.iloc[rows[0]]["Ticker"])
+    if not view.empty:
+        return str(view.iloc[0]["Ticker"])
+    return None
 
-    hdr = "".join(f'<th style="{_TH}">{h}</th>' for h in
-                  ["Ticker", "Price", "Chg", "Scanners", "RSI W/D", "MACD>Sig",
-                   "MACD Zone", ">SMA9", ">SMA20", "Vol×", "RS·SPY", "Flags"])
-    rows = ""
-    for _, r in df.iterrows():
-        price_s = "${:,.2f}".format(float(r["Price"]))
-        volr_s  = "{:.2f}x".format(float(r["Vol Ratio"]))
-        rs_s    = "{:.2f}".format(float(r["RS vs SPY"]))
-        rsi_w_s = "{:.0f}".format(float(r["RSI_W"]))
-        rsi_d_s = "{:.0f}".format(float(r["RSI_D"]))
-        count   = int(r["_count"])
-        stars   = int(r.get("_stars", 0))
-        sc_col  = ACCENT_GREEN if count >= 2 else ACCENT_BLUE
-        wlab = f'<span style="color:{TEXT_MUTED};font-size:9px">W</span> '
-        dlab = f' <span style="color:{TEXT_MUTED};font-size:9px">D</span> '
-        rsi_cell = wlab + _mono(rsi_w_s, TEXT_PRIMARY, 11) + dlab + _mono(rsi_d_s, TEXT_PRIMARY, 11)
-        ticker_cell = _mono(str(r["Ticker"]), GOLD, 13, True)
-        if stars:
-            ticker_cell += (f' <span style="color:{GOLD};font-size:10px" '
-                             f'title="{stars}-star combo">{"★" * stars}</span>')
-        rows += (
-            "<tr>"
-            + f'<td style="{_TD}">' + ticker_cell + "</td>"
-            + f'<td style="{_TD}">' + _mono(price_s, TEXT_PRIMARY, 11) + "</td>"
-            + f'<td style="{_TD}">' + _chg_html(float(r["Chg"])) + "</td>"
-            + f'<td style="{_TD}">' + _chip(str(r["Scanners"]), sc_col, 0.10) + "</td>"
-            + f'<td style="{_TD}">' + rsi_cell + "</td>"
-            + f'<td style="{_TD};text-align:center">' + _bool_cell(bool(r["MACD>Sig"])) + "</td>"
-            + f'<td style="{_TD}">' + _zone_html(str(r["MACD Zone"])) + "</td>"
-            + f'<td style="{_TD};text-align:center">' + _bool_cell(bool(r[">SMA9"])) + "</td>"
-            + f'<td style="{_TD};text-align:center">' + _bool_cell(bool(r[">SMA20"])) + "</td>"
-            + f'<td style="{_TD}">' + _mono(volr_s, TEXT_PRIMARY, 11) + "</td>"
-            + f'<td style="{_TD}">' + _mono(rs_s, TEXT_PRIMARY, 11) + "</td>"
-            + f'<td style="{_TD}">' + _flag_html(list(r["Flags"])) + "</td>"
-            + "</tr>"
-        )
+
+def _pivot_levels(df: pd.DataFrame, order: int = 5, max_levels: int = 2):
+    """Simple swing-high/low support & resistance: bars that are the local
+    max/min within a +/- `order` window. Returns the (support[], resistance[])
+    levels nearest to the last close — not a substitute for real S/R analysis,
+    just a best-effort visual guide."""
+    high, low, close = df["High"].squeeze(), df["Low"].squeeze(), df["Close"].squeeze()
+    win = 2 * order + 1
+    roll_max = high.rolling(win, center=True, min_periods=win).max()
+    roll_min = low.rolling(win, center=True, min_periods=win).min()
+    piv_hi = set(high[high == roll_max].round(2).tolist())
+    piv_lo = set(low[low == roll_min].round(2).tolist())
+    last = float(close.iloc[-1])
+    resistance = sorted(p for p in piv_hi if p > last)[:max_levels]
+    support = sorted((p for p in piv_lo if p < last), reverse=True)[:max_levels]
+    return support, resistance
+
+
+def _build_scanner_chart(ticker: str):
+    """Daily candlestick + EMA20/SMA50/SMA200 + support/resistance, MACD, RSI."""
+    df = get_price_history(ticker, period="2y")
+    if df is None or df.empty:
+        return None
+    if isinstance(df.columns, pd.MultiIndex):
+        df = df.copy(); df.columns = df.columns.get_level_values(0)
+    close = df["Close"].squeeze()
+    if len(close.dropna()) < 30:
+        return None
+
+    n = min(180, len(df))
+    view = df.iloc[-n:]
+    close_v = close.iloc[-n:]
+    xs = view.index
+
+    ema20  = _ema(close, 20).iloc[-n:]
+    sma50  = _sma(close, 50).iloc[-n:]
+    sma200 = _sma(close, 200).iloc[-n:]
+    macd_ln, sig_ln, hist_s = _macd(close)
+    macd_ln, sig_ln, hist_s = macd_ln.iloc[-n:], sig_ln.iloc[-n:], hist_s.iloc[-n:]
+    rsi_s = _rsi(close).iloc[-n:]
+    support, resistance = _pivot_levels(view)
+
+    fig = make_subplots(
+        rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03,
+        row_heights=[0.55, 0.22, 0.23],
+    )
+
+    fig.add_trace(go.Candlestick(
+        x=xs, open=view["Open"].squeeze(), high=view["High"].squeeze(),
+        low=view["Low"].squeeze(), close=close_v,
+        increasing_line_color=ACCENT_GREEN, decreasing_line_color=ACCENT_RED,
+        increasing_fillcolor=_rgba(ACCENT_GREEN, 0.6), decreasing_fillcolor=_rgba(ACCENT_RED, 0.6),
+        name=ticker,
+    ), row=1, col=1)
+
+    for series, color, label in [(ema20, GOLD, "EMA 20"), (sma50, ACCENT_BLUE, "SMA 50"),
+                                  (sma200, "#A78BFA", "SMA 200")]:
+        if not series.dropna().empty:
+            fig.add_trace(go.Scatter(x=xs, y=series, line=dict(color=color, width=1.4), name=label),
+                          row=1, col=1)
+
+    for lvl in resistance:
+        fig.add_hline(y=lvl, line=dict(color=ACCENT_RED, width=1, dash="dash"),
+                      annotation_text=f"R {lvl:.2f}", annotation_position="right",
+                      annotation_font=dict(size=9, color=ACCENT_RED), row=1, col=1)
+    for lvl in support:
+        fig.add_hline(y=lvl, line=dict(color=ACCENT_GREEN, width=1, dash="dash"),
+                      annotation_text=f"S {lvl:.2f}", annotation_position="right",
+                      annotation_font=dict(size=9, color=ACCENT_GREEN), row=1, col=1)
+
+    hist_colors = [ACCENT_GREEN if v >= 0 else ACCENT_RED for v in hist_s]
+    fig.add_trace(go.Bar(x=xs, y=hist_s, marker_color=hist_colors, name="MACD Hist",
+                         showlegend=False, opacity=0.85), row=2, col=1)
+    fig.add_trace(go.Scatter(x=xs, y=macd_ln, line=dict(color=ACCENT_BLUE, width=1.3), name="MACD"),
+                  row=2, col=1)
+    fig.add_trace(go.Scatter(x=xs, y=sig_ln, line=dict(color=GOLD, width=1.1), name="Signal"),
+                  row=2, col=1)
+    fig.add_hline(y=0, line=dict(color=BORDER_COLOR, width=0.8, dash="dot"), row=2, col=1)
+
+    fig.add_trace(go.Scatter(x=xs, y=rsi_s, line=dict(color="#A78BFA", width=1.5), name="RSI",
+                             fill="tozeroy", fillcolor=_rgba("#A78BFA", 0.08)), row=3, col=1)
+    for lvl, clr in [(30, ACCENT_RED), (50, _rgba(TEXT_MUTED, 0.5)), (70, ACCENT_GREEN)]:
+        fig.add_hline(y=lvl, line=dict(color=clr, width=0.7, dash="dot"), row=3, col=1)
+
+    fig.update_layout(
+        paper_bgcolor=BG_DARK, plot_bgcolor=BG_PANEL,
+        font=dict(color=TEXT_PRIMARY, family="Inter, sans-serif", size=11),
+        height=560, margin=dict(l=10, r=55, t=34, b=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0,
+                    bgcolor="rgba(0,0,0,0)", font=dict(size=10)),
+        xaxis_rangeslider_visible=False, hovermode="x unified",
+        title=dict(text=f"{ticker} — Daily", font=dict(size=13, color=GOLD), x=0.01, y=0.99),
+    )
+    for i in range(1, 4):
+        fig.update_xaxes(gridcolor=BORDER_COLOR, row=i, col=1, showgrid=True)
+        fig.update_yaxes(gridcolor=BORDER_COLOR, row=i, col=1, showgrid=True)
+    fig.update_yaxes(title_text="Price", row=1, col=1, title_font=dict(size=10, color=TEXT_MUTED))
+    fig.update_yaxes(title_text="MACD",  row=2, col=1, title_font=dict(size=10, color=TEXT_MUTED))
+    fig.update_yaxes(title_text="RSI",   row=3, col=1, title_font=dict(size=10, color=TEXT_MUTED),
+                     range=[0, 100])
+    return fig
+
+
+def _render_scanner_chart_section(ticker):
     st.markdown(
-        f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px;max-height:640px">'
-        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
-        f'<thead><tr>{hdr}</tr></thead><tbody>{rows}</tbody></table></div>',
+        f'<div style="margin-top:18px;color:{TEXT_MUTED};font-size:11px;letter-spacing:.08em;'
+        f'text-transform:uppercase">Chart{f" — {ticker}" if ticker else ""}'
+        f'<span style="font-weight:400;text-transform:none"> (click a row above to change)</span></div>',
         unsafe_allow_html=True,
     )
+    if not ticker:
+        st.info("Select a ticker in the table above to see its chart.")
+        return
+    with st.spinner(f"Loading {ticker} chart…"):
+        fig = _build_scanner_chart(ticker)
+    if fig is None:
+        st.warning(f"Couldn't load chart data for {ticker}.")
+        return
+    st.plotly_chart(fig, use_container_width=True, key=f"home_best_chart_{ticker}")
 
 
 _STAR_LEGEND = [
@@ -654,7 +748,8 @@ def _render_best_scanners_tab():
         st.download_button("⬇ CSV", exp.to_csv(index=False), "best_scanners.csv",
                            "text/csv", use_container_width=True, key="home_best_csv")
 
-    _render_best_table(df)
+    selected_ticker = _render_best_table(df)
+    _render_scanner_chart_section(selected_ticker)
     _render_star_legend()
     _render_scanner_notes()
 
