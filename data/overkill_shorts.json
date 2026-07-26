@@ -1,16 +1,304 @@
 {
-  "updated": "2026-07-23",
+  "updated": "2026-07-25",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "title": "DISCORD CHART REQUESTS 📈 ACHR DOW OPTT SBET $ETH - JULY 25",
+      "date": "2026-07-25",
+      "url": "https://www.youtube.com/shorts/U_eHNFeu5VA",
+      "picks": [
+        {
+          "ticker": "ACHR",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Pulled back from $15 to ~$4, trying to bottom. Signals at $5.25 and $4.74; hold above $4.20. Bullish while the dot stays green, but depends heavily on next week's earnings. Pre-revenue/penny stock — high risk."
+        },
+        {
+          "ticker": "DOW",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "8% dividend payer. Ran $21→$40 (100%) then corrected to ~$26. Stop loss at $26 (prior low) if playing the signal. Bullish while the dot stays green."
+        },
+        {
+          "ticker": "OPTT",
+          "bias": "Bearish",
+          "dot": "None",
+          "notes": "Penny stock (~15¢) in a persistent downtrend. \"I would not touch this one.\""
+        },
+        {
+          "ticker": "SBET",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Ethereum-treasury company — price tracks ETH closely. Green signal near $4, historically ran $2→$106. Bullish on ETH here (sees $1,500 as the cycle low); waiting for a red dot to sell."
+        }
+      ]
+    },
+    {
+      "title": "$HOOD MSTR OKLO ONDS STOCK ANALYSIS 🚨 JULY 25",
+      "date": "2026-07-25",
+      "url": "https://www.youtube.com/shorts/fclSb7vFncA",
+      "picks": [
+        {
+          "ticker": "OKLO",
+          "bias": "Neutral",
+          "dot": "None",
+          "notes": "Nuclear energy play, no revenue yet — be cautious. Red dot (sell) hit $180 in October; green signal in April at $47, now back to $40. Plan: average down on the next green dot."
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Red dot last week at $115; sold ~65-70% of the position bought at $70 (peaked $120). Stop loss ~$87-90 on the rest — a break risks a drop to the $50 area."
+        },
+        {
+          "ticker": "MSTR",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Sell signal fired at $450, now down to $90 — tracks Bitcoin closely. Earnings Thursday. Watching for a green dot to average back down (had 3 signals between $135-160)."
+        },
+        {
+          "ticker": "ONDS",
+          "bias": "Neutral",
+          "dot": "None",
+          "notes": "Drone maker. Ran $0.77→$15, pulled back to ~$7. Watching for a fresh signal next week; looks to be finding support."
+        }
+      ]
+    },
+    {
+      "title": "WATCHLIST IS LIVE ON YOUTUBE 📈 JULY 25",
+      "date": "2026-07-25",
+      "url": "https://www.youtube.com/shorts/Y1_iG2grvqo",
+      "picks": []
+    },
+    {
+      "title": "Is this the bottom for Gold & Silver? 📈 July 24",
+      "date": "2026-07-24",
+      "url": "https://www.youtube.com/shorts/E8PvBl0wWUA",
+      "picks": [
+        {
+          "ticker": "JNUG",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "2x levered gold-miners ETF. A fresh signal is printing in July — the last two (2023, Jan 2025) turned into 10x-type moves. A way to play gold/silver strength without holding the metal directly."
+        }
+      ]
+    },
+    {
+      "title": "#1 FEAR & GREED INDEX",
+      "date": "2026-07-24",
+      "url": "https://www.youtube.com/shorts/NhwuZLjBtKg",
+      "picks": []
+    },
+    {
+      "title": "I am giving away 1000 XRP to somebody in the discord 🤟 good luck!!",
+      "date": "2026-07-22",
+      "url": "https://www.youtube.com/shorts/864J32QFFFw",
+      "picks": []
+    },
+    {
+      "title": "IREN $HOOD SPCX STOCK ANALYSIS 🚨 JULY 21",
+      "date": "2026-07-21",
+      "url": "https://www.youtube.com/shorts/I0vVg9EU8X0",
+      "picks": [
+        {
+          "ticker": "IREN",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Red dot fired at $60-70 in June, now down to $40, attempting to bounce near $31. Won't turn bullish until a green dot confirms — the swing-trade window looks like it's already passed for now."
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Second red-dot mention this week. Bought $70 in March, sold half at $120, watching for re-entry near $100. Stop loss ~$95; earnings next week."
+        }
+      ]
+    },
+    {
+      "title": "CHART REQUESTS GOING LIVE 📈",
+      "date": "2026-07-21",
+      "url": "https://www.youtube.com/shorts/BDbfDdhV5ow",
+      "picks": []
+    },
+    {
+      "title": "4 STOCKS TO WATCH NOW 🚨 JULY 20 $ORCL",
+      "date": "2026-07-20",
+      "url": "https://www.youtube.com/shorts/u4ixWlCflAo",
+      "picks": [
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Bought $140 in March, sold at $250. Pulled back to the April-2025 low. Wants back in — just needs the green dot to confirm (these signals only come once or twice a year)."
+        },
+        {
+          "ticker": "OKTA",
+          "bias": "Bearish",
+          "dot": "None",
+          "notes": "Wave is extended/up here — trimming and taking profit, would be a seller. Watching for a pullback to ~$98 to re-enter."
+        },
+        {
+          "ticker": "QBTS",
+          "bias": "Neutral",
+          "dot": "None",
+          "notes": "Quantum computing play. Ran 81¢→$40-50 in 2024, pulled back to $16. Needs the green-dot confirmation before buying, same as Oracle."
+        },
+        {
+          "ticker": "AVAV",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Military drone maker, benefiting from the Iran war escalation. 3 signals between $140-180; started a small position. Pulled back from $400 to $140 — green dot a couple weeks ago at this price. \"I'd be a buyer.\""
+        }
+      ]
+    },
+    {
+      "title": "The #1 Trading Rule That Protects Your Portfolio (2.5% Rule)",
+      "date": "2026-07-20",
+      "url": "https://www.youtube.com/shorts/q4HEquuNBN4",
+      "picks": []
+    },
+    {
+      "title": "OVERKILL WATCHLIST 📈JULY 17",
+      "date": "2026-07-17",
+      "url": "https://www.youtube.com/shorts/VV39tqcp7Cg",
+      "picks": []
+    },
+    {
+      "title": "3 STOCKS NOW 🚨 JULY 16",
+      "date": "2026-07-16",
+      "url": "https://www.youtube.com/shorts/ZJUhVyaJcr8",
+      "picks": [
+        {
+          "ticker": "ISRG",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Green dot last week near $400, sitting right on the 4-yr moving average. Earnings after the bell — a real catalyst to watch."
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Has a green dot but earnings are after the bell, so it's not fully trusted yet. Plan: buy half the position now, the other half after earnings if it dips (could go to ~$60 on a miss)."
+        },
+        {
+          "ticker": "STLA",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Makes Jeep/Ram/Dodge. Sitting at a multi-year support/low zone (~$5-6) that's held since 2016."
+        }
+      ]
+    },
+    {
+      "title": "🚨 8 Stocks to Watch RIGHT NOW 📈 | July 16",
+      "date": "2026-07-16",
+      "url": "https://www.youtube.com/shorts/EnoofWMnljE",
+      "picks": [
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Green dot with MACD confirming. Bullish above $26.50 (stop level); a break back over $34 would confirm a real breakout. Ran $20→$70 (+195%) on the last cycle."
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Still green despite a normal 6% weekly pullback. Last major signal was $10→$30; now around $17.50. Bullish above $15."
+        },
+        {
+          "ticker": "CRCL",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Watching for a fresh weekly green dot (last one was 5 months ago, $60→$140)."
+        },
+        {
+          "ticker": "INTC",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Breaking down below its 90-day MA — short since the $130-140 signal, targeting an exit near $70. Could extend to the $40s if that level breaks."
+        },
+        {
+          "ticker": "STLA",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Second mention this week — a dot printed then faded, but still thinks the bottom is in near the 10-year support zone (~$5-6), ~54% below the 4-yr average."
+        }
+      ]
+    },
+    {
+      "title": "$COIN $NVO $ELF STOCK ANALYSIS 📈 JULY 15",
+      "date": "2026-07-15",
+      "url": "https://www.youtube.com/shorts/eFHeSVhBajs",
+      "picks": [
+        {
+          "ticker": "COIN",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Consolidating/ranging at $140 — 4 separate signals have now printed at this same level, marking it as a major support zone. Bullish as long as $140 holds; sees it as a crypto-cycle beneficiary."
+        },
+        {
+          "ticker": "NVO",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Continuation trade (makes Ozempic/GLP-1s). Signals at $37 (April) and $43 (December), now around $50, down from a $160 high. Waiting for a red dot to trim; a break above $55 could push it up significantly."
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Continuation trade — double bottom formed since April around $50, now near $74. No red dot yet, so still riding the upswing; watching for it to hold $60."
+        }
+      ]
+    },
+    {
+      "title": "$MU $CRCL $PYPL STOCK ANALYSIS 🚨 JULY 15",
+      "date": "2026-07-15",
+      "url": "https://www.youtube.com/shorts/jQh2ZdCdL6I",
+      "picks": [
+        {
+          "ticker": "MU",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Up 1,600% YTD — red dot (sell) fired in June. MACD is extremely extended, comparable to the dot-com-crash top. Shorting via SOXS rather than MU directly; targeting a pullback to ~$250."
+        },
+        {
+          "ticker": "CRCL",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Has a position, likes it at $65 (matches the prior signal level ~$58 that ran to $140). Watching for a green dot to confirm the bottom."
+        },
+        {
+          "ticker": "PYPL",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Spiked on buyout-rumor news (unconfirmed offer, ~$60.50). Called out at $42 in June, now ~$55; took some profit today but still holding options, hoping the deal drags out for more upside."
+        }
+      ]
+    },
     {
       "title": "BIG TECH SELLING OFF 📉 JULY 23",
       "date": "2026-07-23",
       "url": "https://www.youtube.com/shorts/YSWQOW9SCqs",
       "picks": [
-        {"ticker": "TSLA", "bias": "Bearish", "dot": "Red", "notes": "Down 15% post-earnings; already short from ~$380 and riding it lower. Approaching the 4-yr MA. Will flip bullish only on a green dot (past ones: $109→$300, $160→$500, bounced off $230 in 2025)."},
-        {"ticker": "GOOGL", "bias": "Bearish", "dot": "Red", "notes": "Down 6–7% this week after a huge run. Support near $300 (yearly MA) — a break sends it toward the $200–220 4-yr average zone. Waiting for a green dot before buying."},
-        {"ticker": "INTC", "bias": "Bearish", "dot": "Red", "notes": "Short since the red dot in May at $120 (down ~20% since). Bought originally at $20 last year; won't chase it back at $140. Reports earnings after the bell."}
+        {
+          "ticker": "TSLA",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Down 15% post-earnings; already short from ~$380 and riding it lower. Approaching the 4-yr MA. Will flip bullish only on a green dot (past ones: $109→$300, $160→$500, bounced off $230 in 2025)."
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Down 6–7% this week after a huge run. Support near $300 (yearly MA) — a break sends it toward the $200–220 4-yr average zone. Waiting for a green dot before buying."
+        },
+        {
+          "ticker": "INTC",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Short since the red dot in May at $120 (down ~20% since). Bought originally at $20 last year; won't chase it back at $140. Reports earnings after the bell."
+        }
       ]
     },
     {
@@ -18,9 +306,24 @@
       "date": "2026-07-23",
       "url": "https://www.youtube.com/shorts/fGHZ3dPFCT0",
       "picks": [
-        {"ticker": "HOOD", "bias": "Neutral", "dot": "Red", "notes": "Take-profit/trim signal fired July 13. Buy signal was March at $70, ran to $120 (sold half there). Stop loss at $90 (June 22 low) for the rest. Earnings next week could add volatility."},
-        {"ticker": "ONDS", "bias": "Bullish", "dot": "None", "notes": "Drone maker with a new Australian DoD contract. Pulled back from a $15 high to ~$7–8; wave still down, no green dot yet. A similar setup ripped from $0.78→$15 starting May 2025. Bullish as long as it holds $6 (his stop level)."},
-        {"ticker": "SOFI", "bias": "Bearish", "dot": "Red", "notes": "Red dot; stop set at the prior low from May (~$15) and letting the short play out from there."}
+        {
+          "ticker": "HOOD",
+          "bias": "Neutral",
+          "dot": "Red",
+          "notes": "Take-profit/trim signal fired July 13. Buy signal was March at $70, ran to $120 (sold half there). Stop loss at $90 (June 22 low) for the rest. Earnings next week could add volatility."
+        },
+        {
+          "ticker": "ONDS",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Drone maker with a new Australian DoD contract. Pulled back from a $15 high to ~$7–8; wave still down, no green dot yet. A similar setup ripped from $0.78→$15 starting May 2025. Bullish as long as it holds $6 (his stop level)."
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Red dot; stop set at the prior low from May (~$15) and letting the short play out from there."
+        }
       ]
     },
     {
@@ -28,9 +331,24 @@
       "date": "2026-07-22",
       "url": "https://www.youtube.com/shorts/fOpnkuG3M7s",
       "picks": [
-        {"ticker": "GOOGL", "bias": "Bearish", "dot": "Red", "notes": "Reports earnings 7/22. Trading at a premium (~$340 vs 4-yr avg ~$211). Sell signal fired May 26. Would sell into earnings; only buy near/below the 4-yr average."},
-        {"ticker": "NOW", "bias": "Neutral", "dot": "Red", "notes": "Red dot into earnings. Big AI play, choppy. Plan: average down if it sells off hard after earnings."},
-        {"ticker": "TSLA", "bias": "Bearish", "dot": "Red", "notes": "Chart weak, sitting at its yearly MA. Would prefer to buy nearer ~$300."}
+        {
+          "ticker": "GOOGL",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Reports earnings 7/22. Trading at a premium (~$340 vs 4-yr avg ~$211). Sell signal fired May 26. Would sell into earnings; only buy near/below the 4-yr average."
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Neutral",
+          "dot": "Red",
+          "notes": "Red dot into earnings. Big AI play, choppy. Plan: average down if it sells off hard after earnings."
+        },
+        {
+          "ticker": "TSLA",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Chart weak, sitting at its yearly MA. Would prefer to buy nearer ~$300."
+        }
       ]
     },
     {
@@ -38,10 +356,30 @@
       "date": "2026-07-22",
       "url": "https://www.youtube.com/shorts/8gew6LUe-EU",
       "picks": [
-        {"ticker": "SNOW", "bias": "Bullish", "dot": "None", "notes": "Up +110% off the April $134 buy. Extended — take profits/trim ~50%. Needs to clear $280 resistance; stop $259."},
-        {"ticker": "RBLX", "bias": "Neutral", "dot": "None", "notes": "Wait for a MONTHLY green dot; $40 is the key support/signal level. No trade until confirmation."},
-        {"ticker": "AMZN", "bias": "Bullish", "dot": "Green", "notes": "Green dot, but prefers buying closer to the 4-yr average (~$200). Earnings next day; stop $226."},
-        {"ticker": "CLSK", "bias": "Bullish", "dot": "Green", "notes": "+100% off the $9 signal. Likes it above $12."}
+        {
+          "ticker": "SNOW",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "Up +110% off the April $134 buy. Extended — take profits/trim ~50%. Needs to clear $280 resistance; stop $259."
+        },
+        {
+          "ticker": "RBLX",
+          "bias": "Neutral",
+          "dot": "None",
+          "notes": "Wait for a MONTHLY green dot; $40 is the key support/signal level. No trade until confirmation."
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Green dot, but prefers buying closer to the 4-yr average (~$200). Earnings next day; stop $226."
+        },
+        {
+          "ticker": "CLSK",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "+100% off the $9 signal. Likes it above $12."
+        }
       ]
     },
     {
@@ -49,9 +387,24 @@
       "date": "2026-07-22",
       "url": "https://www.youtube.com/shorts/TtUZJ7i9BGo",
       "picks": [
-        {"ticker": "PSKY", "bias": "Bullish", "dot": "None", "notes": "His favorite. Bought UFC; earnings Aug 4. Down $100→$8 (all-time low $3). Starting a ~2% dividend Sept 15. Waiting for a green dot near the lows."},
-        {"ticker": "NFLX", "bias": "Neutral", "dot": "None", "notes": "Reported earnings (slight revenue miss), ~$64 trying to bottom. Wait for a green dot; $48–56 would be a big opportunity."},
-        {"ticker": "DIS", "bias": "Bullish", "dot": "None", "notes": "~$95 (was $200). Owns ESPN/Hulu/Disney+. Interesting into year-end; watching for a green dot."}
+        {
+          "ticker": "PSKY",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "His favorite. Bought UFC; earnings Aug 4. Down $100→$8 (all-time low $3). Starting a ~2% dividend Sept 15. Waiting for a green dot near the lows."
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Neutral",
+          "dot": "None",
+          "notes": "Reported earnings (slight revenue miss), ~$64 trying to bottom. Wait for a green dot; $48–56 would be a big opportunity."
+        },
+        {
+          "ticker": "DIS",
+          "bias": "Bullish",
+          "dot": "None",
+          "notes": "~$95 (was $200). Owns ESPN/Hulu/Disney+. Interesting into year-end; watching for a green dot."
+        }
       ]
     }
   ]
