@@ -264,27 +264,36 @@ def _analyze_ticker(ticker: str) -> dict:
             daily = daily.dropna(subset=["Open", "High", "Low", "Close"])
         vp = _volume_profile(daily) if daily is not None and not daily.empty else None
 
+        try:
+            spy_close = get_price_history("SPY", period="2y", interval="1d")["Close"].squeeze()
+        except Exception:
+            spy_close = pd.Series(dtype=float)
+        scanners, stars = _run_best_scanner(daily, spy_close)
+
         weekly_close = weekly["Close"].squeeze()
         ma400_w = calc_sma(weekly_close, MA_LEN)
+        sma9_w = calc_sma(weekly_close, 9)
         wt1_w, wt2_w = _wavetrend(weekly)
         dots_w = _wt_dots(wt1_w, wt2_w)
         rsi_w = float(_rsi(weekly_close).iloc[-1])
 
         result = dict(
             ticker=ticker, weekly=weekly, monthly=None, vp=vp,
-            wt1_w=wt1_w, wt2_w=wt2_w, dots_w=dots_w, ma400_w=ma400_w,
-            wt1_m=None, wt2_m=None, dots_m=None, ma400_m=None,
+            wt1_w=wt1_w, wt2_w=wt2_w, dots_w=dots_w, ma400_w=ma400_w, sma9_w=sma9_w,
+            wt1_m=None, wt2_m=None, dots_m=None, ma400_m=None, sma9_m=None,
             rsi_w=rsi_w, rsi_m=None,
             price_now=float(weekly_close.iloc[-1]),
+            scanners=scanners, stars=stars,
         )
 
         if monthly is not None and len(monthly) >= 20:
             monthly_close = monthly["Close"].squeeze()
             ma400_m = calc_sma(monthly_close, MA_LEN)
+            sma9_m = calc_sma(monthly_close, 9)
             wt1_m, wt2_m = _wavetrend(monthly)
             dots_m = _wt_dots(wt1_m, wt2_m)
             result.update(monthly=monthly, wt1_m=wt1_m, wt2_m=wt2_m, dots_m=dots_m, ma400_m=ma400_m,
-                         rsi_m=float(_rsi(monthly_close).iloc[-1]))
+                         sma9_m=sma9_m, rsi_m=float(_rsi(monthly_close).iloc[-1]))
 
         result["last_w"] = _last_dot(weekly, dots_w, ma400_w, vp)
         result["last_m"] = (_last_dot(monthly, result["dots_m"], result["ma400_m"], vp)
@@ -380,6 +389,25 @@ def _vp_position(price: float | None, vp: dict | None) -> tuple[str, str]:
     return f"⚠️ Above VAH (${vah:.2f})", GOLD
 
 
+def _run_best_scanner(daily: pd.DataFrame | None, spy_close: pd.Series) -> tuple[list[str], int]:
+    """Runs the exact same 6-scanner (+7Square/8Cross) evaluation as the Best
+    Scanners tab, reusing the daily bars already fetched here for the Volume
+    Profile — no extra fetch. Lazy import of scanners.home to dodge the
+    circular import (home.py imports this module at module load time; by the
+    time this function is actually CALLED, home.py is already fully loaded)."""
+    if daily is None or daily.empty:
+        return [], 0
+    from scanners.home import _evaluate, _star_rating, _LABELS
+    res = _evaluate(daily, spy_close)
+    if res is None:
+        return [], 0
+    labels = res["labels"]
+    scan_s = sorted(labels, key=lambda x: _LABELS.index(x))
+    if res["snap"].get("x8_weekly") and "8Cross" in labels:
+        scan_s = ["8Cross·W" if s == "8Cross" else s for s in scan_s]
+    return scan_s, _star_rating(labels)
+
+
 def _verdict_cell(last: dict | None, price_now: float | None, vp: dict | None) -> str:
     bias_text, bias_color = _vp_position(price_now, vp)
     if last is None:
@@ -398,12 +426,15 @@ def _verdict_cell(last: dict | None, price_now: float | None, vp: dict | None) -
 # ── Chart ────────────────────────────────────────────────────────────────────
 def _build_chart(result: dict, timeframe: str):
     if timeframe == "Monthly":
-        df, wt1, wt2, dots, ma_series = (result.get("monthly"), result.get("wt1_m"),
-                                          result.get("wt2_m"), result.get("dots_m"),
-                                          result.get("ma400_m"))
+        df, wt1, wt2, dots, ma_series, sma9_series = (
+            result.get("monthly"), result.get("wt1_m"), result.get("wt2_m"),
+            result.get("dots_m"), result.get("ma400_m"), result.get("sma9_m"),
+        )
     else:
-        df, wt1, wt2, dots, ma_series = (result["weekly"], result["wt1_w"], result["wt2_w"],
-                                          result["dots_w"], result["ma400_w"])
+        df, wt1, wt2, dots, ma_series, sma9_series = (
+            result["weekly"], result["wt1_w"], result["wt2_w"],
+            result["dots_w"], result["ma400_w"], result.get("sma9_w"),
+        )
     if df is None or df.empty or wt1 is None:
         return None
 
@@ -413,6 +444,7 @@ def _build_chart(result: dict, timeframe: str):
     wt1_v, wt2_v = wt1.iloc[-n:], wt2.iloc[-n:]
     dots_v = dots.iloc[-n:]
     ma_v = ma_series.iloc[-n:] if ma_series is not None else None
+    sma9_v = sma9_series.iloc[-n:] if sma9_series is not None else None
     vp = result.get("vp")
     ticker = result["ticker"]
 
@@ -429,6 +461,10 @@ def _build_chart(result: dict, timeframe: str):
         increasing_fillcolor=_rgba(ACCENT_GREEN, 0.6), decreasing_fillcolor=_rgba(ACCENT_RED, 0.6),
         name=ticker,
     ), row=1, col=1)
+
+    if sma9_v is not None and not sma9_v.dropna().empty:
+        fig.add_trace(go.Scatter(x=xs, y=sma9_v, line=dict(color="#22D3EE", width=1.3),
+                                 name="9-period MA"), row=1, col=1)
 
     if ma_v is not None and not ma_v.dropna().empty:
         fig.add_trace(go.Scatter(x=xs, y=ma_v, line=dict(color=PURPLE, width=2.2),
@@ -505,8 +541,8 @@ def _build_chart(result: dict, timeframe: str):
 _TH = (f"color:{TEXT_MUTED};font-size:9px;font-weight:700;text-transform:uppercase;"
        f"letter-spacing:0.6px;padding:6px 10px;text-align:left;white-space:nowrap;"
        f"border-bottom:1.5px solid {BORDER_COLOR}")
-_TABLE_RATIOS  = [0.32, 0.5, 1.05, 1.05, 0.62, 1.7]
-_TABLE_HEADERS = ["", "Ticker", "Weekly Dot", "Monthly Dot", "RSI", "Verdict"]
+_TABLE_RATIOS  = [0.28, 0.45, 0.55, 0.95, 0.95, 0.62, 1.3, 1.55]
+_TABLE_HEADERS = ["", "Ticker", "Price", "Weekly Dot", "Monthly Dot", "RSI", "Scanners", "Verdict"]
 _ROW_HEIGHT_PX = 83   # calibrated against the Best Scanners table (~83px/row)
 
 
@@ -520,10 +556,31 @@ def _dot_compact(last: dict | None) -> str:
             f'· {last["bars_ago"]}b ago</span>')
 
 
+def _price_cell(price: float | None) -> str:
+    if price is None or not np.isfinite(price):
+        return f'<span style="color:{TEXT_MUTED}">—</span>'
+    return f'<span style="font-family:\'DM Mono\',monospace;color:{TEXT_PRIMARY}">${price:,.2f}</span>'
+
+
+def _rsi_color(val: float | None) -> str:
+    """Green when 50-70 (his 'healthy uptrend' zone), red otherwise."""
+    if val is None or not np.isfinite(val):
+        return TEXT_MUTED
+    return ACCENT_GREEN if 50 <= val <= 70 else ACCENT_RED
+
+
 def _rsi_cell(rsi_w: float | None, rsi_m: float | None) -> str:
     w = f"{rsi_w:.0f}" if rsi_w is not None and np.isfinite(rsi_w) else "—"
     m = f"{rsi_m:.0f}" if rsi_m is not None and np.isfinite(rsi_m) else "—"
-    return f"W {w} / M {m}"
+    return (f'<span style="color:{_rsi_color(rsi_w)};font-weight:600">W {w}</span> / '
+            f'<span style="color:{_rsi_color(rsi_m)};font-weight:600">M {m}</span>')
+
+
+def _scanners_cell(scanners: list[str] | None, stars: int) -> str:
+    if not scanners:
+        return f'<span style="color:{TEXT_MUTED};font-size:10px">no scanner match</span>'
+    star_str = f'<span style="color:{GOLD}">{"★" * stars} </span>' if stars else ""
+    return star_str + f'<span style="color:{TEXT_PRIMARY};font-size:10.5px">{" · ".join(scanners)}</span>'
 
 
 def _select_ticker_cb(ticker: str, all_tickers: list, key_prefix: str) -> None:
@@ -579,10 +636,12 @@ def _render_ticker_table(results: list[dict], key_prefix: str) -> str | None:
                              on_change=_select_ticker_cb, args=(ticker, all_tickers, key_prefix))
             tk_style = f"color:{GOLD};font-weight:700" + (";text-decoration:underline" if ticker == selected else "")
             cols[1].markdown(f'<span style="{tk_style}">{ticker}</span>', unsafe_allow_html=True)
-            cols[2].markdown(_dot_compact(lw), unsafe_allow_html=True)
-            cols[3].markdown(_dot_compact(lm), unsafe_allow_html=True)
-            cols[4].markdown(_rsi_cell(r.get("rsi_w"), r.get("rsi_m")))
-            cols[5].markdown(_verdict_cell(lw or lm, r.get("price_now"), r.get("vp")), unsafe_allow_html=True)
+            cols[2].markdown(_price_cell(r.get("price_now")), unsafe_allow_html=True)
+            cols[3].markdown(_dot_compact(lw), unsafe_allow_html=True)
+            cols[4].markdown(_dot_compact(lm), unsafe_allow_html=True)
+            cols[5].markdown(_rsi_cell(r.get("rsi_w"), r.get("rsi_m")), unsafe_allow_html=True)
+            cols[6].markdown(_scanners_cell(r.get("scanners"), r.get("stars", 0)), unsafe_allow_html=True)
+            cols[7].markdown(_verdict_cell(lw or lm, r.get("price_now"), r.get("vp")), unsafe_allow_html=True)
 
     return st.session_state.get(sel_key, selected)
 
