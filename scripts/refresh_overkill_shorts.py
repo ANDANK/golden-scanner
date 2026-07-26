@@ -26,7 +26,8 @@ DATA_PATH = os.path.join(ROOT, "data", "overkill_shorts.json")
 
 CHANNEL_ID = "UCmN5oK_nYL55aannadOlrqg"   # @overkilltrading
 MODEL = "claude-opus-4-8"
-MAX_VIDEOS_TO_CHECK = 15                  # how far back to look each run
+MAX_VIDEOS_TO_CHECK = 40                  # how far back to look each run (uploads playlist mixes
+                                           # Shorts + long-form videos, so this must be generous)
 
 PICK_SCHEMA = {
     "type": "object",
@@ -165,6 +166,12 @@ def main():
     playlist_id = get_uploads_playlist_id()
     recent = list_recent_videos(playlist_id)
     candidates = [v for v in recent if v["video_id"] not in known_ids]
+
+    print(f"Checked {len(recent)} most recent uploads (limit={MAX_VIDEOS_TO_CHECK}); "
+          f"{len(known_ids)} already known; {len(candidates)} new candidate(s).")
+    if recent:
+        oldest = recent[-1]
+        print(f"  oldest upload in this window: {oldest['date']} — {oldest['title']}")
 
     if not candidates:
         print("No new videos since last refresh.")

@@ -741,8 +741,8 @@ def _to_ct(iso_utc: str) -> str:
         return iso_utc
 
 
-def _failed_job_log_tail(run_id: int, lines: int = 60) -> str:
-    """Return the tail of the failing job's log for a run, or an error string."""
+def _job_log_tail(run_id: int, lines: int = 150) -> str:
+    """Return the tail of a run's job log — the failed job if any, else the first job."""
     token = _get_github_token()
     if not token:
         return ""
@@ -753,11 +753,11 @@ def _failed_job_log_tail(run_id: int, lines: int = 60) -> str:
         )
         jr.raise_for_status()
         jobs = jr.json().get("jobs", [])
-        failed = next((j for j in jobs if j.get("conclusion") == "failure"), None)
-        if not failed:
-            return "(no failed job found on this run)"
+        if not jobs:
+            return "(no jobs found on this run)"
+        job = next((j for j in jobs if j.get("conclusion") == "failure"), jobs[0])
         lr = requests.get(
-            f"https://api.github.com/repos/{_GH_OWNER}/{_GH_REPO}/actions/jobs/{failed['id']}/logs",
+            f"https://api.github.com/repos/{_GH_OWNER}/{_GH_REPO}/actions/jobs/{job['id']}/logs",
             headers=_gh_headers(token), timeout=20,
         )
         lr.raise_for_status()
@@ -787,11 +787,13 @@ def _render_overkill_trigger():
                         "queued": "⏳", "cancelled": "🚫"}.get(label, "ℹ️")
                 st.info(f"{icon} Latest run: **{label}** · started "
                         f"{_to_ct(run.get('run_started_at', ''))}")
-                if label == "failure":
-                    with st.spinner("Fetching failure log…"):
-                        tail = _failed_job_log_tail(run["id"])
-                    with st.expander("🪵 Failure log (last 60 lines)", expanded=True):
-                        st.code(tail or "(empty log)", language="text")
+                with st.spinner("Fetching run log…"):
+                    tail = _job_log_tail(run["id"])
+                with st.expander("🪵 Run log (last 150 lines)", expanded=(label == "failure")):
+                    st.code(tail or "(empty log)", language="text")
+                    st.caption("On a successful run with no new videos in the table, this log shows exactly "
+                               "which candidate videos were checked and why each was skipped (crypto, no "
+                               "transcript yet, or no picks extracted).")
 
     # Always-visible debug so token problems are self-diagnosable without asking Claude
     token = _get_github_token()
