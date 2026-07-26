@@ -4,7 +4,9 @@
 #   ┌─ Market-regime header (Risk-On/Mixed/Off · indices · breadth) ─┐
 #   ├─ Tab 1  🎯 Best Scanners  — the 6 keeper scanners over a universe
 #   ├─ Tab 2  📺 OverKill Shorts — curated watch-list from the YouTube shorts
-#   └─ Tab 3  🔄 Sector Rotation — RRG-style flows (preserved from the old page)
+#   ├─ Tab 3  🔄 Sector Rotation — RRG-style flows (preserved from the old page)
+#   └─ Tab 4  🔍 Overkill Check — WaveTrend dot + Volume Profile confluence
+#             scan on any user-entered ticker(s) (see scanners/overkill_check.py)
 #
 # The Fear & Greed gauge and the whole sidebar live in app.py — untouched here.
 # Backup of the previous command-center page: scanners/home_backup_2026-07-23.py
@@ -25,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import *
 from utils import section_header, calc_sma
 from data_loader import get_price_history, get_market_overview, prefetch_tickers
+from scanners import overkill_check
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
@@ -468,16 +471,41 @@ _SORT_COLUMNS = {
 }
 
 
+_ROW_COL_RATIOS = [0.35, 0.4, 0.6, 0.65, 0.55, 1.7, 0.75, 0.95, 0.65, 0.85, 1.3]
+_ROW_HEADERS = ["", "★", "Ticker", "Price", "Chg %", "Scanners", "RSI W/D",
+                "MACD", ">SMA 9/20", "Vol× / RS", "Flags"]
+
+
+def _select_ticker_cb(ticker: str, all_tickers: list):
+    """on_change for a row checkbox — enforces single-selection: checking one
+    unchecks the rest; unchecking the active one is ignored (always exactly
+    one ticker selected, since the chart needs one)."""
+    key = f"home_best_chk_{ticker}"
+    if st.session_state.get(key):
+        for t in all_tickers:
+            if t != ticker:
+                st.session_state[f"home_best_chk_{t}"] = False
+        st.session_state["home_best_selected_ticker"] = ticker
+    elif st.session_state.get("home_best_selected_ticker") == ticker:
+        st.session_state[key] = True
+
+
 def _render_best_table(df: pd.DataFrame):
-    """Sortable table + a ticker picker for the chart below.
+    """Sortable table with a per-row checkbox (leftmost column, single-select)
+    that picks which ticker charts below.
 
     Streamlit's interactive st.dataframe grid renders on an HTML5 canvas;
     on this app's Streamlit Cloud deployment that canvas never paints
     (confirmed: double-clicking a cell still opens the real value in an
     editor, so data/interaction work — only the paint step doesn't,
-    consistently across browsers). Rather than depend on that component,
-    sorting and ticker selection are done with plain selectboxes over a
-    plain HTML table, the same primitives the original table used.
+    consistently across browsers). A raw HTML checkbox has the same
+    problem in reverse (paints fine, but can't call back into Python), so
+    each row is rendered as real Streamlit widgets (checkbox + markdown)
+    laid out via st.columns — the only combination that's both interactive
+    and guaranteed to render here. Trade-off: no fixed-height scroll
+    container (native widgets can't be wrapped in one across separate
+    st.markdown calls), so the table now grows with the page instead of
+    scrolling internally.
     """
     view = pd.DataFrame({
         "★": df["_stars"].apply(lambda n: "★" * int(n) if n else ""),
@@ -503,73 +531,87 @@ def _render_best_table(df: pd.DataFrame):
         st.info("No rows to show.")
         return None
 
-    c1, c2, c3 = st.columns([1.3, 0.7, 1.6])
+    c1, c2 = st.columns([1.3, 0.7])
     with c1:
         sort_label = st.selectbox("Sort by", list(_SORT_COLUMNS.keys()), index=0, key="home_best_sort_col")
     with c2:
         descending = st.selectbox("Order", ["↓ High-Low", "↑ Low-High"], index=0, key="home_best_sort_dir") \
             .startswith("↓")
     view = view.sort_values(_SORT_COLUMNS[sort_label], ascending=not descending).reset_index(drop=True)
-    with c3:
-        selected = st.selectbox("Chart ticker", view["Ticker"].tolist(), index=0, key="home_best_chart_ticker")
 
-    def _bool_html(b):
-        return (f'<span style="color:{ACCENT_GREEN}">✅</span>' if b
-                else f'<span style="color:{TEXT_MUTED}">—</span>')
+    all_tickers = view["Ticker"].tolist()
+    selected = st.session_state.get("home_best_selected_ticker")
+    if selected not in all_tickers:
+        selected = all_tickers[0]
+        st.session_state["home_best_selected_ticker"] = selected
+    for t in all_tickers:
+        st.session_state.setdefault(f"home_best_chk_{t}", t == selected)
 
     def _chg_html(v):
         col = ACCENT_GREEN if v >= 0 else ACCENT_RED
         return f'<span style="color:{col}">{v:+.1f}%</span>'
 
-    hdr = "".join(f'<th style="{_TH}">{h}</th>' for h in
-                  ["★", "Ticker", "Price", "Chg %", "Scanners", "RSI W", "RSI D",
-                   "MACD>Sig", "MACD Zone", ">SMA9", ">SMA20", "Vol×", "RS·SPY", "Flags"])
-    rows_html = ""
+    def _b(v):
+        return "✅" if v else "—"
+
+    hdr_cols = st.columns(_ROW_COL_RATIOS)
+    for c, label in zip(hdr_cols, _ROW_HEADERS):
+        c.markdown(f'<div style="{_TH}">{label}</div>', unsafe_allow_html=True)
+
     for _, r in view.iterrows():
-        hl = f'background:{_rgba(GOLD, 0.10)}' if r["Ticker"] == selected else ""
-        rows_html += (
-            f'<tr style="{hl}">'
-            + f'<td style="{_TD};color:{GOLD}">{r["★"]}</td>'
-            + f'<td style="{_TD};color:{GOLD};font-weight:700">{r["Ticker"]}</td>'
-            + f'<td style="{_TD}">${r["Price"]:,.2f}</td>'
-            + f'<td style="{_TD}">{_chg_html(r["Chg %"])}</td>'
-            + f'<td style="{_TD};white-space:normal">{r["Scanners"]}</td>'
-            + f'<td style="{_TD}">{r["RSI W"]:.0f}</td>'
-            + f'<td style="{_TD}">{r["RSI D"]:.0f}</td>'
-            + f'<td style="{_TD};text-align:center">{_bool_html(r["MACD>Sig"])}</td>'
-            + f'<td style="{_TD}">{r["MACD Zone"]}</td>'
-            + f'<td style="{_TD};text-align:center">{_bool_html(r[">SMA9"])}</td>'
-            + f'<td style="{_TD};text-align:center">{_bool_html(r[">SMA20"])}</td>'
-            + f'<td style="{_TD}">{r["Vol×"]:.2f}x</td>'
-            + f'<td style="{_TD}">{r["RS·SPY"]:.2f}</td>'
-            + f'<td style="{_TD};white-space:normal;color:{TEXT_MUTED}">{r["Flags"] or "—"}</td>'
-            + "</tr>"
-        )
-    st.markdown(
-        f'<div style="overflow:auto;max-height:370px;border:1px solid {BORDER_COLOR};border-radius:10px">'
-        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif;font-size:12.5px">'
-        f'<thead style="position:sticky;top:0;background:{BG_PANEL}"><tr>{hdr}</tr></thead>'
-        f'<tbody>{rows_html}</tbody></table></div>',
-        unsafe_allow_html=True,
-    )
+        ticker = r["Ticker"]
+        cols = st.columns(_ROW_COL_RATIOS)
+        cols[0].checkbox("select", key=f"home_best_chk_{ticker}", label_visibility="collapsed",
+                         on_change=_select_ticker_cb, args=(ticker, all_tickers))
+        tk_style = f"color:{GOLD};font-weight:700" + (";text-decoration:underline" if ticker == selected else "")
+        cols[1].markdown(f'<span style="color:{GOLD}">{r["★"]}</span>', unsafe_allow_html=True)
+        cols[2].markdown(f'<span style="{tk_style}">{ticker}</span>', unsafe_allow_html=True)
+        cols[3].markdown(f'${r["Price"]:,.2f}')
+        cols[4].markdown(_chg_html(r["Chg %"]), unsafe_allow_html=True)
+        cols[5].markdown(f'<span style="font-size:11.5px">{r["Scanners"]}</span>', unsafe_allow_html=True)
+        cols[6].markdown(f'W{r["RSI W"]:.0f} / D{r["RSI D"]:.0f}')
+        cols[7].markdown(f'{_b(r["MACD>Sig"])} {r["MACD Zone"]}')
+        cols[8].markdown(f'{_b(r[">SMA9"])} / {_b(r[">SMA20"])}')
+        cols[9].markdown(f'{r["Vol×"]:.2f}x / {r["RS·SPY"]:.2f}')
+        cols[10].markdown(f'<span style="color:{TEXT_MUTED};font-size:11px">{r["Flags"] or "—"}</span>',
+                          unsafe_allow_html=True)
 
-    return selected
+    return st.session_state.get("home_best_selected_ticker", selected)
 
 
-def _pivot_levels(df: pd.DataFrame, order: int = 5, max_levels: int = 2):
-    """Simple swing-high/low support & resistance: bars that are the local
-    max/min within a +/- `order` window. Returns the (support[], resistance[])
-    levels nearest to the last close — not a substitute for real S/R analysis,
-    just a best-effort visual guide."""
+def _pivot_levels(df: pd.DataFrame, order: int = 8, min_touches: int = 2,
+                  cluster_pct: float = 0.015, max_levels: int = 2):
+    """Support/resistance from CLUSTERED swing highs/lows on the daily chart —
+    a level only counts as 'strong' if price reversed near it at least
+    `min_touches` times, within `cluster_pct` of each other. A single
+    isolated swing point no longer qualifies on its own (that was the old
+    behavior, and why levels looked cluttered/arbitrary). Pass the full
+    fetched history (not just the visible chart window) so an older but
+    still-relevant level isn't missed just because it's off-screen."""
     high, low, close = df["High"].squeeze(), df["Low"].squeeze(), df["Close"].squeeze()
     win = 2 * order + 1
     roll_max = high.rolling(win, center=True, min_periods=win).max()
     roll_min = low.rolling(win, center=True, min_periods=win).min()
-    piv_hi = set(high[high == roll_max].round(2).tolist())
-    piv_lo = set(low[low == roll_min].round(2).tolist())
+    piv_hi = sorted(float(p) for p in high[high == roll_max].round(2).tolist())
+    piv_lo = sorted(float(p) for p in low[low == roll_min].round(2).tolist())
+
+    def _cluster(pivots):
+        if not pivots:
+            return []
+        groups, current = [], [pivots[0]]
+        for p in pivots[1:]:
+            if abs(p - current[-1]) / current[-1] <= cluster_pct:
+                current.append(p)
+            else:
+                groups.append(current)
+                current = [p]
+        groups.append(current)
+        return [sum(g) / len(g) for g in groups if len(g) >= min_touches]
+
+    strong_hi, strong_lo = _cluster(piv_hi), _cluster(piv_lo)
     last = float(close.iloc[-1])
-    resistance = sorted(p for p in piv_hi if p > last)[:max_levels]
-    support = sorted((p for p in piv_lo if p < last), reverse=True)[:max_levels]
+    resistance = sorted(p for p in strong_hi if p > last)[:max_levels]
+    support = sorted((p for p in strong_lo if p < last), reverse=True)[:max_levels]
     return support, resistance
 
 
@@ -600,7 +642,7 @@ def _build_scanner_chart(ticker: str):
     macd_ln, sig_ln, hist_s = _macd(close)
     macd_ln, sig_ln, hist_s = macd_ln.iloc[-n:], sig_ln.iloc[-n:], hist_s.iloc[-n:]
     rsi_s = _rsi(close).iloc[-n:]
-    support, resistance = _pivot_levels(view)
+    support, resistance = _pivot_levels(df)   # full 2y history, not just the visible window
 
     fig = make_subplots(
         rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.03,
@@ -1212,7 +1254,9 @@ def render():
         except Exception:
             st.warning("Regime bar unavailable.")
 
-    tab1, tab2, tab3 = st.tabs(["🎯  Best Scanners", "📺  Over Kill", "🔄  Sector Rotation"])
+    tab1, tab2, tab3, tab4 = st.tabs(
+        ["🎯  Best Scanners", "📺  Over Kill", "🔄  Sector Rotation", "🔍  Overkill Check"]
+    )
 
     with tab1:
         try:
@@ -1232,6 +1276,12 @@ def render():
                 _render_sectors()
             except Exception:
                 st.warning("Sector rotation unavailable.")
+
+    with tab4:
+        try:
+            overkill_check.render()
+        except Exception as e:
+            st.error(f"Overkill Check tab error: {e}")
 
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
