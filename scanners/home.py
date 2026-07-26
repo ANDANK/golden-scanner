@@ -559,10 +559,11 @@ def _build_scanner_chart(ticker: str):
         name=ticker,
     ), row=1, col=1)
 
-    for series, color, label in [(ema20, GOLD, "EMA 20"), (sma50, ACCENT_BLUE, "SMA 50"),
-                                  (sma200, "#A78BFA", "SMA 200")]:
+    for series, color, label, width in [(ema20, "#22D3EE", "EMA 20", 1.4),
+                                         (sma50, ACCENT_GREEN, "SMA 50", 1.4),
+                                         (sma200, ACCENT_RED, "SMA 200", 2.6)]:
         if not series.dropna().empty:
-            fig.add_trace(go.Scatter(x=xs, y=series, line=dict(color=color, width=1.4), name=label),
+            fig.add_trace(go.Scatter(x=xs, y=series, line=dict(color=color, width=width), name=label),
                           row=1, col=1)
 
     for lvl in resistance:
@@ -577,9 +578,9 @@ def _build_scanner_chart(ticker: str):
     hist_colors = [ACCENT_GREEN if v >= 0 else ACCENT_RED for v in hist_s]
     fig.add_trace(go.Bar(x=xs, y=hist_s, marker_color=hist_colors, name="MACD Hist",
                          showlegend=False, opacity=0.85), row=2, col=1)
-    fig.add_trace(go.Scatter(x=xs, y=macd_ln, line=dict(color=ACCENT_BLUE, width=1.3), name="MACD"),
+    fig.add_trace(go.Scatter(x=xs, y=macd_ln, line=dict(color=ACCENT_GREEN, width=1.3), name="MACD"),
                   row=2, col=1)
-    fig.add_trace(go.Scatter(x=xs, y=sig_ln, line=dict(color=GOLD, width=1.1), name="Signal"),
+    fig.add_trace(go.Scatter(x=xs, y=sig_ln, line=dict(color=ACCENT_RED, width=1.1), name="Signal"),
                   row=2, col=1)
     fig.add_hline(y=0, line=dict(color=BORDER_COLOR, width=0.8, dash="dot"), row=2, col=1)
 
