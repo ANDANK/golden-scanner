@@ -1259,7 +1259,7 @@ def render():
             st.warning("Regime bar unavailable.")
 
     tab1, tab2, tab3, tab4 = st.tabs(
-        ["🎯  Best Scanners", "📺  Over Kill", "🔄  Sector Rotation", "🔍  Overkill Check"]
+        ["🎯  Best Scanners", "📺  Over Kill", "🔄  Sector Rotation", "🔍  OverKill"]
     )
 
     with tab1:

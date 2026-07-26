@@ -35,9 +35,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import (
     GOLD, BG_DARK, BG_PANEL, ACCENT_BLUE, ACCENT_GREEN, ACCENT_RED,
     TEXT_PRIMARY, TEXT_MUTED, BORDER_COLOR,
+    FTF_UNIVERSE, MTPA_200, SP500_SAMPLE,
 )
 from utils import calc_ema
-from data_loader import get_price_history
+from data_loader import get_price_history, prefetch_tickers
 
 PURPLE = "#A78BFA"
 
@@ -53,6 +54,15 @@ VP_LOOKBACK_DAYS  = 504   # ~2y of daily bars behind the volume profile
 VP_BINS           = 24
 CONFLUENCE_TOL    = 0.02  # 2% of price counts as "at" a level
 MAX_TICKERS       = 20
+
+# ── Universe scan (screener mode) ────────────────────────────────────────────
+_SCAN_UNIVERSE_CHOICES = {
+    "FTF Universe (~480 · full S&P 500 + ETFs)": FTF_UNIVERSE,
+    "MTPA 200 (stock-heavy)": MTPA_200,
+    "S&P 500 sample (200)": SP500_SAMPLE[:200],
+}
+DEFAULT_WEEKLY_FRESH_BARS  = 4   # "fresh" weekly dot = within the last N weekly bars
+DEFAULT_MONTHLY_FRESH_BARS = 2   # "fresh" monthly dot = within the last N monthly bars
 
 
 def _rgba(hex_color: str, alpha: float) -> str:
@@ -182,8 +192,30 @@ def _last_dot(df: pd.DataFrame, dots: pd.DataFrame | None, ma_series: pd.Series 
     ma_val = None
     if ma_series is not None and ts in ma_series.index and pd.notna(ma_series.loc[ts]):
         ma_val = float(ma_series.loc[ts])
+    bars_ago = len(df.index) - 1 - df.index.get_loc(ts)
     return dict(date=pd.Timestamp(ts).date().isoformat(), color=color, price=price,
-                hits=_level_hits(price, vp, ma_val))
+                hits=_level_hits(price, vp, ma_val), bars_ago=int(bars_ago))
+
+
+def _last_green_dot(df: pd.DataFrame, dots: pd.DataFrame | None, ma_series: pd.Series | None,
+                     vp: dict | None) -> dict | None:
+    """Same as _last_dot but green-only — used by the Universe Scan, which is
+    a long-side (green dot) screener and shouldn't have a more-recent red dot
+    on the same ticker shadow out the green one that qualified it."""
+    if dots is None:
+        return None
+    idx = df.index[dots["green"].to_numpy()]
+    if len(idx) == 0:
+        return None
+    ts = idx[-1]
+    bar = df.loc[ts]
+    price = float(bar["Low"])
+    ma_val = None
+    if ma_series is not None and ts in ma_series.index and pd.notna(ma_series.loc[ts]):
+        ma_val = float(ma_series.loc[ts])
+    bars_ago = len(df.index) - 1 - df.index.get_loc(ts)
+    return dict(date=pd.Timestamp(ts).date().isoformat(), color="Green", price=price,
+                hits=_level_hits(price, vp, ma_val), bars_ago=int(bars_ago))
 
 
 # ── Per-ticker analysis ──────────────────────────────────────────────────────
@@ -228,6 +260,73 @@ def _analyze_ticker(ticker: str) -> dict:
         return result
     except Exception as e:
         return {"ticker": ticker, "error": str(e)}
+
+
+def _analyze_ticker_green_only(ticker: str) -> dict:
+    """Full per-ticker profile (for the chart + confluence columns), but with
+    last_w/last_m overridden to the most recent GREEN dot specifically —
+    used by the Universe Scan table so a ticker's more-recent red dot never
+    hides the green dot that got it onto the screener."""
+    r = _analyze_ticker(ticker)
+    if "error" in r:
+        return r
+    r["last_w"] = _last_green_dot(r["weekly"], r["dots_w"], r["ma400_w"], r["vp"])
+    r["last_m"] = (_last_green_dot(r["monthly"], r["dots_m"], r["ma400_m"], r["vp"])
+                   if r.get("dots_m") is not None else None)
+    return r
+
+
+def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
+                   progress_cb=None) -> list[dict]:
+    """Phase 1 of the Universe Scan — cheap pass (weekly + monthly WaveTrend
+    only, no daily/Volume-Profile fetch) over the whole universe to find
+    tickers with a green dot inside the fresh-lookback window on either
+    timeframe (OR). Returns candidates sorted weekly-fresh-first (then by
+    weekly dot recency), monthly-only matches after (then by monthly dot
+    recency) — matching 'sort the table by weekly green dots'.
+    """
+    prefetch_tickers(universe, "max", "1wk")
+    prefetch_tickers(universe, "max", "1mo")
+
+    candidates = []
+    total = len(universe)
+    for i, ticker in enumerate(universe):
+        if progress_cb and (i % 5 == 0 or i == total - 1):
+            progress_cb(i, total, ticker)
+        try:
+            weekly = get_price_history(ticker, period="max", interval="1wk")
+            if weekly is None or weekly.empty:
+                continue
+            weekly = weekly.dropna(subset=["Open", "High", "Low", "Close"])
+            if len(weekly) < 30:
+                continue
+            dots_w = _wt_dots(*_wavetrend(weekly))
+            gw = _last_green_dot(weekly, dots_w, None, None)
+            fresh_w = gw is not None and gw["bars_ago"] < weekly_fresh
+
+            gm = None
+            fresh_m = False
+            monthly = get_price_history(ticker, period="max", interval="1mo")
+            if monthly is not None and not monthly.empty:
+                monthly = monthly.dropna(subset=["Open", "High", "Low", "Close"])
+                if len(monthly) >= 20:
+                    dots_m = _wt_dots(*_wavetrend(monthly))
+                    gm = _last_green_dot(monthly, dots_m, None, None)
+                    fresh_m = gm is not None and gm["bars_ago"] < monthly_fresh
+
+            if fresh_w or fresh_m:
+                candidates.append(dict(
+                    ticker=ticker, fresh_w=fresh_w, fresh_m=fresh_m,
+                    gw_date=gw["date"] if gw else "", gm_date=gm["date"] if gm else "",
+                ))
+        except Exception:
+            continue
+
+    weekly_first = sorted([c for c in candidates if c["fresh_w"]],
+                          key=lambda c: c["gw_date"], reverse=True)
+    monthly_only = sorted([c for c in candidates if not c["fresh_w"] and c["fresh_m"]],
+                          key=lambda c: c["gm_date"], reverse=True)
+    return weekly_first + monthly_only
 
 
 def _verdict(last: dict | None) -> tuple[str, str]:
@@ -403,23 +502,51 @@ def _render_summary_table(results: list[dict]) -> None:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# MAIN RENDER
+# SHARED RESULTS SECTION (table + chart) — used by both modes
 # ══════════════════════════════════════════════════════════════════════════════
 
-def render():
-    st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
-        f'Approximates Overkill Trading\'s <b>WaveTrend dot + Volume Profile confluence</b> setup on '
-        f'any ticker(s) you enter. <b style="color:{ACCENT_GREEN}">🟢 Green Dot</b> = bullish WaveTrend '
-        f'cross while oversold · <b style="color:{ACCENT_RED}">🔴 Red Dot</b> = bearish cross while '
-        f'overbought. Per his own rule, a dot only matters when it lines up with a key Volume-Profile '
-        f'level (POC/VAH/VAL/HVN) or the {MA_LEN}-period MA — an isolated dot elsewhere is flagged as '
-        f'chop risk. <b>Note:</b> dots are computed from the public WaveTrend formula his tool is built '
-        f'on (not his exact proprietary script) and the Volume Profile is approximated from daily volume '
-        f'(yfinance has no true volume-at-price feed) — treat both as close estimates.</div>',
-        unsafe_allow_html=True,
-    )
+def _render_results_section(results: list[dict], key_prefix: str) -> None:
+    _render_summary_table(results)
 
+    ok = [r for r in results if "error" not in r]
+    if not ok:
+        return
+
+    st.markdown(
+        f'<div style="margin-top:18px;color:{TEXT_MUTED};font-size:11px;letter-spacing:.08em;'
+        f'text-transform:uppercase">Chart</div>', unsafe_allow_html=True,
+    )
+    cc1, cc2 = st.columns([2, 1])
+    with cc1:
+        sel_ticker = st.selectbox("Ticker", [r["ticker"] for r in ok], key=f"{key_prefix}_ticker_sel")
+    result = next(r for r in ok if r["ticker"] == sel_ticker)
+    with cc2:
+        tf_options = ["Weekly"] + (["Monthly"] if result.get("wt1_m") is not None else [])
+        tf = st.selectbox("Timeframe", tf_options, key=f"{key_prefix}_tf_sel_{sel_ticker}")
+
+    with st.spinner(f"Building {sel_ticker} chart…"):
+        fig = _build_chart(result, tf)
+    if fig is None:
+        st.warning("Not enough data to build this chart.")
+    else:
+        st.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}_chart_{sel_ticker}_{tf}")
+
+    vp = result.get("vp")
+    if vp:
+        st.caption(
+            f"Volume Profile (trailing ~2y daily, approximated) — "
+            f"POC ${vp['poc']:.2f} · VAH ${vp['vah']:.2f} · VAL ${vp['val']:.2f} · "
+            f"HVN {', '.join(f'${h:.2f}' for h in vp['hvn'][:3]) or '—'}"
+        )
+    else:
+        st.caption("Volume Profile unavailable for this ticker (not enough daily history).")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODE 1 — MANUAL TICKER(S)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _render_manual_mode():
     c1, c2 = st.columns([4, 1])
     with c1:
         raw = st.text_input("Ticker(s) — comma-separated", key="overkill_check_input",
@@ -450,37 +577,96 @@ def render():
         return
 
     st.caption(f"Checked {st.session_state.get('overkill_check_ts','')}")
-    _render_summary_table(results)
+    _render_results_section(results, key_prefix="overkill_check")
 
-    ok = [r for r in results if "error" not in r]
-    if not ok:
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODE 2 — UNIVERSE SCAN (green-dot screener)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _render_scan_mode():
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:11.5px;line-height:1.6;margin-bottom:8px">'
+        f'Scans the whole universe for tickers with a <b style="color:{ACCENT_GREEN}">🟢 fresh green '
+        f'dot</b> on the Weekly <i>or</i> Monthly chart — only matching tickers are listed (not all '
+        f'~480). "Fresh" = the dot printed within the lookback below; tighten it for only-this-week '
+        f'signals, loosen it to catch dots that are still developing.</div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3 = st.columns([2.2, 1, 1])
+    with c1:
+        uni_label = st.selectbox("Universe", list(_SCAN_UNIVERSE_CHOICES.keys()), key="overkill_scan_uni")
+    with c2:
+        weekly_fresh = st.number_input("Weekly lookback (bars)", min_value=1, max_value=20,
+                                       value=DEFAULT_WEEKLY_FRESH_BARS, key="overkill_scan_wf")
+    with c3:
+        monthly_fresh = st.number_input("Monthly lookback (bars)", min_value=1, max_value=12,
+                                        value=DEFAULT_MONTHLY_FRESH_BARS, key="overkill_scan_mf")
+
+    run_scan = st.button("▶ Scan Universe", type="primary", key="overkill_scan_run")
+
+    if run_scan:
+        universe = _SCAN_UNIVERSE_CHOICES[uni_label]
+        prog = st.progress(0.0, text="Scanning for fresh green dots…")
+
+        def _cb(i, total, ticker):
+            prog.progress(min((i + 1) / total, 1.0), text=f"Scanning {ticker} ({i+1}/{total})…")
+
+        candidates = _scan_universe(universe, int(weekly_fresh), int(monthly_fresh), progress_cb=_cb)
+        prog.empty()
+
+        if not candidates:
+            st.session_state.pop("overkill_scan_results", None)
+            st.info("No tickers currently show a fresh green dot within the chosen lookback — "
+                    "try widening the lookback windows above.")
+        else:
+            prefetch_tickers([c["ticker"] for c in candidates], "2y", "1d")
+            with st.spinner(f"Building full profile (Volume Profile + confluence) for "
+                            f"{len(candidates)} matching ticker(s)…"):
+                results = [_analyze_ticker_green_only(c["ticker"]) for c in candidates]
+            st.session_state["overkill_scan_results"] = results
+            st.session_state["overkill_scan_ts"] = pd.Timestamp.now().strftime("%b %d %Y · %I:%M %p")
+            st.session_state.pop("overkill_scan_ticker_sel", None)
+
+    results = st.session_state.get("overkill_scan_results")
+    if not results:
+        st.markdown(
+            f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;padding:36px;'
+            f'text-align:center;color:{TEXT_MUTED}">Press <b style="color:{GOLD}">▶ Scan Universe</b> '
+            f'to find tickers with a fresh green dot right now.</div>',
+            unsafe_allow_html=True,
+        )
         return
 
+    ok = [r for r in results if "error" not in r]
+    st.caption(f"Scanned {st.session_state.get('overkill_scan_ts','')} · "
+              f"{len(ok)} ticker(s) with a fresh green dot (sorted: weekly dots first, most recent)")
+    _render_results_section(results, key_prefix="overkill_scan")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MAIN RENDER
+# ══════════════════════════════════════════════════════════════════════════════
+
+def render():
     st.markdown(
-        f'<div style="margin-top:18px;color:{TEXT_MUTED};font-size:11px;letter-spacing:.08em;'
-        f'text-transform:uppercase">Chart</div>', unsafe_allow_html=True,
+        f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
+        f'Approximates Overkill Trading\'s <b>WaveTrend dot + Volume Profile confluence</b> setup. '
+        f'<b style="color:{ACCENT_GREEN}">🟢 Green Dot</b> = bullish WaveTrend cross while oversold · '
+        f'<b style="color:{ACCENT_RED}">🔴 Red Dot</b> = bearish cross while overbought. Per his own '
+        f'rule, a dot only matters when it lines up with a key Volume-Profile level (POC/VAH/VAL/HVN) '
+        f'or the {MA_LEN}-period MA — an isolated dot elsewhere is flagged as chop risk. <b>Note:</b> '
+        f'dots are computed from the public WaveTrend formula his tool is built on (not his exact '
+        f'proprietary script) and the Volume Profile is approximated from daily volume (yfinance has '
+        f'no true volume-at-price feed) — treat both as close estimates.</div>',
+        unsafe_allow_html=True,
     )
-    cc1, cc2 = st.columns([2, 1])
-    with cc1:
-        sel_ticker = st.selectbox("Ticker", [r["ticker"] for r in ok], key="overkill_check_ticker_sel")
-    result = next(r for r in ok if r["ticker"] == sel_ticker)
-    with cc2:
-        tf_options = ["Weekly"] + (["Monthly"] if result.get("wt1_m") is not None else [])
-        tf = st.selectbox("Timeframe", tf_options, key=f"overkill_check_tf_sel_{sel_ticker}")
 
-    with st.spinner(f"Building {sel_ticker} chart…"):
-        fig = _build_chart(result, tf)
-    if fig is None:
-        st.warning("Not enough data to build this chart.")
-    else:
-        st.plotly_chart(fig, use_container_width=True, key=f"overkill_check_chart_{sel_ticker}_{tf}")
+    mode = st.radio("Mode", ["🔤 Manual Ticker(s)", "🌐 Scan Universe"], horizontal=True,
+                    key="overkill_check_mode", label_visibility="collapsed")
 
-    vp = result.get("vp")
-    if vp:
-        st.caption(
-            f"Volume Profile (trailing ~2y daily, approximated) — "
-            f"POC ${vp['poc']:.2f} · VAH ${vp['vah']:.2f} · VAL ${vp['val']:.2f} · "
-            f"HVN {', '.join(f'${h:.2f}' for h in vp['hvn'][:3]) or '—'}"
-        )
+    if mode == "🌐 Scan Universe":
+        _render_scan_mode()
     else:
-        st.caption("Volume Profile unavailable for this ticker (not enough daily history).")
+        _render_manual_mode()
