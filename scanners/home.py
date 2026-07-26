@@ -469,14 +469,19 @@ def _render_best_table(df: pd.DataFrame):
         "Scanners": df["Scanners"].astype(str),
         "RSI W": pd.to_numeric(df["RSI_W"], errors="coerce"),
         "RSI D": pd.to_numeric(df["RSI_D"], errors="coerce"),
-        "MACD>Sig": df["MACD>Sig"].astype(bool),
+        "MACD>Sig": df["MACD>Sig"].fillna(False).astype(bool),
         "MACD Zone": df["MACD Zone"].astype(str),
-        ">SMA9": df[">SMA9"].astype(bool),
-        ">SMA20": df[">SMA20"].astype(bool),
+        ">SMA9": df[">SMA9"].fillna(False).astype(bool),
+        ">SMA20": df[">SMA20"].fillna(False).astype(bool),
         "Vol×": pd.to_numeric(df["Vol Ratio"], errors="coerce"),
         "RS·SPY": pd.to_numeric(df["RS vs SPY"], errors="coerce"),
         "Flags": df["Flags"].apply(lambda x: "; ".join(x) if isinstance(x, list) else (x or "")),
     }).reset_index(drop=True)
+    # A NaN gap in the underlying price data (same root cause as the earlier chart
+    # bug) can otherwise leave a row with no usable Price — drop those defensively.
+    view = view.dropna(subset=["Price"]).reset_index(drop=True)
+
+    st.caption(f"Streamlit {st.__version__} · {len(view)} row(s)")  # temp diagnostic — remove once table issue is confirmed fixed
 
     event = st.dataframe(
         view,
