@@ -129,11 +129,17 @@ def fetch_transcript(video_id: str) -> str | None:
         try:
             subprocess.run(
                 ["yt-dlp", "--skip-download", "--write-auto-sub", "--sub-lang", "en",
-                 "--sub-format", "vtt", "-o", out_tmpl, f"https://www.youtube.com/watch?v={video_id}"],
+                 "--sub-format", "vtt",
+                 "--extractor-args", "youtube:player_client=android,web",
+                 "-o", out_tmpl, f"https://www.youtube.com/watch?v={video_id}"],
                 check=True, capture_output=True, timeout=120, text=True,
             )
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
-            print(f"  yt-dlp failed for {video_id}: {e}", file=sys.stderr)
+        except subprocess.CalledProcessError as e:
+            # str(e) alone omits yt-dlp's actual error — surface stderr so failures are diagnosable
+            print(f"  yt-dlp failed for {video_id}: {e}\n{(e.stderr or '').strip()}", file=sys.stderr)
+            return None
+        except subprocess.TimeoutExpired as e:
+            print(f"  yt-dlp timed out for {video_id}: {e}", file=sys.stderr)
             return None
         vtt_path = f"{out_tmpl}.en.vtt"
         if not os.path.exists(vtt_path):
