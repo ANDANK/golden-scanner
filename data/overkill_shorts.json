@@ -1,7 +1,7 @@
 {
   "updated": "2026-07-23",
   "channel": "@overkilltrading",
-  "note": "Non-crypto Shorts only. Curated from video captions; auto-refreshed twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py). 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
+  "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
       "title": "BIG TECH SELLING OFF 📉 JULY 23",

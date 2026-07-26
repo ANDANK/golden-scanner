@@ -529,8 +529,13 @@ def _build_scanner_chart(ticker: str):
         return None
     if isinstance(df.columns, pd.MultiIndex):
         df = df.copy(); df.columns = df.columns.get_level_values(0)
+    # Drop any bar with a gap in OHLC (yfinance occasionally returns NaN closes) —
+    # a NaN mid-series otherwise breaks Plotly's SVG path for the candlesticks/MACD bars.
+    df = df.dropna(subset=["Open", "High", "Low", "Close"])
+    if df.empty:
+        return None
     close = df["Close"].squeeze()
-    if len(close.dropna()) < 30:
+    if len(close) < 30:
         return None
 
     n = min(180, len(df))
@@ -907,6 +912,41 @@ def _render_overkill_trigger():
                        "a minute, use 'Reboot app' from the Cloud menu to force it.")
 
 
+def _render_overkill_pending():
+    """Semi-auto model: the GitHub Action only detects new Shorts (via the
+    official YouTube API — reliable) and lists them here. Pulling transcripts
+    and extracting picks is done on request in a Claude session, since
+    yt-dlp gets blocked wholesale by YouTube's bot-check from GitHub Actions'
+    shared IPs ('Sign in to confirm you're not a bot' — IP-reputation based,
+    not fixable by spoofing a different yt-dlp client)."""
+    path = os.path.join(DATA_DIR, "overkill_pending.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            pending_data = json.load(f)
+    except Exception:
+        return
+    pending = pending_data.get("pending", [])
+    if not pending:
+        return
+    items = "".join(
+        f'<li style="margin-bottom:4px"><a href="{p.get("url","")}" target="_blank" '
+        f'style="color:{TEXT_PRIMARY}">{p.get("title","")}</a> '
+        f'<span style="color:{TEXT_MUTED};font-size:10px">· {p.get("date","")}</span></li>'
+        for p in pending
+    )
+    st.markdown(
+        f'<div style="background:{_rgba(GOLD, 0.08)};border:1px solid {GOLD}44;border-radius:10px;'
+        f'padding:12px 16px;margin:4px 0 14px">'
+        f'<div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:6px">'
+        f'🕒 {len(pending)} new Short(s) detected, not yet analyzed</div>'
+        f'<ul style="margin:0;padding-left:18px;font-size:12px">{items}</ul>'
+        f'<div style="color:{TEXT_MUTED};font-size:10.5px;margin-top:8px">'
+        f'Ask Claude to pull picks for these — automatic extraction is blocked by '
+        f'YouTube\'s bot-check on GitHub Actions.</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
 def _render_overkill_tab():
     path = os.path.join(DATA_DIR, "overkill_shorts.json")
     try:
@@ -926,6 +966,7 @@ def _render_overkill_tab():
     )
 
     _render_overkill_trigger()
+    _render_overkill_pending()
 
     def _bias_html(b):
         col = ACCENT_GREEN if b == "Bullish" else ACCENT_RED if b == "Bearish" else TEXT_MUTED
@@ -974,8 +1015,9 @@ def _render_overkill_tab():
         f'<thead><tr>{hdr}</tr></thead><tbody>{rows}</tbody></table></div>',
         unsafe_allow_html=True,
     )
-    st.caption("One row per pick across all captured days. Auto-refreshed twice daily (~8am/7pm CT) "
-               "via GitHub Actions — or hit “Refresh Now” above to run it on demand.")
+    st.caption("One row per pick across all captured days. New-video detection runs twice daily "
+               "(~8am/7pm CT) via GitHub Actions — pending ones needing analysis show above. "
+               "Hit “Refresh Now” to check for new Shorts on demand.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

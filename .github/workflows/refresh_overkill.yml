@@ -1,4 +1,4 @@
-name: Refresh Over Kill Shorts
+name: Detect New Over Kill Shorts
 
 on:
   schedule:
@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   refresh:
-    name: Refresh Over Kill Shorts picks
+    name: Detect new Over Kill Shorts
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -41,28 +41,27 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install requests anthropic yt-dlp
+          pip install requests
 
-      - name: Run refresh script
+      - name: Run detection script
         env:
-          YOUTUBE_API_KEY:    ${{ secrets.YOUTUBE_API_KEY }}
-          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python scripts/refresh_overkill_shorts.py
 
-      - name: Commit refreshed picks
+      - name: Commit pending list
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/overkill_shorts.json
+          git add data/overkill_pending.json
           if git diff --cached --quiet; then
-            echo "Nothing to commit — no new Shorts found."
+            echo "Nothing to commit — pending list unchanged."
           else
-            git commit -m "Auto-refresh Over Kill Shorts $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git commit -m "Update Over Kill pending list $(date -u +'%Y-%m-%d %H:%M UTC')"
 
             if git pull --rebase -X ours origin main; then
               git push origin main
             else
-              echo "Rebase conflict could not be auto-resolved; force-pushing refreshed picks."
+              echo "Rebase conflict could not be auto-resolved; force-pushing pending list."
               git rebase --abort
               git push --force-with-lease origin main
             fi
