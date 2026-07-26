@@ -59,6 +59,13 @@ VP_BINS           = 24
 CONFLUENCE_TOL    = 0.02  # 2% of price counts as "at" a level
 MAX_TICKERS       = 30
 
+# Money Flow Index — soft confirmation layer for dots (volume-weighted RSI).
+# Doesn't filter anything out; a dot just gets a 💰 badge next to the ticker
+# when MF agrees (oversold for a green dot, overbought for a red dot).
+MFI_PERIOD    = 14
+MFI_OS_LEVEL  = 20
+MFI_OB_LEVEL  = 80
+
 # ── Universe scan (screener mode) ────────────────────────────────────────────
 _SCAN_UNIVERSE_CHOICES = {
     "FTF Universe (~480 · full S&P 500 + ETFs)": FTF_UNIVERSE,
@@ -121,6 +128,18 @@ def _macd(close: pd.Series) -> tuple[pd.Series, pd.Series, pd.Series]:
     macd_line = calc_ema(close, 12) - calc_ema(close, 26)
     signal_line = calc_ema(macd_line, 9)
     return macd_line, signal_line, macd_line - signal_line
+
+
+def _mfi(df: pd.DataFrame, period: int = MFI_PERIOD) -> pd.Series:
+    """Money Flow Index — the standard public volume-weighted RSI. Used only
+    as a soft confirmation flag on dots (never a filter)."""
+    tp = (df["High"].squeeze() + df["Low"].squeeze() + df["Close"].squeeze()) / 3.0
+    raw_mf = tp * df["Volume"].squeeze()
+    tp_diff = tp.diff()
+    pos_mf = raw_mf.where(tp_diff > 0, 0.0).rolling(period, min_periods=1).sum()
+    neg_mf = raw_mf.where(tp_diff < 0, 0.0).rolling(period, min_periods=1).sum()
+    mfr = pos_mf / neg_mf.replace(0, np.nan)
+    return (100 - 100 / (1 + mfr)).fillna(50)
 
 
 # ── Volume Profile (approximated from daily bars) ───────────────────────────
@@ -203,8 +222,15 @@ def _level_hits(price: float | None, vp: dict | None, ma_val: float | None) -> l
     return hits
 
 
+def _mf_confirmed(color: str, ts, mfi_series: pd.Series | None) -> bool:
+    if mfi_series is None or ts not in mfi_series.index or pd.isna(mfi_series.loc[ts]):
+        return False
+    val = float(mfi_series.loc[ts])
+    return val <= MFI_OS_LEVEL if color == "Green" else val >= MFI_OB_LEVEL
+
+
 def _last_dot(df: pd.DataFrame, dots: pd.DataFrame | None, ma_series: pd.Series | None,
-              vp: dict | None) -> dict | None:
+              vp: dict | None, mfi_series: pd.Series | None = None) -> dict | None:
     if dots is None:
         return None
     greens = df.index[dots["green"].to_numpy()]
@@ -220,11 +246,12 @@ def _last_dot(df: pd.DataFrame, dots: pd.DataFrame | None, ma_series: pd.Series 
         ma_val = float(ma_series.loc[ts])
     bars_ago = len(df.index) - 1 - df.index.get_loc(ts)
     return dict(date=pd.Timestamp(ts).date().isoformat(), color=color, price=price,
-                hits=_level_hits(price, vp, ma_val), bars_ago=int(bars_ago))
+                hits=_level_hits(price, vp, ma_val), bars_ago=int(bars_ago),
+                mf_confirmed=_mf_confirmed(color, ts, mfi_series))
 
 
 def _last_green_dot(df: pd.DataFrame, dots: pd.DataFrame | None, ma_series: pd.Series | None,
-                     vp: dict | None) -> dict | None:
+                     vp: dict | None, mfi_series: pd.Series | None = None) -> dict | None:
     """Same as _last_dot but green-only — used by the Universe Scan, which is
     a long-side (green dot) screener and shouldn't have a more-recent red dot
     on the same ticker shadow out the green one that qualified it."""
@@ -241,7 +268,8 @@ def _last_green_dot(df: pd.DataFrame, dots: pd.DataFrame | None, ma_series: pd.S
         ma_val = float(ma_series.loc[ts])
     bars_ago = len(df.index) - 1 - df.index.get_loc(ts)
     return dict(date=pd.Timestamp(ts).date().isoformat(), color="Green", price=price,
-                hits=_level_hits(price, vp, ma_val), bars_ago=int(bars_ago))
+                hits=_level_hits(price, vp, ma_val), bars_ago=int(bars_ago),
+                mf_confirmed=_mf_confirmed("Green", ts, mfi_series))
 
 
 # ── Per-ticker analysis ──────────────────────────────────────────────────────
@@ -276,12 +304,13 @@ def _analyze_ticker(ticker: str) -> dict:
         wt1_w, wt2_w = _wavetrend(weekly)
         dots_w = _wt_dots(wt1_w, wt2_w)
         rsi_w = float(_rsi(weekly_close).iloc[-1])
+        mfi_w = _mfi(weekly)
 
         result = dict(
             ticker=ticker, weekly=weekly, monthly=None, vp=vp,
             wt1_w=wt1_w, wt2_w=wt2_w, dots_w=dots_w, ma400_w=ma400_w, sma9_w=sma9_w,
             wt1_m=None, wt2_m=None, dots_m=None, ma400_m=None, sma9_m=None,
-            rsi_w=rsi_w, rsi_m=None,
+            rsi_w=rsi_w, rsi_m=None, mfi_w=mfi_w, mfi_m=None,
             price_now=float(weekly_close.iloc[-1]),
             scanners=scanners, stars=stars,
         )
@@ -293,10 +322,10 @@ def _analyze_ticker(ticker: str) -> dict:
             wt1_m, wt2_m = _wavetrend(monthly)
             dots_m = _wt_dots(wt1_m, wt2_m)
             result.update(monthly=monthly, wt1_m=wt1_m, wt2_m=wt2_m, dots_m=dots_m, ma400_m=ma400_m,
-                         sma9_m=sma9_m, rsi_m=float(_rsi(monthly_close).iloc[-1]))
+                         sma9_m=sma9_m, rsi_m=float(_rsi(monthly_close).iloc[-1]), mfi_m=_mfi(monthly))
 
-        result["last_w"] = _last_dot(weekly, dots_w, ma400_w, vp)
-        result["last_m"] = (_last_dot(monthly, result["dots_m"], result["ma400_m"], vp)
+        result["last_w"] = _last_dot(weekly, dots_w, ma400_w, vp, mfi_w)
+        result["last_m"] = (_last_dot(monthly, result["dots_m"], result["ma400_m"], vp, result["mfi_m"])
                              if result.get("dots_m") is not None else None)
         return result
     except Exception as e:
@@ -311,8 +340,8 @@ def _analyze_ticker_green_only(ticker: str) -> dict:
     r = _analyze_ticker(ticker)
     if "error" in r:
         return r
-    r["last_w"] = _last_green_dot(r["weekly"], r["dots_w"], r["ma400_w"], r["vp"])
-    r["last_m"] = (_last_green_dot(r["monthly"], r["dots_m"], r["ma400_m"], r["vp"])
+    r["last_w"] = _last_green_dot(r["weekly"], r["dots_w"], r["ma400_w"], r["vp"], r["mfi_w"])
+    r["last_m"] = (_last_green_dot(r["monthly"], r["dots_m"], r["ma400_m"], r["vp"], r["mfi_m"])
                    if r.get("dots_m") is not None else None)
     return r
 
@@ -544,6 +573,7 @@ _TH = (f"color:{TEXT_MUTED};font-size:9px;font-weight:700;text-transform:upperca
 _TABLE_RATIOS  = [0.28, 0.45, 0.55, 0.95, 0.95, 0.62, 1.3, 1.55]
 _TABLE_HEADERS = ["", "Ticker", "Price", "Weekly Dot", "Monthly Dot", "RSI", "Scanners", "Verdict"]
 _ROW_HEIGHT_PX = 83   # calibrated against the Best Scanners table (~83px/row)
+_MAX_VISIBLE_ROWS = 6
 
 
 def _dot_compact(last: dict | None) -> str:
@@ -554,6 +584,18 @@ def _dot_compact(last: dict | None) -> str:
     return (f'<span style="color:{color};font-weight:600">{icon} {last["date"]}</span><br>'
             f'<span style="color:{TEXT_MUTED};font-size:10px">${last["price"]:.2f} '
             f'· {last["bars_ago"]}b ago</span>')
+
+
+def _mf_badge(last: dict | None) -> str:
+    """Money Flow soft confirmation — a small badge next to the ticker when
+    the qualifying dot's Money Flow Index agrees (oversold for green,
+    overbought for red). Absence of the badge doesn't mean anything is
+    wrong — it's confirmation-when-present, never a filter."""
+    if not last or not last.get("mf_confirmed"):
+        return ""
+    color = ACCENT_GREEN if last["color"] == "Green" else ACCENT_RED
+    return (f' <span title="Money Flow confirms this dot" '
+            f'style="color:{color};font-size:10px">💰</span>')
 
 
 def _price_cell(price: float | None) -> str:
@@ -578,7 +620,7 @@ def _rsi_cell(rsi_w: float | None, rsi_m: float | None) -> str:
 
 def _scanners_cell(scanners: list[str] | None, stars: int) -> str:
     if not scanners:
-        return f'<span style="color:{TEXT_MUTED};font-size:10px">no scanner match</span>'
+        return f'<span style="color:{GOLD};font-size:11px">no scanner match</span>'
     star_str = f'<span style="color:{GOLD}">{"★" * stars} </span>' if stars else ""
     return star_str + f'<span style="color:{TEXT_PRIMARY};font-size:10.5px">{" · ".join(scanners)}</span>'
 
@@ -598,7 +640,7 @@ def _select_ticker_cb(ticker: str, all_tickers: list, key_prefix: str) -> None:
 
 
 def _render_ticker_table(results: list[dict], key_prefix: str) -> str | None:
-    """Scrollable table (~7 rows) with a per-row single-select checkbox that
+    """Scrollable table (~6 rows) with a per-row single-select checkbox that
     drives which ticker's chart renders below. Uses real Streamlit widgets
     (not raw HTML) so the checkbox can call back into Python, wrapped in
     st.container(height=...) — the native way to get a real scrollable area
@@ -626,7 +668,7 @@ def _render_ticker_table(results: list[dict], key_prefix: str) -> str | None:
     for c, label in zip(hdr_cols, _TABLE_HEADERS):
         c.markdown(f'<div style="{_TH}">{label}</div>', unsafe_allow_html=True)
 
-    height = min(max(len(ok), 1), 7) * _ROW_HEIGHT_PX + 10
+    height = min(max(len(ok), 1), _MAX_VISIBLE_ROWS) * _ROW_HEIGHT_PX + 10
     with st.container(height=height):
         for r in ok:
             ticker = r["ticker"]
@@ -635,7 +677,8 @@ def _render_ticker_table(results: list[dict], key_prefix: str) -> str | None:
             cols[0].checkbox("select", key=f"{key_prefix}_chk_{ticker}", label_visibility="collapsed",
                              on_change=_select_ticker_cb, args=(ticker, all_tickers, key_prefix))
             tk_style = f"color:{GOLD};font-weight:700" + (";text-decoration:underline" if ticker == selected else "")
-            cols[1].markdown(f'<span style="{tk_style}">{ticker}</span>', unsafe_allow_html=True)
+            mf = _mf_badge(lw or lm)
+            cols[1].markdown(f'<span style="{tk_style}">{ticker}</span>{mf}', unsafe_allow_html=True)
             cols[2].markdown(_price_cell(r.get("price_now")), unsafe_allow_html=True)
             cols[3].markdown(_dot_compact(lw), unsafe_allow_html=True)
             cols[4].markdown(_dot_compact(lm), unsafe_allow_html=True)
@@ -798,7 +841,9 @@ def render():
         f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
         f'Approximates Overkill Trading\'s <b>WaveTrend dot + Volume Profile confluence</b> setup. '
         f'<b style="color:{ACCENT_GREEN}">🟢 Green Dot</b> = bullish WaveTrend cross while oversold · '
-        f'<b style="color:{ACCENT_RED}">🔴 Red Dot</b> = bearish cross while overbought. The '
+        f'<b style="color:{ACCENT_RED}">🔴 Red Dot</b> = bearish cross while overbought. A 💰 next to '
+        f'the ticker means Money Flow Index agrees with that dot (oversold for green, overbought for '
+        f'red) — a soft confirmation, not a filter; its absence doesn\'t disqualify anything. The '
         f'<b>Verdict</b> column combines two reads: where <i>today\'s</i> price sits vs. the Volume '
         f'Profile (room up to POC/VAH = upside bias, below VAL = downside risk) and whether the '
         f'qualifying dot itself printed at a key level or in isolation (his "Golden Rule" — an '
@@ -810,7 +855,7 @@ def render():
         unsafe_allow_html=True,
     )
 
-    mode = st.radio("Mode", ["🔤 Manual Ticker(s)", "🌐 Scan Universe"], horizontal=True,
+    mode = st.radio("Mode", ["🔤 Manual Ticker(s)", "🌐 Scan Universe"], horizontal=True, index=1,
                     key="overkill_check_mode", label_visibility="collapsed")
 
     if mode == "🌐 Scan Universe":
