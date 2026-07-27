@@ -416,13 +416,13 @@ def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
       1. A fresh green dot inside the lookback window (weekly or monthly).
       2. A bullish WaveTrend divergence (weekly or monthly) — catches a
          reversal warning even before WT1/WT2 actually cross into a dot.
-    Returns candidates in three tiers, each sorted by weekly dot recency
-    (falling back to monthly recency where no weekly date exists):
-      1. Both timeframes freshly confirmed (fresh_w AND fresh_m) — the
-         highest-conviction group, both dots independently inside their own
-         lookback window (not a stale monthly paired with a fresh weekly).
-      2. Weekly-fresh only.
-      3. Everything else (monthly-fresh-only and/or divergence-only).
+    Returns candidates grouped both-fresh / weekly-fresh / everything-else,
+    each sorted by weekly dot recency (falling back to monthly recency where
+    no weekly date exists) — but this ordering only affects which order
+    Phase 2 analyzes/reports progress on. The FINAL displayed order (built
+    in _render_scan_mode, after Phase 2) sorts by ★ power first; both_fresh
+    is carried through as a tie-breaker among equal star tiers, not a
+    grouping that can outrank a higher star tier.
     """
     prefetch_tickers(universe, "max", "1wk")
     prefetch_tickers(universe, "max", "1mo")
@@ -1155,9 +1155,10 @@ def _render_scan_mode():
         f'deliberately liberal, additional way in — it can catch a reversal before the dot itself '
         f'prints, so it only ever adds candidates, never narrows them. A <b style="color:{GOLD}">🎯</b> '
         f'next to the ticker means BOTH Weekly and Monthly have an independently fresh confirmation at '
-        f'once — the strongest confluence available, ranked ahead of a weekly-only match. "Fresh" = '
-        f'the dot printed within the lookback below; tighten it for only-this-week signals, loosen it '
-        f'to catch dots that are still developing.</div>',
+        f'once — extra context, and a tie-breaker among tickers with the same ★ rating, but it can\'t '
+        f'outrank a higher star tier: ★ is backtest-validated, the dual-timeframe flag isn\'t (yet). '
+        f'"Fresh" = the dot printed within the lookback below; tighten it for only-this-week signals, '
+        f'loosen it to catch dots that are still developing.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1196,25 +1197,26 @@ def _render_scan_mode():
             # Tag each result with the dual-timeframe boost (both weekly AND
             # monthly independently fresh) so the table can badge it.
             both_fresh_tickers = {c["ticker"] for c in candidates if c["both_fresh"]}
+            fresh_w_tickers = {c["ticker"] for c in candidates if c["fresh_w"]}
             for r in results:
                 r["both_fresh"] = r.get("ticker") in both_fresh_tickers
 
-            # Three tiers, unchanged grouping order (both-fresh, then weekly-fresh,
-            # then everything else), sorted WITHIN each tier by ★ power rating
-            # instead of raw dot recency — the more useful "which one first" signal.
-            fresh_w_tickers = {c["ticker"] for c in candidates if c["fresh_w"]}
-            errored    = [r for r in results if "error" in r]
-            both_grp    = [r for r in results if "error" not in r and r["both_fresh"]]
-            weekly_grp  = [r for r in results if "error" not in r and not r["both_fresh"]
-                          and r["ticker"] in fresh_w_tickers]
-            monthly_grp = [r for r in results if "error" not in r and not r["both_fresh"]
-                          and r["ticker"] not in fresh_w_tickers]
-            star_key = lambda r: _verdict_stars(r.get("last_w") or r.get("last_m"),
-                                               r.get("price_now"), r.get("vp"))
-            both_grp.sort(key=star_key, reverse=True)
-            weekly_grp.sort(key=star_key, reverse=True)
-            monthly_grp.sort(key=star_key, reverse=True)
-            results = both_grp + weekly_grp + monthly_grp + errored
+            # ★ is the primary sort key — it's backtest-validated (5★ actually
+            # wins far more than 1★, confirmed against real historical outcomes
+            # in Backtest mode). "Both timeframes fresh" is only a heuristic
+            # that's never been validated the same way, so it can no longer
+            # outrank a higher star tier — it's a tie-breaker among EQUAL star
+            # tiers only (previously it was the primary grouping, which could
+            # rank a weak 2★ dual-fresh dot above a strong 5★ single-fresh one).
+            errored = [r for r in results if "error" in r]
+            ok = [r for r in results if "error" not in r]
+
+            def _sort_key(r):
+                stars = _verdict_stars(r.get("last_w") or r.get("last_m"), r.get("price_now"), r.get("vp"))
+                return (stars, r["both_fresh"], r["ticker"] in fresh_w_tickers)
+
+            ok.sort(key=_sort_key, reverse=True)
+            results = ok + errored
 
             st.session_state["overkill_scan_results"] = results
             st.session_state["overkill_scan_ts"] = pd.Timestamp.now().strftime("%b %d %Y · %I:%M %p")
@@ -1233,8 +1235,9 @@ def _render_scan_mode():
     ok = [r for r in results if "error" not in r]
     st.caption(f"Scanned {st.session_state.get('overkill_scan_ts','')} · "
               f"{len(ok)} ticker(s) with a fresh green dot or divergence "
-              f"(sorted: both-fresh 🎯 first, then weekly-fresh, then the rest — ★ power within each; "
-              f"a dimmed/'stale' dot means that timeframe isn't why this row qualified)")
+              f"(sorted by ★ power first — backtest-validated; 🎯 both-fresh and weekly-fresh only "
+              f"break ties within the same star tier. A dimmed/'stale' dot means that timeframe isn't "
+              f"why this row qualified)")
     _render_results_section(results, key_prefix="overkill_scan", weekly_fresh=int(weekly_fresh),
                             monthly_fresh=int(monthly_fresh))
 
