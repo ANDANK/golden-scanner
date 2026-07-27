@@ -437,8 +437,43 @@ def _run_best_scanner(daily: pd.DataFrame | None, spy_close: pd.Series) -> tuple
     return scan_s, _star_rating(labels)
 
 
+def _verdict_stars(last: dict | None, price_now: float | None, vp: dict | None) -> int:
+    """0-5 power rating for the Verdict — confluence is the primary gate
+    (an isolated dot never outranks a confirmed one, per the Golden Rule);
+    within a confirmed dot, stars grade REWARD POTENTIAL — how much room is
+    left between today's price and the value area's far edge in the dot's
+    favored direction — not the odds the move actually happens.
+      0 = no recent dot          3 = confirmed, no VP to grade room, OR
+      1 = isolated dot               confirmed + past fair value (POC) a bit
+      2 = confirmed, little/no room left (extended past the far edge)
+      4 = confirmed, roughly at fair value (POC), room to the far edge left
+      5 = confirmed, full room left toward the far edge (freshest read)
+    """
+    if last is None:
+        return 0
+    if not last["hits"]:
+        return 1
+    if price_now is None or vp is None or not np.isfinite(price_now):
+        return 3
+    val, vah = vp["val"], vp["vah"]
+    span = vah - val
+    if span <= 0:
+        return 3
+    room = (vah - price_now) / span if last["color"] == "Green" else (price_now - val) / span
+    room = max(0.0, room)
+    if room >= 0.75:
+        return 5
+    if room >= 0.5:
+        return 4
+    if room >= 0.25:
+        return 3
+    return 2
+
+
 def _verdict_cell(last: dict | None, price_now: float | None, vp: dict | None) -> str:
     bias_text, bias_color = _vp_position(price_now, vp)
+    stars = _verdict_stars(last, price_now, vp)
+    star_prefix = f'<span style="color:{GOLD}">{"★" * stars}</span> ' if stars else ""
     if last is None:
         conv_text, conv_color = "no recent dot", TEXT_MUTED
     elif last["hits"]:
@@ -447,7 +482,8 @@ def _verdict_cell(last: dict | None, price_now: float | None, vp: dict | None) -
     else:
         conv_text, conv_color = "⚠️ isolated dot — chop risk", GOLD
     return (
-        f'<div style="color:{bias_color};font-weight:700;font-size:11px;white-space:normal">{bias_text}</div>'
+        f'<div style="color:{bias_color};font-weight:700;font-size:11px;white-space:normal">'
+        f'{star_prefix}{bias_text}</div>'
         f'<div style="color:{conv_color};font-size:9.5px;margin-top:2px;white-space:normal">{conv_text}</div>'
     )
 
@@ -812,6 +848,20 @@ def _render_scan_mode():
             with st.spinner(f"Building full profile (Volume Profile + confluence) for "
                             f"{len(candidates)} matching ticker(s)…"):
                 results = [_analyze_ticker_green_only(c["ticker"]) for c in candidates]
+
+            # Keep the weekly-fresh group ahead of the monthly-only group (unchanged
+            # from before), but sort WITHIN each group by the ★ power rating instead
+            # of raw dot recency — the more useful "which one first" signal.
+            fresh_w_tickers = {c["ticker"] for c in candidates if c["fresh_w"]}
+            errored   = [r for r in results if "error" in r]
+            weekly_grp  = [r for r in results if "error" not in r and r["ticker"] in fresh_w_tickers]
+            monthly_grp = [r for r in results if "error" not in r and r["ticker"] not in fresh_w_tickers]
+            star_key = lambda r: _verdict_stars(r.get("last_w") or r.get("last_m"),
+                                               r.get("price_now"), r.get("vp"))
+            weekly_grp.sort(key=star_key, reverse=True)
+            monthly_grp.sort(key=star_key, reverse=True)
+            results = weekly_grp + monthly_grp + errored
+
             st.session_state["overkill_scan_results"] = results
             st.session_state["overkill_scan_ts"] = pd.Timestamp.now().strftime("%b %d %Y · %I:%M %p")
             st.session_state.pop("overkill_scan_selected_ticker", None)
@@ -828,7 +878,7 @@ def _render_scan_mode():
 
     ok = [r for r in results if "error" not in r]
     st.caption(f"Scanned {st.session_state.get('overkill_scan_ts','')} · "
-              f"{len(ok)} ticker(s) with a fresh green dot (sorted: weekly dots first, most recent)")
+              f"{len(ok)} ticker(s) with a fresh green dot (sorted: weekly dots first, then by ★ power)")
     _render_results_section(results, key_prefix="overkill_scan")
 
 
@@ -847,7 +897,11 @@ def render():
         f'<b>Verdict</b> column combines two reads: where <i>today\'s</i> price sits vs. the Volume '
         f'Profile (room up to POC/VAH = upside bias, below VAL = downside risk) and whether the '
         f'qualifying dot itself printed at a key level or in isolation (his "Golden Rule" — an '
-        f'isolated dot is chop risk). MACD crossover is shown on the chart. <b>Note:</b> dots come from '
+        f'isolated dot is chop risk). The <b style="color:{GOLD}">★</b> before it (1-5, blank = no dot) '
+        f'ranks that combination — confluence first (an isolated dot is capped at ★, per the Golden '
+        f'Rule), then how much reward room is left toward the far edge of the Volume Profile; it grades '
+        f'potential reward, not the odds the move happens. MACD crossover is shown on the chart. '
+        f'<b>Note:</b> dots come from '
         f'the public WaveTrend formula his tool is built on (not his exact proprietary script), the '
         f'{MA_LEN}-period MA is an expanding average until enough bars exist, and the Volume Profile is '
         f'approximated from daily volume (yfinance has no true volume-at-price feed) — treat all three '
