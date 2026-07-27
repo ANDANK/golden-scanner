@@ -675,15 +675,30 @@ def _run_best_scanner(daily: pd.DataFrame | None, spy_close: pd.Series) -> tuple
 
 def _verdict_stars(last: dict | None, price_now: float | None, vp: dict | None) -> int:
     """0-5 power rating for the Verdict — confluence is the primary gate
-    (an isolated dot never outranks a confirmed one, per the Golden Rule);
-    within a confirmed dot, stars grade REWARD POTENTIAL — how much room is
-    left between today's price and the value area's far edge in the dot's
-    favored direction — not the odds the move actually happens.
-      0 = no recent dot          3 = confirmed, no VP to grade room, OR
-      1 = isolated dot               confirmed + past fair value (POC) a bit
-      2 = confirmed, little/no room left (extended past the far edge)
-      4 = confirmed, roughly at fair value (POC), room to the far edge left
-      5 = confirmed, full room left toward the far edge (freshest read)
+    (an isolated dot never outranks a confirmed one, per the Golden Rule).
+
+    Within a confirmed dot, stars grade where price sits relative to the
+    level it confirmed at — corrected against a real backtest (MTPA 200 +
+    FTF ~480, 25/45/90-day holds) which showed the original "reward = room
+    still left toward the far edge" framing was backwards: it scored
+    "price has since crashed through VAL" the SAME as "fresh dot right at
+    VAL" (both were unboundedly >= max reward), which buried a huge number
+    of broken-support dots in the top tier and dragged its win rate down
+    to ~35% — statistically indistinguishable from an isolated dot. It also
+    treated "price already extended past VAH" as "no room left" (worst
+    tier) when empirically that was the BEST-performing case (~100% win
+    rate, zero stop-outs) — a green dot confirming during an already-proven
+    uptrend is a trend-continuation trade, not a "too late" trade.
+      0 = no recent dot
+      1 = isolated dot (no confluence when it printed)
+      2 = confirmed, but price has since broken the opposite structural
+          level (e.g. a green dot whose VAL support has since given way) —
+          the worst confirmed case, on par with or below isolated
+      3 = confirmed, price still between the confirming level and fair
+          value (POC) — the traditional "textbook entry", not yet proven
+      4 = confirmed, price has moved through fair value toward the far edge
+      5 = confirmed, price at or beyond the far edge — confirmed strength /
+          trend continuation, empirically the strongest tier
     """
     if last is None:
         return 0
@@ -695,15 +710,16 @@ def _verdict_stars(last: dict | None, price_now: float | None, vp: dict | None) 
     span = vah - val
     if span <= 0:
         return 3
-    room = (vah - price_now) / span if last["color"] == "Green" else (price_now - val) / span
-    room = max(0.0, room)
-    if room >= 0.75:
-        return 5
-    if room >= 0.5:
-        return 4
-    if room >= 0.25:
+    # pos: 0 = at the confirming level, 1 = at the far edge, >1 = past the far
+    # edge (proven strength), <0 = broken back through the confirming level
+    pos = (price_now - val) / span if last["color"] == "Green" else (vah - price_now) / span
+    if pos < 0:
+        return 2
+    if pos < 0.4:
         return 3
-    return 2
+    if pos < 0.75:
+        return 4
+    return 5
 
 
 def _verdict_cell(last: dict | None, price_now: float | None, vp: dict | None) -> str:
@@ -1263,9 +1279,15 @@ def render():
         f'Profile (room up to POC/VAH = upside bias, below VAL = downside risk) and whether the '
         f'qualifying dot itself printed at a key level or in isolation (his "Golden Rule" — an '
         f'isolated dot is chop risk). The <b style="color:{GOLD}">★</b> before it (1-5, blank = no dot) '
-        f'ranks that combination — confluence first (an isolated dot is capped at ★, per the Golden '
-        f'Rule), then how much reward room is left toward the far edge of the Volume Profile; it grades '
-        f'potential reward, not the odds the move happens. MACD crossover is shown on the chart. '
+        f'ranks that combination — confluence first (isolated is capped at ★), then <i>where price sits '
+        f'relative to the level that confirmed it</i>: already through fair value toward/past the far '
+        f'edge (★★★★★–★★★★) reads as confirmed strength/trend continuation, near the confirming level '
+        f'but not yet proven (★★★) is the textbook-but-unconfirmed entry, and price that has since '
+        f'broken back through the confirming level (★★) is the weakest confirmed case. This ordering '
+        f'was corrected against a real Backtest run (see that mode) — the original "more room left = '
+        f'more stars" framing scored broken-support dots the same as fresh ones and undervalued '
+        f'trend-continuation dots; validate any further tuning the same way. MACD crossover is shown '
+        f'on the chart. '
         f'<b>Note:</b> dots come from '
         f'the public WaveTrend formula his tool is built on (not his exact proprietary script), the '
         f'{MA_LEN}-period MA is an expanding average until enough bars exist, and the Volume Profile is '
