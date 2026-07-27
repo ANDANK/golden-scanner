@@ -399,6 +399,179 @@ def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
     return weekly_first + monthly_only
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# BACKTEST — validates the ★ system against real historical outcomes
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# For every historical dot in the lookback window: rebuild the Volume Profile
+# using ONLY daily bars up to that dot's own date (no lookahead bias), compute
+# what its ★ rating would have been at the time, then walk forward day-by-day
+# to see whether price hit TP1 (POC), TP2 (VAH for a long / VAL for a short),
+# or the stop (just past the nearest LVN) first — the strategy's own exits,
+# not a substitute metric. Aggregating outcomes by ★ tier answers "does a
+# 5★ dot actually win more than a 2★ one, historically?"
+
+BACKTEST_LOOKBACK_YEARS = 5
+BACKTEST_MAX_HOLD_DAYS  = 90     # ~4.5 months — a swing/position-trade horizon
+BACKTEST_DAILY_PERIOD   = "10y"  # needs lookback + VP_LOOKBACK_DAYS of headroom
+BACKTEST_SL_FALLBACK_PCT = 0.10  # used only if no LVN exists in the stop direction
+
+
+def _enumerate_dots(df: pd.DataFrame, dots: pd.DataFrame, since: pd.Timestamp) -> list[dict]:
+    """Every green/red dot on/after `since` — unlike _last_dot (most recent
+    only), this returns the full history for backtesting."""
+    out = []
+    for ts in df.index[dots["green"].to_numpy()]:
+        if ts >= since:
+            out.append(dict(date=ts, color="Green", price=float(df.loc[ts, "Low"])))
+    for ts in df.index[dots["red"].to_numpy()]:
+        if ts >= since:
+            out.append(dict(date=ts, color="Red", price=float(df.loc[ts, "High"])))
+    out.sort(key=lambda d: d["date"])
+    return out
+
+
+def _historical_vp(daily: pd.DataFrame, as_of: pd.Timestamp) -> dict | None:
+    """Volume Profile built only from bars up to `as_of` — the as-of-the-time
+    reconstruction needed to backtest a historical dot without lookahead."""
+    return _volume_profile(daily[daily.index <= as_of])
+
+
+def _nearest_lvn(vp: dict, price: float, direction: str) -> float | None:
+    """Nearest low-volume bin in `direction` ('below'/'above') from `price` —
+    the strategy's own stop placement rule ('just past the LVN')."""
+    mids, vols = vp["mids"], vp["vols"]
+    positive = vols[vols > 0]
+    if len(positive) == 0:
+        return None
+    threshold = float(np.median(positive)) * 0.4
+    if direction == "below":
+        cands = [m for m, v in zip(mids, vols) if m < price and v <= threshold]
+        return max(cands) if cands else None
+    cands = [m for m, v in zip(mids, vols) if m > price and v <= threshold]
+    return min(cands) if cands else None
+
+
+def _simulate_trade(daily: pd.DataFrame, entry_date: pd.Timestamp, color: str,
+                    tp1: float, tp2: float, sl: float, max_hold_days: int) -> str:
+    """Walks forward day-by-day (using daily High/Low) from the bar after
+    `entry_date` for up to `max_hold_days`. Returns 'tp1', 'tp2', 'sl', or
+    'expired'. A day that touches both a target and the stop is resolved in
+    favor of the stop — the conservative assumption, since daily bars can't
+    tell us which was actually touched first intraday."""
+    future = daily[daily.index > entry_date].head(max_hold_days)
+    for _, bar in future.iterrows():
+        hi, lo = float(bar["High"]), float(bar["Low"])
+        if color == "Green":
+            if lo <= sl:
+                return "sl"
+            if hi >= tp2:
+                return "tp2"
+            if hi >= tp1:
+                return "tp1"
+        else:
+            if hi >= sl:
+                return "sl"
+            if lo <= tp2:
+                return "tp2"
+            if lo <= tp1:
+                return "tp1"
+    return "expired"
+
+
+def _backtest_ticker(ticker: str, lookback_years: int, max_hold_days: int) -> list[dict]:
+    """Backtests every Weekly + Monthly dot for `ticker` over the trailing
+    `lookback_years`. One record per dot tested."""
+    records: list[dict] = []
+    try:
+        weekly  = get_price_history(ticker, period="max", interval="1wk")
+        monthly = get_price_history(ticker, period="max", interval="1mo")
+        daily   = get_price_history(ticker, period=BACKTEST_DAILY_PERIOD, interval="1d")
+        if weekly is None or weekly.empty or daily is None or daily.empty:
+            return records
+        weekly = weekly.dropna(subset=["Open", "High", "Low", "Close"])
+        daily  = daily.dropna(subset=["Open", "High", "Low", "Close", "Volume"])
+        if len(weekly) < 30 or len(daily) < 100:
+            return records
+
+        since = pd.Timestamp.now() - pd.DateOffset(years=lookback_years)
+
+        for label, df in (("Weekly", weekly), ("Monthly", monthly)):
+            if df is None or df.empty:
+                continue
+            df = df.dropna(subset=["Open", "High", "Low", "Close"])
+            if len(df) < 20:
+                continue
+            wt1, wt2 = _wavetrend(df)
+            dots = _wt_dots(wt1, wt2)
+            mfi = _mfi(df)
+            ma400 = calc_sma(df["Close"].squeeze(), MA_LEN)
+
+            for d in _enumerate_dots(df, dots, since):
+                ts, color, price = d["date"], d["color"], d["price"]
+                vp = _historical_vp(daily, ts)
+                if vp is None:
+                    continue
+                ma_val = float(ma400.loc[ts]) if ts in ma400.index and pd.notna(ma400.loc[ts]) else None
+                hits = _level_hits(price, vp, ma_val)
+                close_at_dot = float(df.loc[ts, "Close"])
+                stars = _verdict_stars(dict(color=color, hits=hits), close_at_dot, vp)
+
+                if color == "Green":
+                    tp1, tp2, sl_dir = vp["poc"], vp["vah"], "below"
+                else:
+                    tp1, tp2, sl_dir = vp["poc"], vp["val"], "above"
+                lvn = _nearest_lvn(vp, price, sl_dir)
+                pad = (vp["vah"] - vp["val"]) * 0.02
+                if lvn is not None:
+                    sl = lvn - pad if color == "Green" else lvn + pad
+                else:
+                    sl = price * (1 - BACKTEST_SL_FALLBACK_PCT) if color == "Green" \
+                        else price * (1 + BACKTEST_SL_FALLBACK_PCT)
+
+                outcome = _simulate_trade(daily, ts, color, tp1, tp2, sl, max_hold_days)
+                records.append(dict(
+                    ticker=ticker, timeframe=label, date=ts.date().isoformat(),
+                    color=color, stars=stars, confirmed=bool(hits), outcome=outcome,
+                ))
+    except Exception:
+        pass
+    return records
+
+
+def _run_backtest(universe: list[str], lookback_years: int, max_hold_days: int,
+                  progress_cb=None) -> list[dict]:
+    prefetch_tickers(universe, "max", "1wk")
+    prefetch_tickers(universe, "max", "1mo")
+    prefetch_tickers(universe, BACKTEST_DAILY_PERIOD, "1d")
+
+    all_records: list[dict] = []
+    total = len(universe)
+    for i, ticker in enumerate(universe):
+        if progress_cb and (i % 5 == 0 or i == total - 1):
+            progress_cb(i, total, ticker)
+        all_records.extend(_backtest_ticker(ticker, lookback_years, max_hold_days))
+    return all_records
+
+
+def _aggregate_backtest(records: list[dict]) -> pd.DataFrame:
+    if not records:
+        return pd.DataFrame()
+    df = pd.DataFrame(records)
+    rows = []
+    for stars, grp in df.groupby("stars"):
+        n = len(grp)
+        tp1 = int((grp["outcome"] == "tp1").sum())
+        tp2 = int((grp["outcome"] == "tp2").sum())
+        sl  = int((grp["outcome"] == "sl").sum())
+        exp = int((grp["outcome"] == "expired").sum())
+        decided = tp1 + tp2 + sl
+        win_rate = (tp1 + tp2) / decided * 100 if decided else float("nan")
+        rows.append(dict(stars=int(stars), n=n, tp1=tp1, tp2=tp2, sl=sl, expired=exp,
+                         win_rate=win_rate))
+    return pd.DataFrame(rows).sort_values("stars", ascending=False).reset_index(drop=True)
+
+
 def _vp_position(price: float | None, vp: dict | None) -> tuple[str, str]:
     """Directional read of CURRENT price vs the Volume Profile — this is the
     'which tickers are likely to move up' heuristic: room-to-run toward the
@@ -883,6 +1056,114 @@ def _render_scan_mode():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# MODE 3 — BACKTEST (validates the ★ system against history)
+# ══════════════════════════════════════════════════════════════════════════════
+
+_BT_TD = f"padding:7px 10px;border-bottom:1px solid {BORDER_COLOR};vertical-align:middle;white-space:nowrap"
+
+
+def _render_backtest_table(agg: pd.DataFrame) -> None:
+    if agg.empty:
+        st.info("No historical dots found to backtest in this window.")
+        return
+    cols = ["★", "Dots Tested", "Win Rate", "TP1 (POC)", "TP2 (VAH/VAL)", "Stopped Out", "Expired"]
+    thead = "".join(f'<th style="{_TH}">{c}</th>' for c in cols)
+    body = ""
+    for _, r in agg.iterrows():
+        wr = r["win_rate"]
+        if np.isnan(wr):
+            wr_str, wr_color = "—", TEXT_MUTED
+        else:
+            wr_str = f"{wr:.0f}%"
+            wr_color = ACCENT_GREEN if wr >= 55 else (GOLD if wr >= 45 else ACCENT_RED)
+        body += (
+            "<tr>"
+            f'<td style="{_BT_TD};color:{GOLD};font-size:13px">{"★" * int(r["stars"])}</td>'
+            f'<td style="{_BT_TD}">{int(r["n"])}</td>'
+            f'<td style="{_BT_TD};color:{wr_color};font-weight:700">{wr_str}</td>'
+            f'<td style="{_BT_TD};color:{ACCENT_GREEN}">{int(r["tp1"])}</td>'
+            f'<td style="{_BT_TD};color:{ACCENT_GREEN}">{int(r["tp2"])}</td>'
+            f'<td style="{_BT_TD};color:{ACCENT_RED}">{int(r["sl"])}</td>'
+            f'<td style="{_BT_TD};color:{TEXT_MUTED}">{int(r["expired"])}</td>'
+            "</tr>"
+        )
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>{thead}</tr></thead><tbody>{body}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_backtest_mode():
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:11.5px;line-height:1.6;margin-bottom:8px">'
+        f'Tests every historical dot against the strategy\'s own exits — TP1 = POC, TP2 = VAH '
+        f'(long) / VAL (short), stop just past the nearest LVN — walked forward day-by-day. The '
+        f'Volume Profile for each dot is rebuilt using only data available <i>as of that dot\'s own '
+        f'date</i> (no lookahead bias). Grouped by ★ to answer: does a 5★ dot actually win more than '
+        f'a 2★ one, historically? <b>Caveats:</b> today\'s universe list applied backward in time '
+        f'(survivorship bias — tickers that failed/delisted since aren\'t included), same-day '
+        f'target-vs-stop ties resolved in favor of the stop (conservative), and a flat '
+        f'{int(BACKTEST_SL_FALLBACK_PCT*100)}% stop used on the rare dot with no LVN in the right '
+        f'direction. Watch the <b>Dots Tested</b> column — a tier with only a handful of dots isn\'t '
+        f'statistically meaningful yet.</div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3 = st.columns([2.2, 1, 1])
+    with c1:
+        uni_label = st.selectbox("Universe", list(_SCAN_UNIVERSE_CHOICES.keys()), index=1,
+                                 key="overkill_bt_uni")
+    with c2:
+        lookback_years = st.number_input("Lookback (years)", min_value=1, max_value=10,
+                                         value=BACKTEST_LOOKBACK_YEARS, key="overkill_bt_years")
+    with c3:
+        max_hold = st.number_input("Max hold (trading days)", min_value=10, max_value=250,
+                                   value=BACKTEST_MAX_HOLD_DAYS, key="overkill_bt_hold")
+
+    run_bt = st.button("▶ Run Backtest", type="primary", key="overkill_bt_run")
+
+    if run_bt:
+        universe = _SCAN_UNIVERSE_CHOICES[uni_label]
+        prog = st.progress(0.0, text="Backtesting historical dots…")
+
+        def _cb(i, total, ticker):
+            prog.progress(min((i + 1) / total, 1.0), text=f"Backtesting {ticker} ({i+1}/{total})…")
+
+        records = _run_backtest(universe, int(lookback_years), int(max_hold), progress_cb=_cb)
+        prog.empty()
+
+        st.session_state["overkill_bt_records"] = records
+        st.session_state["overkill_bt_ts"] = pd.Timestamp.now().strftime("%b %d %Y · %I:%M %p")
+        if not records:
+            st.info("No historical dots found in this window — try a longer lookback or a bigger universe.")
+            return
+
+    records = st.session_state.get("overkill_bt_records")
+    if not records:
+        st.markdown(
+            f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;padding:36px;'
+            f'text-align:center;color:{TEXT_MUTED}">Press <b style="color:{GOLD}">▶ Run Backtest</b> '
+            f'to validate the ★ ratings against historical outcomes. This scans every ticker in the '
+            f'chosen universe and can take a while — it\'s doing far more work per ticker than a '
+            f'live scan.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    greens = sum(1 for r in records if r["color"] == "Green")
+    reds = len(records) - greens
+    weeklies = sum(1 for r in records if r["timeframe"] == "Weekly")
+    st.caption(
+        f"Backtested {st.session_state.get('overkill_bt_ts','')} · {len(records)} historical dots "
+        f"({greens} green, {reds} red · {weeklies} weekly, {len(records)-weeklies} monthly)"
+    )
+    agg = _aggregate_backtest(records)
+    _render_backtest_table(agg)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # MAIN RENDER
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -909,10 +1190,12 @@ def render():
         unsafe_allow_html=True,
     )
 
-    mode = st.radio("Mode", ["🔤 Manual Ticker(s)", "🌐 Scan Universe"], horizontal=True, index=1,
-                    key="overkill_check_mode", label_visibility="collapsed")
+    mode = st.radio("Mode", ["🔤 Manual Ticker(s)", "🌐 Scan Universe", "📊 Backtest"], horizontal=True,
+                    index=1, key="overkill_check_mode", label_visibility="collapsed")
 
     if mode == "🌐 Scan Universe":
         _render_scan_mode()
+    elif mode == "📊 Backtest":
+        _render_backtest_mode()
     else:
         _render_manual_mode()
