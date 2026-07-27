@@ -115,6 +115,55 @@ def _wt_dots(wt1: pd.Series, wt2: pd.Series) -> pd.DataFrame:
     return out
 
 
+# ── Divergence — "light/liberal" by design: a small pivot_order (2) means a
+# bar only has to be the local extreme within +/-2 bars to count, and only the
+# two MOST RECENT pivots need to disagree with price — no requirement that
+# the divergence be large or that a whole pattern of swings lines up. This
+# catches a reversal warning early, before WT1/WT2 even cross into a dot.
+DIVERGENCE_PIVOT_ORDER = 2
+DIVERGENCE_LOOKBACK_WEEKLY  = 26   # ~6 months of weekly bars
+DIVERGENCE_LOOKBACK_MONTHLY = 12   # ~1 year of monthly bars
+
+
+def _pivot_lows(series: pd.Series, order: int) -> list:
+    win = 2 * order + 1
+    roll_min = series.rolling(win, center=True, min_periods=win).min()
+    return list(series.index[series == roll_min])
+
+
+def _pivot_highs(series: pd.Series, order: int) -> list:
+    win = 2 * order + 1
+    roll_max = series.rolling(win, center=True, min_periods=win).max()
+    return list(series.index[series == roll_max])
+
+
+def _detect_divergence(df: pd.DataFrame, wt1: pd.Series, lookback_bars: int,
+                       order: int = DIVERGENCE_PIVOT_ORDER) -> str | None:
+    """'bullish' if price's two most recent swing lows (within `lookback_bars`)
+    make a LOWER low while WT1 makes a HIGHER low at those same two points;
+    'bearish' for the mirror-image swing-high case. None otherwise. Pivots
+    are found over the FULL series (so the rolling window isn't distorted by
+    truncation) then filtered down to the recent window."""
+    close = df["Close"].squeeze()
+    if len(close) < order * 2 + 3:
+        return None
+    since_ts = close.index[max(0, len(close) - lookback_bars)]
+
+    lows = [t for t in _pivot_lows(close, order) if t >= since_ts]
+    if len(lows) >= 2:
+        t1, t2 = lows[-2], lows[-1]
+        if close.loc[t2] < close.loc[t1] and wt1.loc[t2] > wt1.loc[t1]:
+            return "bullish"
+
+    highs = [t for t in _pivot_highs(close, order) if t >= since_ts]
+    if len(highs) >= 2:
+        t1, t2 = highs[-2], highs[-1]
+        if close.loc[t2] > close.loc[t1] and wt1.loc[t2] < wt1.loc[t1]:
+            return "bearish"
+
+    return None
+
+
 def _rsi(close: pd.Series, period: int = 14) -> pd.Series:
     """Wilder's-smoothed RSI, full series (utils.calc_rsi only returns the
     latest scalar, which isn't enough to also plot/chart it if ever needed)."""
@@ -308,12 +357,13 @@ def _analyze_ticker(ticker: str) -> dict:
         dots_w = _wt_dots(wt1_w, wt2_w)
         rsi_w = float(_rsi(weekly_close).iloc[-1])
         mfi_w = _mfi(weekly)
+        div_w = _detect_divergence(weekly, wt1_w, DIVERGENCE_LOOKBACK_WEEKLY)
 
         result = dict(
             ticker=ticker, weekly=weekly, monthly=None, vp=vp,
             wt1_w=wt1_w, wt2_w=wt2_w, dots_w=dots_w, ma400_w=ma400_w, sma9_w=sma9_w,
             wt1_m=None, wt2_m=None, dots_m=None, ma400_m=None, sma9_m=None,
-            rsi_w=rsi_w, rsi_m=None, mfi_w=mfi_w, mfi_m=None,
+            rsi_w=rsi_w, rsi_m=None, mfi_w=mfi_w, mfi_m=None, div_w=div_w, div_m=None,
             price_now=float(weekly_close.iloc[-1]),
             scanners=scanners, stars=stars,
         )
@@ -325,7 +375,8 @@ def _analyze_ticker(ticker: str) -> dict:
             wt1_m, wt2_m = _wavetrend(monthly)
             dots_m = _wt_dots(wt1_m, wt2_m)
             result.update(monthly=monthly, wt1_m=wt1_m, wt2_m=wt2_m, dots_m=dots_m, ma400_m=ma400_m,
-                         sma9_m=sma9_m, rsi_m=float(_rsi(monthly_close).iloc[-1]), mfi_m=_mfi(monthly))
+                         sma9_m=sma9_m, rsi_m=float(_rsi(monthly_close).iloc[-1]), mfi_m=_mfi(monthly),
+                         div_m=_detect_divergence(monthly, wt1_m, DIVERGENCE_LOOKBACK_MONTHLY))
 
         result["last_w"] = _last_dot(weekly, dots_w, ma400_w, vp, mfi_w)
         result["last_m"] = (_last_dot(monthly, result["dots_m"], result["ma400_m"], vp, result["mfi_m"])
@@ -352,11 +403,15 @@ def _analyze_ticker_green_only(ticker: str) -> dict:
 def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
                    progress_cb=None) -> list[dict]:
     """Phase 1 of the Universe Scan — cheap pass (weekly + monthly WaveTrend
-    only, no daily/Volume-Profile fetch) over the whole universe to find
-    tickers with a green dot inside the fresh-lookback window on either
-    timeframe (OR). Returns candidates sorted weekly-fresh-first (then by
-    weekly dot recency), monthly-only matches after (then by monthly dot
-    recency) — matching 'sort the table by weekly green dots'.
+    only, no daily/Volume-Profile fetch) over the whole universe. A ticker
+    qualifies via EITHER of two liberal paths (OR'd, so this only ever grows
+    the result set, never narrows it):
+      1. A fresh green dot inside the lookback window (weekly or monthly).
+      2. A bullish WaveTrend divergence (weekly or monthly) — catches a
+         reversal warning even before WT1/WT2 actually cross into a dot.
+    Returns candidates sorted weekly-fresh-first (then by weekly dot
+    recency); everything else (monthly-fresh and/or divergence-only matches)
+    follows, sorted by monthly dot recency where one exists.
     """
     prefetch_tickers(universe, "max", "1wk")
     prefetch_tickers(universe, "max", "1mo")
@@ -373,23 +428,28 @@ def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
             weekly = weekly.dropna(subset=["Open", "High", "Low", "Close"])
             if len(weekly) < 30:
                 continue
-            dots_w = _wt_dots(*_wavetrend(weekly))
+            wt1_w, wt2_w = _wavetrend(weekly)
+            dots_w = _wt_dots(wt1_w, wt2_w)
             gw = _last_green_dot(weekly, dots_w, None, None)
             fresh_w = gw is not None and gw["bars_ago"] < weekly_fresh
+            div_w = _detect_divergence(weekly, wt1_w, DIVERGENCE_LOOKBACK_WEEKLY) == "bullish"
 
             gm = None
             fresh_m = False
+            div_m = False
             monthly = get_price_history(ticker, period="max", interval="1mo")
             if monthly is not None and not monthly.empty:
                 monthly = monthly.dropna(subset=["Open", "High", "Low", "Close"])
                 if len(monthly) >= 20:
-                    dots_m = _wt_dots(*_wavetrend(monthly))
+                    wt1_m, wt2_m = _wavetrend(monthly)
+                    dots_m = _wt_dots(wt1_m, wt2_m)
                     gm = _last_green_dot(monthly, dots_m, None, None)
                     fresh_m = gm is not None and gm["bars_ago"] < monthly_fresh
+                    div_m = _detect_divergence(monthly, wt1_m, DIVERGENCE_LOOKBACK_MONTHLY) == "bullish"
 
-            if fresh_w or fresh_m:
+            if fresh_w or fresh_m or div_w or div_m:
                 candidates.append(dict(
-                    ticker=ticker, fresh_w=fresh_w, fresh_m=fresh_m,
+                    ticker=ticker, fresh_w=fresh_w, fresh_m=fresh_m, div_w=div_w, div_m=div_m,
                     gw_date=gw["date"] if gw else "", gm_date=gm["date"] if gm else "",
                 ))
         except Exception:
@@ -397,9 +457,9 @@ def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
 
     weekly_first = sorted([c for c in candidates if c["fresh_w"]],
                           key=lambda c: c["gw_date"], reverse=True)
-    monthly_only = sorted([c for c in candidates if not c["fresh_w"] and c["fresh_m"]],
-                          key=lambda c: c["gm_date"], reverse=True)
-    return weekly_first + monthly_only
+    rest = sorted([c for c in candidates if not c["fresh_w"]],
+                  key=lambda c: c["gm_date"], reverse=True)  # divergence-only (no gm_date) sorts last
+    return weekly_first + rest
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -810,6 +870,19 @@ def _mf_badge(last: dict | None) -> str:
             f'style="color:{color};font-size:10px">💰</span>')
 
 
+def _divergence_badge(div_w: str | None, div_m: str | None) -> str:
+    """Small badge next to the ticker when a bullish/bearish WaveTrend
+    divergence is present on either timeframe — catches a reversal warning
+    even before WT1/WT2 actually cross into a dot."""
+    div = div_w or div_m
+    if not div:
+        return ""
+    icon = "📈" if div == "bullish" else "📉"
+    color = ACCENT_GREEN if div == "bullish" else ACCENT_RED
+    label = f"{div.capitalize()} divergence"
+    return f' <span title="{label}" style="color:{color};font-size:10px">{icon}</span>'
+
+
 def _price_cell(price: float | None) -> str:
     if price is None or not np.isfinite(price):
         return f'<span style="color:{TEXT_MUTED}">—</span>'
@@ -890,7 +963,8 @@ def _render_ticker_table(results: list[dict], key_prefix: str) -> str | None:
                              on_change=_select_ticker_cb, args=(ticker, all_tickers, key_prefix))
             tk_style = f"color:{GOLD};font-weight:700" + (";text-decoration:underline" if ticker == selected else "")
             mf = _mf_badge(lw or lm)
-            cols[1].markdown(f'<span style="{tk_style}">{ticker}</span>{mf}', unsafe_allow_html=True)
+            div = _divergence_badge(r.get("div_w"), r.get("div_m"))
+            cols[1].markdown(f'<span style="{tk_style}">{ticker}</span>{mf}{div}', unsafe_allow_html=True)
             cols[2].markdown(_price_cell(r.get("price_now")), unsafe_allow_html=True)
             cols[3].markdown(_dot_compact(lw), unsafe_allow_html=True)
             cols[4].markdown(_dot_compact(lm), unsafe_allow_html=True)
@@ -987,9 +1061,12 @@ def _render_scan_mode():
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11.5px;line-height:1.6;margin-bottom:8px">'
         f'Scans the whole universe for tickers with a <b style="color:{ACCENT_GREEN}">🟢 fresh green '
-        f'dot</b> on the Weekly <i>or</i> Monthly chart — only matching tickers are listed (not all '
-        f'~480). "Fresh" = the dot printed within the lookback below; tighten it for only-this-week '
-        f'signals, loosen it to catch dots that are still developing.</div>',
+        f'dot</b> OR a <b style="color:{ACCENT_GREEN}">📈 bullish divergence</b> on the Weekly '
+        f'<i>or</i> Monthly chart — only matching tickers are listed (not all ~480). Divergence is a '
+        f'deliberately liberal, additional way in — it can catch a reversal before the dot itself '
+        f'prints, so it only ever adds candidates, never narrows them. "Fresh" = the dot printed '
+        f'within the lookback below; tighten it for only-this-week signals, loosen it to catch dots '
+        f'that are still developing.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1177,7 +1254,11 @@ def render():
         f'<b style="color:{ACCENT_GREEN}">🟢 Green Dot</b> = bullish WaveTrend cross while oversold · '
         f'<b style="color:{ACCENT_RED}">🔴 Red Dot</b> = bearish cross while overbought. A 💰 next to '
         f'the ticker means Money Flow Index agrees with that dot (oversold for green, overbought for '
-        f'red) — a soft confirmation, not a filter; its absence doesn\'t disqualify anything. The '
+        f'red) — a soft confirmation, not a filter; its absence doesn\'t disqualify anything. A '
+        f'<b style="color:{ACCENT_GREEN}">📈</b>/<b style="color:{ACCENT_RED}">📉</b> means price and '
+        f'the WaveTrend line are diverging (e.g. price makes a lower low while the oscillator makes a '
+        f'higher low) — a reversal warning that can show up <i>before</i> a dot even prints; in Scan '
+        f'Universe it\'s one of the ways a ticker can qualify. The '
         f'<b>Verdict</b> column combines two reads: where <i>today\'s</i> price sits vs. the Volume '
         f'Profile (room up to POC/VAH = upside bias, below VAL = downside risk) and whether the '
         f'qualifying dot itself printed at a key level or in isolation (his "Golden Rule" — an '
