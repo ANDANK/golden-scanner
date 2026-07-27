@@ -45,6 +45,9 @@ from utils import calc_ema, calc_sma
 from data_loader import get_price_history, prefetch_tickers
 
 PURPLE = "#A78BFA"
+SMA9_COLOR  = "#FACC15"  # yellow
+SMA20_COLOR = "#22D3EE"  # aqua
+SMA50_COLOR = "#F97316"  # orange — aqua's taken by SMA20, needs its own distinct color
 
 # ── WaveTrend params (LazyBear's public "WaveTrend Oscillator" formula) ────
 WT_CHANNEL_LEN = 9
@@ -360,6 +363,8 @@ def _analyze_ticker(ticker: str) -> dict:
         weekly_close = weekly["Close"].squeeze()
         ma400_w = calc_sma(weekly_close, MA_LEN)
         sma9_w = calc_sma(weekly_close, 9)
+        sma20_w = calc_sma(weekly_close, 20)
+        sma50_w = calc_sma(weekly_close, 50)
         wt1_w, wt2_w = _wavetrend(weekly)
         dots_w = _wt_dots(wt1_w, wt2_w)
         rsi_w = float(_rsi(weekly_close).iloc[-1])
@@ -368,8 +373,10 @@ def _analyze_ticker(ticker: str) -> dict:
 
         result = dict(
             ticker=ticker, weekly=weekly, monthly=None, vp=vp,
-            wt1_w=wt1_w, wt2_w=wt2_w, dots_w=dots_w, ma400_w=ma400_w, sma9_w=sma9_w,
-            wt1_m=None, wt2_m=None, dots_m=None, ma400_m=None, sma9_m=None,
+            wt1_w=wt1_w, wt2_w=wt2_w, dots_w=dots_w, ma400_w=ma400_w,
+            sma9_w=sma9_w, sma20_w=sma20_w, sma50_w=sma50_w,
+            wt1_m=None, wt2_m=None, dots_m=None, ma400_m=None,
+            sma9_m=None, sma20_m=None, sma50_m=None,
             rsi_w=rsi_w, rsi_m=None, mfi_w=mfi_w, mfi_m=None, div_w=div_w, div_m=None,
             price_now=float(weekly_close.iloc[-1]),
             scanners=scanners, stars=stars,
@@ -379,10 +386,13 @@ def _analyze_ticker(ticker: str) -> dict:
             monthly_close = monthly["Close"].squeeze()
             ma400_m = calc_sma(monthly_close, MA_LEN)
             sma9_m = calc_sma(monthly_close, 9)
+            sma20_m = calc_sma(monthly_close, 20)
+            sma50_m = calc_sma(monthly_close, 50)
             wt1_m, wt2_m = _wavetrend(monthly)
             dots_m = _wt_dots(wt1_m, wt2_m)
             result.update(monthly=monthly, wt1_m=wt1_m, wt2_m=wt2_m, dots_m=dots_m, ma400_m=ma400_m,
-                         sma9_m=sma9_m, rsi_m=float(_rsi(monthly_close).iloc[-1]), mfi_m=_mfi(monthly),
+                         sma9_m=sma9_m, sma20_m=sma20_m, sma50_m=sma50_m,
+                         rsi_m=float(_rsi(monthly_close).iloc[-1]), mfi_m=_mfi(monthly),
                          div_m=_detect_divergence(monthly, wt1_m, DIVERGENCE_LOOKBACK_MONTHLY))
 
         result["last_w"] = _last_dot(weekly, dots_w, ma400_w, vp, mfi_w)
@@ -790,14 +800,16 @@ def _verdict_cell(last: dict | None, price_now: float | None, vp: dict | None) -
 # ── Chart ────────────────────────────────────────────────────────────────────
 def _build_chart(result: dict, timeframe: str):
     if timeframe == "Monthly":
-        df, wt1, wt2, dots, ma_series, sma9_series = (
+        df, wt1, wt2, dots, ma_series, sma9_series, sma20_series, sma50_series = (
             result.get("monthly"), result.get("wt1_m"), result.get("wt2_m"),
             result.get("dots_m"), result.get("ma400_m"), result.get("sma9_m"),
+            result.get("sma20_m"), result.get("sma50_m"),
         )
     else:
-        df, wt1, wt2, dots, ma_series, sma9_series = (
+        df, wt1, wt2, dots, ma_series, sma9_series, sma20_series, sma50_series = (
             result["weekly"], result["wt1_w"], result["wt2_w"],
             result["dots_w"], result["ma400_w"], result.get("sma9_w"),
+            result.get("sma20_w"), result.get("sma50_w"),
         )
     if df is None or df.empty or wt1 is None:
         return None
@@ -809,14 +821,16 @@ def _build_chart(result: dict, timeframe: str):
     dots_v = dots.iloc[-n:]
     ma_v = ma_series.iloc[-n:] if ma_series is not None else None
     sma9_v = sma9_series.iloc[-n:] if sma9_series is not None else None
+    sma20_v = sma20_series.iloc[-n:] if sma20_series is not None else None
+    sma50_v = sma50_series.iloc[-n:] if sma50_series is not None else None
     vp = result.get("vp")
     ticker = result["ticker"]
 
     macd_ln, sig_ln, hist_s = _macd(df["Close"].squeeze())
     macd_ln, sig_ln, hist_s = macd_ln.iloc[-n:], sig_ln.iloc[-n:], hist_s.iloc[-n:]
 
-    fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04,
-                        row_heights=[0.5, 0.26, 0.24])
+    fig = make_subplots(rows=4, cols=1, shared_xaxes=True, vertical_spacing=0.035,
+                        row_heights=[0.44, 0.22, 0.19, 0.15])
 
     fig.add_trace(go.Candlestick(
         x=xs, open=view["Open"].squeeze(), high=view["High"].squeeze(),
@@ -826,9 +840,12 @@ def _build_chart(result: dict, timeframe: str):
         name=ticker,
     ), row=1, col=1)
 
-    if sma9_v is not None and not sma9_v.dropna().empty:
-        fig.add_trace(go.Scatter(x=xs, y=sma9_v, line=dict(color="#22D3EE", width=1.3),
-                                 name="9-period MA"), row=1, col=1)
+    for series_v, color, label in [(sma9_v, SMA9_COLOR, "9-period MA"),
+                                   (sma20_v, SMA20_COLOR, "20-period MA"),
+                                   (sma50_v, SMA50_COLOR, "50-period MA")]:
+        if series_v is not None and not series_v.dropna().empty:
+            fig.add_trace(go.Scatter(x=xs, y=series_v, line=dict(color=color, width=1.3),
+                                     name=label), row=1, col=1)
 
     if ma_v is not None and not ma_v.dropna().empty:
         fig.add_trace(go.Scatter(x=xs, y=ma_v, line=dict(color=PURPLE, width=2.2),
@@ -889,21 +906,28 @@ def _build_chart(result: dict, timeframe: str):
     fig.add_trace(go.Scatter(x=xs, y=sig_ln, line=dict(color=GOLD, width=1.1), name="Signal"), row=3, col=1)
     fig.add_hline(y=0, line=dict(color=BORDER_COLOR, width=0.8, dash="dot"), row=3, col=1)
 
+    # Volume bars — colored by that bar's own candle direction
+    close_v, open_v = view["Close"].squeeze(), view["Open"].squeeze()
+    vol_colors = [ACCENT_GREEN if c >= o else ACCENT_RED for c, o in zip(close_v, open_v)]
+    fig.add_trace(go.Bar(x=xs, y=view["Volume"].squeeze(), marker_color=vol_colors, name="Volume",
+                        showlegend=False, opacity=0.7), row=4, col=1)
+
     fig.update_layout(
         paper_bgcolor=BG_DARK, plot_bgcolor=BG_PANEL,
         font=dict(color=TEXT_PRIMARY, family="Inter, sans-serif", size=11),
-        height=760, margin=dict(l=10, r=60, t=34, b=10),
+        height=880, margin=dict(l=10, r=60, t=34, b=10),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0,
                    bgcolor="rgba(0,0,0,0)", font=dict(size=10)),
         xaxis_rangeslider_visible=False, hovermode="x unified",
         title=dict(text=f"{ticker} — {timeframe}", font=dict(size=13, color=GOLD), x=0.01, y=0.99),
     )
-    for i in (1, 2, 3):
+    for i in (1, 2, 3, 4):
         fig.update_xaxes(gridcolor=BORDER_COLOR, row=i, col=1, showgrid=True)
         fig.update_yaxes(gridcolor=BORDER_COLOR, row=i, col=1, showgrid=True)
     fig.update_yaxes(title_text="Price", row=1, col=1, title_font=dict(size=10, color=TEXT_MUTED))
     fig.update_yaxes(title_text="WaveTrend", row=2, col=1, title_font=dict(size=10, color=TEXT_MUTED))
     fig.update_yaxes(title_text="MACD", row=3, col=1, title_font=dict(size=10, color=TEXT_MUTED))
+    fig.update_yaxes(title_text="Volume", row=4, col=1, title_font=dict(size=10, color=TEXT_MUTED))
     return fig
 
 
