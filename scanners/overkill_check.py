@@ -843,10 +843,16 @@ def _build_chart(result: dict, timeframe: str):
             fig.add_hline(y=lvl, line=dict(color=color, width=width, dash=dash),
                          annotation_text=label, annotation_position="right",
                          annotation_font=dict(size=9, color=color), row=1, col=1)
-        for lvl in vp["hvn"]:
-            fig.add_hline(y=lvl, line=dict(color=_rgba(GOLD, 0.45), width=0.7, dash="dot"), row=1, col=1)
-        for lvl in vp["lvn"]:
-            fig.add_hline(y=lvl, line=dict(color=_rgba(TEXT_MUTED, 0.55), width=0.6, dash="dot"), row=1, col=1)
+        # Chart shows only the top 2 of each (by volume) to stay readable now that
+        # they're labeled — the confluence check (_level_hits) still checks all 5.
+        for lvl in vp["hvn"][:2]:
+            fig.add_hline(y=lvl, line=dict(color=_rgba(GOLD, 0.45), width=0.7, dash="dot"),
+                         annotation_text="HVN", annotation_position="left",
+                         annotation_font=dict(size=8, color=_rgba(GOLD, 0.7)), row=1, col=1)
+        for lvl in vp["lvn"][:2]:
+            fig.add_hline(y=lvl, line=dict(color=_rgba(TEXT_MUTED, 0.55), width=0.6, dash="dot"),
+                         annotation_text="LVN", annotation_position="left",
+                         annotation_font=dict(size=8, color=_rgba(TEXT_MUTED, 0.8)), row=1, col=1)
 
     # WaveTrend "cloud" — two-tone fill between wt1/wt2, green when wt1>=wt2, red otherwise
     bull = (wt1_v >= wt2_v)
