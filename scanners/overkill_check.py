@@ -708,26 +708,32 @@ def _run_best_scanner(daily: pd.DataFrame | None, spy_close: pd.Series) -> tuple
 
 
 def _verdict_stars(last: dict | None, price_now: float | None, vp: dict | None) -> int:
-    """0-5 power rating for the Verdict — confluence is the primary gate
-    (an isolated dot never outranks a confirmed one, per the Golden Rule).
+    """0-5 power rating for the Verdict.
 
     Within a confirmed dot, stars grade where price sits relative to the
-    level it confirmed at — corrected against a real backtest (MTPA 200 +
-    FTF ~480, 25/45/90-day holds) which showed the original "reward = room
-    still left toward the far edge" framing was backwards: it scored
-    "price has since crashed through VAL" the SAME as "fresh dot right at
-    VAL" (both were unboundedly >= max reward), which buried a huge number
-    of broken-support dots in the top tier and dragged its win rate down
-    to ~35% — statistically indistinguishable from an isolated dot. It also
+    level it confirmed at — corrected against a real backtest (MTPA 200 /
+    S&P 500 sample / FTF ~480, 25/30/45/90-day holds) which showed the
+    original "reward = room still left toward the far edge" framing was
+    backwards: it scored "price has since crashed through VAL" the SAME as
+    "fresh dot right at VAL" (both were unboundedly >= max reward), which
+    buried a huge number of broken-support dots in the top tier. It also
     treated "price already extended past VAH" as "no room left" (worst
     tier) when empirically that was the BEST-performing case (~100% win
     rate, zero stop-outs) — a green dot confirming during an already-proven
     uptrend is a trend-continuation trade, not a "too late" trade.
+
+    A second backtest round (after that fix) then showed confirmed-then-
+    BROKEN (2 below) winning far less often than an isolated dot (7-10% vs
+    38-52%, consistent across both universes) — a dot that had real
+    confluence and then got invalidated is a stronger negative signal than
+    a dot that never had confluence at all, so 1 and 2 are ordered with
+    broken-confirmation as the worst tier, below isolated.
       0 = no recent dot
-      1 = isolated dot (no confluence when it printed)
-      2 = confirmed, but price has since broken the opposite structural
+      1 = confirmed, but price has since broken the opposite structural
           level (e.g. a green dot whose VAL support has since given way) —
-          the worst confirmed case, on par with or below isolated
+          empirically the WORST tier, well below isolated
+      2 = isolated dot (no confluence when it printed) — weak/uninformative,
+          but empirically beats an actively-broken confirmation
       3 = confirmed, price still between the confirming level and fair
           value (POC) — the traditional "textbook entry", not yet proven
       4 = confirmed, price has moved through fair value toward the far edge
@@ -737,7 +743,7 @@ def _verdict_stars(last: dict | None, price_now: float | None, vp: dict | None) 
     if last is None:
         return 0
     if not last["hits"]:
-        return 1
+        return 2
     if price_now is None or vp is None or not np.isfinite(price_now):
         return 3
     val, vah = vp["val"], vp["vah"]
@@ -748,7 +754,7 @@ def _verdict_stars(last: dict | None, price_now: float | None, vp: dict | None) 
     # edge (proven strength), <0 = broken back through the confirming level
     pos = (price_now - val) / span if last["color"] == "Green" else (vah - price_now) / span
     if pos < 0:
-        return 2
+        return 1
     if pos < 0.4:
         return 3
     if pos < 0.75:
@@ -898,14 +904,20 @@ _ROW_HEIGHT_PX = 83   # calibrated against the Best Scanners table (~83px/row)
 _MAX_VISIBLE_ROWS = 6
 
 
-def _dot_compact(last: dict | None) -> str:
+def _dot_compact(last: dict | None, fresh_threshold: int | None = None) -> str:
+    """`fresh_threshold`, when given (Scan Universe only), dims the cell and
+    adds a (stale) note when this dot is OLDER than the lookback that would
+    make it 'fresh' — makes it visually obvious when a row only qualified
+    via divergence (or the other timeframe), not this dot."""
     if last is None:
         return f'<span style="color:{TEXT_MUTED}">—</span>'
-    color = ACCENT_GREEN if last["color"] == "Green" else ACCENT_RED
+    is_stale = fresh_threshold is not None and last["bars_ago"] >= fresh_threshold
+    color = TEXT_MUTED if is_stale else (ACCENT_GREEN if last["color"] == "Green" else ACCENT_RED)
     icon = "🟢" if last["color"] == "Green" else "🔴"
+    stale_note = " · stale" if is_stale else ""
     return (f'<span style="color:{color};font-weight:600">{icon} {last["date"]}</span><br>'
             f'<span style="color:{TEXT_MUTED};font-size:10px">${last["price"]:.2f} '
-            f'· {last["bars_ago"]}b ago</span>')
+            f'· {last["bars_ago"]}b ago{stale_note}</span>')
 
 
 def _mf_badge(last: dict | None) -> str:
@@ -985,14 +997,21 @@ def _select_ticker_cb(ticker: str, all_tickers: list, key_prefix: str) -> None:
         st.session_state[key] = True
 
 
-def _render_ticker_table(results: list[dict], key_prefix: str) -> str | None:
+def _render_ticker_table(results: list[dict], key_prefix: str,
+                         weekly_fresh: int | None = None, monthly_fresh: int | None = None) -> str | None:
     """Scrollable table (~6 rows) with a per-row single-select checkbox that
     drives which ticker's chart renders below. Uses real Streamlit widgets
     (not raw HTML) so the checkbox can call back into Python, wrapped in
     st.container(height=...) — the native way to get a real scrollable area
     around widgets (raw HTML can't wrap elements rendered across separate
     st.columns calls). Header is rendered outside the container so it stays
-    fixed while the rows scroll."""
+    fixed while the rows scroll.
+
+    `weekly_fresh`/`monthly_fresh` (Scan Universe only) dim a dot's cell and
+    mark it "stale" when it's outside that lookback — makes it obvious when
+    a row only qualified via divergence or the other timeframe, not this
+    dot (otherwise a stale-but-shown dot reads as if it were the reason the
+    row is here)."""
     ok = [r for r in results if "error" not in r]
     bad = [r for r in results if "error" in r]
     if bad:
@@ -1028,8 +1047,8 @@ def _render_ticker_table(results: list[dict], key_prefix: str) -> str | None:
             dual = _dual_tf_badge(r.get("both_fresh", False))
             cols[1].markdown(f'<span style="{tk_style}">{ticker}</span>{mf}{div}{dual}', unsafe_allow_html=True)
             cols[2].markdown(_price_cell(r.get("price_now")), unsafe_allow_html=True)
-            cols[3].markdown(_dot_compact(lw), unsafe_allow_html=True)
-            cols[4].markdown(_dot_compact(lm), unsafe_allow_html=True)
+            cols[3].markdown(_dot_compact(lw, weekly_fresh), unsafe_allow_html=True)
+            cols[4].markdown(_dot_compact(lm, monthly_fresh), unsafe_allow_html=True)
             cols[5].markdown(_rsi_cell(r.get("rsi_w"), r.get("rsi_m")), unsafe_allow_html=True)
             cols[6].markdown(_scanners_cell(r.get("scanners"), r.get("stars", 0)), unsafe_allow_html=True)
             cols[7].markdown(_verdict_cell(lw or lm, r.get("price_now"), r.get("vp")), unsafe_allow_html=True)
@@ -1041,8 +1060,9 @@ def _render_ticker_table(results: list[dict], key_prefix: str) -> str | None:
 # SHARED RESULTS SECTION (table + chart) — used by both modes
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _render_results_section(results: list[dict], key_prefix: str) -> None:
-    sel_ticker = _render_ticker_table(results, key_prefix)
+def _render_results_section(results: list[dict], key_prefix: str,
+                            weekly_fresh: int | None = None, monthly_fresh: int | None = None) -> None:
+    sel_ticker = _render_ticker_table(results, key_prefix, weekly_fresh, monthly_fresh)
     if sel_ticker is None:
         return
 
@@ -1205,8 +1225,11 @@ def _render_scan_mode():
 
     ok = [r for r in results if "error" not in r]
     st.caption(f"Scanned {st.session_state.get('overkill_scan_ts','')} · "
-              f"{len(ok)} ticker(s) with a fresh green dot (sorted: weekly dots first, then by ★ power)")
-    _render_results_section(results, key_prefix="overkill_scan")
+              f"{len(ok)} ticker(s) with a fresh green dot or divergence "
+              f"(sorted: both-fresh 🎯 first, then weekly-fresh, then the rest — ★ power within each; "
+              f"a dimmed/'stale' dot means that timeframe isn't why this row qualified)")
+    _render_results_section(results, key_prefix="overkill_scan", weekly_fresh=int(weekly_fresh),
+                            monthly_fresh=int(monthly_fresh))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1337,15 +1360,15 @@ def render():
         f'Profile (room up to POC/VAH = upside bias, below VAL = downside risk) and whether the '
         f'qualifying dot itself printed at a key level or in isolation (his "Golden Rule" — an '
         f'isolated dot is chop risk). The <b style="color:{GOLD}">★</b> before it (1-5, blank = no dot) '
-        f'ranks that combination — confluence first (isolated is capped at ★), then <i>where price sits '
-        f'relative to the level that confirmed it</i>: already through fair value toward/past the far '
-        f'edge (★★★★★–★★★★) reads as confirmed strength/trend continuation, near the confirming level '
-        f'but not yet proven (★★★) is the textbook-but-unconfirmed entry, and price that has since '
-        f'broken back through the confirming level (★★) is the weakest confirmed case. This ordering '
-        f'was corrected against a real Backtest run (see that mode) — the original "more room left = '
-        f'more stars" framing scored broken-support dots the same as fresh ones and undervalued '
-        f'trend-continuation dots; validate any further tuning the same way. MACD crossover is shown '
-        f'on the chart. '
+        f'ranks that combination, tuned against two real Backtest rounds (see that mode): already '
+        f'through fair value toward/past the far edge (★★★★★–★★★★) reads as confirmed strength/trend '
+        f'continuation, near the confirming level but not yet proven (★★★) is the textbook-but-'
+        f'unconfirmed entry, an isolated dot with no confluence at all (★★) is weak but merely '
+        f'uninformative, and a dot that WAS confirmed but has since broken back through that same '
+        f'level (★) is the single worst tier — an active failure, empirically worse than never having '
+        f'confluence to begin with. Both backtest rounds found the original design backwards (room-'
+        f'based reward scoring, and isolated ranked above broken-confirmation) — validate any further '
+        f'tuning the same way before trusting it. MACD crossover is shown on the chart. '
         f'<b>Note:</b> dots come from '
         f'the public WaveTrend formula his tool is built on (not his exact proprietary script), the '
         f'{MA_LEN}-period MA is an expanding average until enough bars exist, and the Volume Profile is '
