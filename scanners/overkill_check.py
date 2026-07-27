@@ -75,8 +75,15 @@ _SCAN_UNIVERSE_CHOICES = {
     "MTPA 200 (stock-heavy)": MTPA_200,
     "S&P 500 sample (200)": SP500_SAMPLE[:200],
 }
-DEFAULT_WEEKLY_FRESH_BARS  = 4   # "fresh" weekly dot = within the last N weekly bars
-DEFAULT_MONTHLY_FRESH_BARS = 2   # "fresh" monthly dot = within the last N monthly bars
+DEFAULT_WEEKLY_FRESH_BARS  = 6   # "fresh" weekly dot = within the last N weekly bars
+DEFAULT_MONTHLY_FRESH_BARS = 3   # "fresh" monthly dot = within the last N monthly bars
+# Relaxed from 4/2 (2026-07) — a WT dot is already a strict event (WT2 <= -53
+# at the cross), so a narrow recency window on top of that was crushing the
+# fresh-tier counts in Scan Universe. Widening the window doesn't touch the
+# dot definition, Volume Profile, or star tiers, so backtest results already
+# gathered against those still hold — this only changes which of the SAME
+# dots count as "recent enough" to surface. Still user-adjustable per run
+# (1-20 weekly / 1-12 monthly) regardless of this default.
 
 _DEFAULT_MANUAL_TICKERS = (
     "TSLA, MU, AAPL, MSFT, AMZN, SOXL, TQQQ, QQQ, PLTR, ASTS, CRWV, NVDA, "
