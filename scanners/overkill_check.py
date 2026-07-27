@@ -409,9 +409,13 @@ def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
       1. A fresh green dot inside the lookback window (weekly or monthly).
       2. A bullish WaveTrend divergence (weekly or monthly) — catches a
          reversal warning even before WT1/WT2 actually cross into a dot.
-    Returns candidates sorted weekly-fresh-first (then by weekly dot
-    recency); everything else (monthly-fresh and/or divergence-only matches)
-    follows, sorted by monthly dot recency where one exists.
+    Returns candidates in three tiers, each sorted by weekly dot recency
+    (falling back to monthly recency where no weekly date exists):
+      1. Both timeframes freshly confirmed (fresh_w AND fresh_m) — the
+         highest-conviction group, both dots independently inside their own
+         lookback window (not a stale monthly paired with a fresh weekly).
+      2. Weekly-fresh only.
+      3. Everything else (monthly-fresh-only and/or divergence-only).
     """
     prefetch_tickers(universe, "max", "1wk")
     prefetch_tickers(universe, "max", "1mo")
@@ -455,11 +459,16 @@ def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
         except Exception:
             continue
 
-    weekly_first = sorted([c for c in candidates if c["fresh_w"]],
+    for c in candidates:
+        c["both_fresh"] = c["fresh_w"] and c["fresh_m"]
+
+    both_fresh   = sorted([c for c in candidates if c["both_fresh"]],
+                          key=lambda c: c["gw_date"], reverse=True)
+    weekly_only  = sorted([c for c in candidates if c["fresh_w"] and not c["both_fresh"]],
                           key=lambda c: c["gw_date"], reverse=True)
     rest = sorted([c for c in candidates if not c["fresh_w"]],
                   key=lambda c: c["gm_date"], reverse=True)  # divergence-only (no gm_date) sorts last
-    return weekly_first + rest
+    return both_fresh + weekly_only + rest
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -635,23 +644,48 @@ def _aggregate_backtest(records: list[dict]) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values("stars", ascending=False).reset_index(drop=True)
 
 
-def _vp_position(price: float | None, vp: dict | None) -> tuple[str, str]:
-    """Directional read of CURRENT price vs the Volume Profile — this is the
-    'which tickers are likely to move up' heuristic: room-to-run toward the
-    magnetic POC/VAH levels, not a prediction. Purely technical, not advice."""
+def _vp_position(price: float | None, vp: dict | None, color: str | None = None) -> tuple[str, str]:
+    """Directional read of CURRENT price vs the Volume Profile — mirrors
+    _verdict_stars' pos thresholds (0 / 0.4 / 0.75) exactly, so the text and
+    the star rating never contradict each other.
+
+    Without a `color` (no dot to judge this against — e.g. before any dot
+    has ever printed) the read stays neutral/descriptive only: no
+    "good"/"bad" framing, since there's no direction to judge it against.
+    With a color, phrasing matches what the backtest showed: for a Green/
+    long dot, price already through fair value toward/past VAH is strength
+    (trend continuation), while price that's broken back below VAL is the
+    warning case. The mirror holds for a Red/short dot around VAL/VAH."""
     if price is None or vp is None or not np.isfinite(price):
         return "— no VP data", TEXT_MUTED
     poc, val, vah = vp["poc"], vp["val"], vp["vah"]
     tol = price * CONFLUENCE_TOL
-    if price < val:
-        return f"🔻 Below VAL (${val:.2f})", ACCENT_RED
+
+    if color is None:
+        if price < val:
+            return f"Below VAL (${val:.2f})", TEXT_MUTED
+        if abs(price - poc) <= tol:
+            return f"⚖️ At POC (${poc:.2f})", GOLD
+        if price < poc:
+            return f"Between VAL and POC (${val:.2f}–${poc:.2f})", TEXT_MUTED
+        if price <= vah:
+            return f"Between POC and VAH (${poc:.2f}–${vah:.2f})", TEXT_MUTED
+        return f"Above VAH (${vah:.2f})", TEXT_MUTED
+
+    span = vah - val
+    pos = (price - val) / span if color == "Green" else (vah - price) / span
+    confirm_name, confirm_lvl = ("VAL", val) if color == "Green" else ("VAH", vah)
+    far_name, far_lvl = ("VAH", vah) if color == "Green" else ("VAL", val)
+
+    if pos < 0:
+        return f"⚠️ Broke back through {confirm_name} (${confirm_lvl:.2f})", ACCENT_RED
     if abs(price - poc) <= tol:
         return f"⚖️ At POC (${poc:.2f})", GOLD
-    if price < poc:
-        return f"🚀 Upside to POC (${poc:.2f})", ACCENT_GREEN
-    if price <= vah:
-        return f"➡️ Room to VAH (${vah:.2f})", ACCENT_BLUE
-    return f"⚠️ Above VAH (${vah:.2f})", GOLD
+    if pos < 0.4:
+        return f"🎯 Near {confirm_name} (${confirm_lvl:.2f}) — unproven", GOLD
+    if pos < 0.75:
+        return f"➡️ Through POC, toward {far_name} (${far_lvl:.2f})", ACCENT_BLUE
+    return f"💪 Extended past {far_name} (${far_lvl:.2f}) — trend continuation", ACCENT_GREEN
 
 
 def _run_best_scanner(daily: pd.DataFrame | None, spy_close: pd.Series) -> tuple[list[str], int]:
@@ -723,7 +757,7 @@ def _verdict_stars(last: dict | None, price_now: float | None, vp: dict | None) 
 
 
 def _verdict_cell(last: dict | None, price_now: float | None, vp: dict | None) -> str:
-    bias_text, bias_color = _vp_position(price_now, vp)
+    bias_text, bias_color = _vp_position(price_now, vp, last["color"] if last else None)
     stars = _verdict_stars(last, price_now, vp)
     star_prefix = f'<span style="color:{GOLD}">{"★" * stars}</span> ' if stars else ""
     if last is None:
@@ -899,6 +933,17 @@ def _divergence_badge(div_w: str | None, div_m: str | None) -> str:
     return f' <span title="{label}" style="color:{color};font-size:10px">{icon}</span>'
 
 
+def _dual_tf_badge(both_fresh: bool) -> str:
+    """Small badge when a ticker has a FRESH confirmation on both Weekly AND
+    Monthly at once (each independently inside its own lookback window) —
+    the strongest confluence available, used in Scan Universe to rank these
+    tickers ahead of a weekly-only match."""
+    if not both_fresh:
+        return ""
+    return (f' <span title="Fresh on both Weekly and Monthly" '
+            f'style="color:{GOLD};font-size:10px">🎯</span>')
+
+
 def _price_cell(price: float | None) -> str:
     if price is None or not np.isfinite(price):
         return f'<span style="color:{TEXT_MUTED}">—</span>'
@@ -980,7 +1025,8 @@ def _render_ticker_table(results: list[dict], key_prefix: str) -> str | None:
             tk_style = f"color:{GOLD};font-weight:700" + (";text-decoration:underline" if ticker == selected else "")
             mf = _mf_badge(lw or lm)
             div = _divergence_badge(r.get("div_w"), r.get("div_m"))
-            cols[1].markdown(f'<span style="{tk_style}">{ticker}</span>{mf}{div}', unsafe_allow_html=True)
+            dual = _dual_tf_badge(r.get("both_fresh", False))
+            cols[1].markdown(f'<span style="{tk_style}">{ticker}</span>{mf}{div}{dual}', unsafe_allow_html=True)
             cols[2].markdown(_price_cell(r.get("price_now")), unsafe_allow_html=True)
             cols[3].markdown(_dot_compact(lw), unsafe_allow_html=True)
             cols[4].markdown(_dot_compact(lm), unsafe_allow_html=True)
@@ -1080,9 +1126,11 @@ def _render_scan_mode():
         f'dot</b> OR a <b style="color:{ACCENT_GREEN}">📈 bullish divergence</b> on the Weekly '
         f'<i>or</i> Monthly chart — only matching tickers are listed (not all ~480). Divergence is a '
         f'deliberately liberal, additional way in — it can catch a reversal before the dot itself '
-        f'prints, so it only ever adds candidates, never narrows them. "Fresh" = the dot printed '
-        f'within the lookback below; tighten it for only-this-week signals, loosen it to catch dots '
-        f'that are still developing.</div>',
+        f'prints, so it only ever adds candidates, never narrows them. A <b style="color:{GOLD}">🎯</b> '
+        f'next to the ticker means BOTH Weekly and Monthly have an independently fresh confirmation at '
+        f'once — the strongest confluence available, ranked ahead of a weekly-only match. "Fresh" = '
+        f'the dot printed within the lookback below; tighten it for only-this-week signals, loosen it '
+        f'to catch dots that are still developing.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1118,18 +1166,28 @@ def _render_scan_mode():
                             f"{len(candidates)} matching ticker(s)…"):
                 results = [_analyze_ticker_green_only(c["ticker"]) for c in candidates]
 
-            # Keep the weekly-fresh group ahead of the monthly-only group (unchanged
-            # from before), but sort WITHIN each group by the ★ power rating instead
-            # of raw dot recency — the more useful "which one first" signal.
+            # Tag each result with the dual-timeframe boost (both weekly AND
+            # monthly independently fresh) so the table can badge it.
+            both_fresh_tickers = {c["ticker"] for c in candidates if c["both_fresh"]}
+            for r in results:
+                r["both_fresh"] = r.get("ticker") in both_fresh_tickers
+
+            # Three tiers, unchanged grouping order (both-fresh, then weekly-fresh,
+            # then everything else), sorted WITHIN each tier by ★ power rating
+            # instead of raw dot recency — the more useful "which one first" signal.
             fresh_w_tickers = {c["ticker"] for c in candidates if c["fresh_w"]}
-            errored   = [r for r in results if "error" in r]
-            weekly_grp  = [r for r in results if "error" not in r and r["ticker"] in fresh_w_tickers]
-            monthly_grp = [r for r in results if "error" not in r and r["ticker"] not in fresh_w_tickers]
+            errored    = [r for r in results if "error" in r]
+            both_grp    = [r for r in results if "error" not in r and r["both_fresh"]]
+            weekly_grp  = [r for r in results if "error" not in r and not r["both_fresh"]
+                          and r["ticker"] in fresh_w_tickers]
+            monthly_grp = [r for r in results if "error" not in r and not r["both_fresh"]
+                          and r["ticker"] not in fresh_w_tickers]
             star_key = lambda r: _verdict_stars(r.get("last_w") or r.get("last_m"),
                                                r.get("price_now"), r.get("vp"))
+            both_grp.sort(key=star_key, reverse=True)
             weekly_grp.sort(key=star_key, reverse=True)
             monthly_grp.sort(key=star_key, reverse=True)
-            results = weekly_grp + monthly_grp + errored
+            results = both_grp + weekly_grp + monthly_grp + errored
 
             st.session_state["overkill_scan_results"] = results
             st.session_state["overkill_scan_ts"] = pd.Timestamp.now().strftime("%b %d %Y · %I:%M %p")
