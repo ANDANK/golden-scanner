@@ -54,7 +54,10 @@ WT_OB_LEVEL    = 53      # dots need the cross to land beyond this
 WT_OS_LEVEL    = -53
 
 MA_LEN            = 400   # "he leans on the 400 MA a lot"
-VP_LOOKBACK_DAYS  = 504   # ~2y of daily bars behind the volume profile
+VP_LOOKBACK_DAYS  = 1260  # ~5y of daily bars behind the volume profile — spans
+                         # multiple market cycles instead of just whichever
+                         # regime happened to fall in a shorter trailing window
+VP_FETCH_PERIOD   = "5y"  # daily fetch period must cover VP_LOOKBACK_DAYS
 VP_BINS           = 24
 CONFLUENCE_TOL    = 0.02  # 2% of price counts as "at" a level
 MAX_TICKERS       = 30
@@ -287,13 +290,13 @@ def _analyze_ticker(ticker: str) -> dict:
         if monthly is not None and not monthly.empty:
             monthly = monthly.dropna(subset=["Open", "High", "Low", "Close"])
 
-        daily = get_price_history(ticker, period="2y", interval="1d")
+        daily = get_price_history(ticker, period=VP_FETCH_PERIOD, interval="1d")
         if daily is not None and not daily.empty:
             daily = daily.dropna(subset=["Open", "High", "Low", "Close"])
         vp = _volume_profile(daily) if daily is not None and not daily.empty else None
 
         try:
-            spy_close = get_price_history("SPY", period="2y", interval="1d")["Close"].squeeze()
+            spy_close = get_price_history("SPY", period=VP_FETCH_PERIOD, interval="1d")["Close"].squeeze()
         except Exception:
             spy_close = pd.Series(dtype=float)
         scanners, stars = _run_best_scanner(daily, spy_close)
@@ -929,7 +932,7 @@ def _render_results_section(results: list[dict], key_prefix: str) -> None:
     vp = result.get("vp")
     if vp:
         st.caption(
-            f"Volume Profile (trailing ~2y daily, approximated) — "
+            f"Volume Profile (trailing ~5y daily, approximated) — "
             f"POC ${vp['poc']:.2f} · VAH ${vp['vah']:.2f} · VAL ${vp['val']:.2f} · "
             f"HVN {', '.join(f'${h:.2f}' for h in vp['hvn'][:3]) or '—'}"
         )
@@ -1017,7 +1020,7 @@ def _render_scan_mode():
             st.info("No tickers currently show a fresh green dot within the chosen lookback — "
                     "try widening the lookback windows above.")
         else:
-            prefetch_tickers([c["ticker"] for c in candidates], "2y", "1d")
+            prefetch_tickers([c["ticker"] for c in candidates], VP_FETCH_PERIOD, "1d")
             with st.spinner(f"Building full profile (Volume Profile + confluence) for "
                             f"{len(candidates)} matching ticker(s)…"):
                 results = [_analyze_ticker_green_only(c["ticker"]) for c in candidates]
