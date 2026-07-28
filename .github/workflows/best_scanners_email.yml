@@ -1,0 +1,79 @@
+name: Best Scanners Email
+
+on:
+  schedule:
+    # Staggered 15 min after overkill_scan_email.yml's slots (which already
+    # coincide with scheduled_scan.yml's AM slot) so three jobs aren't all
+    # hitting yfinance at the exact same moment. Revisit if still an issue.
+    # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
+    # 9:15 AM CDT = 14:15 UTC
+    - cron: "15 14 * * 1-5"
+    # 2:15 PM CDT = 19:15 UTC
+    - cron: "15 19 * * 1-5"
+    # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
+    # 9:15 AM CST = 15:15 UTC   ← uncomment these and remove CDT lines in Nov
+    # - cron: "15 15 * * 1-5"
+    # 2:15 PM CST = 20:15 UTC
+    # - cron: "15 20 * * 1-5"
+  workflow_dispatch:          # Manual trigger from GitHub Actions UI
+    inputs:
+      slot:
+        description: "Scan slot (am / pm)"
+        required: true
+        default: "am"
+        type: choice
+        options: [am, pm]
+
+# Prevent two runs of the same slot from overlapping (e.g. duplicate cron fires).
+concurrency:
+  group: best-scanners-email-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.slot || 'auto' }}
+  cancel-in-progress: false
+
+jobs:
+  scan-and-email:
+    name: Scan Best Scanners + Email
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          # Install everything from requirements.txt except streamlit (mocked in headless mode)
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+
+      - name: Determine scan slot
+        id: slot
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "slot=${{ github.event.inputs.slot }}" >> $GITHUB_OUTPUT
+          else
+            HOUR=$(date -u +%H)
+            if [ "$HOUR" = "14" ] || [ "$HOUR" = "15" ]; then
+              echo "slot=am" >> $GITHUB_OUTPUT
+            else
+              echo "slot=pm" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Run Best Scanners scan + send email
+        env:
+          SCAN_SLOT:              ${{ steps.slot.outputs.slot }}
+          GMAIL_ADDRESS:           ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD:      ${{ secrets.GMAIL_APP_PASSWORD }}
+          OVERKILL_EMAIL_TO:       ${{ secrets.OVERKILL_EMAIL_TO }}
+          # Set this secret instead if Best Scanners should go to a different
+          # list than OverKill — otherwise it reuses OVERKILL_EMAIL_TO above.
+          BEST_SCANNERS_EMAIL_TO:  ${{ secrets.BEST_SCANNERS_EMAIL_TO }}
+          # ── Tune without editing code ──
+          BEST_SCANNERS_UNIVERSE: "FTF"   # FTF (~480) / MTPA (200) / SP500 (200)
+        run: python scripts/headless_best_scanners_scan.py
