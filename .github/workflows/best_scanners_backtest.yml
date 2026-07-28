@@ -27,7 +27,11 @@ on:
         default: "90"
 
 concurrency:
-  group: best-scanners-backtest
+  # Keyed by the actual inputs, not a fixed name -- different universe/
+  # lookback/hold combos run on separate isolated runners in parallel (no
+  # shared-CPU risk like the in-app throttling), only an exact duplicate
+  # trigger queues behind the one already running.
+  group: best-scanners-backtest-${{ github.event.inputs.universe }}-${{ github.event.inputs.lookback_years }}-${{ github.event.inputs.hold_days }}
   cancel-in-progress: false
 
 jobs:
