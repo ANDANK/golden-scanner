@@ -334,6 +334,26 @@ def _last_green_dot(df: pd.DataFrame, dots: pd.DataFrame | None, ma_series: pd.S
                 mf_confirmed=_mf_confirmed("Green", ts, mfi_series))
 
 
+def _last_red_dot(df: pd.DataFrame, dots: pd.DataFrame | None, ma_series: pd.Series | None,
+                  vp: dict | None, mfi_series: pd.Series | None = None) -> dict | None:
+    """Red-only mirror of _last_green_dot — short-side screener."""
+    if dots is None:
+        return None
+    idx = df.index[dots["red"].to_numpy()]
+    if len(idx) == 0:
+        return None
+    ts = idx[-1]
+    bar = df.loc[ts]
+    price = float(bar["High"])
+    ma_val = None
+    if ma_series is not None and ts in ma_series.index and pd.notna(ma_series.loc[ts]):
+        ma_val = float(ma_series.loc[ts])
+    bars_ago = len(df.index) - 1 - df.index.get_loc(ts)
+    return dict(date=pd.Timestamp(ts).date().isoformat(), color="Red", price=price,
+                hits=_level_hits(price, vp, ma_val), bars_ago=int(bars_ago),
+                mf_confirmed=_mf_confirmed("Red", ts, mfi_series))
+
+
 # ── Per-ticker analysis ──────────────────────────────────────────────────────
 def _analyze_ticker(ticker: str) -> dict:
     ticker = ticker.strip().upper()
@@ -403,36 +423,31 @@ def _analyze_ticker(ticker: str) -> dict:
         return {"ticker": ticker, "error": str(e)}
 
 
-def _analyze_ticker_green_only(ticker: str) -> dict:
-    """Full per-ticker profile (for the chart + confluence columns), but with
-    last_w/last_m overridden to the most recent GREEN dot specifically —
-    used by the Universe Scan table so a ticker's more-recent red dot never
-    hides the green dot that got it onto the screener."""
-    r = _analyze_ticker(ticker)
-    if "error" in r:
-        return r
-    r["last_w"] = _last_green_dot(r["weekly"], r["dots_w"], r["ma400_w"], r["vp"], r["mfi_w"])
-    r["last_m"] = (_last_green_dot(r["monthly"], r["dots_m"], r["ma400_m"], r["vp"], r["mfi_m"])
-                   if r.get("dots_m") is not None else None)
-    return r
+def _color_variant(base: dict, color: str) -> dict:
+    """Shallow-derive a color-specific view of a full _analyze_ticker result
+    (from the SAME already-fetched data — no extra network/compute), with
+    last_w/last_m overridden to the most recent dot of just that color, so a
+    ticker's more-recent opposite-color dot never shadows the one that
+    qualified this particular row."""
+    v = dict(base)
+    dot_fn = _last_green_dot if color == "Green" else _last_red_dot
+    v["last_w"] = dot_fn(base["weekly"], base["dots_w"], base["ma400_w"], base["vp"], base["mfi_w"])
+    v["last_m"] = (dot_fn(base["monthly"], base["dots_m"], base["ma400_m"], base["vp"], base["mfi_m"])
+                  if base.get("dots_m") is not None else None)
+    return v
 
 
 def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
                    progress_cb=None) -> list[dict]:
     """Phase 1 of the Universe Scan — cheap pass (weekly + monthly WaveTrend
     only, no daily/Volume-Profile fetch) over the whole universe. A ticker
-    qualifies via EITHER of two liberal paths (OR'd, so this only ever grows
-    the result set, never narrows it):
-      1. A fresh green dot inside the lookback window (weekly or monthly).
-      2. A bullish WaveTrend divergence (weekly or monthly) — catches a
-         reversal warning even before WT1/WT2 actually cross into a dot.
-    Returns candidates grouped both-fresh / weekly-fresh / everything-else,
-    each sorted by weekly dot recency (falling back to monthly recency where
-    no weekly date exists) — but this ordering only affects which order
-    Phase 2 analyzes/reports progress on. The FINAL displayed order (built
-    in _render_scan_mode, after Phase 2) sorts by ★ power first; both_fresh
-    is carried through as a tie-breaker among equal star tiers, not a
-    grouping that can outrank a higher star tier.
+    qualifies ONLY by having a dot (green OR red) inside the fresh lookback
+    window, on weekly or monthly — a ticker whose dots are all older than
+    the lookback is excluded, full stop (divergence is no longer a
+    standalone qualifying path; it's still computed and badged as bonus
+    context on rows that already qualify via a fresh dot). Each candidate
+    carries has_green/has_red so the caller can build separate green/red
+    result sets from a single _analyze_ticker() call per ticker.
     """
     prefetch_tickers(universe, "max", "1wk")
     prefetch_tickers(universe, "max", "1mo")
@@ -451,41 +466,35 @@ def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
                 continue
             wt1_w, wt2_w = _wavetrend(weekly)
             dots_w = _wt_dots(wt1_w, wt2_w)
-            gw = _last_green_dot(weekly, dots_w, None, None)
-            fresh_w = gw is not None and gw["bars_ago"] < weekly_fresh
-            div_w = _detect_divergence(weekly, wt1_w, DIVERGENCE_LOOKBACK_WEEKLY) == "bullish"
+            gw_green = _last_green_dot(weekly, dots_w, None, None)
+            gw_red   = _last_red_dot(weekly, dots_w, None, None)
+            fresh_w_green = gw_green is not None and gw_green["bars_ago"] < weekly_fresh
+            fresh_w_red   = gw_red   is not None and gw_red["bars_ago"]   < weekly_fresh
 
-            gm = None
-            fresh_m = False
-            div_m = False
+            fresh_m_green = fresh_m_red = False
             monthly = get_price_history(ticker, period="max", interval="1mo")
             if monthly is not None and not monthly.empty:
                 monthly = monthly.dropna(subset=["Open", "High", "Low", "Close"])
                 if len(monthly) >= 20:
                     wt1_m, wt2_m = _wavetrend(monthly)
                     dots_m = _wt_dots(wt1_m, wt2_m)
-                    gm = _last_green_dot(monthly, dots_m, None, None)
-                    fresh_m = gm is not None and gm["bars_ago"] < monthly_fresh
-                    div_m = _detect_divergence(monthly, wt1_m, DIVERGENCE_LOOKBACK_MONTHLY) == "bullish"
+                    gm_green = _last_green_dot(monthly, dots_m, None, None)
+                    gm_red   = _last_red_dot(monthly, dots_m, None, None)
+                    fresh_m_green = gm_green is not None and gm_green["bars_ago"] < monthly_fresh
+                    fresh_m_red   = gm_red   is not None and gm_red["bars_ago"]   < monthly_fresh
 
-            if fresh_w or fresh_m or div_w or div_m:
+            has_green = fresh_w_green or fresh_m_green
+            has_red   = fresh_w_red or fresh_m_red
+            if has_green or has_red:
                 candidates.append(dict(
-                    ticker=ticker, fresh_w=fresh_w, fresh_m=fresh_m, div_w=div_w, div_m=div_m,
-                    gw_date=gw["date"] if gw else "", gm_date=gm["date"] if gm else "",
+                    ticker=ticker, has_green=has_green, has_red=has_red,
+                    both_fresh_green=fresh_w_green and fresh_m_green,
+                    both_fresh_red=fresh_w_red and fresh_m_red,
                 ))
         except Exception:
             continue
 
-    for c in candidates:
-        c["both_fresh"] = c["fresh_w"] and c["fresh_m"]
-
-    both_fresh   = sorted([c for c in candidates if c["both_fresh"]],
-                          key=lambda c: c["gw_date"], reverse=True)
-    weekly_only  = sorted([c for c in candidates if c["fresh_w"] and not c["both_fresh"]],
-                          key=lambda c: c["gw_date"], reverse=True)
-    rest = sorted([c for c in candidates if not c["fresh_w"]],
-                  key=lambda c: c["gm_date"], reverse=True)  # divergence-only (no gm_date) sorts last
-    return both_fresh + weekly_only + rest
+    return candidates
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1176,19 +1185,35 @@ def _render_manual_mode():
 # MODE 2 — UNIVERSE SCAN (green-dot screener)
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _sort_color_group(results: list[dict]) -> list[dict]:
+    """Newest dot first, ★ as the tie-breaker among similarly-fresh dots."""
+    errored = [r for r in results if "error" in r]
+    ok = [r for r in results if "error" not in r]
+
+    def _key(r):
+        last = r.get("last_w") or r.get("last_m")
+        bars_ago = last["bars_ago"] if last else float("inf")
+        stars = _verdict_stars(last, r.get("price_now"), r.get("vp"))
+        return (-bars_ago, stars)
+
+    ok.sort(key=_key, reverse=True)
+    return ok + errored
+
+
 def _render_scan_mode():
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11.5px;line-height:1.6;margin-bottom:8px">'
         f'Scans the whole universe for tickers with a <b style="color:{ACCENT_GREEN}">🟢 fresh green '
-        f'dot</b> OR a <b style="color:{ACCENT_GREEN}">📈 bullish divergence</b> on the Weekly '
-        f'<i>or</i> Monthly chart — only matching tickers are listed (not all ~480). Divergence is a '
-        f'deliberately liberal, additional way in — it can catch a reversal before the dot itself '
-        f'prints, so it only ever adds candidates, never narrows them. A <b style="color:{GOLD}">🎯</b> '
-        f'next to the ticker means BOTH Weekly and Monthly have an independently fresh confirmation at '
-        f'once — context shown next to the ticker, not part of the sort. The table sorts newest dot '
-        f'first, ★ breaking ties among similarly-fresh dots. "Fresh" = the dot printed within the '
-        f'lookback below; tighten it for only-this-week signals, loosen it to catch dots that are '
-        f'still developing.</div>',
+        f'dot</b> (long) or a <b style="color:{ACCENT_RED}">🔴 fresh red dot</b> (short) on the Weekly '
+        f'<i>or</i> Monthly chart, shown as two separate sections below — only matching tickers are '
+        f'listed (not all ~480), and a ticker whose dots are ALL older than the lookback is excluded '
+        f'entirely. A <b style="color:{ACCENT_GREEN}">📈</b>/<b style="color:{ACCENT_RED}">📉</b> badge '
+        f'still shows divergence as bonus context on a qualifying row, but it can no longer bring in a '
+        f'ticker on its own. A <b style="color:{GOLD}">🎯</b> next to the ticker means BOTH Weekly and '
+        f'Monthly have an independently fresh confirmation of that row\'s color. Each section sorts '
+        f'newest dot first, ★ breaking ties among similarly-fresh dots. "Fresh" = the dot printed '
+        f'within the lookback below; tighten it for only-this-week signals, loosen it to catch dots '
+        f'that are still developing.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1206,7 +1231,7 @@ def _render_scan_mode():
 
     if run_scan:
         universe = _SCAN_UNIVERSE_CHOICES[uni_label]
-        prog = st.progress(0.0, text="Scanning for fresh green dots…")
+        prog = st.progress(0.0, text="Scanning for fresh dots…")
 
         def _cb(i, total, ticker):
             prog.progress(min((i + 1) / total, 1.0), text=f"Scanning {ticker} ({i+1}/{total})…")
@@ -1215,61 +1240,71 @@ def _render_scan_mode():
         prog.empty()
 
         if not candidates:
-            st.session_state.pop("overkill_scan_results", None)
-            st.info("No tickers currently show a fresh green dot within the chosen lookback — "
+            st.session_state.pop("overkill_scan_green_results", None)
+            st.session_state.pop("overkill_scan_red_results", None)
+            st.info("No tickers currently show a fresh dot within the chosen lookback — "
                     "try widening the lookback windows above.")
         else:
             prefetch_tickers([c["ticker"] for c in candidates], VP_FETCH_PERIOD, "1d")
             with st.spinner(f"Building full profile (Volume Profile + confluence) for "
                             f"{len(candidates)} matching ticker(s)…"):
-                results = [_analyze_ticker_green_only(c["ticker"]) for c in candidates]
+                green_results, red_results = [], []
+                for c in candidates:
+                    base = _analyze_ticker(c["ticker"])
+                    if "error" in base:
+                        (green_results if c["has_green"] else red_results).append(base)
+                        continue
+                    if c["has_green"]:
+                        g = _color_variant(base, "Green")
+                        g["both_fresh"] = c["both_fresh_green"]
+                        green_results.append(g)
+                    if c["has_red"]:
+                        rd = _color_variant(base, "Red")
+                        rd["both_fresh"] = c["both_fresh_red"]
+                        red_results.append(rd)
 
-            # Tag each result with the dual-timeframe boost (both weekly AND
-            # monthly independently fresh) so the table can still badge it —
-            # it's no longer part of the sort itself, just context.
-            both_fresh_tickers = {c["ticker"] for c in candidates if c["both_fresh"]}
-            for r in results:
-                r["both_fresh"] = r.get("ticker") in both_fresh_tickers
-
-            # Recency first (newest dot on top), ★ as the tie-breaker among
-            # similarly-fresh dots — per request: see what's fresh before an
-            # older 5★. A ticker with no green dot at all (divergence-only,
-            # zero dot history) has no recency to sort by, so it sinks to the
-            # bottom rather than competing with dated dots.
-            errored = [r for r in results if "error" in r]
-            ok = [r for r in results if "error" not in r]
-
-            def _sort_key(r):
-                last = r.get("last_w") or r.get("last_m")
-                bars_ago = last["bars_ago"] if last else float("inf")
-                stars = _verdict_stars(last, r.get("price_now"), r.get("vp"))
-                return (-bars_ago, stars)
-
-            ok.sort(key=_sort_key, reverse=True)
-            results = ok + errored
-
-            st.session_state["overkill_scan_results"] = results
+            st.session_state["overkill_scan_green_results"] = _sort_color_group(green_results)
+            st.session_state["overkill_scan_red_results"] = _sort_color_group(red_results)
             st.session_state["overkill_scan_ts"] = pd.Timestamp.now().strftime("%b %d %Y · %I:%M %p")
-            st.session_state.pop("overkill_scan_selected_ticker", None)
+            st.session_state.pop("overkill_scan_green_selected_ticker", None)
+            st.session_state.pop("overkill_scan_red_selected_ticker", None)
 
-    results = st.session_state.get("overkill_scan_results")
-    if not results:
+    green_results = st.session_state.get("overkill_scan_green_results")
+    red_results = st.session_state.get("overkill_scan_red_results")
+    if not green_results and not red_results:
         st.markdown(
             f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;padding:36px;'
             f'text-align:center;color:{TEXT_MUTED}">Press <b style="color:{GOLD}">▶ Scan Universe</b> '
-            f'to find tickers with a fresh green dot right now.</div>',
+            f'to find tickers with a fresh dot right now.</div>',
             unsafe_allow_html=True,
         )
         return
 
-    ok = [r for r in results if "error" not in r]
-    st.caption(f"Scanned {st.session_state.get('overkill_scan_ts','')} · "
-              f"{len(ok)} ticker(s) with a fresh green dot or divergence "
-              f"(sorted newest dot first, ★ as the tie-breaker among similarly-fresh dots. A ticker "
-              f"with no green dot at all — divergence-only — sinks to the bottom. A dimmed/'stale' "
-              f"dot means that timeframe isn't why this row qualified)")
-    _render_results_section(results, key_prefix="overkill_scan", weekly_fresh=int(weekly_fresh),
-                            monthly_fresh=int(monthly_fresh))
+    st.caption(f"Scanned {st.session_state.get('overkill_scan_ts','')}")
+
+    st.markdown(
+        f'<div style="margin-top:6px;color:{ACCENT_GREEN};font-size:12px;font-weight:800;'
+        f'text-transform:uppercase;letter-spacing:.06em">🟢 Green Dots — {len(green_results or [])} ticker(s)</div>',
+        unsafe_allow_html=True,
+    )
+    if green_results:
+        _render_results_section(green_results, key_prefix="overkill_scan_green",
+                                weekly_fresh=int(weekly_fresh), monthly_fresh=int(monthly_fresh))
+    else:
+        st.info("No tickers with a fresh green dot right now.")
+
+    st.markdown(f'<hr style="border-color:{BORDER_COLOR};margin:22px 0">', unsafe_allow_html=True)
+
+    st.markdown(
+        f'<div style="color:{ACCENT_RED};font-size:12px;font-weight:800;text-transform:uppercase;'
+        f'letter-spacing:.06em">🔴 Red Dots — {len(red_results or [])} ticker(s)</div>',
+        unsafe_allow_html=True,
+    )
+    if red_results:
+        _render_results_section(red_results, key_prefix="overkill_scan_red",
+                                weekly_fresh=int(weekly_fresh), monthly_fresh=int(monthly_fresh))
+    else:
+        st.info("No tickers with a fresh red dot right now.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1394,8 +1429,8 @@ def render():
         f'red) — a soft confirmation, not a filter; its absence doesn\'t disqualify anything. A '
         f'<b style="color:{ACCENT_GREEN}">📈</b>/<b style="color:{ACCENT_RED}">📉</b> means price and '
         f'the WaveTrend line are diverging (e.g. price makes a lower low while the oscillator makes a '
-        f'higher low) — a reversal warning that can show up <i>before</i> a dot even prints; in Scan '
-        f'Universe it\'s one of the ways a ticker can qualify. The '
+        f'higher low) — a reversal warning shown as bonus context on a row that already has a fresh '
+        f'dot; it can\'t bring in a ticker on its own. The '
         f'<b>Verdict</b> column combines two reads: where <i>today\'s</i> price sits vs. the Volume '
         f'Profile (room up to POC/VAH = upside bias, below VAL = downside risk) and whether the '
         f'qualifying dot itself printed at a key level or in isolation (his "Golden Rule" — an '
