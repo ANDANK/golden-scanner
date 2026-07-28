@@ -785,7 +785,7 @@ def _upload_best_to_sheet(df: pd.DataFrame):
     (st.success if ok else st.error)(msg)
 
 
-def _render_best_scanners_tab():
+def _render_best_scan_mode():
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
         f'The six keeper scanners plus two early-signal add-ons (<b>7Square</b> · <b>8Cross</b>) '
@@ -855,6 +855,222 @@ def _render_best_scanners_tab():
     _render_scanner_chart_section(selected_ticker)
     _render_star_legend()
     _render_scanner_notes()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BEST SCANNERS BACKTEST — validates the ★ combo rules against real outcomes
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Reuses _evaluate()/_star_rating() UNCHANGED — guarantees the backtest tests
+# the EXACT same signal definitions as the live scanner, no risk of a
+# reimplementation quietly drifting out of sync. Each historical day gets a
+# BOUNDED trailing window (260 daily bars — comfortably over _evaluate()'s
+# own 210-day/34-week minimums) instead of the full expanding history, so
+# per-call cost stays roughly constant instead of growing with position —
+# makes a multi-year, multi-hundred-ticker walk-forward backtest tractable.
+#
+# A "signal" is the ONSET of a star tier — the day its value first differs
+# from the prior day's (including from "unflagged"), not every day it
+# persists — otherwise a single multi-month uptrend in one stock would
+# dominate a tier's stats. "Win" = forward return over the hold period
+# beats SPY's return over the same window (relative strength — matches the
+# RS-gated spirit already built into 3MF/4TS), not just "did it go up".
+
+BS_BT_WARMUP_BARS    = 260   # trailing daily bars fed to _evaluate() each call
+BS_BT_LOOKBACK_YEARS = 5
+BS_BT_HOLD_DAYS      = 90
+
+
+def _bt_forward_outcome(closes: pd.Series, spy_aligned: pd.Series, entry_pos: int,
+                        hold_days: int) -> dict | None:
+    """Forward return vs SPY over `hold_days` trading days from `entry_pos`
+    (an integer position into `closes`/`spy_aligned`). None if there isn't
+    enough forward data yet (event too close to the end of history)."""
+    exit_pos = entry_pos + hold_days
+    if exit_pos >= len(closes):
+        return None
+    entry_px, exit_px = float(closes.iloc[entry_pos]), float(closes.iloc[exit_pos])
+    spy_entry, spy_exit = float(spy_aligned.iloc[entry_pos]), float(spy_aligned.iloc[exit_pos])
+    if entry_px <= 0 or spy_entry <= 0 or pd.isna(spy_entry) or pd.isna(spy_exit):
+        return None
+    stock_ret = exit_px / entry_px - 1
+    spy_ret = spy_exit / spy_entry - 1
+    return dict(stock_ret=stock_ret, spy_ret=spy_ret, rel_ret=stock_ret - spy_ret,
+               win=stock_ret > spy_ret)
+
+
+def _backtest_ticker_best_scanners(ticker: str, lookback_years: int, hold_days: int,
+                                   since: pd.Timestamp) -> list[dict]:
+    """Walks `ticker`'s daily history day-by-day from `since` onward, calling
+    the live _evaluate()/_star_rating() on a bounded trailing window at each
+    point, and records one outcome per star-tier ONSET."""
+    records: list[dict] = []
+    try:
+        period = f"{lookback_years + 2}y"
+        daily = get_price_history(ticker, period=period, interval="1d")
+        spy = get_price_history("SPY", period=period, interval="1d")
+        if daily is None or daily.empty or spy is None or spy.empty:
+            return records
+        daily = daily.dropna(subset=["Open", "High", "Low", "Close", "Volume"])
+        if len(daily) < BS_BT_WARMUP_BARS + 20:
+            return records
+        spy_aligned = spy["Close"].squeeze().reindex(daily.index).ffill()
+        closes = daily["Close"].squeeze()
+
+        start_i = max(BS_BT_WARMUP_BARS - 1, int(daily.index.searchsorted(since)))
+        prev_state = None
+        for i in range(start_i, len(daily)):
+            window = daily.iloc[i - BS_BT_WARMUP_BARS + 1: i + 1]
+            spy_window = spy_aligned.iloc[i - BS_BT_WARMUP_BARS + 1: i + 1]
+            res = _evaluate(window, spy_window)
+            cur_state = _star_rating(res["labels"]) if res else None
+            if cur_state is not None and cur_state != prev_state:
+                outcome = _bt_forward_outcome(closes, spy_aligned, i, hold_days)
+                if outcome is not None:
+                    records.append(dict(
+                        ticker=ticker, date=daily.index[i].date().isoformat(),
+                        stars=cur_state, **outcome,
+                    ))
+            prev_state = cur_state
+    except Exception:
+        pass
+    return records
+
+
+def _run_best_scanners_backtest(universe: list, lookback_years: int, hold_days: int,
+                                progress_cb=None) -> list[dict]:
+    prefetch_tickers(list(universe) + ["SPY"], f"{lookback_years + 2}y", "1d")
+    since = pd.Timestamp.now() - pd.DateOffset(years=lookback_years)
+    all_records: list[dict] = []
+    total = len(universe)
+    for i, ticker in enumerate(universe):
+        if progress_cb and (i % 5 == 0 or i == total - 1):
+            progress_cb(i, total, ticker)
+        all_records.extend(_backtest_ticker_best_scanners(ticker, lookback_years, hold_days, since))
+    return all_records
+
+
+def _aggregate_best_scanners_backtest(records: list[dict]) -> pd.DataFrame:
+    if not records:
+        return pd.DataFrame()
+    df = pd.DataFrame(records)
+    rows = []
+    for stars, grp in df.groupby("stars"):
+        n = len(grp)
+        wins = int(grp["win"].sum())
+        rows.append(dict(
+            stars=int(stars), n=n, wins=wins,
+            win_rate=(wins / n * 100) if n else float("nan"),
+            avg_rel=float(grp["rel_ret"].mean()) * 100,
+            avg_stock=float(grp["stock_ret"].mean()) * 100,
+        ))
+    return pd.DataFrame(rows).sort_values("stars", ascending=False).reset_index(drop=True)
+
+
+_BS_BT_TD = f"padding:7px 10px;border-bottom:1px solid {BORDER_COLOR};vertical-align:middle;white-space:nowrap"
+
+
+def _render_best_scanners_backtest_table(agg: pd.DataFrame) -> None:
+    if agg.empty:
+        st.info("No historical signals found to backtest in this window.")
+        return
+    cols = ["★", "Signals Tested", "Win Rate (beats SPY)", "Avg Excess Return", "Avg Stock Return"]
+    thead = "".join(f'<th style="{_TH}">{c}</th>' for c in cols)
+    body = ""
+    for _, r in agg.iterrows():
+        wr = r["win_rate"]
+        if pd.isna(wr):
+            wr_str, wr_color = "—", TEXT_MUTED
+        else:
+            wr_str = f"{wr:.0f}%"
+            wr_color = ACCENT_GREEN if wr >= 55 else (GOLD if wr >= 45 else ACCENT_RED)
+        rel = r["avg_rel"]; rel_color = ACCENT_GREEN if rel >= 0 else ACCENT_RED
+        stock = r["avg_stock"]; stock_color = ACCENT_GREEN if stock >= 0 else ACCENT_RED
+        stars_label = "★" * int(r["stars"]) if r["stars"] > 0 else "— (0)"
+        body += (
+            "<tr>"
+            f'<td style="{_BS_BT_TD};color:{GOLD};font-size:13px">{stars_label}</td>'
+            f'<td style="{_BS_BT_TD}">{int(r["n"])}</td>'
+            f'<td style="{_BS_BT_TD};color:{wr_color};font-weight:700">{wr_str}</td>'
+            f'<td style="{_BS_BT_TD};color:{rel_color}">{rel:+.1f}%</td>'
+            f'<td style="{_BS_BT_TD};color:{stock_color}">{stock:+.1f}%</td>'
+            "</tr>"
+        )
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>{thead}</tr></thead><tbody>{body}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_best_scanners_backtest_mode():
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:11.5px;line-height:1.6;margin-bottom:8px">'
+        f'Tests every historical ★ combo signal against real outcomes. Unlike OverKill, Best Scanners '
+        f'has no stated TP/SL — a "win" here means the stock\'s forward return over the hold period '
+        f'<b>beat SPY\'s</b> return over the same window, not just "went up" (so a rising-tide bull '
+        f'market doesn\'t inflate every tier equally). Each row is the first day a ticker newly '
+        f'entered that ★ tier, not every day it stayed there. Runs the exact same _evaluate()/'
+        f'_star_rating() logic as Run Scan — no separate reimplementation to drift out of sync.</div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3 = st.columns([2.2, 1, 1])
+    with c1:
+        uni_label = st.selectbox("Universe", list(_UNIVERSE_CHOICES.keys()), index=0, key="home_bsbt_uni")
+    with c2:
+        lookback_years = st.number_input("Lookback (years)", min_value=1, max_value=10,
+                                         value=BS_BT_LOOKBACK_YEARS, key="home_bsbt_years")
+    with c3:
+        hold_days = st.number_input("Max hold (trading days)", min_value=10, max_value=250,
+                                    value=BS_BT_HOLD_DAYS, key="home_bsbt_hold")
+
+    run_bt = st.button("▶ Run Backtest", type="primary", key="home_bsbt_run")
+
+    if run_bt:
+        universe = _resolve_universe(_UNIVERSE_CHOICES[uni_label])
+        prog = st.progress(0.0, text="Backtesting historical scanner signals…")
+
+        def _cb(i, total, ticker):
+            prog.progress(min((i + 1) / total, 1.0), text=f"Backtesting {ticker} ({i+1}/{total})…")
+
+        records = _run_best_scanners_backtest(universe, int(lookback_years), int(hold_days), progress_cb=_cb)
+        prog.empty()
+
+        st.session_state["home_bsbt_records"] = records
+        st.session_state["home_bsbt_ts"] = datetime.now().strftime("%b %d %Y · %I:%M %p")
+        if not records:
+            st.info("No historical ★ signals found in this window — try a longer lookback or a bigger universe.")
+
+    records = st.session_state.get("home_bsbt_records")
+    if not records:
+        st.markdown(
+            f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;padding:36px;'
+            f'text-align:center;color:{TEXT_MUTED}">Press <b style="color:{GOLD}">▶ Run Backtest</b> '
+            f'to validate the ★ combo rules against historical outcomes. This scans every ticker in '
+            f'the chosen universe day-by-day and can take a while — far more work per ticker than '
+            f'Run Scan.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    greens = sum(1 for r in records if r["win"])
+    st.caption(
+        f"Backtested {st.session_state.get('home_bsbt_ts','')} · {len(records)} historical signals "
+        f"({greens} beat SPY, {len(records)-greens} didn't)"
+    )
+    agg = _aggregate_best_scanners_backtest(records)
+    _render_best_scanners_backtest_table(agg)
+
+
+def _render_best_scanners_tab():
+    mode = st.radio("Mode", ["▶ Run Scan", "📊 Backtest"], horizontal=True, key="home_best_mode",
+                    label_visibility="collapsed")
+    if mode == "📊 Backtest":
+        _render_best_scanners_backtest_mode()
+    else:
+        _render_best_scan_mode()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
