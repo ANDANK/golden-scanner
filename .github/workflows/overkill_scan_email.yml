@@ -2,18 +2,20 @@ name: OverKill Scan Email
 
 on:
   schedule:
-    # Staggered 30 min after scheduled_scan.yml's slots so the two jobs
-    # don't both hammer yfinance at the exact same moment.
+    # NOTE: 9:00 AM CT coincides exactly with scheduled_scan.yml's AM slot —
+    # both jobs will hit yfinance at the same moment. Independent GH Actions
+    # runners, so it won't fail outright, just a slightly higher chance of
+    # rate-limit hiccups right at :00. Revisit if that becomes a problem.
     # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
-    # 9:30 AM CDT = 14:30 UTC
-    - cron: "30 14 * * 1-5"
-    # 1:30 PM CDT = 18:30 UTC
-    - cron: "30 18 * * 1-5"
+    # 9:00 AM CDT = 14:00 UTC
+    - cron: "0 14 * * 1-5"
+    # 2:00 PM CDT = 19:00 UTC
+    - cron: "0 19 * * 1-5"
     # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
-    # 9:30 AM CST = 15:30 UTC   ← uncomment these and remove CDT lines in Nov
-    # - cron: "30 15 * * 1-5"
-    # 1:30 PM CST = 19:30 UTC
-    # - cron: "30 19 * * 1-5"
+    # 9:00 AM CST = 15:00 UTC   ← uncomment these and remove CDT lines in Nov
+    # - cron: "0 15 * * 1-5"
+    # 2:00 PM CST = 20:00 UTC
+    # - cron: "0 20 * * 1-5"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI
     inputs:
       slot:
