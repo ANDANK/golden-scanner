@@ -1185,10 +1185,10 @@ def _render_scan_mode():
         f'deliberately liberal, additional way in — it can catch a reversal before the dot itself '
         f'prints, so it only ever adds candidates, never narrows them. A <b style="color:{GOLD}">🎯</b> '
         f'next to the ticker means BOTH Weekly and Monthly have an independently fresh confirmation at '
-        f'once — extra context, and a tie-breaker among tickers with the same ★ rating, but it can\'t '
-        f'outrank a higher star tier: ★ is backtest-validated, the dual-timeframe flag isn\'t (yet). '
-        f'"Fresh" = the dot printed within the lookback below; tighten it for only-this-week signals, '
-        f'loosen it to catch dots that are still developing.</div>',
+        f'once — context shown next to the ticker, not part of the sort. The table sorts newest dot '
+        f'first, ★ breaking ties among similarly-fresh dots. "Fresh" = the dot printed within the '
+        f'lookback below; tighten it for only-this-week signals, loosen it to catch dots that are '
+        f'still developing.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1225,25 +1225,25 @@ def _render_scan_mode():
                 results = [_analyze_ticker_green_only(c["ticker"]) for c in candidates]
 
             # Tag each result with the dual-timeframe boost (both weekly AND
-            # monthly independently fresh) so the table can badge it.
+            # monthly independently fresh) so the table can still badge it —
+            # it's no longer part of the sort itself, just context.
             both_fresh_tickers = {c["ticker"] for c in candidates if c["both_fresh"]}
-            fresh_w_tickers = {c["ticker"] for c in candidates if c["fresh_w"]}
             for r in results:
                 r["both_fresh"] = r.get("ticker") in both_fresh_tickers
 
-            # ★ is the primary sort key — it's backtest-validated (5★ actually
-            # wins far more than 1★, confirmed against real historical outcomes
-            # in Backtest mode). "Both timeframes fresh" is only a heuristic
-            # that's never been validated the same way, so it can no longer
-            # outrank a higher star tier — it's a tie-breaker among EQUAL star
-            # tiers only (previously it was the primary grouping, which could
-            # rank a weak 2★ dual-fresh dot above a strong 5★ single-fresh one).
+            # Recency first (newest dot on top), ★ as the tie-breaker among
+            # similarly-fresh dots — per request: see what's fresh before an
+            # older 5★. A ticker with no green dot at all (divergence-only,
+            # zero dot history) has no recency to sort by, so it sinks to the
+            # bottom rather than competing with dated dots.
             errored = [r for r in results if "error" in r]
             ok = [r for r in results if "error" not in r]
 
             def _sort_key(r):
-                stars = _verdict_stars(r.get("last_w") or r.get("last_m"), r.get("price_now"), r.get("vp"))
-                return (stars, r["both_fresh"], r["ticker"] in fresh_w_tickers)
+                last = r.get("last_w") or r.get("last_m")
+                bars_ago = last["bars_ago"] if last else float("inf")
+                stars = _verdict_stars(last, r.get("price_now"), r.get("vp"))
+                return (-bars_ago, stars)
 
             ok.sort(key=_sort_key, reverse=True)
             results = ok + errored
@@ -1265,9 +1265,9 @@ def _render_scan_mode():
     ok = [r for r in results if "error" not in r]
     st.caption(f"Scanned {st.session_state.get('overkill_scan_ts','')} · "
               f"{len(ok)} ticker(s) with a fresh green dot or divergence "
-              f"(sorted by ★ power first — backtest-validated; 🎯 both-fresh and weekly-fresh only "
-              f"break ties within the same star tier. A dimmed/'stale' dot means that timeframe isn't "
-              f"why this row qualified)")
+              f"(sorted newest dot first, ★ as the tie-breaker among similarly-fresh dots. A ticker "
+              f"with no green dot at all — divergence-only — sinks to the bottom. A dimmed/'stale' "
+              f"dot means that timeframe isn't why this row qualified)")
     _render_results_section(results, key_prefix="overkill_scan", weekly_fresh=int(weekly_fresh),
                             monthly_fresh=int(monthly_fresh))
 
