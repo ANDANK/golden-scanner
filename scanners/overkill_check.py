@@ -440,14 +440,24 @@ def _color_variant(base: dict, color: str) -> dict:
 def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
                    progress_cb=None) -> list[dict]:
     """Phase 1 of the Universe Scan — cheap pass (weekly + monthly WaveTrend
-    only, no daily/Volume-Profile fetch) over the whole universe. A ticker
-    qualifies ONLY by having a dot (green OR red) inside the fresh lookback
-    window, on weekly or monthly — a ticker whose dots are all older than
-    the lookback is excluded, full stop (divergence is no longer a
-    standalone qualifying path; it's still computed and badged as bonus
-    context on rows that already qualify via a fresh dot). Each candidate
-    carries has_green/has_red so the caller can build separate green/red
-    result sets from a single _analyze_ticker() call per ticker.
+    only, no daily/Volume-Profile fetch) over the whole universe.
+
+    Qualification is WEEKLY-ONLY now, and uses _last_dot (the single most
+    recent dot of EITHER color, not a color-specific lookup): a ticker
+    qualifies as green only if its single most recent weekly dot is green
+    AND fresh. This fixes two things at once:
+      1. A fresh MONTHLY dot could previously admit a ticker whose WEEKLY
+         dot was long stale (e.g. 27 bars ago) — confusing, since the table
+         displays weekly-first. Monthly no longer gates admission at all.
+      2. A stale-but-still-in-window green dot could previously qualify a
+         ticker even after a MORE RECENT red dot had since printed on the
+         same weekly series — i.e. the picture had already flipped bearish.
+         Using _last_dot (max-by-date across both colors) makes that
+         impossible: if a red dot is more recent, _last_dot returns red,
+         so the earlier green dot can no longer qualify the ticker.
+    Monthly is still computed (for the Monthly Dot column + the 🎯
+    dual-timeframe badge, also using _last_dot for the same supersession
+    logic) but plays no role in whether a ticker is included at all.
     """
     prefetch_tickers(universe, "max", "1wk")
     prefetch_tickers(universe, "max", "1mo")
@@ -466,10 +476,9 @@ def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
                 continue
             wt1_w, wt2_w = _wavetrend(weekly)
             dots_w = _wt_dots(wt1_w, wt2_w)
-            gw_green = _last_green_dot(weekly, dots_w, None, None)
-            gw_red   = _last_red_dot(weekly, dots_w, None, None)
-            fresh_w_green = gw_green is not None and gw_green["bars_ago"] < weekly_fresh
-            fresh_w_red   = gw_red   is not None and gw_red["bars_ago"]   < weekly_fresh
+            last_w = _last_dot(weekly, dots_w, None, None)
+            fresh_w_green = last_w is not None and last_w["color"] == "Green" and last_w["bars_ago"] < weekly_fresh
+            fresh_w_red   = last_w is not None and last_w["color"] == "Red"   and last_w["bars_ago"] < weekly_fresh
 
             fresh_m_green = fresh_m_red = False
             monthly = get_price_history(ticker, period="max", interval="1mo")
@@ -478,13 +487,12 @@ def _scan_universe(universe: list[str], weekly_fresh: int, monthly_fresh: int,
                 if len(monthly) >= 20:
                     wt1_m, wt2_m = _wavetrend(monthly)
                     dots_m = _wt_dots(wt1_m, wt2_m)
-                    gm_green = _last_green_dot(monthly, dots_m, None, None)
-                    gm_red   = _last_red_dot(monthly, dots_m, None, None)
-                    fresh_m_green = gm_green is not None and gm_green["bars_ago"] < monthly_fresh
-                    fresh_m_red   = gm_red   is not None and gm_red["bars_ago"]   < monthly_fresh
+                    last_m = _last_dot(monthly, dots_m, None, None)
+                    fresh_m_green = last_m is not None and last_m["color"] == "Green" and last_m["bars_ago"] < monthly_fresh
+                    fresh_m_red   = last_m is not None and last_m["color"] == "Red"   and last_m["bars_ago"] < monthly_fresh
 
-            has_green = fresh_w_green or fresh_m_green
-            has_red   = fresh_w_red or fresh_m_red
+            has_green = fresh_w_green   # weekly-only gate — monthly no longer admits on its own
+            has_red   = fresh_w_red
             if has_green or has_red:
                 candidates.append(dict(
                     ticker=ticker, has_green=has_green, has_red=has_red,
@@ -1203,17 +1211,17 @@ def _sort_color_group(results: list[dict]) -> list[dict]:
 def _render_scan_mode():
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11.5px;line-height:1.6;margin-bottom:8px">'
-        f'Scans the whole universe for tickers with a <b style="color:{ACCENT_GREEN}">🟢 fresh green '
-        f'dot</b> (long) or a <b style="color:{ACCENT_RED}">🔴 fresh red dot</b> (short) on the Weekly '
-        f'<i>or</i> Monthly chart, shown as two separate sections below — only matching tickers are '
-        f'listed (not all ~480), and a ticker whose dots are ALL older than the lookback is excluded '
-        f'entirely. A <b style="color:{ACCENT_GREEN}">📈</b>/<b style="color:{ACCENT_RED}">📉</b> badge '
-        f'still shows divergence as bonus context on a qualifying row, but it can no longer bring in a '
-        f'ticker on its own. A <b style="color:{GOLD}">🎯</b> next to the ticker means BOTH Weekly and '
-        f'Monthly have an independently fresh confirmation of that row\'s color. Each section sorts '
-        f'newest dot first, ★ breaking ties among similarly-fresh dots. "Fresh" = the dot printed '
-        f'within the lookback below; tighten it for only-this-week signals, loosen it to catch dots '
-        f'that are still developing.</div>',
+        f'Scans the whole universe for tickers whose single most-recent <b>Weekly</b> dot is '
+        f'<b style="color:{ACCENT_GREEN}">🟢 green</b> (long) or <b style="color:{ACCENT_RED}">🔴 red</b> '
+        f'(short) AND fresh, shown as two separate sections below. Weekly-only and "most recent wins" '
+        f'on purpose: if a more recent opposite-color dot has since printed, the earlier same-color one '
+        f'no longer qualifies — the picture has changed. Monthly no longer admits a ticker on its own '
+        f'(that let in tickers with a long-stale weekly dot); it still feeds the '
+        f'<b style="color:{GOLD}">🎯</b> badge (both Weekly and Monthly independently fresh in the same '
+        f'direction) and the Monthly Dot column. A <b style="color:{ACCENT_GREEN}">📈</b>/'
+        f'<b style="color:{ACCENT_RED}">📉</b> badge shows divergence as bonus context on a qualifying '
+        f'row, but can\'t bring in a ticker by itself. Each section sorts newest dot first, ★ breaking '
+        f'ties among similarly-fresh dots.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1224,7 +1232,7 @@ def _render_scan_mode():
         weekly_fresh = st.number_input("Weekly lookback (bars)", min_value=1, max_value=20,
                                        value=DEFAULT_WEEKLY_FRESH_BARS, key="overkill_scan_wf")
     with c3:
-        monthly_fresh = st.number_input("Monthly lookback (bars)", min_value=1, max_value=12,
+        monthly_fresh = st.number_input("Monthly lookback (bars) — 🎯 badge only", min_value=1, max_value=12,
                                         value=DEFAULT_MONTHLY_FRESH_BARS, key="overkill_scan_mf")
 
     run_scan = st.button("▶ Scan Universe", type="primary", key="overkill_scan_run")
