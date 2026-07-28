@@ -932,7 +932,14 @@ def _backtest_ticker_best_scanners(ticker: str, lookback_years: int, hold_days: 
         spy_aligned = spy["Close"].squeeze().reindex(daily.index).ffill()
         closes = daily["Close"].squeeze()
 
-        start_i = max(BS_BT_WARMUP_BARS - 1, int(daily.index.searchsorted(since)))
+        # searchsorted() requires matching datetime64 units under pandas 3.x
+        # (unlike comparison operators, which auto-widen) -- daily.index comes
+        # back from yfinance at whatever resolution it/pandas picked (e.g. 's'),
+        # while `since` is built from Timestamp.now() at pandas's own default
+        # ('us'). Snap since to the index's unit or this raises "Cannot
+        # losslessly convert units" for every single ticker.
+        since_matched = since.as_unit(daily.index.unit)
+        start_i = max(BS_BT_WARMUP_BARS - 1, int(daily.index.searchsorted(since_matched)))
         prev_state = None
         for i in range(start_i, len(daily)):
             window = daily.iloc[i - BS_BT_WARMUP_BARS + 1: i + 1]
