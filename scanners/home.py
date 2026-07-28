@@ -1030,7 +1030,11 @@ def _render_best_scanners_backtest_table(agg: pd.DataFrame) -> None:
     )
 
 
+_BS_BT_BUILD_TAG = "bt-build-2026-07-28-unitfix2"   # bump whenever this function's logic changes
+
+
 def _render_best_scanners_backtest_mode():
+    st.caption(f"engine: {_BS_BT_BUILD_TAG}")
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11.5px;line-height:1.6;margin-bottom:8px">'
         f'Tests every historical ★ combo signal against real outcomes. Unlike OverKill, Best Scanners '
