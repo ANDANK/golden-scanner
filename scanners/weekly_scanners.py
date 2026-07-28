@@ -33,7 +33,12 @@ _WK_CACHE: dict[str, pd.DataFrame] = {}
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def _fetch_weekly_raw(ticker: str, years: int) -> pd.DataFrame:
-    """yfinance weekly bars — Streamlit-session cached."""
+    """yfinance weekly bars — Streamlit-session cached.
+
+    `years` must be one of yfinance's period presets (1, 2, 5, 10) — anything
+    else (e.g. 3) builds an invalid period string like "3y", which Yahoo's API
+    silently rejects and returns empty data for.
+    """
     try:
         import yfinance as yf
         df = yf.download(ticker, period=f"{years}y", interval="1wk",
@@ -45,7 +50,7 @@ def _fetch_weekly_raw(ticker: str, years: int) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def _get_weekly(ticker: str, years: int = 3) -> pd.DataFrame:
+def _get_weekly(ticker: str, years: int = 2) -> pd.DataFrame:
     """Process-level cache → Streamlit cache.  Never fetches twice per run."""
     key = f"{ticker}_{years}"
     if key not in _WK_CACHE:
@@ -54,7 +59,7 @@ def _get_weekly(ticker: str, years: int = 3) -> pd.DataFrame:
 
 
 def _get_weekly_spy() -> pd.DataFrame:
-    return _get_weekly("SPY", years=3)
+    return _get_weekly("SPY", years=2)
 
 
 def clear_weekly_cache():
@@ -62,7 +67,7 @@ def clear_weekly_cache():
     _WK_CACHE.clear()
 
 
-def prefetch_weekly(tickers: list, years: int = 3) -> int:
+def prefetch_weekly(tickers: list, years: int = 2) -> int:
     """
     Batch-download weekly bars for all tickers in ONE yf.download() call and
     populate _WK_CACHE.  Turns 200 sequential weekly API calls → 1 bulk call.
@@ -496,7 +501,7 @@ def scan_trend_continuation(tickers: list,
                 unsafe_allow_html=True,
             )
         try:
-            df_wk = _get_weekly(ticker, years=3)
+            df_wk = _get_weekly(ticker, years=2)
             if df_wk.empty or len(df_wk) < 35:
                 continue
             close_wk = df_wk["Close"].squeeze()
@@ -608,7 +613,7 @@ def scan_momentum_reset(tickers: list,
                 unsafe_allow_html=True,
             )
         try:
-            df_wk = _get_weekly(ticker, years=3)
+            df_wk = _get_weekly(ticker, years=2)
             if df_wk.empty or len(df_wk) < 35:
                 continue
             close_wk = df_wk["Close"].squeeze()

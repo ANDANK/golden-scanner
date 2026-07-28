@@ -133,7 +133,7 @@ def run_combined(tickers: list, include_value: bool = False,
         f'Prefetching weekly price data…</div>',
         unsafe_allow_html=True,
     )
-    prefetch_weekly(tickers, years=3)         # Trend Align / Trend Cont. / Reset Bounce
+    prefetch_weekly(tickers, years=2)         # Trend Align / Trend Cont. / Reset Bounce
 
     status_ph.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:12px;margin:4px 0">'
@@ -358,7 +358,7 @@ def _signals_text(row) -> str:
 def _compute_gs_icons(ticker: str, price: float) -> str:
     """Compute ticker icon HTML using only data already cached during run_combined().
     Daily data: get_price_history(6mo) cached in data_loader.
-    Weekly data: _WK_CACHE populated by prefetch_weekly(tickers, years=3).
+    Weekly data: _WK_CACHE populated by prefetch_weekly(tickers, years=2).
     Zero additional API calls — all data is pre-fetched before this is called."""
     try:
         from utils import calc_ema, calc_sma, calc_rsi
