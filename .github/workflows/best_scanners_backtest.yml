@@ -1,0 +1,73 @@
+name: Best Scanners Backtest
+
+# Manual only -- unlike the scan/email pipelines, a backtest isn't a
+# recurring "new signals today" alert, it's a validation/calibration run you
+# kick off when you want to test a specific universe/lookback/hold
+# combination. Runs on a dedicated GitHub Actions runner instead of the
+# interactive Streamlit app precisely because large runs (FTF ~480 tickers x
+# several years) reliably got cut off partway through in-app -- Community
+# Cloud throttles/interrupts long-blocking sessions; a GA runner just has a
+# much bigger time budget and isn't shared with other apps.
+on:
+  workflow_dispatch:
+    inputs:
+      universe:
+        description: "Universe"
+        required: true
+        default: "FTF"
+        type: choice
+        options: [FTF, MTPA, SP500]
+      lookback_years:
+        description: "Lookback (years, 1-10)"
+        required: true
+        default: "5"
+      hold_days:
+        description: "Max hold (trading days, 10-250)"
+        required: true
+        default: "90"
+
+concurrency:
+  group: best-scanners-backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    name: Backtest Best Scanners
+    runs-on: ubuntu-latest
+    timeout-minutes: 300   # dedicated runner, not the interactive app -- give it room
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          # Install everything from requirements.txt except streamlit (mocked in headless mode)
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+
+      - name: Run backtest + email results
+        env:
+          GMAIL_ADDRESS:           ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD:      ${{ secrets.GMAIL_APP_PASSWORD }}
+          OVERKILL_EMAIL_TO:       ${{ secrets.OVERKILL_EMAIL_TO }}
+          BEST_SCANNERS_EMAIL_TO:  ${{ secrets.BEST_SCANNERS_EMAIL_TO }}
+          BT_UNIVERSE:             ${{ github.event.inputs.universe }}
+          BT_LOOKBACK_YEARS:       ${{ github.event.inputs.lookback_years }}
+          BT_HOLD_DAYS:            ${{ github.event.inputs.hold_days }}
+        run: python scripts/headless_best_scanners_backtest.py
+
+      - name: Upload raw records as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: best-scanners-backtest-${{ github.run_id }}
+          path: data/bs_backtest_*.csv
+          retention-days: 30
+          if-no-files-found: ignore
