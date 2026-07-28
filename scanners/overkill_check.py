@@ -1194,7 +1194,11 @@ def _render_manual_mode():
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _sort_color_group(results: list[dict]) -> list[dict]:
-    """Newest dot first, ★ as the tie-breaker among similarly-fresh dots."""
+    """★ first, newest dot as the tie-breaker among equal star tiers. Now
+    that qualification is weekly-only with opposite-color supersession
+    (every row already has a genuinely fresh, current dot), recency isn't
+    doing much differentiating work on its own — ★ is the more useful
+    primary sort again."""
     errored = [r for r in results if "error" in r]
     ok = [r for r in results if "error" not in r]
 
@@ -1202,7 +1206,7 @@ def _sort_color_group(results: list[dict]) -> list[dict]:
         last = r.get("last_w") or r.get("last_m")
         bars_ago = last["bars_ago"] if last else float("inf")
         stars = _verdict_stars(last, r.get("price_now"), r.get("vp"))
-        return (-bars_ago, stars)
+        return (stars, -bars_ago)
 
     ok.sort(key=_key, reverse=True)
     return ok + errored
@@ -1220,8 +1224,8 @@ def _render_scan_mode():
         f'<b style="color:{GOLD}">🎯</b> badge (both Weekly and Monthly independently fresh in the same '
         f'direction) and the Monthly Dot column. A <b style="color:{ACCENT_GREEN}">📈</b>/'
         f'<b style="color:{ACCENT_RED}">📉</b> badge shows divergence as bonus context on a qualifying '
-        f'row, but can\'t bring in a ticker by itself. Each section sorts newest dot first, ★ breaking '
-        f'ties among similarly-fresh dots.</div>',
+        f'row, but can\'t bring in a ticker by itself. Each section sorts by ★ first, newest dot '
+        f'breaking ties within the same star tier.</div>',
         unsafe_allow_html=True,
     )
 
