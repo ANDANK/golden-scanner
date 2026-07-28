@@ -910,20 +910,25 @@ def _bt_forward_outcome(closes: pd.Series, spy_aligned: pd.Series, entry_pos: in
 
 
 def _backtest_ticker_best_scanners(ticker: str, lookback_years: int, hold_days: int,
-                                   since: pd.Timestamp) -> list[dict]:
+                                   since: pd.Timestamp) -> tuple[list[dict], str]:
     """Walks `ticker`'s daily history day-by-day from `since` onward, calling
     the live _evaluate()/_star_rating() on a bounded trailing window at each
-    point, and records one outcome per star-tier ONSET."""
+    point, and records one outcome per star-tier ONSET. Returns (records,
+    reason) — reason explains an empty result (no_daily_data / no_spy_data /
+    insufficient_history / no_onsets / error:<Type>:<msg>) so a zero-record
+    run can be diagnosed from the UI instead of failing silently."""
     records: list[dict] = []
     try:
         period = _yf_period_for_years(lookback_years + 2)
         daily = get_price_history(ticker, period=period, interval="1d")
         spy = get_price_history("SPY", period=period, interval="1d")
-        if daily is None or daily.empty or spy is None or spy.empty:
-            return records
+        if daily is None or daily.empty:
+            return records, "no_daily_data"
+        if spy is None or spy.empty:
+            return records, "no_spy_data"
         daily = daily.dropna(subset=["Open", "High", "Low", "Close", "Volume"])
         if len(daily) < BS_BT_WARMUP_BARS + 20:
-            return records
+            return records, "insufficient_history"
         spy_aligned = spy["Close"].squeeze().reindex(daily.index).ffill()
         closes = daily["Close"].squeeze()
 
@@ -942,22 +947,26 @@ def _backtest_ticker_best_scanners(ticker: str, lookback_years: int, hold_days: 
                         stars=cur_state, **outcome,
                     ))
             prev_state = cur_state
-    except Exception:
-        pass
-    return records
+        return records, ("ok" if records else "no_onsets")
+    except Exception as e:
+        return records, f"error:{type(e).__name__}:{e}"
 
 
 def _run_best_scanners_backtest(universe: list, lookback_years: int, hold_days: int,
-                                progress_cb=None) -> list[dict]:
+                                progress_cb=None) -> tuple[list[dict], dict]:
+    from collections import Counter
     prefetch_tickers(list(universe) + ["SPY"], _yf_period_for_years(lookback_years + 2), "1d")
     since = pd.Timestamp.now() - pd.DateOffset(years=lookback_years)
     all_records: list[dict] = []
+    reasons: Counter = Counter()
     total = len(universe)
     for i, ticker in enumerate(universe):
         if progress_cb and (i % 5 == 0 or i == total - 1):
             progress_cb(i, total, ticker)
-        all_records.extend(_backtest_ticker_best_scanners(ticker, lookback_years, hold_days, since))
-    return all_records
+        recs, reason = _backtest_ticker_best_scanners(ticker, lookback_years, hold_days, since)
+        all_records.extend(recs)
+        reasons[reason] += 1
+    return all_records, dict(reasons)
 
 
 def _aggregate_best_scanners_backtest(records: list[dict]) -> pd.DataFrame:
@@ -1045,16 +1054,31 @@ def _render_best_scanners_backtest_mode():
         def _cb(i, total, ticker):
             prog.progress(min((i + 1) / total, 1.0), text=f"Backtesting {ticker} ({i+1}/{total})…")
 
-        records = _run_best_scanners_backtest(universe, int(lookback_years), int(hold_days), progress_cb=_cb)
+        records, reasons = _run_best_scanners_backtest(universe, int(lookback_years), int(hold_days), progress_cb=_cb)
         prog.empty()
 
         st.session_state["home_bsbt_records"] = records
+        st.session_state["home_bsbt_reasons"] = reasons
         st.session_state["home_bsbt_ts"] = datetime.now().strftime("%b %d %Y · %I:%M %p")
         if not records:
             st.info("No historical ★ signals found in this window — try a longer lookback or a bigger universe.")
 
     records = st.session_state.get("home_bsbt_records")
     if not records:
+        reasons = st.session_state.get("home_bsbt_reasons")
+        if reasons:
+            _LABEL = {
+                "no_daily_data": "no daily data returned",
+                "no_spy_data": "no SPY data returned",
+                "insufficient_history": "insufficient history (<280 daily bars)",
+                "no_onsets": "data fetched fine, but no ★-tier onset in this window",
+                "ok": "found signal(s)",
+            }
+            parts = []
+            for reason, n in sorted(reasons.items(), key=lambda kv: -kv[1]):
+                label = _LABEL.get(reason) or (reason if not reason.startswith("error:") else reason)
+                parts.append(f"{n} × {label}")
+            st.caption("Diagnostics — " + " · ".join(parts))
         st.markdown(
             f'<div style="border:1px dashed {BORDER_COLOR};border-radius:10px;padding:36px;'
             f'text-align:center;color:{TEXT_MUTED}">Press <b style="color:{GOLD}">▶ Run Backtest</b> '
