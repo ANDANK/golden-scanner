@@ -959,41 +959,27 @@ def _backtest_ticker_best_scanners(ticker: str, lookback_years: int, hold_days: 
         return records, f"error:{type(e).__name__}:{e}"
 
 
-BS_BT_MAX_WORKERS = 8   # threads for the per-ticker walk-forward loop -- see
-                        # _run_best_scanners_backtest. Doesn't change what's
-                        # computed, only overlaps it; only st.* calls stay on
-                        # the main thread (Streamlit widgets aren't thread-safe).
-
-
 def _run_best_scanners_backtest(universe: list, lookback_years: int, hold_days: int,
                                 progress_cb=None) -> tuple[list[dict], dict]:
+    # Sequential on purpose -- this app runs on Streamlit Community Cloud's
+    # free tier, which throttles CPU when usage stays too high for too long.
+    # A thread pool here concentrates CPU load (more of it at once) rather
+    # than reducing total work, which tripped that throttle faster, not
+    # slower. Reducing actual CPU cost (e.g. vectorizing the indicator math)
+    # is the real fix if the full universe/lookback needs to fit reliably;
+    # see the ticket flagged for that.
     from collections import Counter
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-
     prefetch_tickers(list(universe) + ["SPY"], _yf_period_for_years(lookback_years + 2), "1d")
     since = pd.Timestamp.now() - pd.DateOffset(years=lookback_years)
     all_records: list[dict] = []
     reasons: Counter = Counter()
     total = len(universe)
-    done = 0
-
-    with ThreadPoolExecutor(max_workers=BS_BT_MAX_WORKERS) as ex:
-        futures = {
-            ex.submit(_backtest_ticker_best_scanners, ticker, lookback_years, hold_days, since): ticker
-            for ticker in universe
-        }
-        for fut in as_completed(futures):
-            ticker = futures[fut]
-            done += 1
-            if progress_cb and (done % 5 == 0 or done == total):
-                progress_cb(done, total, ticker)
-            try:
-                recs, reason = fut.result()
-            except Exception as e:
-                recs, reason = [], f"error:{type(e).__name__}:{e}"
-            all_records.extend(recs)
-            reasons[reason] += 1
-
+    for i, ticker in enumerate(universe):
+        if progress_cb and (i % 5 == 0 or i == total - 1):
+            progress_cb(i, total, ticker)
+        recs, reason = _backtest_ticker_best_scanners(ticker, lookback_years, hold_days, since)
+        all_records.extend(recs)
+        reasons[reason] += 1
     return all_records, dict(reasons)
 
 
@@ -1051,7 +1037,7 @@ def _render_best_scanners_backtest_table(agg: pd.DataFrame) -> None:
     )
 
 
-_BS_BT_BUILD_TAG = "bt-build-2026-07-28-threaded"   # bump whenever this function's logic changes
+_BS_BT_BUILD_TAG = "bt-build-2026-07-28-sequential2"   # bump whenever this function's logic changes
 
 
 def _render_best_scanners_backtest_mode():
