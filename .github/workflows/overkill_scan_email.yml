@@ -1,0 +1,77 @@
+name: OverKill Scan Email
+
+on:
+  schedule:
+    # Staggered 30 min after scheduled_scan.yml's slots so the two jobs
+    # don't both hammer yfinance at the exact same moment.
+    # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
+    # 9:30 AM CDT = 14:30 UTC
+    - cron: "30 14 * * 1-5"
+    # 1:30 PM CDT = 18:30 UTC
+    - cron: "30 18 * * 1-5"
+    # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
+    # 9:30 AM CST = 15:30 UTC   ← uncomment these and remove CDT lines in Nov
+    # - cron: "30 15 * * 1-5"
+    # 1:30 PM CST = 19:30 UTC
+    # - cron: "30 19 * * 1-5"
+  workflow_dispatch:          # Manual trigger from GitHub Actions UI
+    inputs:
+      slot:
+        description: "Scan slot (am / pm)"
+        required: true
+        default: "am"
+        type: choice
+        options: [am, pm]
+
+# Prevent two runs of the same slot from overlapping (e.g. duplicate cron fires).
+concurrency:
+  group: overkill-scan-email-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.slot || 'auto' }}
+  cancel-in-progress: false
+
+jobs:
+  scan-and-email:
+    name: Scan OverKill Universe + Email
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          # Install everything from requirements.txt except streamlit (mocked in headless mode)
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+
+      - name: Determine scan slot
+        id: slot
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "slot=${{ github.event.inputs.slot }}" >> $GITHUB_OUTPUT
+          else
+            HOUR=$(date -u +%H)
+            if [ "$HOUR" = "14" ] || [ "$HOUR" = "15" ]; then
+              echo "slot=am" >> $GITHUB_OUTPUT
+            else
+              echo "slot=pm" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Run OverKill scan + send email
+        env:
+          SCAN_SLOT:            ${{ steps.slot.outputs.slot }}
+          GMAIL_ADDRESS:        ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD:   ${{ secrets.GMAIL_APP_PASSWORD }}
+          OVERKILL_EMAIL_TO:    ${{ secrets.OVERKILL_EMAIL_TO }}
+          # ── Tune these to change scan behaviour without editing code ──
+          OVERKILL_MIN_STARS:      "4"   # only email 4-5 star results
+          OVERKILL_WEEKLY_FRESH:   "6"   # matches the live Scan Universe UI default
+          OVERKILL_MONTHLY_FRESH:  "3"   # badge-only, doesn't gate inclusion
+        run: python scripts/headless_overkill_scan.py
