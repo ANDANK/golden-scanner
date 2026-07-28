@@ -880,6 +880,16 @@ BS_BT_WARMUP_BARS    = 260   # trailing daily bars fed to _evaluate() each call
 BS_BT_LOOKBACK_YEARS = 5
 BS_BT_HOLD_DAYS      = 90
 
+# yfinance's period param only accepts a fixed preset list (1y/2y/5y/10y/max
+# for year-scale requests) — anything else (e.g. "7y") gets rejected by
+# Yahoo's API and silently comes back empty. Map the requested buffer to the
+# smallest preset that covers it instead of building an arbitrary "Ny" string.
+def _yf_period_for_years(years: int) -> str:
+    for cap, period in ((1, "1y"), (2, "2y"), (5, "5y"), (10, "10y")):
+        if years <= cap:
+            return period
+    return "max"
+
 
 def _bt_forward_outcome(closes: pd.Series, spy_aligned: pd.Series, entry_pos: int,
                         hold_days: int) -> dict | None:
@@ -906,7 +916,7 @@ def _backtest_ticker_best_scanners(ticker: str, lookback_years: int, hold_days: 
     point, and records one outcome per star-tier ONSET."""
     records: list[dict] = []
     try:
-        period = f"{lookback_years + 2}y"
+        period = _yf_period_for_years(lookback_years + 2)
         daily = get_price_history(ticker, period=period, interval="1d")
         spy = get_price_history("SPY", period=period, interval="1d")
         if daily is None or daily.empty or spy is None or spy.empty:
@@ -939,7 +949,7 @@ def _backtest_ticker_best_scanners(ticker: str, lookback_years: int, hold_days: 
 
 def _run_best_scanners_backtest(universe: list, lookback_years: int, hold_days: int,
                                 progress_cb=None) -> list[dict]:
-    prefetch_tickers(list(universe) + ["SPY"], f"{lookback_years + 2}y", "1d")
+    prefetch_tickers(list(universe) + ["SPY"], _yf_period_for_years(lookback_years + 2), "1d")
     since = pd.Timestamp.now() - pd.DateOffset(years=lookback_years)
     all_records: list[dict] = []
     total = len(universe)
