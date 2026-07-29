@@ -37,6 +37,12 @@ universe (FTF or SP500 — S&P 500 membership implies a market-cap floor) as
 a free quality proxy, since we don't currently fetch market cap directly.
 If this run's universe is MTPA, Top 5 is intentionally left empty — MTPA
 names can still appear in the main grid/table, just not the featured picks.
+
+Layout note: every multi-column section below is built with real HTML
+<table>/<tr>/<td> markup, not CSS display:grid/flex. A grid-based version
+of this email shipped once and rendered as a single vertical stack in
+Gmail — grid/flex support in email clients is unreliable (Outlook desktop
+doesn't support either at all), tables are the actual universal standard.
 """
 
 import os, sys, smtplib
@@ -76,8 +82,36 @@ UNIVERSE  = _UNIVERSES.get(UNI_KIND, FTF_UNIVERSE)
 IS_QUALITY_UNIVERSE = UNI_KIND in ("FTF", "SP500")
 TOP_N = 5
 
+# Verdict badge (used in the compact grid + detail table) — semantic, not decorative.
 _VERDICT_COLOR = {"Strong Setup": "#3fcf7f", "Mixed Signal": "#f0b94a"}
 _VERDICT_BG = {"Strong Setup": "rgba(63,207,127,0.16)", "Mixed Signal": "rgba(240,185,74,0.16)"}
+# Verdict TEXT color inside the Top 5 spheres specifically — dark green / dark amber,
+# kept semantic even though the sphere's own background is fixed/decorative per design.
+_VERDICT_TEXT_DARK = {"Strong Setup": "#065F46", "Mixed Signal": "#92400E"}
+
+# Sphere background is a FIXED color per position (not tied to verdict) purely for
+# visual variety — (highlight, mid, dark, secondary-text) per the radial-gradient
+# "glossy sphere" look. Cycles if there were ever more than 5, though Top 5 caps at 5.
+_SPHERE_COLORS = [
+    ("#BFDBFE", "#3B82F6", "#1E3A8A", "#DBEAFE"),   # blue
+    ("#DDD6FE", "#8B5CF6", "#4C1D95", "#EDE9FE"),   # purple
+    ("#FED7AA", "#F97316", "#7C2D12", "#FFEDD5"),   # orange
+    ("#FBCFE8", "#EC4899", "#831843", "#FCE7F3"),   # pink
+    ("#99F6E4", "#14B8A6", "#134E4A", "#CCFBF1"),   # teal
+]
+
+# Fixed color per scanner label (identity, not meaning) so the tag row in each card
+# has real variety instead of one flat gray for all 8.
+_SCANNER_COLORS = {
+    "1Mom":    ("rgba(96,165,250,0.16)",  "#93c5fd"),
+    "2TC":     ("rgba(52,211,153,0.16)",  "#6ee7b7"),
+    "3MF":     ("rgba(167,139,250,0.16)", "#c4b5fd"),
+    "4TS":     ("rgba(251,146,60,0.16)",  "#fdba74"),
+    "5RB":     ("rgba(244,114,182,0.16)", "#f9a8d4"),
+    "6Prime":  ("rgba(129,140,248,0.16)", "#a5b4fc"),
+    "7Square": ("rgba(251,191,36,0.16)",  "#fde68a"),
+    "8Cross":  ("rgba(248,113,113,0.16)", "#fca5a5"),
+}
 
 
 def log(msg: str):
@@ -91,65 +125,138 @@ def _hold_text(hold_range) -> str:
     return f"{lo}-{hi}d"
 
 
-def _points_text(verdict: str, hold_range, n: int) -> str:
-    if hold_range == (10, 90):
-        span = "Works short or long-term"
-    elif hold_range == (10, 60):
-        span = "Validated through ~2 months"
-    else:
-        span = "Best for short-term (10-30d)"
-    sample = "Large, consistent sample" if verdict == "Strong Setup" else "Smaller sample — worth confirming"
-    return f"{span} &middot; {sample}"
+def _chunk(seq, n):
+    for i in range(0, len(seq), n):
+        yield seq[i:i + n]
 
 
-def _top_card_html(row) -> str:
+# ── Top 5 — one row of 3D gradient "sphere" cells, real <table> layout ──────
+
+def _sphere_cell_html(row, idx: int) -> str:
+    highlight, mid, dark, text_2 = _SPHERE_COLORS[idx % len(_SPHERE_COLORS)]
+    verdict = row["_verdict"]
+    v_color = _VERDICT_TEXT_DARK.get(verdict, "#3a3a3a")
+    combo = row.get("_combo") or ""
     return (
-        '<div style="background:rgba(245,200,66,0.10);border:1px solid rgba(245,200,66,0.30);'
-        'border-radius:10px;padding:10px 12px">'
-        f'<span style="font-family:monospace;font-weight:700;font-size:14px;color:#F5C842">{row["Ticker"]}</span>'
-        f'<div style="font-size:11px;color:#a89f8a;margin-top:4px">'
-        f'{row["_verdict"]} &middot; {_hold_text(row["_hold_range"])} &middot; N={int(row["_edge_n"]):,}</div>'
-        '</div>'
+        f'<td width="20%" align="center" valign="top">'
+        f'<table role="presentation" cellpadding="0" cellspacing="0"><tr><td align="center" valign="middle" '
+        f'style="width:104px;height:104px;border-radius:50%;text-align:center;vertical-align:middle;'
+        f'background-color:{mid};'
+        f'background-image:radial-gradient(circle at 34% 28%, {highlight} 0%, {mid} 42%, {dark} 100%);'
+        f'box-shadow:inset -6px -8px 14px rgba(0,0,0,0.35), inset 4px 5px 10px rgba(255,255,255,0.35)">'
+        f'<div style="font-family:Arial,sans-serif;font-size:7.5px;font-weight:bold;color:{v_color};'
+        f'letter-spacing:0.03em">{verdict.upper()}</div>'
+        f'<div style="font-family:monospace;font-weight:bold;font-size:15px;color:#ffffff;'
+        f'text-shadow:0 1px 2px rgba(0,0,0,0.4)">{row["Ticker"]}</div>'
+        f'<div style="font-family:monospace;font-size:9.5px;color:{text_2}">${row.get("Price", 0):,.2f}</div>'
+        f'<div style="font-family:Arial,sans-serif;font-size:8px;color:{text_2};margin-top:1px">'
+        f'{_hold_text(row["_hold_range"])}</div>'
+        f'<div style="font-family:monospace;font-size:6.5px;color:{highlight};margin-top:1px">{combo}</div>'
+        '</td></tr></table></td>'
     )
 
 
-def _card_html(row) -> str:
+def _top5_table_html(top5) -> str:
+    cells = "".join(_sphere_cell_html(r, i) for i, (_, r) in enumerate(top5.iterrows()))
+    return f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>{cells}</tr></table>'
+
+
+# ── "Everything qualified" — compact cards, 4 per row, real <table> layout ──
+
+def _qual_card_html(row) -> str:
     verdict = row["_verdict"]
     color = _VERDICT_COLOR.get(verdict, "#8b8578")
     bg = _VERDICT_BG.get(verdict, "rgba(139,133,120,0.16)")
-    scanners = [s.strip() for s in (row.get("Scanners") or "").split("·") if s.strip()]
-    scanner_pills = "".join(
-        f'<span style="font-family:monospace;font-size:9.5px;color:#726b5a;'
-        f'background:#1d1a13;border-radius:4px;padding:1px 6px;margin:0 4px 4px 0;display:inline-block">{s}</span>'
-        for s in scanners
-    )
+    # Split on " · " (with spaces, the actual join separator) not bare "·" —
+    # the latter also breaks apart the "8Cross·W" weekly-confirmation suffix,
+    # which uses an un-spaced "·" internally.
+    scanners = [s.strip() for s in (row.get("Scanners") or "").split(" · ") if s.strip()]
+    pill_cells = ""
+    for s in scanners:
+        base = s.replace("·W", "").strip()
+        pill_bg, pill_txt = _SCANNER_COLORS.get(base, ("#1d1a13", "#726b5a"))
+        pill_cells += (
+            f'<td style="background:{pill_bg};color:{pill_txt};font-family:monospace;font-size:9px;'
+            f'border-radius:4px;padding:2px 5px">{s}</td><td width="3"></td>'
+        )
     return (
-        '<div style="background:#17140f;border:1px solid rgba(245,200,66,0.08);border-radius:9px;padding:10px 11px">'
-        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">'
-        f'<span style="font-family:monospace;font-weight:700;font-size:13px;color:#F5C842">{row["Ticker"]}</span>'
-        f'<span style="font-family:monospace;font-size:10.5px;color:#726b5a">${row.get("Price", 0):,.2f}</span>'
-        '</div>'
-        f'<span style="display:inline-block;font-size:10px;font-weight:600;border-radius:5px;padding:3px 7px;'
-        f'margin-bottom:6px;color:{color};background:{bg}">{verdict}</span>'
-        f'<div style="font-size:10.5px;color:#a89f8a;margin-bottom:5px">{_hold_text(row["_hold_range"])}</div>'
-        f'<div style="font-size:10.5px;color:#726b5a;margin-bottom:7px">{_points_text(verdict, row["_hold_range"], row["_edge_n"])}</div>'
-        f'<div>{scanner_pills}</div>'
-        '</div>'
+        '<td width="23.5%" valign="top">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        'style="background:#17140f;border:1px solid rgba(245,200,66,0.10);border-radius:9px">'
+        '<tr><td style="padding:9px 10px">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
+        f'<td style="font-family:monospace;font-weight:bold;font-size:12.5px;color:#F5C842">{row["Ticker"]}</td>'
+        f'<td align="right" style="font-family:monospace;font-size:10px;color:#726b5a">${row.get("Price", 0):,.2f}</td>'
+        '</tr></table>'
+        '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:5px 0"><tr><td '
+        f'style="background:{bg};color:{color};font-family:Arial,sans-serif;font-size:9.5px;'
+        f'font-weight:bold;border-radius:5px;padding:3px 6px">{verdict}</td></tr></table>'
+        f'<div style="font-family:Arial,sans-serif;font-size:10px;color:#a89f8a;margin:3px 0">'
+        f'{_hold_text(row["_hold_range"])}</div>'
+        f'<table role="presentation" cellpadding="0" cellspacing="0"><tr>{pill_cells}</tr></table>'
+        '</td></tr></table></td>'
     )
 
+
+def _qual_grid_html(filtered) -> str:
+    all_rows = [r for _, r in filtered.iterrows()]
+    trs = []
+    for chunk in _chunk(all_rows, 4):
+        tds = []
+        for i in range(4):
+            if i > 0:
+                tds.append('<td width="2%"></td>')
+            tds.append(_qual_card_html(chunk[i]) if i < len(chunk) else '<td width="23.5%"></td>')
+        trs.append(f'<tr>{"".join(tds)}</tr>')
+        trs.append('<tr><td colspan="7" style="height:9px"></td></tr>')
+    if trs:
+        trs.pop()  # drop the trailing spacer row
+    return f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0">{"".join(trs)}</table>'
+
+
+# ── Full detail table ────────────────────────────────────────────────────
 
 def _detail_row_html(row) -> str:
     n = row.get("_edge_n")
     score = row.get("_edge_score")
+    chg = row.get("Chg", 0) or 0
+    chg_color = "#3fcf7f" if chg >= 0 else "#ef5350"
+    rsi_d = row.get("RSI_D")
+    rsi_txt = f"{float(rsi_d):.0f}" if rsi_d is not None and rsi_d == rsi_d else "—"
     return (
         '<tr>'
-        f'<td style="padding:7px 10px;font-weight:bold;color:#F5C842;border-bottom:1px solid #262626">{row["Ticker"]}</td>'
-        f'<td style="padding:7px 10px;color:{_VERDICT_COLOR.get(row["_verdict"], "#8b8578")};border-bottom:1px solid #262626">{row["_verdict"]}</td>'
-        f'<td style="padding:7px 10px;color:#a89f8a;border-bottom:1px solid #262626">{_hold_text(row["_hold_range"])}</td>'
-        f'<td style="padding:7px 10px;font-family:monospace;font-size:11px;color:#726b5a;border-bottom:1px solid #262626">{row.get("_combo") or "—"}</td>'
-        f'<td style="padding:7px 10px;font-family:monospace;color:#a89f8a;border-bottom:1px solid #262626">{int(n):,}</td>'
-        f'<td style="padding:7px 10px;font-family:monospace;color:#a89f8a;border-bottom:1px solid #262626">{score:+.2f}%</td>'
+        f'<td style="padding:7px 9px;font-weight:bold;color:#F5C842;border-top:1px solid #262626">{row["Ticker"]}</td>'
+        f'<td style="padding:7px 9px;color:{_VERDICT_COLOR.get(row["_verdict"], "#8b8578")};border-top:1px solid #262626">{row["_verdict"]}</td>'
+        f'<td style="padding:7px 9px;color:#a89f8a;border-top:1px solid #262626">{_hold_text(row["_hold_range"])}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">${row.get("Price", 0):,.2f}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:{chg_color};border-top:1px solid #262626">{chg:+.1f}%</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{rsi_txt}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;font-size:10.5px;color:#726b5a;border-top:1px solid #262626">{row.get("_combo") or "—"}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{int(n):,}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{score:+.2f}%</td>'
         '</tr>'
+    )
+
+
+def _detail_table_html(filtered) -> str:
+    header = (
+        '<tr style="background:#1d1a13;color:#fff">'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Ticker</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Verdict</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Hold</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Price</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Chg</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">RSI D</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Combo</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">N</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Edge</th>'
+        '</tr>'
+    )
+    rows = "".join(_detail_row_html(r) for _, r in filtered.iterrows())
+    return (
+        '<div style="overflow-x:auto;border:1px solid #262626;border-radius:10px">'
+        '<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;'
+        f'font-family:Arial,sans-serif;font-size:12px;background:#0d0d0d;color:#eee">{header}{rows}</table></div>'
     )
 
 
@@ -160,12 +267,12 @@ def build_email(filtered, top5) -> tuple[str, str]:
 
     top5_html = ""
     if len(top5):
-        cards = "".join(_top_card_html(r) for _, r in top5.iterrows())
         top5_html = (
             '<div style="font-size:11px;font-weight:600;color:#c9a53a;text-transform:uppercase;'
             'letter-spacing:0.06em;margin:0 0 10px">'
             f'Top picks today ({len(top5)} of possible {TOP_N})</div>'
-            f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px">{cards}</div>'
+            f'{_top5_table_html(top5)}'
+            '<div style="height:24px"></div>'
         )
     elif not IS_QUALITY_UNIVERSE:
         top5_html = (
@@ -178,26 +285,11 @@ def build_email(filtered, top5) -> tuple[str, str]:
         grid_html = '<p style="color:#888;font-size:13px">Nothing qualified this run.</p>'
         table_html = ""
     else:
-        cards = "".join(_card_html(r) for _, r in filtered.iterrows())
-        grid_html = f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:22px">{cards}</div>'
-        header = (
-            '<tr style="background:#1d1a13;color:#fff">'
-            '<th style="padding:8px 10px;text-align:left;font-size:11px">Ticker</th>'
-            '<th style="padding:8px 10px;text-align:left;font-size:11px">Verdict</th>'
-            '<th style="padding:8px 10px;text-align:left;font-size:11px">Hold</th>'
-            '<th style="padding:8px 10px;text-align:left;font-size:11px">Combo</th>'
-            '<th style="padding:8px 10px;text-align:left;font-size:11px">N</th>'
-            '<th style="padding:8px 10px;text-align:left;font-size:11px">Edge</th>'
-            '</tr>'
-        )
-        rows = "".join(_detail_row_html(r) for _, r in filtered.iterrows())
+        grid_html = _qual_grid_html(filtered) + '<div style="height:22px"></div>'
         table_html = (
             '<div style="font-size:11px;font-weight:600;color:#c9a53a;text-transform:uppercase;'
             'letter-spacing:0.06em;margin:0 0 10px">Full detail</div>'
-            '<div style="overflow-x:auto;border:1px solid #262626;border-radius:10px">'
-            '<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;'
-            f'font-size:12px;background:#0d0d0d;color:#eee"><thead>{header}</thead>'
-            f'<tbody>{rows}</tbody></table></div>'
+            + _detail_table_html(filtered)
         )
 
     html = f"""
@@ -209,8 +301,8 @@ def build_email(filtered, top5) -> tuple[str, str]:
       </p>
       <div style="background:#17140f;border:1px solid rgba(245,200,66,0.08);border-radius:10px;
                   padding:12px 14px;margin-bottom:20px;font-size:13px;color:#a89f8a;line-height:1.5">
-        <b style="color:#F5C842">How to read this:</b> look at the colored badge and the hold-length
-        line — that's the whole decision. Everything else is detail for anyone who wants to dig in.
+        <b style="color:#F5C842">How to read this:</b> look at the ticker and hold-length inside each
+        circle, or the badge in each card — that's the whole decision. Everything else is detail.
       </div>
       {top5_html}
       <div style="font-size:11px;font-weight:600;color:#c9a53a;text-transform:uppercase;
