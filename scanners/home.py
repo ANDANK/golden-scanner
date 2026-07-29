@@ -235,6 +235,77 @@ def _star_rating(labels: list) -> int:
     return 0
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# EDGE SCORE — replaces _STAR_RULES as what Run Scan / the email actually
+# display. _STAR_RULES/_star_rating stay in place unchanged (the Backtest mode
+# still validates them, and nothing here depends on removing them) — this is
+# a parallel, better-evidenced system for the live-facing views specifically.
+#
+# _EDGE_SHORTLIST is hand-curated from 8 headless full-analysis backtests
+# (FTF/MTPA/SP500 universes, 2-10yr lookbacks, 10-90d holds, run 2026-07-29 —
+# see scripts/headless_best_scanners_full_analysis.py). Each entry:
+#   (combo, avg_excess_pct, n, (min_hold_days, max_hold_days))
+# hold_range reflects ACTUAL evidence, not a guess: several combos that look
+# great at 10-30d were CONFIRMED NEGATIVE at 60d in the same backtests (see
+# comments below) and are capped there rather than extrapolated.
+#
+# Confidence is bucketed by sample size alone (n >= 1000 -> high, >= 200 ->
+# medium) since these runs only captured the mean excess return per combo,
+# not its spread -- a proper standard-error-based score needs
+# _aggregate_full_analysis to also track std_rel (added below) and a fresh
+# batch of runs. Until then this is the honest, evidence-backed interim.
+_EDGE_SHORTLIST = [
+    # positive across the FULL 10-90 day range actually tested
+    (frozenset({"1Mom", "8Cross"}), 0.95, 9780, (10, 90)),
+    (frozenset({"3MF", "8Cross"}), 0.83, 3867, (10, 90)),
+    # positive through 60d; no 90d evidence either way yet
+    (frozenset({"1Mom", "5RB", "8Cross"}), 0.97, 3878, (10, 60)),
+    # strong at 10-30d but CONFIRMED NEGATIVE at 60d in the FTF/5y/60d run --
+    # capped here on purpose, not extrapolated past what the data showed
+    (frozenset({"5RB", "8Cross"}), 0.57, 6325, (10, 30)),
+    (frozenset({"3MF", "5RB"}), 0.55, 3613, (10, 30)),
+    (frozenset({"1Mom", "3MF", "8Cross"}), 0.57, 1310, (10, 30)),
+    (frozenset({"6Prime", "7Square", "8Cross"}), 0.47, 2978, (10, 30)),
+    (frozenset({"7Square", "8Cross"}), 0.43, 10416, (10, 30)),
+    # medium-confidence (200-999 samples) -- promising, thinner evidence
+    (frozenset({"3MF", "5RB", "8Cross"}), 1.59, 577, (10, 30)),
+    (frozenset({"3MF", "4TS", "8Cross"}), 1.26, 383, (10, 30)),
+    (frozenset({"3MF", "6Prime", "8Cross"}), 1.10, 214, (10, 30)),
+]
+
+_EDGE_MIN_N_HIGH = 1000
+_EDGE_MIN_N_MEDIUM = 200
+
+
+def _edge_verdict(labels: list) -> dict:
+    """Finds the best-matching shortlist combo for a ticker's CURRENT matched
+    labels (same 'is a subset of what fired' logic as _star_rating). Returns
+    a plain-language verdict plus the numbers behind it; 'Too New' means
+    nothing on the shortlist matched -- not a bad sign, just unconfirmed.
+
+    A ticker can match several shortlist combos at once (e.g. matching both
+    1Mom+8Cross and a smaller-sample triple that happens to have a bigger raw
+    number) -- confidence tier wins first, score only breaks ties within the
+    same tier, so a flashier thin-sample number never outranks a validated
+    high-confidence one. (Not "first match wins" by list order -- checked and
+    fixed after a test caught exactly this ordering bug.)"""
+    label_set = frozenset(labels)
+    matches = [entry for entry in _EDGE_SHORTLIST if entry[0] <= label_set]
+    if not matches:
+        return dict(verdict="Too New", confidence=None, score=None, n=None,
+                   hold_range=None, combo=None)
+    combo, score, n, hold_range = max(
+        matches, key=lambda e: (e[2] >= _EDGE_MIN_N_HIGH, e[1])
+    )
+    confidence = "high" if n >= _EDGE_MIN_N_HIGH else "medium"
+    verdict = "Strong Setup" if confidence == "high" else "Mixed Signal"
+    return dict(
+        verdict=verdict, confidence=confidence, score=score, n=n,
+        hold_range=hold_range,
+        combo="+".join(sorted(combo, key=_LABELS.index)),
+    )
+
+
 _UNIVERSE_CHOICES = {
     "FTF Universe (~480 · full S&P 500 + ETFs)": "FTF",
     "MTPA 200 (stock-heavy)": "MTPA",
@@ -454,6 +525,13 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
                 snap["Scanners"] = scan_s
                 snap["_count"] = len(res["labels"])
                 snap["_stars"] = _star_rating(res["labels"])
+                edge = _edge_verdict(res["labels"])
+                snap["_verdict"] = edge["verdict"]
+                snap["_confidence"] = edge["confidence"]
+                snap["_edge_score"] = edge["score"]
+                snap["_edge_n"] = edge["n"]
+                snap["_hold_range"] = edge["hold_range"]
+                snap["_combo"] = edge["combo"]
                 rows.append(snap)
         except Exception:
             continue
@@ -461,13 +539,21 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
 
     df_out = pd.DataFrame(rows)
     if not df_out.empty:
-        # multi-signal first, then more scanners, then higher weekly RSI
-        df_out = df_out.sort_values(["_count", "RS vs SPY"], ascending=[False, False]).reset_index(drop=True)
+        # Strong Setup first, then Mixed Signal, then Too New; within a tier,
+        # higher edge score first. Replaces the old _count-based sort now that
+        # raw scanner count is known not to be a reliable ranker (see the
+        # cross-run analysis -- it doesn't move monotonically either way).
+        verdict_rank = {"Strong Setup": 2, "Mixed Signal": 1, "Too New": 0}
+        df_out["_verdict_rank"] = df_out["_verdict"].map(verdict_rank)
+        df_out = df_out.sort_values(
+            ["_verdict_rank", "_edge_score"], ascending=[False, False], na_position="last"
+        ).drop(columns="_verdict_rank").reset_index(drop=True)
     return df_out
 
 
 _SORT_COLUMNS = {
-    "★ Stars": "_stars_n",
+    "Verdict": "_verdict_rank_n",
+    "Edge Score": "_edge_score_n",
     "Ticker": "Ticker",
     "Price": "Price",
     "Chg %": "Chg %",
@@ -476,9 +562,19 @@ _SORT_COLUMNS = {
     "RS·SPY": "RS·SPY",
 }
 
+_VERDICT_COLOR = {"Strong Setup": ACCENT_GREEN, "Mixed Signal": GOLD, "Too New": TEXT_MUTED}
+_VERDICT_RANK = {"Strong Setup": 2, "Mixed Signal": 1, "Too New": 0}
 
-_ROW_COL_RATIOS = [0.35, 0.4, 0.6, 0.65, 0.55, 1.7, 0.75, 0.95, 0.65, 0.85, 1.3]
-_ROW_HEADERS = ["", "★", "Ticker", "Price", "Chg %", "Scanners", "RSI W/D",
+
+def _hold_range_text(hold_range) -> str:
+    if not hold_range or (isinstance(hold_range, float) and pd.isna(hold_range)):
+        return "—"
+    lo, hi = hold_range
+    return f"{lo}-{hi}d"
+
+
+_ROW_COL_RATIOS = [0.35, 0.85, 0.55, 0.5, 0.55, 0.5, 1.4, 0.7, 0.9, 0.6, 0.8, 1.1]
+_ROW_HEADERS = ["", "Verdict", "Hold", "Ticker", "Price", "Chg %", "Scanners", "RSI W/D",
                 "MACD", ">SMA 9/20", "Vol× / RS", "Flags"]
 
 
@@ -514,8 +610,10 @@ def _render_best_table(df: pd.DataFrame):
     scrolling internally.
     """
     view = pd.DataFrame({
-        "★": df["_stars"].apply(lambda n: "★" * int(n) if n else ""),
-        "_stars_n": pd.to_numeric(df["_stars"], errors="coerce").fillna(0),
+        "Verdict": df["_verdict"].astype(str),
+        "_verdict_rank_n": df["_verdict"].map(_VERDICT_RANK).fillna(0),
+        "Hold": df["_hold_range"].apply(_hold_range_text),
+        "_edge_score_n": pd.to_numeric(df["_edge_score"], errors="coerce").fillna(-999),
         "Ticker": df["Ticker"].astype(str),
         "Price": pd.to_numeric(df["Price"], errors="coerce"),
         "Chg %": pd.to_numeric(df["Chg"], errors="coerce"),
@@ -574,16 +672,20 @@ def _render_best_table(df: pd.DataFrame):
             cols[0].checkbox("select", key=f"home_best_chk_{ticker}", label_visibility="collapsed",
                              on_change=_select_ticker_cb, args=(ticker, all_tickers))
             tk_style = f"color:{GOLD};font-weight:700" + (";text-decoration:underline" if ticker == selected else "")
-            cols[1].markdown(f'<span style="color:{GOLD}">{r["★"]}</span>', unsafe_allow_html=True)
-            cols[2].markdown(f'<span style="{tk_style}">{ticker}</span>', unsafe_allow_html=True)
-            cols[3].markdown(f'${r["Price"]:,.2f}')
-            cols[4].markdown(_chg_html(r["Chg %"]), unsafe_allow_html=True)
-            cols[5].markdown(f'<span style="font-size:11.5px">{r["Scanners"]}</span>', unsafe_allow_html=True)
-            cols[6].markdown(f'W{r["RSI W"]:.0f} / D{r["RSI D"]:.0f}')
-            cols[7].markdown(f'{_b(r["MACD>Sig"])} {r["MACD Zone"]}')
-            cols[8].markdown(f'{_b(r[">SMA9"])} / {_b(r[">SMA20"])}')
-            cols[9].markdown(f'{r["Vol×"]:.2f}x / {r["RS·SPY"]:.2f}')
-            cols[10].markdown(f'<span style="color:{TEXT_MUTED};font-size:11px">{r["Flags"] or "—"}</span>',
+            v_color = _VERDICT_COLOR.get(r["Verdict"], TEXT_MUTED)
+            cols[1].markdown(f'<span style="color:{v_color};font-weight:600;font-size:11.5px">{r["Verdict"]}</span>',
+                             unsafe_allow_html=True)
+            cols[2].markdown(f'<span style="color:{TEXT_MUTED};font-size:11.5px">{r["Hold"]}</span>',
+                             unsafe_allow_html=True)
+            cols[3].markdown(f'<span style="{tk_style}">{ticker}</span>', unsafe_allow_html=True)
+            cols[4].markdown(f'${r["Price"]:,.2f}')
+            cols[5].markdown(_chg_html(r["Chg %"]), unsafe_allow_html=True)
+            cols[6].markdown(f'<span style="font-size:11.5px">{r["Scanners"]}</span>', unsafe_allow_html=True)
+            cols[7].markdown(f'W{r["RSI W"]:.0f} / D{r["RSI D"]:.0f}')
+            cols[8].markdown(f'{_b(r["MACD>Sig"])} {r["MACD Zone"]}')
+            cols[9].markdown(f'{_b(r[">SMA9"])} / {_b(r[">SMA20"])}')
+            cols[10].markdown(f'{r["Vol×"]:.2f}x / {r["RS·SPY"]:.2f}')
+            cols[11].markdown(f'<span style="color:{TEXT_MUTED};font-size:11px">{r["Flags"] or "—"}</span>',
                               unsafe_allow_html=True)
 
     return st.session_state.get("home_best_selected_ticker", selected)
@@ -734,25 +836,31 @@ def _render_scanner_chart_section(ticker):
     st.plotly_chart(fig, use_container_width=True, key=f"home_best_chart_{ticker}")
 
 
-_STAR_LEGEND = [
-    (4, "1Mom + 4TS + 3MF"),
-    (3, "4TS+6Prime · 1Mom+6Prime"),
-    (2, "1Mom+2TC+3MF · 1Mom+5RB"),
-    (1, "4TS+3MF · 2TC+5RB · 2TC+1Mom"),
+_EDGE_LEGEND = [
+    ("Strong Setup", ACCENT_GREEN,
+     "This exact scanner combination has clearly beaten the market historically, "
+     "backed by a large number of past examples."),
+    ("Mixed Signal", GOLD,
+     "Some historical edge, but backed by fewer past examples — worth a look, not a first pick."),
+    ("Too New", TEXT_MUTED,
+     "We haven't seen this exact combination often enough yet to say whether it works."),
 ]
 
 
-def _render_star_legend():
-    items = "".join(
-        f'<tr><td style="{_TD};color:{GOLD};white-space:nowrap">{"★" * n}</td>'
-        f'<td style="{_TD};color:{TEXT_MUTED};font-size:11px">{combo}</td></tr>'
-        for n, combo in _STAR_LEGEND
+def _render_edge_legend():
+    rows = "".join(
+        f'<tr><td style="{_TD};color:{color};font-weight:600;white-space:nowrap">{label}</td>'
+        f'<td style="{_TD};color:{TEXT_MUTED};font-size:11px">{desc}</td></tr>'
+        for label, color, desc in _EDGE_LEGEND
     )
     st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:11px;margin:14px 0 4px">Star rating (next to Ticker) — highest matching combo wins:</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;margin:14px 0 4px">'
+        f'Verdict (next to Ticker) — based on how this exact scanner combination performed '
+        f'historically, not a prediction. "Hold" is the range of hold lengths that combination '
+        f'was actually tested at:</div>'
         f'<div style="border:1px solid {BORDER_COLOR};border-radius:10px;overflow:hidden">'
         f'<table style="width:100%;border-collapse:collapse">'
-        f'<tbody>{items}</tbody></table></div>',
+        f'<tbody>{rows}</tbody></table></div>',
         unsafe_allow_html=True,
     )
 
@@ -859,7 +967,7 @@ def _render_best_scan_mode():
 
     selected_ticker = _render_best_table(df)
     _render_scanner_chart_section(selected_ticker)
-    _render_star_legend()
+    _render_edge_legend()
     _render_scanner_notes()
 
 
@@ -1106,19 +1214,35 @@ def _run_full_analysis_backtest(universe: list, lookback_years: int, hold_days: 
 
 def _aggregate_full_analysis(records: list[dict], min_n: int = 30) -> pd.DataFrame:
     """Groups by (dimension, tier). `ranked` marks whether a row has enough
-    onset events (>= min_n) for its win rate / excess return to be trusted."""
+    onset events (>= min_n) for its win rate / excess return to be trusted.
+
+    Also computes std_rel/standard_error/lower_bound_score -- a proper
+    confidence-adjusted score (avg_rel discounted by its own standard error,
+    Z=1.5), not just the sample-size-bucketed high/medium/low confidence
+    _EDGE_SHORTLIST currently uses. That shortlist predates this addition (it
+    was hand-built from runs that only captured the mean, not the spread);
+    once a fresh batch of full-analysis runs is collected with this in
+    place, the shortlist can be rebuilt from lower_bound_score directly
+    instead of the N-threshold approximation."""
     if not records:
         return pd.DataFrame()
+    Z = 1.5
     df = pd.DataFrame(records)
     rows = []
     for (dim, tier), grp in df.groupby(["dimension", "tier"]):
         n = len(grp)
         wins = int(grp["win"].sum())
+        avg_rel = float(grp["rel_ret"].mean()) * 100
+        std_rel = float(grp["rel_ret"].std()) * 100 if n > 1 else float("nan")
+        se = std_rel / (n ** 0.5) if n > 1 else float("nan")
         rows.append(dict(
             dimension=dim, tier=tier, n=n, wins=wins,
             win_rate=(wins / n * 100) if n else float("nan"),
-            avg_rel=float(grp["rel_ret"].mean()) * 100,
+            avg_rel=avg_rel,
             avg_stock=float(grp["stock_ret"].mean()) * 100,
+            std_rel=std_rel,
+            standard_error=se,
+            lower_bound_score=(avg_rel - Z * se) if n > 1 else float("nan"),
             ranked=n >= min_n,
         ))
     return pd.DataFrame(rows)
