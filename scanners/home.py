@@ -209,12 +209,18 @@ _SCANNER_NOTES = [
 # Star rating — flags rare, high-conviction label combos. A combo matches if the
 # ticker's labels are a SUPERSET of the required set; rules are checked highest
 # tier first, so a ticker matching more than one tier gets the best one.
+#
+# 2*/3* swapped 2026-07-29 based on 5 independent headless backtests (FTF/
+# MTPA/SP500 universes, 2-5yr lookbacks, 10-45 day holds -- see
+# scripts/headless_best_scanners_backtest.py): the 6Prime-based combos
+# (originally 3*) underperformed the {1Mom,2TC,3MF}/{1Mom,5RB} combos
+# (originally 2*) on avg excess return vs SPY in all 5 runs, no exceptions.
 _STAR_RULES = [
     (frozenset({"1Mom", "4TS", "3MF"}), 4),
-    (frozenset({"4TS", "6Prime"}), 3),
-    (frozenset({"1Mom", "6Prime"}), 3),
-    (frozenset({"1Mom", "2TC", "3MF"}), 2),
-    (frozenset({"1Mom", "5RB"}), 2),
+    (frozenset({"1Mom", "2TC", "3MF"}), 3),
+    (frozenset({"1Mom", "5RB"}), 3),
+    (frozenset({"4TS", "6Prime"}), 2),
+    (frozenset({"1Mom", "6Prime"}), 2),
     (frozenset({"4TS", "3MF"}), 1),
     (frozenset({"2TC", "5RB"}), 1),
     (frozenset({"2TC", "1Mom"}), 1),
