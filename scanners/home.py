@@ -1006,6 +1006,124 @@ def _aggregate_best_scanners_backtest(records: list[dict]) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values("stars", ascending=False).reset_index(drop=True)
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# FULL ANALYSIS BACKTEST — is the * combo system actually better than raw
+# scanner count, and are the hardcoded _STAR_RULES combos actually the best
+# ones? Same walk-forward as _backtest_ticker_best_scanners (identical fetch,
+# identical bounded-window _evaluate() call each day), but instead of only
+# tracking the star tier, tracks THREE dimensions per day from the same
+# already-computed label set: star tier (unchanged), raw scanner count, and
+# membership of every 1-3-label combo (singles cover "which one scanner is
+# best", pairs+triples cover "which combo works best" beyond just the ones
+# _STAR_RULES happens to hardcode). One record per (ticker, date, dimension,
+# tier) onset. Reuses _bt_forward_outcome() unchanged.
+# ══════════════════════════════════════════════════════════════════════════════
+
+from itertools import combinations as _combinations
+
+_COMBO_UNIVERSE: list[tuple[frozenset, str]] = [
+    (frozenset(combo), "+".join(combo))
+    for size in (1, 2, 3)
+    for combo in _combinations(_LABELS, size)
+]   # 8 singles + 28 pairs + 56 triples = 92
+
+
+def _backtest_ticker_full_analysis(ticker: str, lookback_years: int, hold_days: int,
+                                   since: pd.Timestamp) -> tuple[list[dict], str]:
+    records: list[dict] = []
+    try:
+        period = _yf_period_for_years(lookback_years + 2)
+        daily = get_price_history(ticker, period=period, interval="1d")
+        spy = get_price_history("SPY", period=period, interval="1d")
+        if daily is None or daily.empty:
+            return records, "no_daily_data"
+        if spy is None or spy.empty:
+            return records, "no_spy_data"
+        daily = daily.dropna(subset=["Open", "High", "Low", "Close", "Volume"])
+        if len(daily) < BS_BT_WARMUP_BARS + 20:
+            return records, "insufficient_history"
+        spy_aligned = spy["Close"].squeeze().reindex(daily.index).ffill()
+        closes = daily["Close"].squeeze()
+
+        since_matched = since.as_unit(daily.index.unit)
+        start_i = max(BS_BT_WARMUP_BARS - 1, int(daily.index.searchsorted(since_matched)))
+
+        prev_star = None
+        prev_count = None
+        prev_combo_in = {key: False for _, key in _COMBO_UNIVERSE}
+
+        for i in range(start_i, len(daily)):
+            window = daily.iloc[i - BS_BT_WARMUP_BARS + 1: i + 1]
+            spy_window = spy_aligned.iloc[i - BS_BT_WARMUP_BARS + 1: i + 1]
+            res = _evaluate(window, spy_window)
+            label_set = frozenset(res["labels"]) if res else frozenset()
+            cur_star = _star_rating(res["labels"]) if res else None
+            cur_count = len(label_set)
+
+            events: list[tuple[str, str]] = []
+            if cur_star is not None and cur_star != prev_star:
+                events.append(("star", str(cur_star)))
+            if cur_count >= 1 and cur_count != prev_count:
+                events.append(("count", str(cur_count)))
+            for combo, key in _COMBO_UNIVERSE:
+                now_in = combo <= label_set
+                if now_in and not prev_combo_in[key]:
+                    events.append(("combo", key))
+                prev_combo_in[key] = now_in
+
+            if events:
+                outcome = _bt_forward_outcome(closes, spy_aligned, i, hold_days)
+                if outcome is not None:
+                    date_str = daily.index[i].date().isoformat()
+                    for dim, tier in events:
+                        records.append(dict(ticker=ticker, date=date_str,
+                                            dimension=dim, tier=tier, **outcome))
+
+            prev_star = cur_star
+            prev_count = cur_count
+
+        return records, ("ok" if records else "no_onsets")
+    except Exception as e:
+        return records, f"error:{type(e).__name__}:{e}"
+
+
+def _run_full_analysis_backtest(universe: list, lookback_years: int, hold_days: int,
+                                progress_cb=None) -> tuple[list[dict], dict]:
+    from collections import Counter
+    prefetch_tickers(list(universe) + ["SPY"], _yf_period_for_years(lookback_years + 2), "1d")
+    since = pd.Timestamp.now() - pd.DateOffset(years=lookback_years)
+    all_records: list[dict] = []
+    reasons: Counter = Counter()
+    total = len(universe)
+    for i, ticker in enumerate(universe):
+        if progress_cb and (i % 5 == 0 or i == total - 1):
+            progress_cb(i, total, ticker)
+        recs, reason = _backtest_ticker_full_analysis(ticker, lookback_years, hold_days, since)
+        all_records.extend(recs)
+        reasons[reason] += 1
+    return all_records, dict(reasons)
+
+
+def _aggregate_full_analysis(records: list[dict], min_n: int = 30) -> pd.DataFrame:
+    """Groups by (dimension, tier). `ranked` marks whether a row has enough
+    onset events (>= min_n) for its win rate / excess return to be trusted."""
+    if not records:
+        return pd.DataFrame()
+    df = pd.DataFrame(records)
+    rows = []
+    for (dim, tier), grp in df.groupby(["dimension", "tier"]):
+        n = len(grp)
+        wins = int(grp["win"].sum())
+        rows.append(dict(
+            dimension=dim, tier=tier, n=n, wins=wins,
+            win_rate=(wins / n * 100) if n else float("nan"),
+            avg_rel=float(grp["rel_ret"].mean()) * 100,
+            avg_stock=float(grp["stock_ret"].mean()) * 100,
+            ranked=n >= min_n,
+        ))
+    return pd.DataFrame(rows)
+
+
 _BS_BT_TD = f"padding:7px 10px;border-bottom:1px solid {BORDER_COLOR};vertical-align:middle;white-space:nowrap"
 
 

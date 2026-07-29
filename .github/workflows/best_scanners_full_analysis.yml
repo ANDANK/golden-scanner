@@ -1,0 +1,78 @@
+name: Best Scanners Full Analysis
+
+# Manual only -- a research/exploration tool (which single scanner is best,
+# which of all 92 possible 1-3-scanner combos actually work, star tiers vs
+# raw scanner count), not a recurring alert. Runs on a dedicated GitHub
+# Actions runner for the same reason as the plain Backtest workflow: this is
+# heavier than the star-only backtest (tracks 92 extra combos per day) and
+# would never survive Streamlit Community Cloud's shared free-tier CPU
+# throttle.
+on:
+  workflow_dispatch:
+    inputs:
+      universe:
+        description: "Universe"
+        required: true
+        default: "FTF"
+        type: choice
+        options: [FTF, MTPA, SP500]
+      lookback_years:
+        description: "Lookback (years, 1-10)"
+        required: true
+        default: "5"
+      hold_days:
+        description: "Max hold (trading days, 10-250)"
+        required: true
+        default: "90"
+      min_n:
+        description: "Minimum onset events for a combo to be ranked"
+        required: true
+        default: "30"
+
+concurrency:
+  # Keyed by inputs -- different configs run in parallel on separate
+  # isolated runners; only an exact duplicate trigger queues.
+  group: best-scanners-full-analysis-${{ github.event.inputs.universe }}-${{ github.event.inputs.lookback_years }}-${{ github.event.inputs.hold_days }}
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    name: Full Analysis — Best Scanners
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+
+      - name: Run full analysis + email summary
+        env:
+          GMAIL_ADDRESS:           ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD:      ${{ secrets.GMAIL_APP_PASSWORD }}
+          OVERKILL_EMAIL_TO:       ${{ secrets.OVERKILL_EMAIL_TO }}
+          BEST_SCANNERS_EMAIL_TO:  ${{ secrets.BEST_SCANNERS_EMAIL_TO }}
+          BT_UNIVERSE:             ${{ github.event.inputs.universe }}
+          BT_LOOKBACK_YEARS:       ${{ github.event.inputs.lookback_years }}
+          BT_HOLD_DAYS:            ${{ github.event.inputs.hold_days }}
+          BT_MIN_N:                ${{ github.event.inputs.min_n }}
+        run: python scripts/headless_best_scanners_full_analysis.py
+
+      - name: Upload raw + aggregate CSVs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: best-scanners-full-analysis-${{ github.run_id }}
+          path: data/bs_full_*.csv
+          retention-days: 30
+          if-no-files-found: ignore
