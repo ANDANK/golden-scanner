@@ -82,6 +82,11 @@ UNIVERSE  = _UNIVERSES.get(UNI_KIND, FTF_UNIVERSE)
 IS_QUALITY_UNIVERSE = UNI_KIND in ("FTF", "SP500")
 TOP_N = 5
 
+# Hidden 2026-07-29 to keep the email simple for now -- _qual_card_html()/
+# _qual_grid_html() are untouched below, just not called from build_email().
+# Flip back to True to restore the compact card-grid section.
+SHOW_QUALIFIED_GRID = False
+
 # Verdict badge (used in the compact grid + detail table) — semantic, not decorative.
 _VERDICT_COLOR = {"Strong Setup": "#3fcf7f", "Mixed Signal": "#f0b94a"}
 _VERDICT_BG = {"Strong Setup": "rgba(63,207,127,0.16)", "Mixed Signal": "rgba(240,185,74,0.16)"}
@@ -130,28 +135,29 @@ def _chunk(seq, n):
         yield seq[i:i + n]
 
 
-# ── Top 5 — one row of 3D gradient "sphere" cells, real <table> layout ──────
+# ── Top 5 — one row of colored-ring cells (outline only, no fill shading),
+# real <table> layout ───────────────────────────────────────────────────
 
 def _sphere_cell_html(row, idx: int) -> str:
-    highlight, mid, dark, text_2 = _SPHERE_COLORS[idx % len(_SPHERE_COLORS)]
+    # Ring border uses the fixed per-position color (the "mid" tone of that
+    # slot's palette entry); highlight/dark/text_2 stay unused for now but
+    # the palette keeps its 4-tuple shape in case a shaded version comes back.
+    _highlight, mid, _dark, _text_2 = _SPHERE_COLORS[idx % len(_SPHERE_COLORS)]
     verdict = row["_verdict"]
-    v_color = _VERDICT_TEXT_DARK.get(verdict, "#3a3a3a")
+    v_color = _VERDICT_COLOR.get(verdict, "#8b8578")
     combo = row.get("_combo") or ""
     return (
         f'<td width="20%" align="center" valign="top">'
         f'<table role="presentation" cellpadding="0" cellspacing="0"><tr><td align="center" valign="middle" '
         f'style="width:104px;height:104px;border-radius:50%;text-align:center;vertical-align:middle;'
-        f'background-color:{mid};'
-        f'background-image:radial-gradient(circle at 34% 28%, {highlight} 0%, {mid} 42%, {dark} 100%);'
-        f'box-shadow:inset -6px -8px 14px rgba(0,0,0,0.35), inset 4px 5px 10px rgba(255,255,255,0.35)">'
+        f'background-color:#17140f;border:3px solid {mid}">'
         f'<div style="font-family:Arial,sans-serif;font-size:7.5px;font-weight:bold;color:{v_color};'
         f'letter-spacing:0.03em">{verdict.upper()}</div>'
-        f'<div style="font-family:monospace;font-weight:bold;font-size:15px;color:#ffffff;'
-        f'text-shadow:0 1px 2px rgba(0,0,0,0.4)">{row["Ticker"]}</div>'
-        f'<div style="font-family:monospace;font-size:9.5px;color:{text_2}">${row.get("Price", 0):,.2f}</div>'
-        f'<div style="font-family:Arial,sans-serif;font-size:8px;color:{text_2};margin-top:1px">'
+        f'<div style="font-family:monospace;font-weight:bold;font-size:15px;color:#ffffff">{row["Ticker"]}</div>'
+        f'<div style="font-family:monospace;font-size:9.5px;color:#a89f8a">${row.get("Price", 0):,.2f}</div>'
+        f'<div style="font-family:Arial,sans-serif;font-size:8px;color:#a89f8a;margin-top:1px">'
         f'{_hold_text(row["_hold_range"])}</div>'
-        f'<div style="font-family:monospace;font-size:6.5px;color:{highlight};margin-top:1px">{combo}</div>'
+        f'<div style="font-family:monospace;font-size:6.5px;color:{mid};margin-top:1px">{combo}</div>'
         '</td></tr></table></td>'
     )
 
@@ -281,11 +287,16 @@ def build_email(filtered, top5) -> tuple[str, str]:
             'so featured picks are skipped (still shown in the full list below).</p>'
         )
 
+    qualified_section_html = ""
     if filtered.empty:
-        grid_html = '<p style="color:#888;font-size:13px">Nothing qualified this run.</p>'
-        table_html = ""
+        table_html = '<p style="color:#888;font-size:13px">Nothing qualified this run.</p>'
     else:
-        grid_html = _qual_grid_html(filtered) + '<div style="height:22px"></div>'
+        if SHOW_QUALIFIED_GRID:
+            qualified_section_html = (
+                '<div style="font-size:11px;font-weight:600;color:#c9a53a;text-transform:uppercase;'
+                'letter-spacing:0.06em;margin:0 0 10px">Everything that qualified</div>'
+                + _qual_grid_html(filtered) + '<div style="height:22px"></div>'
+            )
         table_html = (
             '<div style="font-size:11px;font-weight:600;color:#c9a53a;text-transform:uppercase;'
             'letter-spacing:0.06em;margin:0 0 10px">Full detail</div>'
@@ -305,9 +316,7 @@ def build_email(filtered, top5) -> tuple[str, str]:
         circle, or the badge in each card — that's the whole decision. Everything else is detail.
       </div>
       {top5_html}
-      <div style="font-size:11px;font-weight:600;color:#c9a53a;text-transform:uppercase;
-                  letter-spacing:0.06em;margin:0 0 10px">Everything that qualified</div>
-      {grid_html}
+      {qualified_section_html}
       {table_html}
       <p style="color:#666;font-size:11px;margin-top:20px;line-height:1.5">
         "Strong Setup" and "Mixed Signal" reflect how this exact scanner combination performed
