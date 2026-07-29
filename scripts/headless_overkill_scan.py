@@ -84,7 +84,8 @@ def _filter_min_stars(results: list[dict], min_stars: int) -> list[dict]:
 def _row_html(r: dict, color_hex: str) -> str:
     last = r.get("last_w") or r.get("last_m")
     bias_text, _ = _vp_position(r.get("price_now"), r.get("vp"), last["color"] if last else None)
-    dot_txt = f'{last["date"]} ({last["bars_ago"]}b ago)' if last else "—"
+    dot_txt = last["date"] if last else "—"
+    age_txt = f'{last["bars_ago"]}b ago' if last else "—"
     price = r.get("price_now")
     price_txt = f"${price:,.2f}" if price is not None else "—"
     return (
@@ -93,6 +94,7 @@ def _row_html(r: dict, color_hex: str) -> str:
         f'<td style="padding:6px 10px;color:#F5C842;border-bottom:1px solid #333">{"★"*r["_stars"]}</td>'
         f'<td style="padding:6px 10px;border-bottom:1px solid #333">{price_txt}</td>'
         f'<td style="padding:6px 10px;color:#888;font-size:12px;border-bottom:1px solid #333">{dot_txt}</td>'
+        f'<td style="padding:6px 10px;color:#888;font-size:12px;border-bottom:1px solid #333">{age_txt}</td>'
         f'<td style="padding:6px 10px;font-size:12px;border-bottom:1px solid #333">{bias_text}</td>'
         '</tr>'
     )
@@ -108,6 +110,7 @@ def _table_html(results: list[dict], label: str, color_hex: str) -> str:
         '<th style="padding:6px 10px;text-align:left">★</th>'
         '<th style="padding:6px 10px;text-align:left">Price</th>'
         '<th style="padding:6px 10px;text-align:left">Dot</th>'
+        '<th style="padding:6px 10px;text-align:left">Age</th>'
         '<th style="padding:6px 10px;text-align:left">Verdict</th>'
         '</tr>'
     )

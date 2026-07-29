@@ -952,26 +952,36 @@ def _build_chart(result: dict, timeframe: str):
 _TH = (f"color:{TEXT_MUTED};font-size:9px;font-weight:700;text-transform:uppercase;"
        f"letter-spacing:0.6px;padding:6px 10px;text-align:left;white-space:nowrap;"
        f"border-bottom:1.5px solid {BORDER_COLOR}")
-_TABLE_RATIOS  = [0.28, 0.45, 0.55, 0.95, 0.95, 0.62, 1.3, 1.55]
-_TABLE_HEADERS = ["", "Ticker", "Price", "Weekly Dot", "Monthly Dot", "RSI", "Scanners", "Verdict"]
+_TABLE_RATIOS  = [0.28, 0.45, 0.55, 0.95, 0.55, 0.95, 0.55, 0.62, 1.3, 1.55]
+_TABLE_HEADERS = ["", "Ticker", "Price", "Weekly Dot", "Weekly Age", "Monthly Dot", "Monthly Age",
+                  "RSI", "Scanners", "Verdict"]
 _ROW_HEIGHT_PX = 83   # calibrated against the Best Scanners table (~83px/row)
 _MAX_VISIBLE_ROWS = 6
 
 
 def _dot_compact(last: dict | None, fresh_threshold: int | None = None) -> str:
-    """`fresh_threshold`, when given (Scan Universe only), dims the cell and
-    adds a (stale) note when this dot is OLDER than the lookback that would
-    make it 'fresh' — makes it visually obvious when a row only qualified
-    via divergence (or the other timeframe), not this dot."""
+    """`fresh_threshold`, when given (Scan Universe only), dims the cell when
+    this dot is OLDER than the lookback that would make it 'fresh' — makes it
+    visually obvious when a row only qualified via divergence (or the other
+    timeframe), not this dot. Bars-ago lives in its own column now (see
+    _dot_age), not stacked into this cell."""
     if last is None:
         return f'<span style="color:{TEXT_MUTED}">—</span>'
     is_stale = fresh_threshold is not None and last["bars_ago"] >= fresh_threshold
     color = TEXT_MUTED if is_stale else (ACCENT_GREEN if last["color"] == "Green" else ACCENT_RED)
     icon = "🟢" if last["color"] == "Green" else "🔴"
-    stale_note = " · stale" if is_stale else ""
     return (f'<span style="color:{color};font-weight:600">{icon} {last["date"]}</span><br>'
-            f'<span style="color:{TEXT_MUTED};font-size:10px">${last["price"]:.2f} '
-            f'· {last["bars_ago"]}b ago{stale_note}</span>')
+            f'<span style="color:{TEXT_MUTED};font-size:10px">${last["price"]:.2f}</span>')
+
+
+def _dot_age(last: dict | None, fresh_threshold: int | None = None) -> str:
+    """The 'Nb ago' + stale note that used to be stacked inside _dot_compact,
+    now its own column."""
+    if last is None:
+        return f'<span style="color:{TEXT_MUTED}">—</span>'
+    is_stale = fresh_threshold is not None and last["bars_ago"] >= fresh_threshold
+    stale_note = " · stale" if is_stale else ""
+    return f'<span style="color:{TEXT_MUTED};font-size:11px">{last["bars_ago"]}b ago{stale_note}</span>'
 
 
 def _mf_badge(last: dict | None) -> str:
@@ -1102,10 +1112,12 @@ def _render_ticker_table(results: list[dict], key_prefix: str,
             cols[1].markdown(f'<span style="{tk_style}">{ticker}</span>{mf}{div}{dual}', unsafe_allow_html=True)
             cols[2].markdown(_price_cell(r.get("price_now")), unsafe_allow_html=True)
             cols[3].markdown(_dot_compact(lw, weekly_fresh), unsafe_allow_html=True)
-            cols[4].markdown(_dot_compact(lm, monthly_fresh), unsafe_allow_html=True)
-            cols[5].markdown(_rsi_cell(r.get("rsi_w"), r.get("rsi_m")), unsafe_allow_html=True)
-            cols[6].markdown(_scanners_cell(r.get("scanners"), r.get("stars", 0)), unsafe_allow_html=True)
-            cols[7].markdown(_verdict_cell(lw or lm, r.get("price_now"), r.get("vp")), unsafe_allow_html=True)
+            cols[4].markdown(_dot_age(lw, weekly_fresh), unsafe_allow_html=True)
+            cols[5].markdown(_dot_compact(lm, monthly_fresh), unsafe_allow_html=True)
+            cols[6].markdown(_dot_age(lm, monthly_fresh), unsafe_allow_html=True)
+            cols[7].markdown(_rsi_cell(r.get("rsi_w"), r.get("rsi_m")), unsafe_allow_html=True)
+            cols[8].markdown(_scanners_cell(r.get("scanners"), r.get("stars", 0)), unsafe_allow_html=True)
+            cols[9].markdown(_verdict_cell(lw or lm, r.get("price_now"), r.get("vp")), unsafe_allow_html=True)
 
     return st.session_state.get(sel_key, selected)
 
