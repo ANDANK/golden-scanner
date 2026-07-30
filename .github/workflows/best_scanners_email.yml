@@ -2,19 +2,19 @@ name: Best Scanners Email
 
 on:
   schedule:
-    # Staggered 15 min after overkill_scan_email.yml's slots (which already
-    # coincide with scheduled_scan.yml's AM slot) so three jobs aren't all
-    # hitting yfinance at the exact same moment. Revisit if still an issue.
+    # Once daily now (was twice) -- _evaluate() explicitly drops today's
+    # still-forming daily bar before 4pm ET, so any two runs on the same day
+    # before close were computing off the identical completed bar (that's
+    # why they kept repeating the same tickers). One run after close gets
+    # that day's genuinely fresh, final bar instead. Staggered 15 min after
+    # overkill_scan_email.yml's own 5:00 PM CT slot so both jobs aren't
+    # hitting yfinance at the exact same moment.
     # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
-    # 9:15 AM CDT = 14:15 UTC
-    - cron: "15 14 * * 1-5"
-    # 2:15 PM CDT = 19:15 UTC
-    - cron: "15 19 * * 1-5"
+    # 5:15 PM CDT = 22:15 UTC
+    - cron: "15 22 * * 1-5"
     # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
-    # 9:15 AM CST = 15:15 UTC   ← uncomment these and remove CDT lines in Nov
-    # - cron: "15 15 * * 1-5"
-    # 2:15 PM CST = 20:15 UTC
-    # - cron: "15 20 * * 1-5"
+    # 5:15 PM CST = 23:15 UTC   ← uncomment this and remove the CDT line in Nov
+    # - cron: "15 23 * * 1-5"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI
     inputs:
       slot:
