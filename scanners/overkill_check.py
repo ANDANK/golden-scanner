@@ -1494,17 +1494,36 @@ def _render_backtest_mode():
 # ══════════════════════════════════════════════════════════════════════════════
 
 def render():
+    mode = st.radio("Mode", ["🔤 Manual Ticker(s)", "🌐 Scan Universe", "📊 Backtest"], horizontal=True,
+                    index=1, key="overkill_check_mode", label_visibility="collapsed")
+
+    if mode == "🌐 Scan Universe":
+        _render_scan_mode()
+    elif mode == "📊 Backtest":
+        _render_backtest_mode()
+    else:
+        _render_manual_mode()
+
     st.markdown(
-        f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
+        f'<div style="color:{TEXT_MUTED};font-size:14px;line-height:1.85;margin-top:28px;'
+        f'padding-top:18px;border-top:1px solid {BORDER_COLOR}">'
         f'Approximates Overkill Trading\'s <b>WaveTrend dot + Volume Profile confluence</b> setup. '
         f'<b style="color:{ACCENT_GREEN}">🟢 Green Dot</b> = bullish WaveTrend cross while oversold · '
-        f'<b style="color:{ACCENT_RED}">🔴 Red Dot</b> = bearish cross while overbought. A 💰 next to '
-        f'the ticker means Money Flow Index agrees with that dot (oversold for green, overbought for '
-        f'red) — a soft confirmation, not a filter; its absence doesn\'t disqualify anything. A '
-        f'<b style="color:{ACCENT_GREEN}">📈</b>/<b style="color:{ACCENT_RED}">📉</b> means price and '
-        f'the WaveTrend line are diverging (e.g. price makes a lower low while the oscillator makes a '
-        f'higher low) — a reversal warning shown as bonus context on a row that already has a fresh '
-        f'dot; it can\'t bring in a ticker on its own. The '
+        f'<b style="color:{ACCENT_RED}">🔴 Red Dot</b> = bearish cross while overbought. '
+        f'Four small badges can appear next to the ticker, all soft confirmation only — none of them '
+        f'can bring in a ticker on their own, and their absence never disqualifies anything: '
+        f'a 💰 means Money Flow Index agrees with that dot (oversold for green, overbought for red); '
+        f'a <b style="color:{ACCENT_GREEN}">📈</b>/<b style="color:{ACCENT_RED}">📉</b> means price '
+        f'and the WaveTrend line are diverging (e.g. price makes a lower low while the oscillator '
+        f'makes a higher low) — a reversal warning shown as bonus context on a row that already has a '
+        f'fresh dot; a <b style="color:{GOLD}">🎯</b> means Weekly <i>and</i> Monthly are both '
+        f'independently fresh at the same time — the strongest confluence this system can show; and a '
+        f'❤️ means the <b>daily</b> chart confirms the dot\'s direction — either the daily MACD '
+        f'histogram is aligned (positive for green, negative for red) or the daily EMA20/50 '
+        f'relationship just crossed that way. Unlike the other three, this last one is checked on '
+        f'the daily bar specifically, so it can change day to day (even intraday, since it isn\'t '
+        f'gated to only completed bars the way Best Scanners is) as the daily chart moves — read it '
+        f'as "does today\'s daily action line up," not a permanent property of the dot. The '
         f'<b>Verdict</b> column combines two reads: where <i>today\'s</i> price sits vs. the Volume '
         f'Profile (room up to POC/VAH = upside bias, below VAL = downside risk) and whether the '
         f'qualifying dot itself printed at a key level or in isolation (his "Golden Rule" — an '
@@ -1525,13 +1544,3 @@ def render():
         f'as close estimates, not certainty.</div>',
         unsafe_allow_html=True,
     )
-
-    mode = st.radio("Mode", ["🔤 Manual Ticker(s)", "🌐 Scan Universe", "📊 Backtest"], horizontal=True,
-                    index=1, key="overkill_check_mode", label_visibility="collapsed")
-
-    if mode == "🌐 Scan Universe":
-        _render_scan_mode()
-    elif mode == "📊 Backtest":
-        _render_backtest_mode()
-    else:
-        _render_manual_mode()
