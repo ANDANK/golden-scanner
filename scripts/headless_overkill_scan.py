@@ -55,7 +55,8 @@ sys.modules["streamlit"] = _MockST()
 from config import FTF_UNIVERSE
 from scanners.overkill_check import (
     _scan_universe, _analyze_ticker, _color_variant, _sort_color_group,
-    _verdict_stars, _vp_position, DEFAULT_WEEKLY_FRESH_BARS, DEFAULT_MONTHLY_FRESH_BARS,
+    _verdict_stars, _vp_position, _daily_confirm_badge,
+    DEFAULT_WEEKLY_FRESH_BARS, DEFAULT_MONTHLY_FRESH_BARS,
 )
 
 SLOT           = os.environ.get("SCAN_SLOT", "am").lower()
@@ -88,9 +89,10 @@ def _row_html(r: dict, color_hex: str) -> str:
     age_txt = f'{last["bars_ago"]}b ago' if last else "—"
     price = r.get("price_now")
     price_txt = f"${price:,.2f}" if price is not None else "—"
+    heart = _daily_confirm_badge(bool(last and last.get("daily_confirmed")))
     return (
         '<tr>'
-        f'<td style="padding:6px 10px;font-weight:bold;color:{color_hex};border-bottom:1px solid #333">{r["ticker"]}</td>'
+        f'<td style="padding:6px 10px;font-weight:bold;color:{color_hex};border-bottom:1px solid #333">{r["ticker"]}{heart}</td>'
         f'<td style="padding:6px 10px;color:#F5C842;border-bottom:1px solid #333">{"★"*r["_stars"]}</td>'
         f'<td style="padding:6px 10px;border-bottom:1px solid #333">{price_txt}</td>'
         f'<td style="padding:6px 10px;color:#888;font-size:12px;border-bottom:1px solid #333">{dot_txt}</td>'
