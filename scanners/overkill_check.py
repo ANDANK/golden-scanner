@@ -392,7 +392,7 @@ def _analyze_ticker(ticker: str) -> dict:
         div_w = _detect_divergence(weekly, wt1_w, DIVERGENCE_LOOKBACK_WEEKLY)
 
         result = dict(
-            ticker=ticker, weekly=weekly, monthly=None, vp=vp,
+            ticker=ticker, weekly=weekly, monthly=None, daily=daily, vp=vp,
             wt1_w=wt1_w, wt2_w=wt2_w, dots_w=dots_w, ma400_w=ma400_w,
             sma9_w=sma9_w, sma20_w=sma20_w, sma50_w=sma50_w,
             wt1_m=None, wt2_m=None, dots_m=None, ma400_m=None,
@@ -418,6 +418,10 @@ def _analyze_ticker(ticker: str) -> dict:
         result["last_w"] = _last_dot(weekly, dots_w, ma400_w, vp, mfi_w)
         result["last_m"] = (_last_dot(monthly, result["dots_m"], result["ma400_m"], vp, result["mfi_m"])
                              if result.get("dots_m") is not None else None)
+        if result["last_w"] is not None:
+            result["last_w"]["daily_confirmed"] = _daily_confirm(daily, result["last_w"]["color"])
+        if result["last_m"] is not None:
+            result["last_m"]["daily_confirmed"] = _daily_confirm(daily, result["last_m"]["color"])
         return result
     except Exception as e:
         return {"ticker": ticker, "error": str(e)}
@@ -434,6 +438,10 @@ def _color_variant(base: dict, color: str) -> dict:
     v["last_w"] = dot_fn(base["weekly"], base["dots_w"], base["ma400_w"], base["vp"], base["mfi_w"])
     v["last_m"] = (dot_fn(base["monthly"], base["dots_m"], base["ma400_m"], base["vp"], base["mfi_m"])
                   if base.get("dots_m") is not None else None)
+    if v["last_w"] is not None:
+        v["last_w"]["daily_confirmed"] = _daily_confirm(base.get("daily"), color)
+    if v["last_m"] is not None:
+        v["last_m"]["daily_confirmed"] = _daily_confirm(base.get("daily"), color)
     return v
 
 
@@ -1020,6 +1028,43 @@ def _dual_tf_badge(both_fresh: bool) -> str:
             f'style="color:{GOLD};font-size:10px">🎯</span>')
 
 
+def _daily_confirm(daily: pd.DataFrame | None, color: str) -> bool:
+    """Daily-timeframe confirmation for a weekly/monthly dot: True if EITHER
+    (1) the daily MACD histogram is aligned with the dot's direction (Hist>0
+    for Green, Hist<0 for Red — MACD line above/below its own signal line,
+    a crossover STATE not a fresh-cross event, regardless of the MACD line's
+    own position relative to zero), OR (2) the daily EMA20/50 relationship
+    just crossed in that direction. (2) mirrors Best Scanners' own 8Cross
+    label, which is bullish-only (crossedD = EMA20 crossed above EMA50) — the
+    Red-dot case needs the bearish mirror computed here since no such label
+    exists upstream. Non-gating, informational only, like the other badges."""
+    if daily is None or daily.empty or len(daily) < 60:
+        return False
+    from scanners.home import _ema, _macd
+    close = daily["Close"].squeeze()
+    _, _, hist = _macd(close)
+    hist_v = float(hist.iloc[-1])
+    hist_ok = hist_v > 0 if color == "Green" else hist_v < 0
+
+    diff = _ema(close, 20) - _ema(close, 50)
+    d_now = float(diff.iloc[-1])
+    if color == "Green":
+        cross_ok = d_now > 0 and float(diff.iloc[-7:-1].min()) <= 0
+    else:
+        cross_ok = d_now < 0 and float(diff.iloc[-7:-1].max()) >= 0
+
+    return hist_ok or cross_ok
+
+
+def _daily_confirm_badge(confirmed: bool) -> str:
+    """Heart badge next to the star rating when the daily chart confirms the
+    dot's direction (see _daily_confirm) — non-gating, informational only."""
+    if not confirmed:
+        return ""
+    return (f' <span title="Daily MACD/EMA confirms this dot\'s direction" '
+            f'style="font-size:10px">❤️</span>')
+
+
 def _price_cell(price: float | None) -> str:
     if price is None or not np.isfinite(price):
         return f'<span style="color:{TEXT_MUTED}">—</span>'
@@ -1040,11 +1085,13 @@ def _rsi_cell(rsi_w: float | None, rsi_m: float | None) -> str:
             f'<span style="color:{_rsi_color(rsi_m)};font-weight:600">M {m}</span>')
 
 
-def _scanners_cell(scanners: list[str] | None, stars: int) -> str:
+def _scanners_cell(scanners: list[str] | None, stars: int, daily_confirmed: bool = False) -> str:
     if not scanners:
         return f'<span style="color:{GOLD};font-size:11px">no scanner match</span>'
-    star_str = f'<span style="color:{GOLD}">{"★" * stars} </span>' if stars else ""
-    return star_str + f'<span style="color:{TEXT_PRIMARY};font-size:10.5px">{" · ".join(scanners)}</span>'
+    star_str = f'<span style="color:{GOLD}">{"★" * stars}</span>' if stars else ""
+    heart = _daily_confirm_badge(daily_confirmed)
+    return (star_str + heart
+            + f' <span style="color:{TEXT_PRIMARY};font-size:10.5px">{" · ".join(scanners)}</span>')
 
 
 def _select_ticker_cb(ticker: str, all_tickers: list, key_prefix: str) -> None:
@@ -1116,7 +1163,9 @@ def _render_ticker_table(results: list[dict], key_prefix: str,
             cols[5].markdown(_dot_compact(lm, monthly_fresh), unsafe_allow_html=True)
             cols[6].markdown(_dot_age(lm, monthly_fresh), unsafe_allow_html=True)
             cols[7].markdown(_rsi_cell(r.get("rsi_w"), r.get("rsi_m")), unsafe_allow_html=True)
-            cols[8].markdown(_scanners_cell(r.get("scanners"), r.get("stars", 0)), unsafe_allow_html=True)
+            daily_confirmed = bool((lw or lm or {}).get("daily_confirmed"))
+            cols[8].markdown(_scanners_cell(r.get("scanners"), r.get("stars", 0), daily_confirmed),
+                             unsafe_allow_html=True)
             cols[9].markdown(_verdict_cell(lw or lm, r.get("price_now"), r.get("vp")), unsafe_allow_html=True)
 
     return st.session_state.get(sel_key, selected)
