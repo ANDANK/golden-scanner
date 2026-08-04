@@ -1256,19 +1256,18 @@ def _render_manual_mode():
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _sort_color_group(results: list[dict]) -> list[dict]:
-    """★ first, newest dot as the tie-breaker among equal star tiers. Now
-    that qualification is weekly-only with opposite-color supersession
-    (every row already has a genuinely fresh, current dot), recency isn't
-    doing much differentiating work on its own — ★ is the more useful
-    primary sort again."""
+    """Weekly Age first (most recent dot on top), ★ as the tie-breaker within
+    the same age. Uses last_w specifically (not last_w-or-last_m) since Scan
+    Universe qualification is weekly-only already — every row here has a
+    genuine weekly dot to sort by."""
     errored = [r for r in results if "error" in r]
     ok = [r for r in results if "error" not in r]
 
     def _key(r):
-        last = r.get("last_w") or r.get("last_m")
+        last = r.get("last_w")
         bars_ago = last["bars_ago"] if last else float("inf")
         stars = _verdict_stars(last, r.get("price_now"), r.get("vp"))
-        return (stars, -bars_ago)
+        return (-bars_ago, stars)
 
     ok.sort(key=_key, reverse=True)
     return ok + errored
