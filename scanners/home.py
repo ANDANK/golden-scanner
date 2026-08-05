@@ -552,8 +552,11 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
 
 
 _SORT_COLUMNS = {
-    "Verdict": "_verdict_rank_n",
-    "Edge Score": "_edge_score_n",
+    # Both options rank by Verdict tier first (Strong Setup > Mixed Signal > Too New),
+    # then by Edge Score within a tier -- a thin-sample combo's flashy score can no
+    # longer outrank a well-validated one just because "Edge Score" was picked.
+    "Verdict": ["_verdict_rank_n", "_edge_score_n"],
+    "Edge Score": ["_verdict_rank_n", "_edge_score_n"],
     "Ticker": "Ticker",
     "Price": "Price",
     "Chg %": "Chg %",
