@@ -6,32 +6,36 @@
       "ticker": "T",
       "color": "Green",
       "stars": 5,
-      "price": 23.059999465942383,
+      "price": 21.549999237060547,
       "dot_date": "2026-07-13",
+      "event_date": "2026-07-13",
       "bars_ago": 3
     },
     {
       "ticker": "CACI",
       "color": "Green",
       "stars": 5,
-      "price": 518.030029296875,
+      "price": 505.239990234375,
       "dot_date": "2026-07-06",
+      "event_date": "2026-07-06",
       "bars_ago": 4
     },
     {
       "ticker": "FXI",
       "color": "Green",
       "stars": 5,
-      "price": 36.08000183105469,
+      "price": 32.4900016784668,
       "dot_date": "2026-07-06",
+      "event_date": "2026-07-06",
       "bars_ago": 4
     },
     {
       "ticker": "KWEB",
       "color": "Green",
       "stars": 4,
-      "price": 28.540000915527344,
+      "price": 25.59000015258789,
       "dot_date": "2026-07-06",
+      "event_date": "2026-07-06",
       "bars_ago": 4
     }
   ]
