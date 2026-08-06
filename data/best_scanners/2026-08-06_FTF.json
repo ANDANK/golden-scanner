@@ -1,0 +1,174 @@
+{
+  "date": "2026-08-06",
+  "tag": "FTF",
+  "rows": [
+    {
+      "ticker": "FNGU",
+      "price": 32.04,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+5RB+8Cross",
+      "edge_score": 0.97,
+      "n": 3878,
+      "hold_range": [
+        10,
+        60
+      ]
+    },
+    {
+      "ticker": "AMZN",
+      "price": 272.65,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "MDB",
+      "price": 376.36,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "VRSN",
+      "price": 293.41,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "CCL",
+      "price": 29.67,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "BA",
+      "price": 240.19,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "ETN",
+      "price": 447.28,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "WEBL",
+      "price": 28.81,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "NVDA",
+      "price": 219.22,
+      "verdict": "Strong Setup",
+      "combo": "3MF+8Cross",
+      "edge_score": 0.83,
+      "n": 3867,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "VWO",
+      "price": 60.01,
+      "verdict": "Strong Setup",
+      "combo": "6Prime+7Square+8Cross",
+      "edge_score": 0.47,
+      "n": 2978,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "EW",
+      "price": 88.97,
+      "verdict": "Strong Setup",
+      "combo": "7Square+8Cross",
+      "edge_score": 0.43,
+      "n": 10416,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "CW",
+      "price": 748.41,
+      "verdict": "Strong Setup",
+      "combo": "7Square+8Cross",
+      "edge_score": 0.43,
+      "n": 10416,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "TT",
+      "price": 483.58,
+      "verdict": "Strong Setup",
+      "combo": "7Square+8Cross",
+      "edge_score": 0.43,
+      "n": 10416,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "QQQ",
+      "price": 717.3,
+      "verdict": "Strong Setup",
+      "combo": "7Square+8Cross",
+      "edge_score": 0.43,
+      "n": 10416,
+      "hold_range": [
+        10,
+        30
+      ]
+    }
+  ]
+}
