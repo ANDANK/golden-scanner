@@ -7,6 +7,7 @@
       "price": 32.04,
       "verdict": "Strong Setup",
       "combo": "1Mom+5RB+8Cross",
+      "scanners": "1Mom \u00b7 5RB \u00b7 8Cross",
       "edge_score": 0.97,
       "n": 3878,
       "hold_range": [
@@ -19,6 +20,7 @@
       "price": 272.65,
       "verdict": "Strong Setup",
       "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
       "edge_score": 0.95,
       "n": 9780,
       "hold_range": [
@@ -31,6 +33,7 @@
       "price": 376.36,
       "verdict": "Strong Setup",
       "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
       "edge_score": 0.95,
       "n": 9780,
       "hold_range": [
@@ -43,6 +46,7 @@
       "price": 293.41,
       "verdict": "Strong Setup",
       "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 3MF \u00b7 8Cross",
       "edge_score": 0.95,
       "n": 9780,
       "hold_range": [
@@ -55,6 +59,7 @@
       "price": 29.67,
       "verdict": "Strong Setup",
       "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
       "edge_score": 0.95,
       "n": 9780,
       "hold_range": [
@@ -67,6 +72,7 @@
       "price": 240.19,
       "verdict": "Strong Setup",
       "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
       "edge_score": 0.95,
       "n": 9780,
       "hold_range": [
@@ -79,6 +85,7 @@
       "price": 447.28,
       "verdict": "Strong Setup",
       "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
       "edge_score": 0.95,
       "n": 9780,
       "hold_range": [
@@ -91,6 +98,7 @@
       "price": 28.81,
       "verdict": "Strong Setup",
       "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross\u00b7W",
       "edge_score": 0.95,
       "n": 9780,
       "hold_range": [
@@ -103,6 +111,20 @@
       "price": 219.22,
       "verdict": "Strong Setup",
       "combo": "3MF+8Cross",
+      "scanners": "3MF \u00b7 7Square \u00b7 8Cross",
+      "edge_score": 0.83,
+      "n": 3867,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "FCX",
+      "price": 69.39,
+      "verdict": "Strong Setup",
+      "combo": "3MF+8Cross",
+      "scanners": "3MF \u00b7 8Cross",
       "edge_score": 0.83,
       "n": 3867,
       "hold_range": [
@@ -115,6 +137,7 @@
       "price": 60.01,
       "verdict": "Strong Setup",
       "combo": "6Prime+7Square+8Cross",
+      "scanners": "6Prime \u00b7 7Square \u00b7 8Cross",
       "edge_score": 0.47,
       "n": 2978,
       "hold_range": [
@@ -127,6 +150,7 @@
       "price": 88.97,
       "verdict": "Strong Setup",
       "combo": "7Square+8Cross",
+      "scanners": "7Square \u00b7 8Cross",
       "edge_score": 0.43,
       "n": 10416,
       "hold_range": [
@@ -139,6 +163,7 @@
       "price": 748.41,
       "verdict": "Strong Setup",
       "combo": "7Square+8Cross",
+      "scanners": "7Square \u00b7 8Cross",
       "edge_score": 0.43,
       "n": 10416,
       "hold_range": [
@@ -151,6 +176,7 @@
       "price": 483.58,
       "verdict": "Strong Setup",
       "combo": "7Square+8Cross",
+      "scanners": "7Square \u00b7 8Cross",
       "edge_score": 0.43,
       "n": 10416,
       "hold_range": [
@@ -163,6 +189,7 @@
       "price": 717.3,
       "verdict": "Strong Setup",
       "combo": "7Square+8Cross",
+      "scanners": "7Square \u00b7 8Cross",
       "edge_score": 0.43,
       "n": 10416,
       "hold_range": [
