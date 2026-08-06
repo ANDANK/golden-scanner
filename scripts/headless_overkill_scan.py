@@ -138,9 +138,14 @@ def _track_row_html(row: dict) -> str:
     pct_color = "#888" if pct is None else ("#22C55E" if pct >= 0 else "#EF4444")
     pct_txt = "—" if pct is None else f"{pct:+.1f}%"
     cur_txt = "—" if row.get("current_price") is None else f"${row['current_price']:,.2f}"
+    stars = "★" * int(row["stars"]) if row.get("stars") else "—"
+    color = row.get("color")
+    verdict_color = "#22C55E" if color == "Green" else ("#EF4444" if color == "Red" else "#888")
     return (
         '<tr>'
         f'<td style="padding:6px 10px;font-weight:bold;color:{"#F5C842"};border-bottom:1px solid #333">{row["ticker"]}</td>'
+        f'<td style="padding:6px 10px;color:#F5C842;border-bottom:1px solid #333">{stars}</td>'
+        f'<td style="padding:6px 10px;font-weight:bold;color:{verdict_color};border-bottom:1px solid #333">{color or "—"}</td>'
         f'<td style="padding:6px 10px;color:#888;font-size:12px;border-bottom:1px solid #333">{_fmt_found_date(row["first_found"])}</td>'
         f'<td style="padding:6px 10px;border-bottom:1px solid #333">${row["first_price"]:,.2f}</td>'
         f'<td style="padding:6px 10px;border-bottom:1px solid #333">{cur_txt}</td>'
@@ -155,8 +160,10 @@ def _track_record_table_html(track_rows: list[dict]) -> str:
     header = (
         '<tr style="background:#1a1a1a;color:#fff">'
         '<th style="padding:6px 10px;text-align:left">Ticker</th>'
-        '<th style="padding:6px 10px;text-align:left">First Found</th>'
-        '<th style="padding:6px 10px;text-align:left">First Price</th>'
+        '<th style="padding:6px 10px;text-align:left">★</th>'
+        '<th style="padding:6px 10px;text-align:left">Verdict</th>'
+        '<th style="padding:6px 10px;text-align:left">Dot Date</th>'
+        '<th style="padding:6px 10px;text-align:left">Price @ Dot</th>'
         '<th style="padding:6px 10px;text-align:left">Now</th>'
         '<th style="padding:6px 10px;text-align:left">Perf</th>'
         '</tr>'
@@ -245,17 +252,35 @@ def run():
     log(f"After {MIN_STARS}★+ filter: {len(green_sorted)} green, {len(red_sorted)} red.")
 
     today_rows = []
+    dot_pairs = []
     for color, group in (("Green", green_sorted), ("Red", red_sorted)):
         for r in group:
             last = r.get("last_w") or r.get("last_m")
+            dot_date = last["date"] if last else None
+            if dot_date:
+                dot_pairs.append((r["ticker"], dot_date))
             today_rows.append({
                 "ticker": r["ticker"],
                 "color": color,
                 "stars": r["_stars"],
-                "price": r.get("price_now"),
-                "dot_date": last["date"] if last else None,
+                "price": r.get("price_now"),   # fallback; replaced below with the dot-date close when fetchable
+                "dot_date": dot_date,
+                "event_date": dot_date,        # first_found should track the dot itself, not the scan day
                 "bars_ago": last["bars_ago"] if last else None,
             })
+
+    # "First price" should be the close ON the dot date, not today's price_now --
+    # a dot can be several bars stale by the time a scan first notices it, and using
+    # today's price would understate (or hide) performance that already happened
+    # between the dot and today. Falls back to price_now if the historical fetch
+    # comes up empty for a ticker (delisted, data gap, etc).
+    dot_prices = scan_history.fetch_prices_on_dates(dot_pairs) if dot_pairs else {}
+    for row in today_rows:
+        if row["dot_date"]:
+            dot_price = dot_prices.get((row["ticker"], row["dot_date"]))
+            if dot_price is not None:
+                row["price"] = dot_price
+
     scan_history.save_snapshot("overkill", HISTORY_TAG, TODAY, today_rows)
     scan_history.prune_old("overkill", HISTORY_TAG, TODAY)
     log(f"Saved OverKill history snapshot for {TODAY} ({len(today_rows)} row(s)).")

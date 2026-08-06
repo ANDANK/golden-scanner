@@ -891,7 +891,10 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
         return
 
     today = datetime.utcnow().strftime("%Y-%m-%d")
-    today_rows = [{"ticker": t, "price": p} for t, p in zip(df["Ticker"], df["Price"]) if pd.notna(p)]
+    today_rows = [
+        {"ticker": r["Ticker"], "price": r["Price"], "verdict": r["_verdict"], "scanners": r.get("Scanners")}
+        for _, r in df.iterrows() if pd.notna(r["Price"])
+    ]
     with st.spinner("Building track record — fetching current prices…"):
         track_rows = scan_history.track_record("best_scanners", tag, today, today_rows)
     if not track_rows:
@@ -904,8 +907,11 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
         pct_color = TEXT_MUTED if pct is None else (ACCENT_GREEN if pct >= 0 else ACCENT_RED)
         pct_txt = "—" if pct is None else f"{pct:+.1f}%"
         cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
+        v_color = _VERDICT_COLOR.get(r.get("verdict"), TEXT_MUTED)
         rows_html += (
             f'<tr><td style="{_TD};font-weight:700;color:{GOLD}">{r["ticker"]}</td>'
+            f'<td style="{_TD};color:{v_color};font-weight:600">{r.get("verdict") or "—"}</td>'
+            f'<td style="{_TD};color:{TEXT_MUTED};font-size:11px">{r.get("scanners") or "—"}</td>'
             f'<td style="{_TD};color:{TEXT_MUTED};font-size:11px">{_fmt_found_date(r["first_found"])}</td>'
             f'<td style="{_TD}">${r["first_price"]:,.2f}</td>'
             f'<td style="{_TD}">{cur_txt}</td>'
@@ -915,7 +921,8 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
         f'<div style="border:1px solid {BORDER_COLOR};border-radius:10px;overflow:hidden;margin-top:6px">'
         f'<table style="width:100%;border-collapse:collapse">'
         f'<thead><tr>'
-        f'<th style="{_TH}">Ticker</th><th style="{_TH}">First Found</th>'
+        f'<th style="{_TH}">Ticker</th><th style="{_TH}">Verdict</th><th style="{_TH}">Scanners</th>'
+        f'<th style="{_TH}">First Found</th>'
         f'<th style="{_TH}">First Price</th><th style="{_TH}">Now</th><th style="{_TH}">Perf</th>'
         f'</tr></thead><tbody>{rows_html}</tbody></table></div>',
         unsafe_allow_html=True,

@@ -86,6 +86,14 @@ def prune_old(kind: str, tag: str, today_date_str: str) -> list[str]:
     return removed
 
 
+def _event_date(row: dict, fallback: str) -> str:
+    """A row's own signal date if it has one (e.g. OverKill's dot date,
+    which can lag the scan date that noticed it by several bars), else the
+    scan-day fallback. Best Scanners rows never set "event_date" since its
+    signals are same-day by construction, so they always use the scan date."""
+    return row.get("event_date") or fallback
+
+
 def annotate_new_and_first_found(kind: str, tag: str, today_date_str: str, today_rows: list[dict]) -> dict:
     """For today's rows (list of dicts with a "ticker" key), returns
     {ticker: {"is_new": bool, "first_found": "YYYY-MM-DD"}}.
@@ -93,9 +101,9 @@ def annotate_new_and_first_found(kind: str, tag: str, today_date_str: str, today
     "New" = ticker did not appear in any of the last `new_window_scans`
     STORED scan-days before today (today's own file, if it already exists
     on disk, is excluded so a re-run never counts itself as history).
-    first_found = earliest date (within the rollup window) this ticker
-    showed up; if it isn't found in stored history at all, first_found is
-    today (this is its first-ever sighting)."""
+    first_found = the earliest _event_date() (within the rollup window)
+    this ticker showed up under; if it isn't found in stored history at
+    all, first_found is today's own event date (first-ever sighting)."""
     cfg = _CONFIG[kind]
     snapshots = [s for s in _load_all(kind, tag) if s["date"] != today_date_str]
     snapshots.sort(key=lambda s: s["date"])
@@ -109,24 +117,25 @@ def annotate_new_and_first_found(kind: str, tag: str, today_date_str: str, today
         if s["date"] < cutoff:
             continue
         for r in s["rows"]:
-            first_found.setdefault(r["ticker"], s["date"])
+            first_found.setdefault(r["ticker"], _event_date(r, s["date"]))
 
     out = {}
     for r in today_rows:
         t = r["ticker"]
         out[t] = {
             "is_new": t not in recent_tickers,
-            "first_found": first_found.get(t, today_date_str),
+            "first_found": first_found.get(t, _event_date(r, today_date_str)),
         }
     return out
 
 
 def rollup_window(kind: str, tag: str, today_date_str: str, today_rows: list[dict]) -> list[dict]:
     """Every distinct ticker seen within the rollup window (including
-    today), each with its first-found date and price. Does NOT fetch
-    current prices — call fetch_current_prices() separately and join, since
-    that needs a live network round-trip this function intentionally
-    doesn't own."""
+    today), each carrying whatever fields its snapshot row had (verdict,
+    combo, scanners, stars, color, ...) plus "first_found" (the row's own
+    _event_date()) and "first_price". Does NOT fetch current prices — call
+    fetch_current_prices() separately and join, since that needs a live
+    network round-trip this function intentionally doesn't own."""
     cfg = _CONFIG[kind]
     snapshots = [s for s in _load_all(kind, tag) if s["date"] != today_date_str]
     cutoff = (datetime.strptime(today_date_str, "%Y-%m-%d") - timedelta(days=cfg["rollup_days"])).strftime("%Y-%m-%d")
@@ -136,13 +145,15 @@ def rollup_window(kind: str, tag: str, today_date_str: str, today_rows: list[dic
         if s["date"] < cutoff:
             continue
         for r in s["rows"]:
-            first_seen.setdefault(r["ticker"], {
-                "ticker": r["ticker"], "first_found": s["date"], "first_price": r.get("price"),
-            })
+            if r["ticker"] not in first_seen:
+                first_seen[r["ticker"]] = {
+                    **r, "first_found": _event_date(r, s["date"]), "first_price": r.get("price"),
+                }
     for r in today_rows:
-        first_seen.setdefault(r["ticker"], {
-            "ticker": r["ticker"], "first_found": today_date_str, "first_price": r.get("price"),
-        })
+        if r["ticker"] not in first_seen:
+            first_seen[r["ticker"]] = {
+                **r, "first_found": _event_date(r, today_date_str), "first_price": r.get("price"),
+            }
 
     return sorted(first_seen.values(), key=lambda v: v["first_found"])
 
@@ -161,6 +172,36 @@ def track_record(kind: str, tag: str, today_date_str: str, today_rows: list[dict
         pct = (current - first_price) / first_price * 100 if current is not None and first_price else None
         out.append({**r, "current_price": current, "pct": pct})
     out.sort(key=lambda r: (r["pct"] is None, -(r["pct"] if r["pct"] is not None else 0)))
+    return out
+
+
+def fetch_prices_on_dates(ticker_dates: list[tuple[str, str]], period: str = "1y") -> dict[tuple[str, str], float]:
+    """Batch best-effort close price for each (ticker, "YYYY-MM-DD") pair —
+    the first available daily close ON OR AFTER that date within a shared
+    `period`-length fetch (falls back to the last available bar if the date
+    is beyond the fetched range, e.g. today). Used when a signal's own date
+    lags the day it was actually noticed/scanned (e.g. OverKill's dot date),
+    so "first price" reflects the actual signal, not a stale scan-day price."""
+    pairs = sorted(set(ticker_dates))
+    tickers = sorted({t for t, _ in pairs})
+    if not tickers:
+        return {}
+    prefetch_tickers(tickers, period, "1d")
+    out = {}
+    for t, date_str in pairs:
+        try:
+            df = get_price_history(t, period=period, interval="1d")
+            if df is None or df.empty:
+                continue
+            target = datetime.strptime(date_str, "%Y-%m-%d")
+            idx = df.index
+            eligible = idx[idx >= target]
+            row_date = eligible[0] if len(eligible) else (idx[-1] if len(idx) else None)
+            if row_date is None:
+                continue
+            out[(t, date_str)] = float(df.loc[row_date, "Close"])
+        except Exception:
+            continue
     return out
 
 

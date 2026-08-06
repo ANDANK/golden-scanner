@@ -295,6 +295,8 @@ def _track_row_html(row: dict) -> str:
     return (
         '<tr>'
         f'<td style="padding:7px 9px;font-weight:bold;color:#F5C842;border-top:1px solid #262626">{row["ticker"]}</td>'
+        f'<td style="padding:7px 9px;color:{_VERDICT_COLOR.get(row.get("verdict"), "#8b8578")};border-top:1px solid #262626">{row.get("verdict") or "—"}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;font-size:10.5px;color:#726b5a;border-top:1px solid #262626">{row.get("scanners") or "—"}</td>'
         f'<td style="padding:7px 9px;color:#a89f8a;font-size:11px;border-top:1px solid #262626">{_fmt_found_date(row["first_found"])}</td>'
         f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">${row["first_price"]:,.2f}</td>'
         f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{cur_txt}</td>'
@@ -309,6 +311,8 @@ def _track_record_table_html(track_rows: list[dict]) -> str:
     header = (
         '<tr style="background:#1d1a13;color:#fff">'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Ticker</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Verdict</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Scanners</th>'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">First Found</th>'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">First Price</th>'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Now</th>'
@@ -436,6 +440,7 @@ def run():
             "price": float(r.get("Price") or 0),
             "verdict": str(r["_verdict"]),
             "combo": str(r["_combo"]) if r.get("_combo") else None,
+            "scanners": str(r["Scanners"]) if r.get("Scanners") else None,
             "edge_score": float(r["_edge_score"]),
             "n": int(r["_edge_n"]),
             "hold_range": [int(x) for x in r["_hold_range"]] if r.get("_hold_range") else None,

@@ -1310,8 +1310,13 @@ def _render_track_record_table():
         pct_color = TEXT_MUTED if pct is None else (ACCENT_GREEN if pct >= 0 else ACCENT_RED)
         pct_txt = "—" if pct is None else f"{pct:+.1f}%"
         cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
+        stars = "★" * int(r["stars"]) if r.get("stars") else "—"
+        color = r.get("color")
+        verdict_color = ACCENT_GREEN if color == "Green" else (ACCENT_RED if color == "Red" else TEXT_MUTED)
         rows_html += (
             f'<tr><td style="{_BT_TD};color:{GOLD};font-weight:700">{r["ticker"]}</td>'
+            f'<td style="{_BT_TD};color:{GOLD}">{stars}</td>'
+            f'<td style="{_BT_TD};color:{verdict_color};font-weight:700">{color or "—"}</td>'
             f'<td style="{_BT_TD};color:{TEXT_MUTED};font-size:11px">{_fmt_found_date(r["first_found"])}</td>'
             f'<td style="{_BT_TD}">${r["first_price"]:,.2f}</td>'
             f'<td style="{_BT_TD}">{cur_txt}</td>'
@@ -1321,8 +1326,9 @@ def _render_track_record_table():
         f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px">'
         f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
         f'<thead><tr>'
-        f'<th style="{_TH}">Ticker</th><th style="{_TH}">First Found</th>'
-        f'<th style="{_TH}">First Price</th><th style="{_TH}">Now</th><th style="{_TH}">Perf</th>'
+        f'<th style="{_TH}">Ticker</th><th style="{_TH}">★</th><th style="{_TH}">Verdict</th>'
+        f'<th style="{_TH}">Dot Date</th>'
+        f'<th style="{_TH}">Price @ Dot</th><th style="{_TH}">Now</th><th style="{_TH}">Perf</th>'
         f'</tr></thead><tbody>{rows_html}</tbody></table></div>',
         unsafe_allow_html=True,
     )
