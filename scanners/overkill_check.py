@@ -1322,13 +1322,15 @@ def _render_track_record_table():
             f'<td style="{_BT_TD}">{cur_txt}</td>'
             f'<td style="{_BT_TD};font-weight:700;color:{pct_color}">{pct_txt}</td></tr>'
         )
+    track_th = f"{_TH};position:sticky;top:0;background:{BG_PANEL}"
     st.markdown(
-        f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px">'
+        f'<div style="border:1px solid {BORDER_COLOR};border-radius:10px;'
+        f'max-height:420px;overflow-y:auto;overflow-x:auto">'
         f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
         f'<thead><tr>'
-        f'<th style="{_TH}">Ticker</th><th style="{_TH}">★</th><th style="{_TH}">Verdict</th>'
-        f'<th style="{_TH}">Dot Date</th>'
-        f'<th style="{_TH}">Price @ Dot</th><th style="{_TH}">Now</th><th style="{_TH}">Perf</th>'
+        f'<th style="{track_th}">Ticker</th><th style="{track_th}">★</th><th style="{track_th}">Verdict</th>'
+        f'<th style="{track_th}">Dot Date</th>'
+        f'<th style="{track_th}">Price @ Dot</th><th style="{track_th}">Now</th><th style="{track_th}">Perf</th>'
         f'</tr></thead><tbody>{rows_html}</tbody></table></div>',
         unsafe_allow_html=True,
     )

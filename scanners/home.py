@@ -918,7 +918,8 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
             f'<td style="{_TD};font-weight:700;color:{pct_color}">{pct_txt}</td></tr>'
         )
     st.markdown(
-        f'<div style="border:1px solid {BORDER_COLOR};border-radius:10px;overflow:hidden;margin-top:6px">'
+        f'<div style="border:1px solid {BORDER_COLOR};border-radius:10px;margin-top:6px;'
+        f'max-height:420px;overflow-y:auto;overflow-x:auto">'
         f'<table style="width:100%;border-collapse:collapse">'
         f'<thead><tr>'
         f'<th style="{_TH}">Ticker</th><th style="{_TH}">Verdict</th><th style="{_TH}">Scanners</th>'
