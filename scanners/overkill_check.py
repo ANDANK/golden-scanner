@@ -36,6 +36,7 @@ from plotly.subplots import make_subplots
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from scanners import scan_history
 from config import (
     GOLD, BG_DARK, BG_PANEL, ACCENT_BLUE, ACCENT_GREEN, ACCENT_RED,
     TEXT_PRIMARY, TEXT_MUTED, BORDER_COLOR,
@@ -1273,6 +1274,60 @@ def _sort_color_group(results: list[dict]) -> list[dict]:
     return ok + errored
 
 
+def _fmt_found_date(date_str) -> str:
+    try:
+        return pd.Timestamp(date_str).strftime("%b %d")
+    except Exception:
+        return date_str or "—"
+
+
+def _render_track_record_table():
+    """Read-only: every ticker the daily email has flagged (4-5★) in the
+    last 6 months, with % performance since it was first flagged. Reads the
+    same data/overkill/*.json history the email writes -- this page never
+    writes its own snapshot (only the once-daily automated run does), and
+    today_rows is passed as [] since Scan Universe here isn't star-filtered
+    the way the email is, so it shouldn't add unfiltered tickers to the
+    historical record."""
+    st.markdown(
+        f'<div style="margin-top:22px;color:{TEXT_MUTED};font-size:12px;font-weight:800;'
+        f'text-transform:uppercase;letter-spacing:.06em">Track Record — last 6 months</div>'
+        f'<div style="color:{TEXT_MUTED};font-size:11px;margin:4px 0 8px">'
+        f'Every ticker the daily email has flagged in the last 6 months, with % performance '
+        f'since it was first flagged.</div>',
+        unsafe_allow_html=True,
+    )
+    today = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
+    with st.spinner("Building track record — fetching current prices…"):
+        track_rows = scan_history.track_record("overkill", "default", today, [])
+    if not track_rows:
+        st.caption("No track record yet — check back after the daily email has run a few times.")
+        return
+
+    rows_html = ""
+    for r in track_rows:
+        pct = r.get("pct")
+        pct_color = TEXT_MUTED if pct is None else (ACCENT_GREEN if pct >= 0 else ACCENT_RED)
+        pct_txt = "—" if pct is None else f"{pct:+.1f}%"
+        cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
+        rows_html += (
+            f'<tr><td style="{_BT_TD};color:{GOLD};font-weight:700">{r["ticker"]}</td>'
+            f'<td style="{_BT_TD};color:{TEXT_MUTED};font-size:11px">{_fmt_found_date(r["first_found"])}</td>'
+            f'<td style="{_BT_TD}">${r["first_price"]:,.2f}</td>'
+            f'<td style="{_BT_TD}">{cur_txt}</td>'
+            f'<td style="{_BT_TD};font-weight:700;color:{pct_color}">{pct_txt}</td></tr>'
+        )
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:10px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>'
+        f'<th style="{_TH}">Ticker</th><th style="{_TH}">First Found</th>'
+        f'<th style="{_TH}">First Price</th><th style="{_TH}">Now</th><th style="{_TH}">Perf</th>'
+        f'</tr></thead><tbody>{rows_html}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
+
+
 def _render_scan_mode():
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:11.5px;line-height:1.6;margin-bottom:8px">'
@@ -1378,6 +1433,9 @@ def _render_scan_mode():
                                 weekly_fresh=int(weekly_fresh), monthly_fresh=int(monthly_fresh))
     else:
         st.info("No tickers with a fresh red dot right now.")
+
+    st.markdown(f'<hr style="border-color:{BORDER_COLOR};margin:22px 0">', unsafe_allow_html=True)
+    _render_track_record_table()
 
 
 # ══════════════════════════════════════════════════════════════════════════════

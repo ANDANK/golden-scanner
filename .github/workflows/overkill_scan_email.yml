@@ -30,6 +30,9 @@ concurrency:
   group: overkill-scan-email-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.slot || 'auto' }}
   cancel-in-progress: false
 
+permissions:
+  contents: write          # allow the bot to commit + push the daily history snapshot
+
 jobs:
   scan-and-email:
     name: Scan OverKill Universe + Email
@@ -77,3 +80,27 @@ jobs:
           OVERKILL_WEEKLY_FRESH:   "6"   # matches the live Scan Universe UI default
           OVERKILL_MONTHLY_FRESH:  "3"   # badge-only, doesn't gate inclusion
         run: python scripts/headless_overkill_scan.py
+
+      - name: Commit history snapshot JSON
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/overkill/*.json
+          if git diff --cached --quiet; then
+            echo "Nothing to commit — no history snapshot was written this run."
+          else
+            git commit -m "OverKill history snapshot $(date -u +'%Y-%m-%d %H:%M UTC') [${{ steps.slot.outputs.slot }}]"
+
+            # Pull any remote commits made since checkout.
+            # -X ours: on add/add conflict with today's own snapshot file
+            # (duplicate cron fires), always keep THIS run's fresh data.
+            if git pull --rebase -X ours origin main; then
+              git push origin main
+            else
+              # Rebase left repo in a broken state — abort cleanly then force-push
+              # our snapshot so it's never silently lost.
+              echo "Rebase conflict could not be auto-resolved; force-pushing snapshot."
+              git rebase --abort
+              git push --force-with-lease origin main
+            fi
+          fi

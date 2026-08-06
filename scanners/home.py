@@ -28,6 +28,7 @@ from config import *
 from utils import section_header, calc_sma
 from data_loader import get_price_history, get_market_overview, prefetch_tickers
 from scanners import overkill_check
+from scanners import scan_history
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
@@ -551,12 +552,37 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
     return df_out
 
 
+def _annotate_history(df: pd.DataFrame, tag: str) -> pd.DataFrame:
+    """Read-only: tags each row with _is_new / _first_found from the stored
+    scan-history JSON (data/best_scanners/*.json, written once daily by the
+    Best Scanners email GitHub Action) and re-sorts tier -> New -> Edge
+    Score. The interactive app never writes its own snapshot -- only the
+    once-daily automated run does -- so "New" means the same thing here as
+    it does in the email. Uses UTC to match the email script's TODAY so the
+    two surfaces never disagree about which calendar day "today" is."""
+    if df.empty:
+        return df
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    today_rows = [{"ticker": t} for t in df["Ticker"]]
+    history = scan_history.annotate_new_and_first_found("best_scanners", tag, today, today_rows)
+    df = df.copy()
+    df["_is_new"] = df["Ticker"].map(lambda t: history.get(t, {}).get("is_new", True))
+    df["_first_found"] = df["Ticker"].map(lambda t: history.get(t, {}).get("first_found", today))
+    verdict_rank = {"Strong Setup": 2, "Mixed Signal": 1, "Too New": 0}
+    df["_verdict_rank"] = df["_verdict"].map(verdict_rank)
+    df = df.sort_values(
+        ["_verdict_rank", "_is_new", "_edge_score"], ascending=[False, False, False], na_position="last"
+    ).drop(columns="_verdict_rank").reset_index(drop=True)
+    return df
+
+
 _SORT_COLUMNS = {
-    # Both options rank by Verdict tier first (Strong Setup > Mixed Signal > Too New),
-    # then by Edge Score within a tier -- a thin-sample combo's flashy score can no
-    # longer outrank a well-validated one just because "Edge Score" was picked.
-    "Verdict": ["_verdict_rank_n", "_edge_score_n"],
-    "Edge Score": ["_verdict_rank_n", "_edge_score_n"],
+    # All three keys rank by Verdict tier first (Strong Setup > Mixed Signal > Too New),
+    # New tickers next within a tier, then Edge Score -- a thin-sample combo's flashy
+    # score can no longer outrank a well-validated one just because "Edge Score" was
+    # picked, and a fresh signal always rises above a day-5 repeat in the same tier.
+    "Verdict": ["_verdict_rank_n", "_is_new", "_edge_score_n"],
+    "Edge Score": ["_verdict_rank_n", "_is_new", "_edge_score_n"],
     "Ticker": "Ticker",
     "Price": "Price",
     "Chg %": "Chg %",
@@ -576,8 +602,15 @@ def _hold_range_text(hold_range) -> str:
     return f"{lo}-{hi}d"
 
 
-_ROW_COL_RATIOS = [0.35, 0.85, 0.55, 0.5, 0.55, 0.5, 1.4, 0.7, 0.9, 0.6, 0.8, 1.1]
-_ROW_HEADERS = ["", "Verdict", "Hold", "Ticker", "Price", "Chg %", "Scanners", "RSI W/D",
+def _fmt_found_date(date_str) -> str:
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").strftime("%b %d")
+    except Exception:
+        return date_str or "—"
+
+
+_ROW_COL_RATIOS = [0.35, 0.85, 0.55, 0.55, 0.55, 0.5, 0.55, 0.5, 1.4, 0.7, 0.9, 0.6, 0.8, 1.1]
+_ROW_HEADERS = ["", "Verdict", "Hold", "Date", "Ticker", "Price", "Chg %", "Scanners", "RSI W/D",
                 "MACD", ">SMA 9/20", "Vol× / RS", "Flags"]
 
 
@@ -616,6 +649,10 @@ def _render_best_table(df: pd.DataFrame):
         "Verdict": df["_verdict"].astype(str),
         "_verdict_rank_n": df["_verdict"].map(_VERDICT_RANK).fillna(0),
         "Hold": df["_hold_range"].apply(_hold_range_text),
+        "Date": df["_first_found"].apply(_fmt_found_date) if "_first_found" in df.columns
+                else pd.Series(["—"] * len(df)),
+        "_is_new": df["_is_new"].fillna(False).astype(bool) if "_is_new" in df.columns
+                   else pd.Series([False] * len(df)),
         "_edge_score_n": pd.to_numeric(df["_edge_score"], errors="coerce").fillna(-999),
         "Ticker": df["Ticker"].astype(str),
         "Price": pd.to_numeric(df["Price"], errors="coerce"),
@@ -675,20 +712,24 @@ def _render_best_table(df: pd.DataFrame):
             cols[0].checkbox("select", key=f"home_best_chk_{ticker}", label_visibility="collapsed",
                              on_change=_select_ticker_cb, args=(ticker, all_tickers))
             tk_style = f"color:{GOLD};font-weight:700" + (";text-decoration:underline" if ticker == selected else "")
+            new_badge = ' <span title="New in the last 7 scan-days" style="font-size:10px">🆕</span>' \
+                if r["_is_new"] else ""
             v_color = _VERDICT_COLOR.get(r["Verdict"], TEXT_MUTED)
             cols[1].markdown(f'<span style="color:{v_color};font-weight:600;font-size:11.5px">{r["Verdict"]}</span>',
                              unsafe_allow_html=True)
             cols[2].markdown(f'<span style="color:{TEXT_MUTED};font-size:11.5px">{r["Hold"]}</span>',
                              unsafe_allow_html=True)
-            cols[3].markdown(f'<span style="{tk_style}">{ticker}</span>', unsafe_allow_html=True)
-            cols[4].markdown(f'${r["Price"]:,.2f}')
-            cols[5].markdown(_chg_html(r["Chg %"]), unsafe_allow_html=True)
-            cols[6].markdown(f'<span style="font-size:11.5px">{r["Scanners"]}</span>', unsafe_allow_html=True)
-            cols[7].markdown(f'W{r["RSI W"]:.0f} / D{r["RSI D"]:.0f}')
-            cols[8].markdown(f'{_b(r["MACD>Sig"])} {r["MACD Zone"]}')
-            cols[9].markdown(f'{_b(r[">SMA9"])} / {_b(r[">SMA20"])}')
-            cols[10].markdown(f'{r["Vol×"]:.2f}x / {r["RS·SPY"]:.2f}')
-            cols[11].markdown(f'<span style="color:{TEXT_MUTED};font-size:11px">{r["Flags"] or "—"}</span>',
+            cols[3].markdown(f'<span style="color:{TEXT_MUTED};font-size:11px">{r["Date"]}</span>',
+                             unsafe_allow_html=True)
+            cols[4].markdown(f'<span style="{tk_style}">{ticker}</span>{new_badge}', unsafe_allow_html=True)
+            cols[5].markdown(f'${r["Price"]:,.2f}')
+            cols[6].markdown(_chg_html(r["Chg %"]), unsafe_allow_html=True)
+            cols[7].markdown(f'<span style="font-size:11.5px">{r["Scanners"]}</span>', unsafe_allow_html=True)
+            cols[8].markdown(f'W{r["RSI W"]:.0f} / D{r["RSI D"]:.0f}')
+            cols[9].markdown(f'{_b(r["MACD>Sig"])} {r["MACD Zone"]}')
+            cols[10].markdown(f'{_b(r[">SMA9"])} / {_b(r[">SMA20"])}')
+            cols[11].markdown(f'{r["Vol×"]:.2f}x / {r["RS·SPY"]:.2f}')
+            cols[12].markdown(f'<span style="color:{TEXT_MUTED};font-size:11px">{r["Flags"] or "—"}</span>',
                               unsafe_allow_html=True)
 
     return st.session_state.get("home_best_selected_ticker", selected)
@@ -839,6 +880,48 @@ def _render_scanner_chart_section(ticker):
     st.plotly_chart(fig, use_container_width=True, key=f"home_best_chart_{ticker}")
 
 
+def _render_track_record_table(df: pd.DataFrame, tag: str):
+    st.markdown(
+        f'<div style="margin-top:22px;color:{TEXT_MUTED};font-size:11px;letter-spacing:.06em;'
+        f'text-transform:uppercase;font-weight:700">Track Record — last 90 days</div>',
+        unsafe_allow_html=True,
+    )
+    if df.empty:
+        st.caption("No qualifying tickers to build a track record from yet.")
+        return
+
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    today_rows = [{"ticker": t, "price": p} for t, p in zip(df["Ticker"], df["Price"]) if pd.notna(p)]
+    with st.spinner("Building track record — fetching current prices…"):
+        track_rows = scan_history.track_record("best_scanners", tag, today, today_rows)
+    if not track_rows:
+        st.caption("No track record yet — check back after a few more days of runs.")
+        return
+
+    rows_html = ""
+    for r in track_rows:
+        pct = r.get("pct")
+        pct_color = TEXT_MUTED if pct is None else (ACCENT_GREEN if pct >= 0 else ACCENT_RED)
+        pct_txt = "—" if pct is None else f"{pct:+.1f}%"
+        cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
+        rows_html += (
+            f'<tr><td style="{_TD};font-weight:700;color:{GOLD}">{r["ticker"]}</td>'
+            f'<td style="{_TD};color:{TEXT_MUTED};font-size:11px">{_fmt_found_date(r["first_found"])}</td>'
+            f'<td style="{_TD}">${r["first_price"]:,.2f}</td>'
+            f'<td style="{_TD}">{cur_txt}</td>'
+            f'<td style="{_TD};font-weight:700;color:{pct_color}">{pct_txt}</td></tr>'
+        )
+    st.markdown(
+        f'<div style="border:1px solid {BORDER_COLOR};border-radius:10px;overflow:hidden;margin-top:6px">'
+        f'<table style="width:100%;border-collapse:collapse">'
+        f'<thead><tr>'
+        f'<th style="{_TH}">Ticker</th><th style="{_TH}">First Found</th>'
+        f'<th style="{_TH}">First Price</th><th style="{_TH}">Now</th><th style="{_TH}">Perf</th>'
+        f'</tr></thead><tbody>{rows_html}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
+
+
 _EDGE_LEGEND = [
     ("Strong Setup", ACCENT_GREEN,
      "This exact scanner combination has clearly beaten the market historically, "
@@ -930,7 +1013,9 @@ def _render_best_scan_mode():
         universe = _resolve_universe(_UNIVERSE_CHOICES[uni_label])
         st.info(f"Scanning {len(universe)} tickers across 6 scanners — this takes a few minutes.")
         df = _run_best_scanners(universe)
+        df = _annotate_history(df, _UNIVERSE_CHOICES[uni_label])
         st.session_state["home_best_df"] = df
+        st.session_state["home_best_uni_tag"] = _UNIVERSE_CHOICES[uni_label]
         st.session_state["home_best_ts"] = datetime.now().strftime("%b %d %Y · %I:%M %p")
         st.rerun()
 
@@ -969,6 +1054,7 @@ def _render_best_scan_mode():
                            "text/csv", use_container_width=True, key="home_best_csv")
 
     selected_ticker = _render_best_table(df)
+    _render_track_record_table(df, st.session_state.get("home_best_uni_tag", "FTF"))
     _render_scanner_chart_section(selected_ticker)
     _render_edge_legend()
     _render_scanner_notes()

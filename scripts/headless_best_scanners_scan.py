@@ -74,6 +74,7 @@ sys.modules["streamlit"] = _MockST()
 # ── Now safe to import project modules ──────────────────────────────────
 from config import FTF_UNIVERSE, MTPA_200, SP500_SAMPLE
 from scanners.home import _run_best_scanners
+from scanners import scan_history
 
 SLOT      = os.environ.get("SCAN_SLOT", "am").lower()
 UNI_KIND  = os.environ.get("BEST_SCANNERS_UNIVERSE", "FTF").upper()
@@ -81,6 +82,7 @@ _UNIVERSES = {"FTF": FTF_UNIVERSE, "MTPA": MTPA_200, "SP500": SP500_SAMPLE[:200]
 UNIVERSE  = _UNIVERSES.get(UNI_KIND, FTF_UNIVERSE)
 IS_QUALITY_UNIVERSE = UNI_KIND in ("FTF", "SP500")
 TOP_N = 5
+TODAY = datetime.utcnow().strftime("%Y-%m-%d")
 
 # Hidden 2026-07-29 to keep the email simple for now -- _qual_card_html()/
 # _qual_grid_html() are untouched below, just not called from build_email().
@@ -130,6 +132,17 @@ def _hold_text(hold_range) -> str:
     return f"{lo}-{hi}d"
 
 
+def _fmt_found_date(date_str) -> str:
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").strftime("%b %d")
+    except Exception:
+        return date_str or "—"
+
+
+def _new_badge(is_new: bool) -> str:
+    return ' <span title="New in the last 7 scan-days" style="font-size:9px">\U0001F195</span>' if is_new else ""
+
+
 def _chunk(seq, n):
     for i in range(0, len(seq), n):
         yield seq[i:i + n]
@@ -153,7 +166,8 @@ def _sphere_cell_html(row, idx: int) -> str:
         f'background-color:#17140f;border:3px solid {mid}">'
         f'<div style="font-family:Arial,sans-serif;font-size:7.5px;font-weight:bold;color:{v_color};'
         f'letter-spacing:0.03em">{verdict.upper()}</div>'
-        f'<div style="font-family:monospace;font-weight:bold;font-size:15px;color:#ffffff">{row["Ticker"]}</div>'
+        f'<div style="font-family:monospace;font-weight:bold;font-size:15px;color:#ffffff">'
+        f'{row["Ticker"]}{_new_badge(row.get("_is_new", False))}</div>'
         f'<div style="font-family:monospace;font-size:9.5px;color:#a89f8a">${row.get("Price", 0):,.2f}</div>'
         f'<div style="font-family:Arial,sans-serif;font-size:8px;color:#a89f8a;margin-top:1px">'
         f'{_hold_text(row["_hold_range"])}</div>'
@@ -191,7 +205,8 @@ def _qual_card_html(row) -> str:
         'style="background:#17140f;border:1px solid rgba(245,200,66,0.10);border-radius:9px">'
         '<tr><td style="padding:9px 10px">'
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
-        f'<td style="font-family:monospace;font-weight:bold;font-size:12.5px;color:#F5C842">{row["Ticker"]}</td>'
+        f'<td style="font-family:monospace;font-weight:bold;font-size:12.5px;color:#F5C842">'
+        f'{row["Ticker"]}{_new_badge(row.get("_is_new", False))}</td>'
         f'<td align="right" style="font-family:monospace;font-size:10px;color:#726b5a">${row.get("Price", 0):,.2f}</td>'
         '</tr></table>'
         '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:5px 0"><tr><td '
@@ -231,9 +246,11 @@ def _detail_row_html(row) -> str:
     rsi_txt = f"{float(rsi_d):.0f}" if rsi_d is not None and rsi_d == rsi_d else "—"
     return (
         '<tr>'
-        f'<td style="padding:7px 9px;font-weight:bold;color:#F5C842;border-top:1px solid #262626">{row["Ticker"]}</td>'
+        f'<td style="padding:7px 9px;font-weight:bold;color:#F5C842;border-top:1px solid #262626">'
+        f'{row["Ticker"]}{_new_badge(row.get("_is_new", False))}</td>'
         f'<td style="padding:7px 9px;color:{_VERDICT_COLOR.get(row["_verdict"], "#8b8578")};border-top:1px solid #262626">{row["_verdict"]}</td>'
         f'<td style="padding:7px 9px;color:#a89f8a;border-top:1px solid #262626">{_hold_text(row["_hold_range"])}</td>'
+        f'<td style="padding:7px 9px;color:#a89f8a;font-size:11px;border-top:1px solid #262626">{_fmt_found_date(row.get("_first_found"))}</td>'
         f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">${row.get("Price", 0):,.2f}</td>'
         f'<td style="padding:7px 9px;font-family:monospace;color:{chg_color};border-top:1px solid #262626">{chg:+.1f}%</td>'
         f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{rsi_txt}</td>'
@@ -250,6 +267,7 @@ def _detail_table_html(filtered) -> str:
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Ticker</th>'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Verdict</th>'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Hold</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Date</th>'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Price</th>'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Chg</th>'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">RSI D</th>'
@@ -266,7 +284,46 @@ def _detail_table_html(filtered) -> str:
     )
 
 
-def build_email(filtered, top5) -> tuple[str, str]:
+# ── Track record — every distinct ticker seen in the last 90 days, with
+# % performance since it was first flagged ──────────────────────────────
+
+def _track_row_html(row: dict) -> str:
+    pct = row.get("pct")
+    pct_color = "#726b5a" if pct is None else ("#3fcf7f" if pct >= 0 else "#ef5350")
+    pct_txt = "—" if pct is None else f"{pct:+.1f}%"
+    cur_txt = "—" if row.get("current_price") is None else f"${row['current_price']:,.2f}"
+    return (
+        '<tr>'
+        f'<td style="padding:7px 9px;font-weight:bold;color:#F5C842;border-top:1px solid #262626">{row["ticker"]}</td>'
+        f'<td style="padding:7px 9px;color:#a89f8a;font-size:11px;border-top:1px solid #262626">{_fmt_found_date(row["first_found"])}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">${row["first_price"]:,.2f}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{cur_txt}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;font-weight:bold;color:{pct_color};border-top:1px solid #262626">{pct_txt}</td>'
+        '</tr>'
+    )
+
+
+def _track_record_table_html(track_rows: list[dict]) -> str:
+    if not track_rows:
+        return '<p style="color:#888;font-size:13px">No track record yet — check back after a few more days of runs.</p>'
+    header = (
+        '<tr style="background:#1d1a13;color:#fff">'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Ticker</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">First Found</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">First Price</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Now</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Perf</th>'
+        '</tr>'
+    )
+    rows = "".join(_track_row_html(r) for r in track_rows)
+    return (
+        '<div style="overflow-x:auto;border:1px solid #262626;border-radius:10px">'
+        '<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;'
+        f'font-family:Arial,sans-serif;font-size:12px;background:#0d0d0d;color:#eee">{header}{rows}</table></div>'
+    )
+
+
+def build_email(filtered, top5, track_rows) -> tuple[str, str]:
     subject = (f"Best Scanners [{SLOT}] — {len(filtered)} setups"
                + (f", {len(top5)} featured" if len(top5) else "")
                + f" ({datetime.utcnow().strftime('%Y-%m-%d')})")
@@ -303,6 +360,12 @@ def build_email(filtered, top5) -> tuple[str, str]:
             + _detail_table_html(filtered)
         )
 
+    track_record_html = (
+        '<div style="font-size:11px;font-weight:600;color:#c9a53a;text-transform:uppercase;'
+        'letter-spacing:0.06em;margin:24px 0 10px">Track record — last 90 days</div>'
+        + _track_record_table_html(track_rows)
+    )
+
     html = f"""
     <div style="font-family:Arial,sans-serif;background:#000;padding:20px">
       <h2 style="color:#F5C842;margin-bottom:4px">Best Scanners</h2>
@@ -318,6 +381,7 @@ def build_email(filtered, top5) -> tuple[str, str]:
       {top5_html}
       {qualified_section_html}
       {table_html}
+      {track_record_html}
       <p style="color:#666;font-size:11px;margin-top:20px;line-height:1.5">
         "Strong Setup" and "Mixed Signal" reflect how this exact scanner combination performed
         historically, adjusted for how many times we've actually seen it — not a prediction.
@@ -366,6 +430,33 @@ def run():
     filtered = df[df["_verdict"] != "Too New"].copy().reset_index(drop=True)
     log(f"After filter (Strong Setup or Mixed Signal): {len(filtered)} ticker(s).")
 
+    today_rows = [
+        {
+            "ticker": str(r["Ticker"]),
+            "price": float(r.get("Price") or 0),
+            "verdict": str(r["_verdict"]),
+            "combo": str(r["_combo"]) if r.get("_combo") else None,
+            "edge_score": float(r["_edge_score"]),
+            "n": int(r["_edge_n"]),
+            "hold_range": [int(x) for x in r["_hold_range"]] if r.get("_hold_range") else None,
+        }
+        for _, r in filtered.iterrows()
+    ]
+    history = scan_history.annotate_new_and_first_found("best_scanners", UNI_KIND, TODAY, today_rows)
+    if not filtered.empty:
+        filtered["_is_new"] = filtered["Ticker"].map(lambda t: history.get(t, {}).get("is_new", True))
+        filtered["_first_found"] = filtered["Ticker"].map(lambda t: history.get(t, {}).get("first_found", TODAY))
+        verdict_rank = {"Strong Setup": 2, "Mixed Signal": 1}
+        filtered["_verdict_rank"] = filtered["_verdict"].map(verdict_rank)
+        filtered = filtered.sort_values(
+            ["_verdict_rank", "_is_new", "_edge_score"], ascending=[False, False, False]
+        ).drop(columns="_verdict_rank").reset_index(drop=True)
+
+    scan_history.save_snapshot("best_scanners", UNI_KIND, TODAY, today_rows)
+    scan_history.prune_old("best_scanners", UNI_KIND, TODAY)
+    n_new = sum(1 for v in history.values() if v["is_new"])
+    log(f"Saved history snapshot for {TODAY} ({len(today_rows)} row(s)); {n_new} new ticker(s).")
+
     if filtered.empty:
         log("Nothing qualified this run — skipping email.")
         return
@@ -375,7 +466,10 @@ def run():
         top5 = filtered[filtered["_verdict"] == "Strong Setup"].head(TOP_N)
     log(f"Top picks: {len(top5)} of a possible {TOP_N} (quality universe: {IS_QUALITY_UNIVERSE}).")
 
-    subject, html = build_email(filtered, top5)
+    track_rows = scan_history.track_record("best_scanners", UNI_KIND, TODAY, today_rows)
+    log(f"Track record: {len(track_rows)} distinct ticker(s) over the last 90 days.")
+
+    subject, html = build_email(filtered, top5, track_rows)
     send_email(subject, html)
 
 

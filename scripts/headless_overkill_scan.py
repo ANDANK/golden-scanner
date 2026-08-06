@@ -58,11 +58,14 @@ from scanners.overkill_check import (
     _verdict_stars, _vp_position, _daily_confirm_badge,
     DEFAULT_WEEKLY_FRESH_BARS, DEFAULT_MONTHLY_FRESH_BARS,
 )
+from scanners import scan_history
 
 SLOT           = os.environ.get("SCAN_SLOT", "am").lower()
 MIN_STARS      = int(os.environ.get("OVERKILL_MIN_STARS", 4))
 WEEKLY_FRESH   = int(os.environ.get("OVERKILL_WEEKLY_FRESH", DEFAULT_WEEKLY_FRESH_BARS))
 MONTHLY_FRESH  = int(os.environ.get("OVERKILL_MONTHLY_FRESH", DEFAULT_MONTHLY_FRESH_BARS))
+TODAY          = datetime.utcnow().strftime("%Y-%m-%d")
+HISTORY_TAG    = "default"
 
 
 def log(msg: str):
@@ -123,7 +126,50 @@ def _table_html(results: list[dict], label: str, color_hex: str) -> str:
     )
 
 
-def build_email(green: list[dict], red: list[dict]) -> tuple[str, str]:
+def _fmt_found_date(date_str) -> str:
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").strftime("%b %d")
+    except Exception:
+        return date_str or "—"
+
+
+def _track_row_html(row: dict) -> str:
+    pct = row.get("pct")
+    pct_color = "#888" if pct is None else ("#22C55E" if pct >= 0 else "#EF4444")
+    pct_txt = "—" if pct is None else f"{pct:+.1f}%"
+    cur_txt = "—" if row.get("current_price") is None else f"${row['current_price']:,.2f}"
+    return (
+        '<tr>'
+        f'<td style="padding:6px 10px;font-weight:bold;color:{"#F5C842"};border-bottom:1px solid #333">{row["ticker"]}</td>'
+        f'<td style="padding:6px 10px;color:#888;font-size:12px;border-bottom:1px solid #333">{_fmt_found_date(row["first_found"])}</td>'
+        f'<td style="padding:6px 10px;border-bottom:1px solid #333">${row["first_price"]:,.2f}</td>'
+        f'<td style="padding:6px 10px;border-bottom:1px solid #333">{cur_txt}</td>'
+        f'<td style="padding:6px 10px;font-weight:bold;color:{pct_color};border-bottom:1px solid #333">{pct_txt}</td>'
+        '</tr>'
+    )
+
+
+def _track_record_table_html(track_rows: list[dict]) -> str:
+    if not track_rows:
+        return '<p style="color:#888;font-size:13px">No track record yet — check back after a few more weeks of runs.</p>'
+    header = (
+        '<tr style="background:#1a1a1a;color:#fff">'
+        '<th style="padding:6px 10px;text-align:left">Ticker</th>'
+        '<th style="padding:6px 10px;text-align:left">First Found</th>'
+        '<th style="padding:6px 10px;text-align:left">First Price</th>'
+        '<th style="padding:6px 10px;text-align:left">Now</th>'
+        '<th style="padding:6px 10px;text-align:left">Perf</th>'
+        '</tr>'
+    )
+    rows = "".join(_track_row_html(r) for r in track_rows)
+    return (
+        '<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;'
+        f'font-size:13px;background:#0d0d0d;color:#eee"><thead>{header}</thead>'
+        f'<tbody>{rows}</tbody></table>'
+    )
+
+
+def build_email(green: list[dict], red: list[dict], track_rows: list[dict]) -> tuple[str, str]:
     subject = (f"OverKill Scan [{SLOT}] — {len(green)} green / {len(red)} red "
               f"at {MIN_STARS}★+ ({datetime.utcnow().strftime('%Y-%m-%d')})")
     html = f"""
@@ -137,6 +183,8 @@ def build_email(green: list[dict], red: list[dict]) -> tuple[str, str]:
       {_table_html(green, "green", "#22C55E")}
       <h3 style="color:#EF4444;margin-top:24px">\U0001F534 Red Dots ({len(red)})</h3>
       {_table_html(red, "red", "#EF4444")}
+      <h3 style="color:#F5C842;margin-top:24px">Track Record — last 6 months</h3>
+      {_track_record_table_html(track_rows)}
       <p style="color:#666;font-size:11px;margin-top:24px;line-height:1.5">
         Approximates a public WaveTrend + Volume Profile confluence read — not his exact proprietary
         indicator, and not financial advice. Educational/research use only. Open the OverKill tab in
@@ -196,11 +244,30 @@ def run():
     red_sorted = _filter_min_stars(_sort_color_group(red_results), MIN_STARS)
     log(f"After {MIN_STARS}★+ filter: {len(green_sorted)} green, {len(red_sorted)} red.")
 
+    today_rows = []
+    for color, group in (("Green", green_sorted), ("Red", red_sorted)):
+        for r in group:
+            last = r.get("last_w") or r.get("last_m")
+            today_rows.append({
+                "ticker": r["ticker"],
+                "color": color,
+                "stars": r["_stars"],
+                "price": r.get("price_now"),
+                "dot_date": last["date"] if last else None,
+                "bars_ago": last["bars_ago"] if last else None,
+            })
+    scan_history.save_snapshot("overkill", HISTORY_TAG, TODAY, today_rows)
+    scan_history.prune_old("overkill", HISTORY_TAG, TODAY)
+    log(f"Saved OverKill history snapshot for {TODAY} ({len(today_rows)} row(s)).")
+
     if not green_sorted and not red_sorted:
         log(f"Nothing at {MIN_STARS}★+ this run — skipping email (no news is fine, not an error).")
         return
 
-    subject, html = build_email(green_sorted, red_sorted)
+    track_rows = scan_history.track_record("overkill", HISTORY_TAG, TODAY, today_rows)
+    log(f"Track record: {len(track_rows)} distinct ticker(s) over the last 6 months.")
+
+    subject, html = build_email(green_sorted, red_sorted, track_rows)
     send_email(subject, html)
 
 

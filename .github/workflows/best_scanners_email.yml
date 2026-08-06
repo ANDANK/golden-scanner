@@ -29,6 +29,9 @@ concurrency:
   group: best-scanners-email-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.slot || 'auto' }}
   cancel-in-progress: false
 
+permissions:
+  contents: write          # allow the bot to commit + push the daily history snapshot
+
 jobs:
   scan-and-email:
     name: Scan Best Scanners + Email
@@ -77,3 +80,27 @@ jobs:
           # ── Tune without editing code ──
           BEST_SCANNERS_UNIVERSE: "FTF"   # FTF (~480) / MTPA (200) / SP500 (200)
         run: python scripts/headless_best_scanners_scan.py
+
+      - name: Commit history snapshot JSON
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/best_scanners/*.json
+          if git diff --cached --quiet; then
+            echo "Nothing to commit — no history snapshot was written this run."
+          else
+            git commit -m "Best Scanners history snapshot $(date -u +'%Y-%m-%d %H:%M UTC') [${{ steps.slot.outputs.slot }}]"
+
+            # Pull any remote commits made since checkout.
+            # -X ours: on add/add conflict with today's own snapshot file
+            # (duplicate cron fires), always keep THIS run's fresh data.
+            if git pull --rebase -X ours origin main; then
+              git push origin main
+            else
+              # Rebase left repo in a broken state — abort cleanly then force-push
+              # our snapshot so it's never silently lost.
+              echo "Rebase conflict could not be auto-resolved; force-pushing snapshot."
+              git rebase --abort
+              git push --force-with-lease origin main
+            fi
+          fi
