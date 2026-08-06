@@ -37,6 +37,7 @@ from plotly.subplots import make_subplots
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scanners import scan_history
+from scanners.ui_tables import sortable_table_html
 from config import (
     GOLD, BG_DARK, BG_PANEL, ACCENT_BLUE, ACCENT_GREEN, ACCENT_RED,
     TEXT_PRIMARY, TEXT_MUTED, BORDER_COLOR,
@@ -1096,6 +1097,25 @@ def _scanners_cell(scanners: list[str] | None, stars: int) -> str:
     return star_str + f'<span style="color:{TEXT_PRIMARY};font-size:10.5px">{" · ".join(scanners)}</span>'
 
 
+def _stars_of(r: dict) -> int:
+    last = r.get("last_w") or r.get("last_m")
+    return _verdict_stars(last, r.get("price_now"), r.get("vp"))
+
+
+# Each key returns a sortable value (or tuple, for a tiebreak) from a row dict.
+# "Weekly Age"/"Monthly Age" use NEGATIVE bars_ago so "High-Low" (descending,
+# the default) reads as "most recent first" -- matching the table's original
+# fixed sort order (_sort_color_group) rather than a literal magnitude sort.
+_SCAN_SORT_COLUMNS = {
+    "Weekly Age":  lambda r: (-(r.get("last_w") or {}).get("bars_ago", float("inf")), _stars_of(r)),
+    "Monthly Age": lambda r: (-(r.get("last_m") or {}).get("bars_ago", float("inf")), _stars_of(r)),
+    "★ Stars":     lambda r: (_stars_of(r), -(r.get("last_w") or {}).get("bars_ago", float("inf"))),
+    "Ticker":      lambda r: r["ticker"],
+    "Price":       lambda r: r["price_now"] if r.get("price_now") is not None else float("-inf"),
+    "RSI (Weekly)": lambda r: r["rsi_w"] if r.get("rsi_w") is not None else float("-inf"),
+}
+
+
 def _select_ticker_cb(ticker: str, all_tickers: list, key_prefix: str) -> None:
     """on_change for a row checkbox — single-selection: checking one unchecks
     the rest; unchecking the active one is ignored (exactly one selected)."""
@@ -1132,6 +1152,14 @@ def _render_ticker_table(results: list[dict], key_prefix: str,
     if not ok:
         st.info("No tickers returned usable data.")
         return None
+
+    sc1, sc2 = st.columns([1.3, 0.7])
+    with sc1:
+        sort_label = st.selectbox("Sort by", list(_SCAN_SORT_COLUMNS.keys()), index=0, key=f"{key_prefix}_sort_col")
+    with sc2:
+        descending = st.selectbox("Order", ["↓ High-Low", "↑ Low-High"], index=0, key=f"{key_prefix}_sort_dir") \
+            .startswith("↓")
+    ok = sorted(ok, key=_SCAN_SORT_COLUMNS[sort_label], reverse=descending)
 
     all_tickers = [r["ticker"] for r in ok]
     sel_key = f"{key_prefix}_selected_ticker"
@@ -1304,35 +1332,39 @@ def _render_track_record_table():
         st.caption("No track record yet — check back after the daily email has run a few times.")
         return
 
-    rows_html = ""
+    columns = [
+        {"label": "Ticker", "type": "str"}, {"label": "★", "type": "num"},
+        {"label": "Verdict", "type": "str"}, {"label": "Dot Date", "type": "str"},
+        {"label": "Price @ Dot", "type": "num"}, {"label": "Now", "type": "num"},
+        {"label": "Perf", "type": "num"},
+    ]
+    table_rows = []
     for r in track_rows:
         pct = r.get("pct")
         pct_color = TEXT_MUTED if pct is None else (ACCENT_GREEN if pct >= 0 else ACCENT_RED)
         pct_txt = "—" if pct is None else f"{pct:+.1f}%"
         cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
-        stars = "★" * int(r["stars"]) if r.get("stars") else "—"
+        n_stars = int(r["stars"]) if r.get("stars") else 0
+        stars_txt = "★" * n_stars if n_stars else "—"
         color = r.get("color")
         verdict_color = ACCENT_GREEN if color == "Green" else (ACCENT_RED if color == "Red" else TEXT_MUTED)
-        rows_html += (
-            f'<tr><td style="{_BT_TD};color:{GOLD};font-weight:700">{r["ticker"]}</td>'
-            f'<td style="{_BT_TD};color:{GOLD}">{stars}</td>'
-            f'<td style="{_BT_TD};color:{verdict_color};font-weight:700">{color or "—"}</td>'
-            f'<td style="{_BT_TD};color:{TEXT_MUTED};font-size:11px">{_fmt_found_date(r["first_found"])}</td>'
-            f'<td style="{_BT_TD}">${r["first_price"]:,.2f}</td>'
-            f'<td style="{_BT_TD}">{cur_txt}</td>'
-            f'<td style="{_BT_TD};font-weight:700;color:{pct_color}">{pct_txt}</td></tr>'
-        )
-    track_th = f"{_TH};position:sticky;top:0;background:{BG_PANEL}"
-    st.markdown(
-        f'<div style="border:1px solid {BORDER_COLOR};border-radius:10px;'
-        f'max-height:420px;overflow-y:auto;overflow-x:auto">'
-        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
-        f'<thead><tr>'
-        f'<th style="{track_th}">Ticker</th><th style="{track_th}">★</th><th style="{track_th}">Verdict</th>'
-        f'<th style="{track_th}">Dot Date</th>'
-        f'<th style="{track_th}">Price @ Dot</th><th style="{track_th}">Now</th><th style="{track_th}">Perf</th>'
-        f'</tr></thead><tbody>{rows_html}</tbody></table></div>',
-        unsafe_allow_html=True,
+        table_rows.append([
+            (f'<span style="font-weight:700;color:{GOLD}">{r["ticker"]}</span>', r["ticker"]),
+            (f'<span style="color:{GOLD}">{stars_txt}</span>', n_stars),
+            (f'<span style="color:{verdict_color};font-weight:700">{color or "—"}</span>', color or ""),
+            (f'<span style="color:{TEXT_MUTED};font-size:11px">{_fmt_found_date(r["first_found"])}</span>', r["first_found"]),
+            (f'${r["first_price"]:,.2f}', r["first_price"]),
+            (cur_txt, r.get("current_price") if r.get("current_price") is not None else ""),
+            (f'<span style="font-weight:700;color:{pct_color}">{pct_txt}</span>', pct if pct is not None else ""),
+        ])
+    # Imported here, not at module top-level: headless mode (the GitHub Actions
+    # email script) mocks `streamlit` without a real install, and this submodule
+    # import fails against that mock -- headless mode never calls this render
+    # function, so a lazy import avoids the issue without extending the mock.
+    import streamlit.components.v1 as components
+    components.html(
+        sortable_table_html(columns, table_rows, default_sort_idx=6, default_desc=True),
+        height=440, scrolling=False,
     )
 
 

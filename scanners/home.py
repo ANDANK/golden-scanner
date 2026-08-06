@@ -29,6 +29,7 @@ from utils import section_header, calc_sma
 from data_loader import get_price_history, get_market_overview, prefetch_tickers
 from scanners import overkill_check
 from scanners import scan_history
+from scanners.ui_tables import sortable_table_html
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
@@ -901,32 +902,37 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
         st.caption("No track record yet — check back after a few more days of runs.")
         return
 
-    rows_html = ""
+    columns = [
+        {"label": "Ticker", "type": "str"}, {"label": "Verdict", "type": "str"},
+        {"label": "Scanners", "type": "str"}, {"label": "First Found", "type": "str"},
+        {"label": "First Price", "type": "num"}, {"label": "Now", "type": "num"},
+        {"label": "Perf", "type": "num"},
+    ]
+    table_rows = []
     for r in track_rows:
         pct = r.get("pct")
         pct_color = TEXT_MUTED if pct is None else (ACCENT_GREEN if pct >= 0 else ACCENT_RED)
         pct_txt = "—" if pct is None else f"{pct:+.1f}%"
         cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
         v_color = _VERDICT_COLOR.get(r.get("verdict"), TEXT_MUTED)
-        rows_html += (
-            f'<tr><td style="{_TD};font-weight:700;color:{GOLD}">{r["ticker"]}</td>'
-            f'<td style="{_TD};color:{v_color};font-weight:600">{r.get("verdict") or "—"}</td>'
-            f'<td style="{_TD};color:{TEXT_MUTED};font-size:11px">{r.get("scanners") or "—"}</td>'
-            f'<td style="{_TD};color:{TEXT_MUTED};font-size:11px">{_fmt_found_date(r["first_found"])}</td>'
-            f'<td style="{_TD}">${r["first_price"]:,.2f}</td>'
-            f'<td style="{_TD}">{cur_txt}</td>'
-            f'<td style="{_TD};font-weight:700;color:{pct_color}">{pct_txt}</td></tr>'
-        )
-    st.markdown(
-        f'<div style="border:1px solid {BORDER_COLOR};border-radius:10px;margin-top:6px;'
-        f'max-height:420px;overflow-y:auto;overflow-x:auto">'
-        f'<table style="width:100%;border-collapse:collapse">'
-        f'<thead><tr>'
-        f'<th style="{_TH}">Ticker</th><th style="{_TH}">Verdict</th><th style="{_TH}">Scanners</th>'
-        f'<th style="{_TH}">First Found</th>'
-        f'<th style="{_TH}">First Price</th><th style="{_TH}">Now</th><th style="{_TH}">Perf</th>'
-        f'</tr></thead><tbody>{rows_html}</tbody></table></div>',
-        unsafe_allow_html=True,
+        table_rows.append([
+            (f'<span style="font-weight:700;color:{GOLD}">{r["ticker"]}</span>', r["ticker"]),
+            (f'<span style="color:{v_color};font-weight:600">{r.get("verdict") or "—"}</span>', r.get("verdict") or ""),
+            (f'<span style="color:{TEXT_MUTED};font-size:11px">{r.get("scanners") or "—"}</span>', r.get("scanners") or ""),
+            (f'<span style="color:{TEXT_MUTED};font-size:11px">{_fmt_found_date(r["first_found"])}</span>', r["first_found"]),
+            (f'${r["first_price"]:,.2f}', r["first_price"]),
+            (cur_txt, r.get("current_price") if r.get("current_price") is not None else ""),
+            (f'<span style="font-weight:700;color:{pct_color}">{pct_txt}</span>', pct if pct is not None else ""),
+        ])
+    # Imported here, not at module top-level: headless mode (the GitHub Actions
+    # email scripts) mocks `streamlit` in sys.modules without a real streamlit
+    # install, and this submodule import fails against that mock -- but headless
+    # mode never calls this render function, so a lazy import avoids the issue
+    # entirely without needing to extend the mock.
+    import streamlit.components.v1 as components
+    components.html(
+        sortable_table_html(columns, table_rows, default_sort_idx=6, default_desc=True),
+        height=440, scrolling=False,
     )
 
 
