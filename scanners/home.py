@@ -1807,7 +1807,7 @@ def _sector_leaders() -> dict:                  # slower than the live RS quadra
     Prefers names that aren't already extended (RSI>68 or >6% above EMA9 --
     the same 'extended' threshold scanners/sector_rotation.py already uses
     for its own trade ideas) so the list isn't just whatever ran hardest;
-    falls back to extended names only if fewer than 5 clean ones qualify."""
+    falls back to extended names only if fewer than 10 clean ones qualify."""
     all_tickers = sorted({t for cands in _SECTOR_CANDIDATES.values() for t in cands}
                          | set(_SECTOR_CANDIDATES.keys()))
     prefetch_tickers(all_tickers, "6mo", "1d")
@@ -1835,10 +1835,13 @@ def _sector_leaders() -> dict:                  # slower than the live RS quadra
                 scored.append((t, rs, extended))
             except Exception:
                 continue
+        # Sorted by RS descending BEFORE the clean/chasey split, so within each
+        # group the strongest name stays leftmost; clean (non-extended) names
+        # always precede chasey (extended) ones -- best overall on the left.
         scored.sort(key=lambda x: -x[1])
         clean = [t for t, _rs, ext in scored if not ext]
         chasey = [t for t, _rs, ext in scored if ext]
-        out[etf] = (clean + chasey)[:5]
+        out[etf] = (clean + chasey)[:10]
     return out
 
 
@@ -1869,7 +1872,7 @@ def _render_sectors():
 
     ranked = sorted(rows, key=lambda r: -r["rs63"])
     max_dev = max((abs(r["rs63"] - 1) for r in ranked), default=0.01) or 0.01
-    GRID = "grid-template-columns:132px 132px 50px 24px 58px 62px 150px 210px"
+    GRID = "grid-template-columns:132px 132px 50px 24px 58px 62px 150px 480px"
     leaders_by_etf = _sector_leaders()
 
     bar_rows = ""
@@ -1896,7 +1899,8 @@ def _render_sectors():
         signal_txt = _plain_signal(r["quad"], m_arrow)
         signal_cell = f'<span style="color:{col};font-size:11px;font-weight:600">{signal_txt}</span>'
         leader_tickers = leaders_by_etf.get(r["tkr"], [])
-        leaders_cell = (f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:10.5px">'
+        leaders_cell = (f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;'
+                        f'font-size:10.5px;white-space:nowrap">'
                         + ", ".join(leader_tickers) + "</span>") if leader_tickers else \
                        f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>'
         bar_rows += (
@@ -1936,7 +1940,7 @@ def _render_sectors():
         f'center line (= SPY): green/blue = leading/improving · gold/red = weakening/lagging. '
         f'▲ = momentum accelerating (21d RS &gt; 63d) · 💰 = dollar-volume surge ≥1.15×. '
         f'Flows show up in price × volume before headlines. Signal spells out the '
-        f'quadrant + momentum in plain English. Leaders = up to 5 names currently beating '
+        f'quadrant + momentum in plain English. Leaders = up to 10 names (best first), currently beating '
         f'THAT SECTOR\'S own ETF (not just SPY), preferring ones that aren\'t already '
         f'extended (RSI&gt;68 or &gt;6% above EMA9) — updates every 4h, not live. '
         f'QQQ/IWM/GLD/TLT have no leaders list (not a stock sector).</div>'
