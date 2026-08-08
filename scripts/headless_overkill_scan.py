@@ -19,7 +19,7 @@ Required env vars (GitHub Actions secrets):
   OVERKILL_EMAIL_TO    recipient address (can be the same as GMAIL_ADDRESS)
 
 Optional env vars:
-  OVERKILL_MIN_STARS       minimum star rating to include (default 4)
+  OVERKILL_MIN_STARS       minimum star rating to include (default 3)
   OVERKILL_WEEKLY_FRESH    weekly lookback in bars (default matches the live UI)
   OVERKILL_MONTHLY_FRESH   monthly lookback in bars (badge-only, same default)
 """
@@ -61,7 +61,7 @@ from scanners.overkill_check import (
 from scanners import scan_history
 
 SLOT           = os.environ.get("SCAN_SLOT", "am").lower()
-MIN_STARS      = int(os.environ.get("OVERKILL_MIN_STARS", 4))
+MIN_STARS      = int(os.environ.get("OVERKILL_MIN_STARS", 3))
 WEEKLY_FRESH   = int(os.environ.get("OVERKILL_WEEKLY_FRESH", DEFAULT_WEEKLY_FRESH_BARS))
 MONTHLY_FRESH  = int(os.environ.get("OVERKILL_MONTHLY_FRESH", DEFAULT_MONTHLY_FRESH_BARS))
 TODAY          = datetime.utcnow().strftime("%Y-%m-%d")
@@ -181,9 +181,9 @@ def build_email(green: list[dict], red: list[dict], track_rows: list[dict]) -> t
               f"at {MIN_STARS}★+ ({datetime.utcnow().strftime('%Y-%m-%d')})")
     html = f"""
     <div style="font-family:Arial,sans-serif;background:#000;padding:20px">
-      <h2 style="color:#F5C842;margin-bottom:4px">OverKill Scan — {MIN_STARS}★ and 5★ only</h2>
+      <h2 style="color:#F5C842;margin-bottom:4px">OverKill Scan — {MIN_STARS}★+ only</h2>
       <p style="color:#888;font-size:12px;margin-top:0">
-        FTF Universe (~480) · Weekly lookback {WEEKLY_FRESH} bars · {SLOT.upper()} run ·
+        FTF Universe (~500) · Weekly lookback {WEEKLY_FRESH} bars · {SLOT.upper()} run ·
         {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}
       </p>
       <h3 style="color:#22C55E;margin-top:24px">\U0001F7E2 Green Dots ({len(green)})</h3>

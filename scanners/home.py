@@ -309,7 +309,7 @@ def _edge_verdict(labels: list) -> dict:
 
 
 _UNIVERSE_CHOICES = {
-    "FTF Universe (~480 · full S&P 500 + ETFs)": "FTF",
+    "FTF Universe (~500 · full S&P 500 + ETFs)": "FTF",
     "MTPA 200 (stock-heavy)": "MTPA",
     "S&P 500 sample (200)": "SP500",
 }

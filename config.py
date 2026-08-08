@@ -168,9 +168,14 @@ FTF_UNIVERSE = list(dict.fromkeys([
     "SOXX","SMH","ARKK","IBB","EEM","FXI","EWZ","KWEB","VNQ","EFA",
     # ── More ETFs (6) ───────────────────────────────────────────
     "VWO","AGG","BND","XRT","KRE","IAT",
-    # ── 3× Leveraged ETFs (18) ───────────────────────────────────
+    # ── 3× Leveraged ETFs — bull (24) ─────────────────────────────
     "TQQQ","SOXL","TECL","CURE","NAIL","UPRO","SPXL","TNA",
     "FNGU","LABU","FAS","UDOW","DPST","HIBL","NUGT","WEBL","NVDL","3TSL",
+    "DFEN","ERX","URTY","WANT","MIDU","INDL",
+    # ── 3× Leveraged ETFs — inverse/bear (10) ─────────────────────
+    # Lets OverKill flag a bearish-sector turn via a GREEN dot on the
+    # inverse fund, not just a RED dot on the matching bull fund.
+    "SQQQ","SOXS","SPXS","TECS","FNGD","LABD","WEBS","FAZ","TZA","SDOW",
 ]))
 
 # ── MTPA Scanner universe — 200 curated tickers ───────────────

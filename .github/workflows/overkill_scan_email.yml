@@ -76,7 +76,7 @@ jobs:
           GMAIL_APP_PASSWORD:   ${{ secrets.GMAIL_APP_PASSWORD }}
           OVERKILL_EMAIL_TO:    ${{ secrets.OVERKILL_EMAIL_TO }}
           # ── Tune these to change scan behaviour without editing code ──
-          OVERKILL_MIN_STARS:      "4"   # only email 4-5 star results
+          OVERKILL_MIN_STARS:      "3"   # only email 3-5 star results
           OVERKILL_WEEKLY_FRESH:   "6"   # matches the live Scan Universe UI default
           OVERKILL_MONTHLY_FRESH:  "3"   # badge-only, doesn't gate inclusion
         run: python scripts/headless_overkill_scan.py

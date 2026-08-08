@@ -76,7 +76,7 @@ MFI_OB_LEVEL  = 80
 
 # ── Universe scan (screener mode) ────────────────────────────────────────────
 _SCAN_UNIVERSE_CHOICES = {
-    "FTF Universe (~480 · full S&P 500 + ETFs)": FTF_UNIVERSE,
+    "FTF Universe (~500 · full S&P 500 + ETFs)": FTF_UNIVERSE,
     "MTPA 200 (stock-heavy)": MTPA_200,
     "S&P 500 sample (200)": SP500_SAMPLE[:200],
 }
