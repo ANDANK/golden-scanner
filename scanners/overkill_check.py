@@ -1332,6 +1332,32 @@ def _render_track_record_table():
         st.caption("No track record yet — check back after the daily email has run a few times.")
         return
 
+    tiers = scan_history.star_tier_breakdown(track_rows)
+    tier_cards = ""
+    for t in tiers:
+        stars_txt = "★" * t["stars"] if t["stars"] else "—"
+        hit_txt = f'{t["hit_rate"]:.0f}% hit' if t["hit_rate"] is not None else "— hit"
+        avg_txt = f'{t["avg_return"]:+.1f}% avg' if t["avg_return"] is not None else "— avg"
+        hit_color = TEXT_MUTED
+        if t["hit_rate"] is not None:
+            hit_color = ACCENT_GREEN if t["hit_rate"] >= 55 else (GOLD if t["hit_rate"] >= 45 else ACCENT_RED)
+        avg_color = TEXT_MUTED if t["avg_return"] is None else (ACCENT_GREEN if t["avg_return"] >= 0 else ACCENT_RED)
+        tier_cards += (
+            f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-top:2px solid {GOLD};'
+            f'border-radius:8px;padding:10px 16px;text-align:center;min-width:104px">'
+            f'<div style="color:{GOLD};font-size:14px;font-weight:700">{stars_txt}</div>'
+            f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:2px">{t["count"]} tickers</div>'
+            f'<div style="color:{hit_color};font-size:12px;font-weight:700;margin-top:4px">{hit_txt}</div>'
+            f'<div style="color:{avg_color};font-size:11px">{avg_txt}</div>'
+            f'</div>'
+        )
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:11px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:.06em;margin-bottom:6px">Performance by Star Rating</div>'
+        f'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">{tier_cards}</div>',
+        unsafe_allow_html=True,
+    )
+
     columns = [
         {"label": "Ticker", "type": "str"}, {"label": "★", "type": "num"},
         {"label": "Verdict", "type": "str"}, {"label": "Dot Date", "type": "str"},

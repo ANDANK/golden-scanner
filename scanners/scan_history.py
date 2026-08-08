@@ -175,6 +175,32 @@ def track_record(kind: str, tag: str, today_date_str: str, today_rows: list[dict
     return out
 
 
+def star_tier_breakdown(track_rows: list[dict]) -> list[dict]:
+    """Aggregate track_record() rows by star rating, so a caller can compare
+    e.g. 3-star vs 4-star vs 5-star hit rate/average return -- the raw
+    track_record() list only carries stars per-row, with no rollup. Rows
+    missing a "stars" field are grouped under 0. A row counts toward
+    `hit_rate`/`avg_return` only if it has a fetchable current price
+    (pct is not None); `count` always includes every row regardless.
+    Sorted highest star rating first."""
+    tiers: dict[int, list[dict]] = {}
+    for r in track_rows:
+        stars = int(r.get("stars") or 0)
+        tiers.setdefault(stars, []).append(r)
+
+    out = []
+    for stars, rows in tiers.items():
+        priced = [r for r in rows if r.get("pct") is not None]
+        hit_rate = (sum(1 for r in priced if r["pct"] >= 0) / len(priced) * 100) if priced else None
+        avg_return = (sum(r["pct"] for r in priced) / len(priced)) if priced else None
+        out.append({
+            "stars": stars, "count": len(rows), "priced": len(priced),
+            "hit_rate": hit_rate, "avg_return": avg_return,
+        })
+    out.sort(key=lambda t: -t["stars"])
+    return out
+
+
 def fetch_prices_on_dates(ticker_dates: list[tuple[str, str]], period: str = "1y") -> dict[tuple[str, str], float]:
     """Batch best-effort close price for each (ticker, "YYYY-MM-DD") pair —
     the first available daily close ON OR AFTER that date within a shared

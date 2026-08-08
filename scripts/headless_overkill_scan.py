@@ -176,6 +176,38 @@ def _track_record_table_html(track_rows: list[dict]) -> str:
     )
 
 
+def _star_tier_html(tiers: list[dict]) -> str:
+    if not tiers:
+        return '<p style="color:#888;font-size:13px">No priced track record yet.</p>'
+    rows = ""
+    for t in tiers:
+        stars_txt = "★" * t["stars"] if t["stars"] else "—"
+        hit_txt = f'{t["hit_rate"]:.0f}%' if t["hit_rate"] is not None else "—"
+        avg_txt = f'{t["avg_return"]:+.1f}%' if t["avg_return"] is not None else "—"
+        avg_color = "#888" if t["avg_return"] is None else ("#22C55E" if t["avg_return"] >= 0 else "#EF4444")
+        rows += (
+            '<tr>'
+            f'<td style="padding:6px 10px;color:#F5C842;font-weight:bold;border-bottom:1px solid #333">{stars_txt}</td>'
+            f'<td style="padding:6px 10px;border-bottom:1px solid #333">{t["count"]}</td>'
+            f'<td style="padding:6px 10px;border-bottom:1px solid #333">{hit_txt}</td>'
+            f'<td style="padding:6px 10px;font-weight:bold;color:{avg_color};border-bottom:1px solid #333">{avg_txt}</td>'
+            '</tr>'
+        )
+    header = (
+        '<tr style="background:#1a1a1a;color:#fff">'
+        '<th style="padding:6px 10px;text-align:left">★ Tier</th>'
+        '<th style="padding:6px 10px;text-align:left"># Tickers</th>'
+        '<th style="padding:6px 10px;text-align:left">Hit Rate</th>'
+        '<th style="padding:6px 10px;text-align:left">Avg Return</th>'
+        '</tr>'
+    )
+    return (
+        '<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;'
+        f'font-size:13px;background:#0d0d0d;color:#eee"><thead>{header}</thead>'
+        f'<tbody>{rows}</tbody></table>'
+    )
+
+
 def build_email(green: list[dict], red: list[dict], track_rows: list[dict]) -> tuple[str, str]:
     subject = (f"OverKill Scan [{SLOT}] — {len(green)} green / {len(red)} red "
               f"at {MIN_STARS}★+ ({datetime.utcnow().strftime('%Y-%m-%d')})")
@@ -190,6 +222,8 @@ def build_email(green: list[dict], red: list[dict], track_rows: list[dict]) -> t
       {_table_html(green, "green", "#22C55E")}
       <h3 style="color:#EF4444;margin-top:24px">\U0001F534 Red Dots ({len(red)})</h3>
       {_table_html(red, "red", "#EF4444")}
+      <h3 style="color:#F5C842;margin-top:24px">Performance by Star Rating</h3>
+      {_star_tier_html(scan_history.star_tier_breakdown(track_rows))}
       <h3 style="color:#F5C842;margin-top:24px">Track Record — last 6 months</h3>
       {_track_record_table_html(track_rows)}
       <p style="color:#666;font-size:11px;margin-top:24px;line-height:1.5">
