@@ -39,6 +39,15 @@ def _fetch_prices(tickers: tuple) -> dict:
 def render():
     section_header("👁", "WatchList", "Tickers on your radar — not yet in a position")
 
+    tab1, tab2 = st.tabs(["👁 My WatchList", "🗳️ Election Playbook 2026"])
+    with tab1:
+        _render_my_watchlist()
+    with tab2:
+        from scanners.election_playbook import render as _render_election_playbook
+        _render_election_playbook()
+
+
+def _render_my_watchlist():
     show_storage_banner()
 
     storage = "Google Sheets ✅" if using_google_sheets() else "⚠️ Local CSV (ephemeral — lost on restart)"
