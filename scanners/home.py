@@ -1778,6 +1778,84 @@ def _sector_flows() -> list[dict]:
     return rows
 
 
+# Hand-curated candidate pool per real GICS sector ETF (~15 well-known,
+# liquid names each) -- there's no sector-constituent data source in this
+# codebase, so this is a reasonable stand-in universe to rank within.
+# QQQ/IWM/GLD/TLT are intentionally excluded: they aren't a sector basket
+# of stocks (GLD is bullion, TLT is bonds), so they get no leaders list.
+_SECTOR_CANDIDATES = {
+    "XLK":  ["AAPL","MSFT","NVDA","AVGO","ORCL","CRM","ADBE","AMD","CSCO","ACN","QCOM","TXN","INTU","IBM","NOW"],
+    "XLF":  ["BRK-B","JPM","V","MA","BAC","WFC","GS","MS","SPGI","AXP","C","SCHW","BLK","PGR","MMC"],
+    "XLV":  ["LLY","UNH","JNJ","ABBV","MRK","TMO","ABT","PFE","DHR","AMGN","ISRG","BMY","GILD","CVS","MDT"],
+    "XLI":  ["GE","CAT","RTX","UNP","HON","UPS","BA","DE","LMT","ETN","ADP","GD","MMM","WM","NOC"],
+    "XLE":  ["XOM","CVX","COP","EOG","SLB","MPC","PSX","WMB","OXY","VLO","KMI","HES","BKR","OKE","TRGP"],
+    "XLY":  ["AMZN","TSLA","HD","MCD","NKE","LOW","BKNG","TJX","SBUX","CMG","MAR","ORLY","AZO","ROST","YUM"],
+    "XLP":  ["PG","KO","PEP","COST","WMT","PM","MDLZ","MO","CL","TGT","KMB","GIS","STZ","KDP","SYY"],
+    "XLC":  ["GOOGL","META","NFLX","DIS","CMCSA","TMUS","VZ","T","CHTR","EA","WBD","OMC","TTWO","MTCH","PARA"],
+    "XLB":  ["LIN","SHW","FCX","ECL","APD","NEM","DOW","DD","NUE","VMC","MLM","PPG","ALB","IFF","CTVA"],
+    "XLRE": ["PLD","AMT","EQIX","PSA","WELL","SPG","O","DLR","CCI","CBRE","AVB","EQR","VTR","EXR","INVH"],
+    "XLU":  ["NEE","SO","DUK","CEG","AEP","SRE","D","EXC","XEL","ED","WEC","PEG","ES","AWK","DTE"],
+}
+
+
+@st.cache_data(ttl=14400, show_spinner=False)   # 4h -- "which names lead the sector" moves
+def _sector_leaders() -> dict:                  # slower than the live RS quadrant, no need to refresh every 30 min
+    """For each real GICS sector ETF, up to 5 candidate tickers currently
+    beating THAT SECTOR'S OWN ETF (63d RS vs the ETF, not vs SPY -- a
+    different question than the sector-vs-market table: "which names are
+    leading the sector" rather than "is the sector leading the market").
+    Prefers names that aren't already extended (RSI>68 or >6% above EMA9 --
+    the same 'extended' threshold scanners/sector_rotation.py already uses
+    for its own trade ideas) so the list isn't just whatever ran hardest;
+    falls back to extended names only if fewer than 5 clean ones qualify."""
+    all_tickers = sorted({t for cands in _SECTOR_CANDIDATES.values() for t in cands}
+                         | set(_SECTOR_CANDIDATES.keys()))
+    prefetch_tickers(all_tickers, "6mo", "1d")
+
+    out = {}
+    for etf, candidates in _SECTOR_CANDIDATES.items():
+        try:
+            etf_close = get_price_history(etf, period="6mo")["Close"].squeeze()
+        except Exception:
+            out[etf] = []
+            continue
+        scored = []
+        for t in candidates:
+            try:
+                close = get_price_history(t, period="6mo")["Close"].squeeze()
+                n = min(len(close), len(etf_close), 63)
+                if n < 63:
+                    continue
+                rs = ((float(close.iloc[-1]) / float(close.iloc[-n]))
+                      / (float(etf_close.iloc[-1]) / float(etf_close.iloc[-n])))
+                rsi_now = float(_rsi(close).iloc[-1])
+                ema9_now = float(_ema(close, 9).iloc[-1])
+                pct_above_ema9 = (float(close.iloc[-1]) / ema9_now - 1) * 100 if ema9_now else 0.0
+                extended = rsi_now > 68 or pct_above_ema9 > 6
+                scored.append((t, rs, extended))
+            except Exception:
+                continue
+        scored.sort(key=lambda x: -x[1])
+        clean = [t for t, _rs, ext in scored if not ext]
+        chasey = [t for t, _rs, ext in scored if ext]
+        out[etf] = (clean + chasey)[:5]
+    return out
+
+
+def _plain_signal(quad: str, m_arrow: str) -> str:
+    """Plain-English translation of quadrant + momentum-arrow, e.g. 'Leading
+    but Decelerating' -- the quadrant answers 'in or out' (Focus/Avoid), the
+    arrow answers 'gaining or losing steam', together they tell the whole
+    story in one phrase."""
+    if quad == "Leading":
+        return {"▲": "Leading & Accelerating", "▬": "Leading, Steady"}.get(m_arrow, "Leading but Decelerating")
+    if quad == "Improving":
+        return "Emerging — Turning Up" if m_arrow != "▼" else "Improving"
+    if quad == "Weakening":
+        return "Weakening, Stabilizing" if m_arrow == "▲" else "Weakening — Losing Steam"
+    return "Lagging, Stabilizing" if m_arrow == "▲" else "Avoid — Underperforming"
+
+
 def _render_sectors():
     rows = _sector_flows()
     if not rows:
@@ -1791,7 +1869,8 @@ def _render_sectors():
 
     ranked = sorted(rows, key=lambda r: -r["rs63"])
     max_dev = max((abs(r["rs63"] - 1) for r in ranked), default=0.01) or 0.01
-    GRID = "grid-template-columns:132px 132px 50px 24px 58px 62px"
+    GRID = "grid-template-columns:132px 132px 50px 24px 58px 62px 150px 210px"
+    leaders_by_etf = _sector_leaders()
 
     bar_rows = ""
     for r in ranked:
@@ -1814,6 +1893,12 @@ def _render_sectors():
         else:
             flow_badge = f'<span style="color:{TEXT_MUTED};font-size:10px">{r["flow"]:.1f}x</span>'
         name = str(r["name"])[:12]
+        signal_txt = _plain_signal(r["quad"], m_arrow)
+        signal_cell = f'<span style="color:{col};font-size:11px;font-weight:600">{signal_txt}</span>'
+        leader_tickers = leaders_by_etf.get(r["tkr"], [])
+        leaders_cell = (f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;font-size:10.5px">'
+                        + ", ".join(leader_tickers) + "</span>") if leader_tickers else \
+                       f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>'
         bar_rows += (
             f'<div style="display:grid;{GRID};align-items:center;gap:6px;padding:3px 0;'
             f'border-bottom:1px solid #2A2A3A22">'
@@ -1828,13 +1913,13 @@ def _render_sectors():
             + f'<span style="color:{m_col};font-size:11px">' + m_arrow + "</span>"
             + f'<span style="color:{ret_col};font-family:\'DM Mono\',monospace;font-size:11px">'
             + "{:+.1f}%".format(ret) + "</span>"
-            + flow_badge + "</div>"
+            + flow_badge + signal_cell + leaders_cell + "</div>"
         )
 
     header = (f'<div style="display:grid;{GRID};gap:6px;padding:0 0 4px;color:{TEXT_MUTED};'
               f'font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">'
               f'<span>Sector</span><span>RS vs SPY 63d</span><span>RS</span><span>Mom</span>'
-              f'<span>1M</span><span>Flow</span></div>')
+              f'<span>1M</span><span>Flow</span><span>Signal</span><span>Leaders (RS vs sector)</span></div>')
 
     buys  = [r for r in ranked if r["quad"] in ("Leading", "Improving")][:4]
     sells = sorted([r for r in ranked if r["quad"] in ("Lagging", "Weakening")],
@@ -1850,7 +1935,11 @@ def _render_sectors():
         f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:8px">Bars diverge from the '
         f'center line (= SPY): green/blue = leading/improving · gold/red = weakening/lagging. '
         f'▲ = momentum accelerating (21d RS &gt; 63d) · 💰 = dollar-volume surge ≥1.15×. '
-        f'Flows show up in price × volume before headlines.</div>'
+        f'Flows show up in price × volume before headlines. Signal spells out the '
+        f'quadrant + momentum in plain English. Leaders = up to 5 names currently beating '
+        f'THAT SECTOR\'S own ETF (not just SPY), preferring ones that aren\'t already '
+        f'extended (RSI&gt;68 or &gt;6% above EMA9) — updates every 4h, not live. '
+        f'QQQ/IWM/GLD/TLT have no leaders list (not a stock sector).</div>'
     )
 
     st.markdown(_card("Sector Rotation — follow the big money", "🔄", MINT,
