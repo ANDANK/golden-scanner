@@ -25,11 +25,12 @@ from config import (
     GOLD, BG_CARD, BG_PANEL, ACCENT_GREEN, ACCENT_RED, ACCENT_BLUE,
     TEXT_PRIMARY, TEXT_MUTED, BORDER_COLOR,
 )
-from utils import calc_sma, _export_filename
+from utils import calc_sma, calc_rsi, _export_filename
 from data_loader import get_price_history
 from scanners.ui_tables import sortable_table_html
 
 HEDGE_COLOR = "#A78BFA"   # violet — kept distinct from the 4-color outlook legend
+BUY_SPEC_COLOR = "#FB923C"   # orange — "buy the dip" while the trend itself is still broken
 
 DATA_CSV = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data",
@@ -44,18 +45,42 @@ POST_WINDOW_END = ELECTION_DATE + timedelta(days=182)   # ~6mo post-midterm rall
 OUTLOOK_META = {
     "Down hard":  (ACCENT_RED,   "#F4CCCC", "🔻 Down hard — deepest drawdown risk into Oct"),
     "Down mild":  ("#E08A3A",    "#FCE5CD", "🔸 Down mild — softer / conditional dip"),
-    "Resilient":  (ACCENT_GREEN, "#D9EAD3", "🛡️ Resilient / election-agnostic — little election impact"),
-    "Volatile":   (ACCENT_BLUE,  "#CFE2F3", "⚡ Volatile / dip-buy — big swings, buy the flush or sell CSP"),
+    "Resilient":  (ACCENT_GREEN, "#D9EAD3", "🛡️ Resilient / Election-agnostic — hold, little election impact"),
+    "Volatile":   (ACCENT_BLUE,  "#CFE2F3", "⚡ Volatile / dip-buy — big swings, buy the flush / sell CSP"),
 }
 
+# Column Guide — shown as a reference panel under the main table.
+COLUMN_GUIDE = [
+    ("Ticker",               "Symbol, sector underneath, and a ⚡ flag if it's a leveraged/inverse ETF."),
+    ("Outlook",               "The playbook's read on this name for the Oct window — color-coded, see legend above."),
+    ("Price",                 "Latest live price."),
+    ("vs 52wk High",          "How far it's pulled back from its 52-week high — this is the dip trigger."),
+    ("vs 200-SMA",            "Is the pullback inside a long-term uptrend (Above) or has the trend itself broken (Below)? Now feeds the Buy Dip tier — Confirmed vs. Speculative."),
+    ("Today's Instruction",   "The action to consider today, and why — recomputed live on every refresh, never a stale sheet price."),
+    ("Election Beta",         "How exposed the price is to the election outcome itself, separate from the sector's own dip risk."),
+    ("Horizon / Conviction",  "Suggested holding period and how strongly the original thesis leans."),
+    ("Bounce-back Driver",    "The catalyst expected to bring the price back."),
+]
+
 ACTION_META = {
-    "BUY":      (ACCENT_GREEN, "🟢 Buy the Dip"),
-    "SELL_CSP": (GOLD,         "💰 Sell CSP"),
-    "HOLD":     (ACCENT_BLUE,  "✅ Hold / Core"),
-    "WAIT":     (TEXT_MUTED,   "⏳ Wait"),
-    "HEDGE":    (HEDGE_COLOR,  "🛡️ Hedge Watch"),
-    "AVOID":    (ACCENT_RED,   "🚫 Avoid / Trim"),
+    "BUY":       (ACCENT_GREEN,    "🟢 Buy Dip (Confirmed)"),
+    "BUY_SPEC":  (BUY_SPEC_COLOR,  "🟠 Buy Dip (Speculative)"),
+    "SELL_CSP":  (GOLD,            "💰 Sell CSP"),
+    "HOLD":      (ACCENT_BLUE,     "✅ Hold / Core"),
+    "WAIT":      (TEXT_MUTED,      "⏳ Wait"),
+    "HEDGE":     (HEDGE_COLOR,     "🛡️ Hedge Watch"),
+    "AVOID":     (ACCENT_RED,      "🚫 Avoid / Trim"),
 }
+
+# RSI qualifier appended to buy-dip instruction text — momentum context, not a hard gate.
+def _rsi_note(rsi) -> str:
+    if pd.isna(rsi):
+        return ""
+    if rsi <= 35:
+        return f" RSI {rsi:.0f} — oversold, selling pressure looks exhausted."
+    if rsi >= 60:
+        return f" RSI {rsi:.0f} — still elevated, hasn't cooled off much despite the pullback."
+    return f" RSI {rsi:.0f} — neutral."
 
 
 # ── Data loading ────────────────────────────────────────────────
@@ -129,11 +154,13 @@ def _fetch_technicals(tickers: list[str], status_fn=None) -> dict:
             if len(close) >= 20:
                 sma200 = float(calc_sma(close, 200).iloc[-1])
             above_sma200 = (price > sma200) if sma200 else None
+            rsi = float(calc_rsi(close)) if len(close) >= 15 else None
             out[tk] = {
                 "Price": round(price, 2),
                 "High_52w": round(high_52w, 2),
                 "Pct_Off_High": pct_off_high,
                 "Above_SMA200": above_sma200,
+                "RSI": round(rsi, 1) if rsi is not None else None,
             }
         except Exception:
             out[tk] = {}
@@ -146,11 +173,24 @@ _DIP_THRESHOLD = {"Down hard": 10, "Down mild": 5, "Volatile": 8, "Resilient": 4
 
 
 def _build_instruction(strategy: str, outlook_cat: str, ticker: str,
-                        pct_off_high, phase_key: str) -> tuple[str, str]:
-    """Return (action_key, headline_text)."""
+                        pct_off_high, above_sma200, rsi, phase_key: str) -> tuple[str, str]:
+    """Return (action_key, headline_text).
+
+    Dip trigger: % off the 52-week high vs. a per-category threshold.
+    Dip TIER (new): confirmed vs. speculative, gated on whether price is still
+    above its 200-day SMA — a pullback inside an intact uptrend reads very
+    differently from one where the long-term trend itself has broken.
+    RSI is layered on as momentum context (oversold vs. still hot), not a
+    hard gate — it only changes the wording, never the action.
+    """
     has_pct = pd.notna(pct_off_high)
     thresh = _DIP_THRESHOLD.get(outlook_cat, 8)
     dip_hit = has_pct and pct_off_high <= -thresh
+    # Unconfirmed trend (unknown or below the 200-SMA) is treated as
+    # speculative — we can't call it a "healthy" pullback without proof.
+    confirmed = dip_hit and above_sma200 is True
+    rsi_note = _rsi_note(rsi)
+
     if has_pct:
         off_txt = f"{abs(pct_off_high):.0f}% off its 52-wk high"
         off_txt_short = f"{abs(pct_off_high):.0f}% off high"
@@ -176,21 +216,27 @@ def _build_instruction(strategy: str, outlook_cat: str, ticker: str,
         return "HOLD", "IV-spike window has passed — manage any open CSPs, don't chase new entries off this playbook."
 
     if strategy == "DIP_OR_CSP":
+        if confirmed:
+            return "BUY", f"Buy the dip now (confirmed — still above its 200-SMA) — {off_txt}, or sell a CSP below support for income.{rsi_note}"
         if dip_hit:
-            return "BUY", f"Buy the dip now — {off_txt}, or sell a CSP below support for income."
+            return "BUY_SPEC", f"Buy cautiously — SPECULATIVE, price is below its 200-SMA (trend broken) — {off_txt}. Selling a CSP is the lower-risk way in until the trend confirms.{rsi_note}"
         if phase_key in ("WEAK_WINDOW", "ELECTION_WEEK"):
             return "SELL_CSP", "No flush yet — sell CSP into the IV spike while you wait for the dip."
         return "WAIT", f"Watchlist — {off_txt_short}; wait for a real flush or the Sept–Oct window."
 
     if strategy == "TACTICAL_LEV":
         base = "3x/2x daily-reset — SHORT HOLD ONLY, never buy-and-hold (decay)."
+        if confirmed:
+            return "BUY", f"Tactical dip-buy triggered (confirmed — above 200-SMA) — {off_txt_short}. {base}{rsi_note}"
         if dip_hit:
-            return "BUY", f"Tactical dip-buy triggered — {off_txt_short}. {base}"
+            return "BUY_SPEC", f"Tactical dip-buy — SPECULATIVE, below 200-SMA (fighting the trend on a decaying instrument) — {off_txt_short}. {base}{rsi_note}"
         return "WAIT", f"No flush yet ({off_txt_short}) — {base}"
 
     # BUY_DIP default
+    if confirmed:
+        return "BUY", f"Buy the dip now (confirmed — still above its 200-SMA, long-term uptrend intact) — {off_txt}, into the {outlook_cat.lower()} zone.{rsi_note}"
     if dip_hit:
-        return "BUY", f"Buy the dip now — {off_txt}, into the {outlook_cat.lower()} zone."
+        return "BUY_SPEC", f"Buy cautiously — SPECULATIVE, price is below its 200-SMA (the longer-term trend has broken, this is catching a falling knife) — {off_txt}.{rsi_note}"
     return "WAIT", f"Watchlist — no dip yet ({off_txt_short}); wait for a flush toward the Sept–Oct window."
 
 
@@ -286,6 +332,8 @@ def render():
    lower (financials/defense, Tier-1/2 semis). Reach for Nov–Dec+ expiries so any assignment lands
    at the start of the strong post-midterm window.
 3. **BUY THE DIP** on quality that gets marked down but isn't broken. Target an October low as the entry.
+   *(Below, this is split into 🟢 Confirmed — still above its 200-day SMA, the uptrend is intact — vs.
+   🟠 Speculative — below its 200-SMA, the trend itself has broken.)*
 4. **HEDGE** the crowded AI/semi book — tactical, short-hold downside insurance, not the defensives.
 5. **HOLD** election-agnostic compounders through the noise — no dip required.
 6. **AVOID / TRIM** the highest-risk dip names unless you truly want the shares.
@@ -300,11 +348,12 @@ multi-day holds, volatility decay erodes returns — in a choppy tape they can l
 underlying nets flat. Use them as short-hold **tactical** tools only, never buy-and-hold. NRGU is an
 ETN (adds issuer credit risk).
 
-**Outlook color key:**
-{_badge("Down hard", ACCENT_RED)} {_badge("Down mild", "#E08A3A")} {_badge("Resilient", ACCENT_GREEN)} {_badge("Volatile", ACCENT_BLUE)}
+*(Full outlook color key and a column-by-column guide are under the table below.)*
 
-*(Source workbook snapshot: Aug 8, 2026. "Today's Instruction" below is recomputed live from current
-price vs. 52-week high / 200-day SMA — it does not rely on any hand-typed price from the sheet.)*
+*(Source workbook snapshot: Aug 8, 2026. "Today's Instruction" is recomputed live every refresh from
+three signals — % off the 52-week high (the dip trigger), position vs. the 200-day SMA (confirms
+whether the pullback sits inside an intact uptrend or a broken one), and RSI (momentum context) —
+never a hand-typed price from the sheet.)*
 
 ⚠️ **This is a framework built on historical base rates and the source workbook's own notes — not
 financial advice or a forecast. Not a licensed advisor. Verify live prices, forward P/Es, IV rank and
@@ -364,11 +413,12 @@ support levels before acting.**
     df["Price"] = df["Ticker"].map(lambda t: tech.get(t, {}).get("Price"))
     df["Pct_Off_High"] = df["Ticker"].map(lambda t: tech.get(t, {}).get("Pct_Off_High"))
     df["Above_SMA200"] = df["Ticker"].map(lambda t: tech.get(t, {}).get("Above_SMA200"))
+    df["RSI"] = df["Ticker"].map(lambda t: tech.get(t, {}).get("RSI"))
 
     actions, headlines = [], []
     for _, row in df.iterrows():
         a, h = _build_instruction(row["Strategy"], row["Outlook_Category"], row["Ticker"],
-                                  row["Pct_Off_High"], phase["key"])
+                                  row["Pct_Off_High"], row["Above_SMA200"], row["RSI"], phase["key"])
         actions.append(a); headlines.append(h)
     df["Action"] = actions
     df["Instruction"] = headlines
@@ -507,9 +557,35 @@ support levels before acting.**
     html = sortable_table_html(columns, rows, max_height=560)
     st.components.v1.html(html, height=580, scrolling=True)
 
+    # ── Reference panel: outlook legend + column guide ──────────
+    legend_html = "".join(
+        f'<div style="margin-bottom:5px">{_badge(cat, color)} '
+        f'<span style="color:{TEXT_MUTED};font-size:11.5px">{title.split(" — ", 1)[1] if " — " in title else ""}</span></div>'
+        for cat, (color, _, title) in OUTLOOK_META.items()
+    )
+    guide_rows = "".join(
+        f'<tr><td style="padding:6px 12px;border-bottom:1px solid {BORDER_COLOR}22;color:{GOLD};'
+        f'font-size:11.5px;font-weight:700;white-space:nowrap;vertical-align:top">{col}</td>'
+        f'<td style="padding:6px 12px;border-bottom:1px solid {BORDER_COLOR}22;color:{TEXT_MUTED};'
+        f'font-size:11.5px">{meaning}</td></tr>'
+        for col, meaning in COLUMN_GUIDE
+    )
+    st.markdown(
+        f'<div style="margin-top:14px;padding:14px 16px;background:{BG_PANEL};'
+        f'border:1px solid {BORDER_COLOR};border-radius:10px">'
+        f'<div style="color:{GOLD};font-size:11px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:0.8px;margin-bottom:8px">Outlook Color Key</div>'
+        f'{legend_html}'
+        f'<div style="color:{GOLD};font-size:11px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:0.8px;margin:14px 0 8px">Column Guide</div>'
+        f'<table style="width:100%;border-collapse:collapse">{guide_rows}</table>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
     # ── Export ────────────────────────────────────────────────
     export_cols = ["Ticker", "Sector", "Outlook_Category", "Price", "Pct_Off_High",
-                   "Above_SMA200", "Action", "Instruction", "Election_Beta",
+                   "Above_SMA200", "RSI", "Action", "Instruction", "Election_Beta",
                    "Play_Type", "Horizon_Conviction", "Bounce_Driver", "Notes"]
     st.download_button(
         "⬇ Export Filtered View (CSV)",
