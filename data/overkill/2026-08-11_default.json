@@ -1,0 +1,186 @@
+{
+  "date": "2026-08-11",
+  "tag": "default",
+  "rows": [
+    {
+      "ticker": "LKQ",
+      "color": "Green",
+      "stars": 3,
+      "price": 24.56999969482422,
+      "dot_date": "2026-08-10",
+      "event_date": "2026-08-10",
+      "bars_ago": 0
+    },
+    {
+      "ticker": "FAZ",
+      "color": "Green",
+      "stars": 3,
+      "price": 31.5,
+      "dot_date": "2026-08-10",
+      "event_date": "2026-08-10",
+      "bars_ago": 0
+    },
+    {
+      "ticker": "PEP",
+      "color": "Green",
+      "stars": 3,
+      "price": 139.7899932861328,
+      "dot_date": "2026-07-27",
+      "event_date": "2026-07-27",
+      "bars_ago": 2
+    },
+    {
+      "ticker": "CACI",
+      "color": "Green",
+      "stars": 5,
+      "price": 505.239990234375,
+      "dot_date": "2026-07-06",
+      "event_date": "2026-07-06",
+      "bars_ago": 5
+    },
+    {
+      "ticker": "FXI",
+      "color": "Green",
+      "stars": 5,
+      "price": 32.4900016784668,
+      "dot_date": "2026-07-06",
+      "event_date": "2026-07-06",
+      "bars_ago": 5
+    },
+    {
+      "ticker": "KWEB",
+      "color": "Green",
+      "stars": 4,
+      "price": 25.59000015258789,
+      "dot_date": "2026-07-06",
+      "event_date": "2026-07-06",
+      "bars_ago": 5
+    },
+    {
+      "ticker": "SJM",
+      "color": "Red",
+      "stars": 3,
+      "price": 118.06999969482422,
+      "dot_date": "2026-08-10",
+      "event_date": "2026-08-10",
+      "bars_ago": 0
+    },
+    {
+      "ticker": "CUBE",
+      "color": "Red",
+      "stars": 3,
+      "price": 40.9900016784668,
+      "dot_date": "2026-08-10",
+      "event_date": "2026-08-10",
+      "bars_ago": 0
+    },
+    {
+      "ticker": "BXP",
+      "color": "Red",
+      "stars": 3,
+      "price": 70.41000366210938,
+      "dot_date": "2026-08-03",
+      "event_date": "2026-08-03",
+      "bars_ago": 1
+    },
+    {
+      "ticker": "ES",
+      "color": "Red",
+      "stars": 3,
+      "price": 74.69000244140625,
+      "dot_date": "2026-07-27",
+      "event_date": "2026-07-27",
+      "bars_ago": 2
+    },
+    {
+      "ticker": "KMB",
+      "color": "Red",
+      "stars": 4,
+      "price": 108.4800033569336,
+      "dot_date": "2026-07-20",
+      "event_date": "2026-07-20",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "RVTY",
+      "color": "Red",
+      "stars": 3,
+      "price": 106.44000244140625,
+      "dot_date": "2026-07-20",
+      "event_date": "2026-07-20",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "AVB",
+      "color": "Red",
+      "stars": 3,
+      "price": 191.83999633789062,
+      "dot_date": "2026-07-20",
+      "event_date": "2026-07-20",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "EQR",
+      "color": "Red",
+      "stars": 3,
+      "price": 68.80000305175781,
+      "dot_date": "2026-07-20",
+      "event_date": "2026-07-20",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "ILMN",
+      "color": "Red",
+      "stars": 3,
+      "price": 190.0500030517578,
+      "dot_date": "2026-07-13",
+      "event_date": "2026-07-13",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "FHN",
+      "color": "Red",
+      "stars": 3,
+      "price": 25.81999969482422,
+      "dot_date": "2026-07-13",
+      "event_date": "2026-07-13",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "AAL",
+      "color": "Red",
+      "stars": 3,
+      "price": 16.309999465942383,
+      "dot_date": "2026-07-13",
+      "event_date": "2026-07-13",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "LIN",
+      "color": "Red",
+      "stars": 3,
+      "price": 524.0599975585938,
+      "dot_date": "2026-07-13",
+      "event_date": "2026-07-13",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "CPT",
+      "color": "Red",
+      "stars": 3,
+      "price": 114.19000244140625,
+      "dot_date": "2026-07-13",
+      "event_date": "2026-07-13",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "UDR",
+      "color": "Red",
+      "stars": 3,
+      "price": 40.03639221191406,
+      "dot_date": "2026-07-13",
+      "event_date": "2026-07-13",
+      "bars_ago": 4
+    }
+  ]
+}
