@@ -1,21 +1,23 @@
-name: Detect New Over Kill Shorts
+name: OverKill Shorts — Detect + Extract
 
 on:
   schedule:
+    # Once daily now (was twice, detect-only) -- the pipeline is now fully
+    # automated end-to-end (detect -> fetch transcript -> Claude extracts
+    # picks -> writes straight into data/overkill_shorts.json), so there's
+    # no human review step left to prompt twice a day for. One morning run
+    # before market open covers whatever the channel posted since the last run.
     # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
-    # 8:00 AM CDT = 13:00 UTC
-    - cron: "0 13 * * *"
-    # 7:00 PM CDT = 00:00 UTC (next day)
-    - cron: "0 0 * * *"
+    # 7:00 AM CDT = 12:00 UTC
+    - cron: "0 12 * * *"
     # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
-    # 8:00 AM CST = 14:00 UTC   ← uncomment these and remove CDT lines in Nov
-    # - cron: "0 14 * * *"
-    # 7:00 PM CST = 01:00 UTC (next day)
-    # - cron: "0 1 * * *"
-  workflow_dispatch:          # Manual trigger from GitHub Actions UI
+    # 7:00 AM CST = 13:00 UTC   ← uncomment this and remove the CDT line in Nov
+    # - cron: "0 13 * * *"
+  workflow_dispatch:          # Manual trigger from GitHub Actions UI, or the
+                               # "Refresh Now" button on the OverKill Shorts tab
 
 permissions:
-  contents: write          # allow the bot to commit + push refreshed picks
+  contents: write          # allow the bot to commit + push extracted picks
 
 # Prevent overlapping runs from duplicate cron fires.
 concurrency:
@@ -24,7 +26,7 @@ concurrency:
 
 jobs:
   refresh:
-    name: Detect new Over Kill Shorts
+    name: Detect + extract new OverKill Shorts
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -41,27 +43,31 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install requests
+          # youtube-transcript-api pinned below 1.0 -- that release changed its
+          # public API (classmethod -> instance-based), and this runs unattended
+          # so an unpinned upgrade could silently break the fetch step.
+          pip install requests "youtube-transcript-api<1.0" anthropic
 
-      - name: Run detection script
+      - name: Run detection + extraction script
         env:
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-        run: python scripts/refresh_overkill_shorts.py
+          YOUTUBE_API_KEY:    ${{ secrets.YOUTUBE_API_KEY }}
+          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/overkill_shorts_scan.py
 
-      - name: Commit pending list
+      - name: Commit updated picks + pending list
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/overkill_pending.json
+          git add data/overkill_shorts.json data/overkill_pending.json
           if git diff --cached --quiet; then
-            echo "Nothing to commit — pending list unchanged."
+            echo "Nothing to commit — no new videos this run."
           else
-            git commit -m "Update Over Kill pending list $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git commit -m "Update OverKill Shorts $(date -u +'%Y-%m-%d %H:%M UTC')"
 
             if git pull --rebase -X ours origin main; then
               git push origin main
             else
-              echo "Rebase conflict could not be auto-resolved; force-pushing pending list."
+              echo "Rebase conflict could not be auto-resolved; force-pushing."
               git rebase --abort
               git push --force-with-lease origin main
             fi

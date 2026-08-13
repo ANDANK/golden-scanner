@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """
-scripts/refresh_overkill_shorts.py — Detect new Over Kill Shorts (semi-auto).
+scripts/refresh_overkill_shorts.py — video-listing library for OverKill Shorts.
 
-Called by GitHub Actions twice daily. Lists the @overkilltrading channel's
-newest YouTube Shorts via the official YouTube Data API, compares against
-what's already captured in data/overkill_shorts.json, and writes any new
-candidates to data/overkill_pending.json for a human (or Claude, on request)
-to review and turn into structured picks.
+No longer scheduled on its own — scripts/overkill_shorts_scan.py (the full
+detect -> fetch transcript -> Claude-extract pipeline, run daily by
+.github/workflows/refresh_overkill.yml) imports get_uploads_playlist_id(),
+list_recent_videos(), CHANNEL_ID, and _CRYPTO_TITLE_RE from this file rather
+than duplicating them. Kept as a standalone, runnable script too (below)
+purely as a manual debug tool — running it directly still does the old
+detect-only behavior (writes candidates to data/overkill_pending.json,
+no transcript/extraction), useful for checking what the channel has posted
+without touching data/overkill_shorts.json.
 
-This does NOT auto-pull transcripts or extract picks. An earlier version
-used yt-dlp to fetch auto-captions, but YouTube blocks that wholesale from
-GitHub Actions' shared IP ranges ("Sign in to confirm you're not a bot") —
-that check is IP-reputation based, not something a different yt-dlp client
-flag can route around. The official Data API call here is unaffected since
-it's a normal authenticated API request, not scraping.
+Lists the @overkilltrading channel's newest YouTube Shorts via the official
+YouTube Data API and compares against what's already captured in
+data/overkill_shorts.json. The official Data API call here is a normal
+authenticated request, not scraping, so it's unaffected by the bot-check
+that blocks yt-dlp-based video/transcript pulls from GitHub Actions'
+shared IP ranges (see overkill_shorts_scan.py's docstring for that history).
 
 Requires env var: YOUTUBE_API_KEY.
 

@@ -1647,12 +1647,15 @@ def _render_overkill_trigger():
 
 
 def _render_overkill_pending():
-    """Semi-auto model: the GitHub Action only detects new Shorts (via the
-    official YouTube API — reliable) and lists them here. Pulling transcripts
-    and extracting picks is done on request in a Claude session, since
-    yt-dlp gets blocked wholesale by YouTube's bot-check from GitHub Actions'
-    shared IPs ('Sign in to confirm you're not a bot' — IP-reputation based,
-    not fixable by spoofing a different yt-dlp client)."""
+    """The GitHub Action (scripts/overkill_shorts_scan.py) detects new Shorts,
+    fetches each transcript, and asks Claude to extract picks automatically --
+    this list is now the FAILURE fallback, not the normal path: a video lands
+    here only when the transcript couldn't be fetched (no captions, or
+    blocked) or Claude found no clear ticker calls in it. (An earlier
+    version tried yt-dlp for transcripts and got blocked wholesale by
+    YouTube's bot-check on GitHub Actions' shared IPs -- the current
+    approach uses a lighter, different fetch method that doesn't share that
+    exact failure mode, though it isn't guaranteed either.)"""
     path = os.path.join(DATA_DIR, "overkill_pending.json")
     try:
         with open(path, encoding="utf-8") as f:
@@ -1672,11 +1675,11 @@ def _render_overkill_pending():
         f'<div style="background:{_rgba(GOLD, 0.08)};border:1px solid {GOLD}44;border-radius:10px;'
         f'padding:12px 16px;margin:4px 0 14px">'
         f'<div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:6px">'
-        f'🕒 {len(pending)} new Short(s) detected, not yet analyzed</div>'
+        f'🕒 {len(pending)} Short(s) couldn\'t be auto-analyzed</div>'
         f'<ul style="margin:0;padding-left:18px;font-size:12px">{items}</ul>'
         f'<div style="color:{TEXT_MUTED};font-size:10.5px;margin-top:8px">'
-        f'Ask Claude to pull picks for these — automatic extraction is blocked by '
-        f'YouTube\'s bot-check on GitHub Actions.</div></div>',
+        f'Transcript unavailable or no clear ticker call found — ask Claude to pull picks '
+        f'for these manually if needed.</div></div>',
         unsafe_allow_html=True,
     )
 
@@ -1749,8 +1752,9 @@ def _render_overkill_tab():
         f'<thead><tr>{hdr}</tr></thead><tbody>{rows}</tbody></table></div>',
         unsafe_allow_html=True,
     )
-    st.caption("One row per pick across all captured days. New-video detection runs twice daily "
-               "(~8am/7pm CT) via GitHub Actions — pending ones needing analysis show above. "
+    st.caption("One row per pick across all captured days. Detection + auto-extraction (Claude reads "
+               "the transcript) runs once daily (~7am CT) via GitHub Actions. Any video where the "
+               "transcript couldn't be fetched shows pending above instead of being silently dropped. "
                "Hit “Refresh Now” to check for new Shorts on demand.")
 
 
