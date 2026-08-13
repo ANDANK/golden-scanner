@@ -41,6 +41,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # Temporary diagnostic -- confirms what public IP the runner SERVICE
+      # actually sees (not necessarily the same as what your browser shows,
+      # if e.g. a VPN only applies to your interactive session). Safe to
+      # remove once the IP-block question is settled.
+      - name: What IP does the runner see?
+        run: |
+          (Invoke-WebRequest -Uri "https://api.ipify.org" -UseBasicParsing).Content
+
       # No actions/setup-python step: its bundled Windows installer failed
       # on this self-hosted runner ("Error happened during Python
       # installation", no further detail given). Self-hosted runners
