@@ -1822,7 +1822,7 @@ _SECTOR_CANDIDATES = {
 
 @st.cache_data(ttl=14400, show_spinner=False)   # 4h -- "which names lead the sector" moves
 def _sector_leaders() -> dict:                  # slower than the live RS quadrant, no need to refresh every 30 min
-    """For each real GICS sector ETF, up to 5 candidate tickers currently
+    """For each real GICS sector ETF, up to 10 candidate tickers currently
     beating THAT SECTOR'S OWN ETF (63d RS vs the ETF, not vs SPY -- a
     different question than the sector-vs-market table: "which names are
     leading the sector" rather than "is the sector leading the market").
@@ -1970,7 +1970,8 @@ def _render_sectors():
         f'🚪 AVOID: </span>{sell_chips}</div></div>'
         f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:8px">Bars diverge from the '
         f'center line (= SPY): green/blue = leading/improving · gold/red = weakening/lagging. '
-        f'▲ = momentum accelerating (21d RS &gt; 63d) · 💰 = dollar-volume surge ≥1.15×. '
+        f'▲ = momentum accelerating (last 21d edge vs SPY running ahead of its own '
+        f'63d average pace) · 💰 = dollar-volume surge ≥1.15×. '
         f'Flows show up in price × volume before headlines. Signal spells out the '
         f'quadrant + momentum in plain English. Leaders = up to 10 names (best first), currently beating '
         f'THAT SECTOR\'S own ETF (not just SPY), preferring ones that aren\'t already '
