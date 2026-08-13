@@ -43,10 +43,14 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          # youtube-transcript-api pinned below 1.0 -- that release changed its
-          # public API (classmethod -> instance-based), and this runs unattended
-          # so an unpinned upgrade could silently break the fetch step.
-          pip install requests "youtube-transcript-api<1.0" anthropic
+          # youtube-transcript-api pinned to the 1.x line, NOT <1.0 -- an
+          # earlier version of this workflow pinned <1.0 to keep the old
+          # get_transcript() classmethod API, but that old version returns
+          # a false "subtitles are disabled" against YouTube's current
+          # backend (confirmed: identical video IDs fetch fine on 1.2.4,
+          # fail on 0.6.3). Capped below 2.0 so a future breaking major
+          # version doesn't silently break this unattended job.
+          pip install requests "youtube-transcript-api>=1.0,<2.0" anthropic
 
       - name: Run detection + extraction script
         env:

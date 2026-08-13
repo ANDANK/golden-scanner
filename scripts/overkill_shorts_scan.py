@@ -14,10 +14,17 @@ earlier version tried yt-dlp for transcripts and got blocked wholesale by
 YouTube's bot-check from GitHub Actions' shared IPs ("Sign in to confirm
 you're not a bot" — IP-reputation based). youtube-transcript-api hits a
 different, lighter endpoint (the public caption/timedtext API, not a full
-video-extraction pipeline), so it has a real chance of not sharing that
-exact failure mode — but this is NOT guaranteed until proven by an actual
-scheduled run from GitHub Actions, which is the whole reason the code
-below still has a fallback path.
+video-extraction pipeline), so it was a reasonable bet not to share that
+exact failure mode. First real run confirmed it wasn't: a v0.6.3 pin
+(kept to preserve the old get_transcript() classmethod) returned a false
+"subtitles are disabled" for every single video, while the current 1.x
+API (YouTubeTranscriptApi().fetch(...)) retrieves the exact same videos'
+captions fine from a completely different network — an outdated library
+version talking to YouTube's current backend, not an IP block at all.
+Fixed by moving to the 1.x API and dropping the version pin below 1.0.
+The fallback path below stays regardless, since transcript fetches can
+still fail for legitimate reasons (captions actually off, a transient
+error) even with the right library version.
 
 Successfully-extracted picks are written directly into
 data/overkill_shorts.json (no human review step). Any video where the
@@ -98,11 +105,19 @@ def fetch_transcript(video_id: str) -> str | None:
     """Best-effort caption text for a video. Returns None if unavailable —
     no captions, captions disabled, or the fetch itself fails/gets blocked.
     Pulls whatever caption track YouTube offers (manual or auto-generated);
-    doesn't distinguish, since this channel has captions on either way."""
+    doesn't distinguish, since this channel has captions on either way.
+
+    Uses the modern instance-based API (YouTubeTranscriptApi().fetch(...)),
+    not the old get_transcript() classmethod -- confirmed by direct
+    side-by-side test that the classmethod path (via a <1.0 pin) returns a
+    false "subtitles are disabled" for videos that DO have captions,
+    while fetch() on the current library version retrieves them fine for
+    the exact same video IDs. Not a GitHub Actions IP-block after all --
+    an outdated library version talking to YouTube's current backend."""
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
-        segments = YouTubeTranscriptApi.get_transcript(video_id)
-        text = " ".join(seg["text"] for seg in segments).strip()
+        result = YouTubeTranscriptApi().fetch(video_id)
+        text = " ".join(seg.text for seg in result).strip()
         return text or None
     except Exception as e:
         log(f"  transcript unavailable for {video_id}: {e}")
