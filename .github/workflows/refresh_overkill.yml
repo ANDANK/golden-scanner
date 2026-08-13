@@ -7,12 +7,19 @@ on:
     # picks -> writes straight into data/overkill_shorts.json), so there's
     # no human review step left to prompt twice a day for. One morning run
     # before market open covers whatever the channel posted since the last run.
+    # Deliberately :17, not :00 -- GitHub's cron is best-effort and drops or
+    # delays runs under load, and the top of the hour is by far its most
+    # contended slot. The first 12:00 UTC firing after this schedule was
+    # added never dispatched at all (runner was online and idle; no job ever
+    # reached it), which is the classic symptom. An odd minute avoids the
+    # stampede. Exact timing doesn't matter here -- it just needs to land
+    # before the market opens.
     # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
-    # 7:00 AM CDT = 12:00 UTC
-    - cron: "0 12 * * *"
+    # 7:17 AM CDT = 12:17 UTC
+    - cron: "17 12 * * *"
     # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
-    # 7:00 AM CST = 13:00 UTC   ← uncomment this and remove the CDT line in Nov
-    # - cron: "0 13 * * *"
+    # 7:17 AM CST = 13:17 UTC   ← uncomment this and remove the CDT line in Nov
+    # - cron: "17 13 * * *"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI, or the
                                # "Refresh Now" button on the OverKill Shorts tab
 
@@ -78,6 +85,11 @@ jobs:
         env:
           YOUTUBE_API_KEY:  ${{ secrets.YOUTUBE_API_KEY }}
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          # Python 3.14 on Windows still encodes stdout with the locale
+          # codepage (cp1252), so em-dashes etc. in log messages arrive in
+          # the Actions log as mojibake. Force UTF-8 rather than restricting
+          # log text -- ticker notes from the transcripts aren't ASCII either.
+          PYTHONIOENCODING: utf-8
         run: |
           & "C:\Users\llcai\AppData\Local\Programs\Python\Python314\python.exe" scripts\overkill_shorts_scan.py
 
