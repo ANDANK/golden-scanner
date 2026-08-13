@@ -1826,10 +1826,11 @@ def _sector_leaders() -> dict:                  # slower than the live RS quadra
     beating THAT SECTOR'S OWN ETF (63d RS vs the ETF, not vs SPY -- a
     different question than the sector-vs-market table: "which names are
     leading the sector" rather than "is the sector leading the market").
-    Prefers names that aren't already extended (RSI>68 or >6% above EMA9 --
-    the same 'extended' threshold scanners/sector_rotation.py already uses
-    for its own trade ideas) so the list isn't just whatever ran hardest;
-    falls back to extended names only if fewer than 10 clean ones qualify."""
+
+    Returns {etf: [(ticker, extended), ...]} ranked purely by RS, strongest
+    first. `extended` (RSI>68 or >6% above EMA9 -- the same threshold
+    scanners/sector_rotation.py uses for its own trade ideas) is passed
+    through for display rather than used to reorder; see the note below."""
     all_tickers = sorted({t for cands in _SECTOR_CANDIDATES.values() for t in cands}
                          | set(_SECTOR_CANDIDATES.keys()))
     prefetch_tickers(all_tickers, "6mo", "1d")
@@ -1857,13 +1858,18 @@ def _sector_leaders() -> dict:                  # slower than the live RS quadra
                 scored.append((t, rs, extended))
             except Exception:
                 continue
-        # Sorted by RS descending BEFORE the clean/chasey split, so within each
-        # group the strongest name stays leftmost; clean (non-extended) names
-        # always precede chasey (extended) ones -- best overall on the left.
+        # Pure RS ranking -- strongest first, extended or not. The previous
+        # ordering placed every non-extended name ahead of every extended one,
+        # which reads like a mild preference but measured out as total
+        # exclusion: clean counts run 11-15 per sector, always at or above the
+        # 10-name cap, so no extended name EVER surfaced -- 15 of them were
+        # invisible across the table, including MSFT/ORCL/INTU/ACN in Tech.
+        # They're extended *because* they're leading, so a column headed
+        # "Leaders" was systematically hiding the leaders. Rank on merit now
+        # and pass `extended` through for the caller to mark, keeping
+        # leadership and entry quality as the two separate questions they are.
         scored.sort(key=lambda x: -x[1])
-        clean = [t for t, _rs, ext in scored if not ext]
-        chasey = [t for t, _rs, ext in scored if ext]
-        out[etf] = (clean + chasey)[:10]
+        out[etf] = [(t, ext) for t, _rs, ext in scored[:10]]
     return out
 
 
@@ -1894,15 +1900,29 @@ def _render_sectors():
 
     ranked = sorted(rows, key=lambda r: -r["rs63"])
     max_dev = max((abs(r["rs63"] - 1) for r in ranked), default=0.01) or 0.01
-    GRID = "grid-template-columns:132px 132px 50px 24px 58px 62px 150px 480px"
+    GRID = "grid-template-columns:132px 100px 48px 76px 92px 60px 152px 430px"
     leaders_by_etf = _sector_leaders()
+
+    # Momentum as a readable percentage rather than a bare ratio difference:
+    # "-3.1%" says how far last month's edge ran behind the 3-month pace,
+    # where "-0.0306" says nothing to a reader. The ratio and difference forms
+    # were checked against live data and classify all 15 rows identically, so
+    # this is purely a units change. Computed up here because the FOCUS chips
+    # rank on it too.
+    for r in ranked:
+        r["mom_pct"] = (r["rs21"] / r["rs63"] ** (21 / 63) - 1) * 100
+        # rs21 drives the quadrant but was never displayed anywhere -- shown
+        # now as the "vs SPY" line. Ratio-excess rather than a plain
+        # percentage-point subtraction, to stay consistent with the RS column
+        # and the quadrant; measured max divergence between the two is 0.24pp.
+        r["vs_spy"] = (r["rs21"] - 1) * 100
 
     bar_rows = ""
     for r in ranked:
         col = q_col.get(r["quad"], TEXT_MUTED)
         dev = r["rs63"] - 1.0
-        w = min(abs(dev) / max_dev * 58, 58)
-        left = 62 if dev >= 0 else 62 - w
+        w = min(abs(dev) / max_dev * 46, 46)
+        left = 48 if dev >= 0 else 48 - w
         bar = (f'<div style="position:absolute;left:{left:.0f}px;top:0;bottom:0;'
                f'width:{max(w,1):.0f}px;background:{col};border-radius:3px;opacity:0.9"></div>')
         # rs21 and rs63 are CUMULATIVE ratios over different horizons, so
@@ -1915,14 +1935,28 @@ def _render_sectors():
         # same footing -- last month's edge vs the average monthly edge over
         # three months -- which drops that correlation to -0.39 (the remainder
         # is real: sectors that have run hard do tend to cool off).
-        mom = r["rs21"] - r["rs63"] ** (21 / 63)
-        if mom > 0.005:
+        mom_pct = r["mom_pct"]
+        if mom_pct > 0.5:
             m_arrow, m_col = "▲", ACCENT_GREEN
-        elif mom < -0.005:
+        elif mom_pct < -0.5:
             m_arrow, m_col = "▼", ACCENT_RED
         else:
             m_arrow, m_col = "▬", TEXT_MUTED
+        mom_cell = (f'<span style="color:{m_col};font-family:\'DM Mono\',monospace;'
+                    f'font-size:11px;font-weight:600">{m_arrow} {mom_pct:+.1f}%</span>')
+
+        # Absolute return on top, market-relative underneath. The absolute
+        # number alone was the page's biggest source of confusion -- a sector
+        # can be up 6% and still be losing ground if SPY is up more, which is
+        # what every other column on the row is actually measuring.
         ret = r["ret1m"]; ret_col = ACCENT_GREEN if ret >= 0 else ACCENT_RED
+        vs_col = ACCENT_GREEN if r["vs_spy"] >= 0 else ACCENT_RED
+        ret_cell = (f'<span style="line-height:1.2;display:block">'
+                    f'<span style="color:{ret_col};font-family:\'DM Mono\',monospace;'
+                    f'font-size:11px;font-weight:600">{ret:+.1f}%</span><br>'
+                    f'<span style="color:{vs_col};font-family:\'DM Mono\',monospace;'
+                    f'font-size:9px;opacity:0.9">{r["vs_spy"]:+.1f}% vs SPY</span></span>')
+
         if r["flow"] >= 1.15:
             flow_badge = f'<span style="color:{GOLD};font-size:10px;font-weight:700">💰{r["flow"]:.1f}x</span>'
         else:
@@ -1930,10 +1964,18 @@ def _render_sectors():
         name = str(r["name"])[:12]
         signal_txt = _plain_signal(r["quad"], m_arrow)
         signal_cell = f'<span style="color:{col};font-size:11px;font-weight:600">{signal_txt}</span>'
-        leader_tickers = leaders_by_etf.get(r["tkr"], [])
-        leaders_cell = (f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;'
+
+        # Extended names shown in gold with a degree mark rather than demoted:
+        # colour and symbol both, so the distinction survives a colour-blind
+        # reader and a grayscale screenshot alike.
+        leader_pairs = leaders_by_etf.get(r["tkr"], [])
+        leaders_cell = (f'<span style="font-family:\'DM Mono\',monospace;'
                         f'font-size:10.5px;white-space:nowrap">'
-                        + ", ".join(leader_tickers) + "</span>") if leader_tickers else \
+                        + ", ".join(
+                            f'<span style="color:{GOLD}">{t}°</span>' if ext
+                            else f'<span style="color:{TEXT_PRIMARY}">{t}</span>'
+                            for t, ext in leader_pairs)
+                        + "</span>") if leader_pairs else \
                        f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>'
         bar_rows += (
             f'<div style="display:grid;{GRID};align-items:center;gap:6px;padding:3px 0;'
@@ -1942,40 +1984,60 @@ def _render_sectors():
             + f'font-weight:700">' + q_ic.get(r["quad"], "") + " " + str(r["tkr"])
             + f'<span style="color:{TEXT_MUTED};font-weight:400"> ' + name + "</span></span>"
             + f'<div style="position:relative;height:12px;background:#2A2A3A33;border-radius:3px">'
-            + f'<div style="position:absolute;left:62px;top:-2px;bottom:-2px;width:1px;'
+            + f'<div style="position:absolute;left:48px;top:-2px;bottom:-2px;width:1px;'
             + f'background:{TEXT_MUTED}66"></div>' + bar + "</div>"
             + f'<span style="color:{col};font-family:\'DM Mono\',monospace;font-size:11px;'
             + f'font-weight:700">' + "{:.3f}".format(r["rs63"]) + "</span>"
-            + f'<span style="color:{m_col};font-size:11px">' + m_arrow + "</span>"
-            + f'<span style="color:{ret_col};font-family:\'DM Mono\',monospace;font-size:11px">'
-            + "{:+.1f}%".format(ret) + "</span>"
+            + mom_cell + ret_cell
             + flow_badge + signal_cell + leaders_cell + "</div>"
         )
 
     header = (f'<div style="display:grid;{GRID};gap:6px;padding:0 0 4px;color:{TEXT_MUTED};'
               f'font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">'
-              f'<span>Sector</span><span>RS vs SPY 63d</span><span>RS</span><span>Mom</span>'
-              f'<span>1M</span><span>Flow</span><span>Signal</span><span>Leaders (RS vs sector)</span></div>')
+              f'<span>Sector</span><span>3-Mo vs SPY</span><span>RS 63d</span>'
+              f'<span>Momentum</span><span>1-Mo Return</span><span>Activity</span>'
+              f'<span>What It Means</span><span>Sector Leaders (° = extended)</span></div>')
 
-    buys  = [r for r in ranked if r["quad"] in ("Leading", "Improving")][:4]
+    # Leaders and emerging names are two different trades, so they get two
+    # different chip rows. Previously both shared one list ranked by RS63,
+    # which structurally buried the emerging ones -- an early-rotation sector
+    # is defined by having a LOW RS63, so ranking that group by RS63 promotes
+    # whichever is closest to already-leading and drops the sharpest turns.
+    # GLD is the live example: strongest momentum on the board and the only
+    # elevated Activity reading, yet absent from the old FOCUS chips entirely.
+    core  = [r for r in ranked if r["quad"] == "Leading"][:4]
+    early = sorted([r for r in ranked if r["quad"] == "Improving"],
+                   key=lambda r: -r["mom_pct"])[:4]
     sells = sorted([r for r in ranked if r["quad"] in ("Lagging", "Weakening")],
                    key=lambda r: r["rs63"])[:4]
-    buy_chips  = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_GREEN) for r in buys) or "—"
-    sell_chips = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_RED) for r in sells) or "—"
+    core_chips  = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_GREEN) for r in core) or "—"
+    early_chips = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_BLUE) for r in early) or "—"
+    sell_chips  = " ".join(_chip(r["tkr"] + " " + r["name"], ACCENT_RED) for r in sells) or "—"
     summary = (
         f'<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">'
         f'<div style="font-size:11px"><span style="color:{ACCENT_GREEN};font-weight:800">'
-        f'💰 FOCUS: </span>{buy_chips}</div>'
+        f'💰 CORE LEADERS: </span>{core_chips}'
+        f'<span style="color:{TEXT_MUTED};font-size:9px"> &nbsp;already strong and still ahead</span></div>'
+        f'<div style="font-size:11px"><span style="color:{ACCENT_BLUE};font-weight:800">'
+        f'📈 EARLY ROTATION: </span>{early_chips}'
+        f'<span style="color:{TEXT_MUTED};font-size:9px"> &nbsp;still behind, but turning up fastest</span></div>'
         f'<div style="font-size:11px"><span style="color:{ACCENT_RED};font-weight:800">'
-        f'🚪 AVOID: </span>{sell_chips}</div></div>'
-        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:8px">Bars diverge from the '
-        f'center line (= SPY): green/blue = leading/improving · gold/red = weakening/lagging. '
-        f'▲ = momentum accelerating (last 21d edge vs SPY running ahead of its own '
-        f'63d average pace) · 💰 = dollar-volume surge ≥1.15×. '
-        f'Flows show up in price × volume before headlines. Signal spells out the '
-        f'quadrant + momentum in plain English. Leaders = up to 10 names (best first), currently beating '
-        f'THAT SECTOR\'S own ETF (not just SPY), preferring ones that aren\'t already '
-        f'extended (RSI&gt;68 or &gt;6% above EMA9) — updates every 4h, not live. '
+        f'🚪 AVOID: </span>{sell_chips}'
+        f'<span style="color:{TEXT_MUTED};font-size:9px"> &nbsp;weakest relative strength</span></div></div>'
+        f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:8px;line-height:1.5">'
+        f'<b>3-Mo vs SPY</b> — bar diverges from the centre line (= SPY): green/blue = '
+        f'leading/improving · gold/red = weakening/lagging. <b>RS 63d</b> is that same figure '
+        f'as a ratio (1.10 = beat SPY by ~10% over three months). '
+        f'<b>Momentum</b> compares the last month\'s edge over SPY against its own 3-month '
+        f'average pace, so ▲ means genuinely picking up speed, not merely still winning. '
+        f'<b>1-Mo Return</b> shows the sector\'s own move, with its market-relative result '
+        f'beneath — a sector can rise and still lose ground when SPY rises more. '
+        f'<b>Activity</b> is 5-day vs 63-day dollar volume (💰 ≥1.15×): it measures how much '
+        f'is trading, <b>not</b> whether that is buying or selling. '
+        f'<b>Leaders</b> = up to 10 names beating THAT SECTOR\'S own ETF (not just SPY), '
+        f'strongest first; <span style="color:{GOLD}">gold°</span> = already extended '
+        f'(RSI&gt;68 or &gt;6% above EMA9), i.e. leading but not an easy entry. '
+        f'Leaders update every 4h, the rest every 30 min. '
         f'QQQ/IWM/GLD/TLT have no leaders list (not a stock sector).</div>'
     )
 
