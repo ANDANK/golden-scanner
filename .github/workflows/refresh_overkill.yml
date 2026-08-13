@@ -41,11 +41,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
+      # No actions/setup-python step: its bundled Windows installer failed
+      # on this self-hosted runner ("Error happened during Python
+      # installation", no further detail given). Self-hosted runners
+      # already have whatever's installed on the machine -- unlike
+      # ephemeral GitHub-hosted runners, there's no need to provision
+      # Python fresh each run. Confirmed Python 3.14 + working pip already
+      # on PATH here, well above this script's 3.10+ requirement (it uses
+      # `X | None` union type hints).
 
       - name: Install dependencies
         run: |
