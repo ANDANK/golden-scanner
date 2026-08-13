@@ -1900,7 +1900,7 @@ def _render_sectors():
 
     ranked = sorted(rows, key=lambda r: -r["rs63"])
     max_dev = max((abs(r["rs63"] - 1) for r in ranked), default=0.01) or 0.01
-    GRID = "grid-template-columns:132px 100px 48px 76px 92px 60px 152px 430px"
+    GRID = "grid-template-columns:132px 100px 48px 76px 70px 72px 60px 152px 356px"
     leaders_by_etf = _sector_leaders()
 
     # Momentum as a readable percentage rather than a bare ratio difference:
@@ -1945,17 +1945,19 @@ def _render_sectors():
         mom_cell = (f'<span style="color:{m_col};font-family:\'DM Mono\',monospace;'
                     f'font-size:11px;font-weight:600">{m_arrow} {mom_pct:+.1f}%</span>')
 
-        # Absolute return on top, market-relative underneath. The absolute
-        # number alone was the page's biggest source of confusion -- a sector
-        # can be up 6% and still be losing ground if SPY is up more, which is
-        # what every other column on the row is actually measuring.
+        # Absolute return and market-relative return as SEPARATE columns, not
+        # stacked in one cell. Same two numbers either way, but stacking made
+        # every row double-height (15 rows of it) and left the relative figure
+        # unreadable down the column, which is exactly how you'd want to scan
+        # it. The absolute number alone was the page's biggest source of
+        # confusion -- a sector can be up 6% and still be losing ground when
+        # SPY is up more, which is what every other column here measures.
         ret = r["ret1m"]; ret_col = ACCENT_GREEN if ret >= 0 else ACCENT_RED
         vs_col = ACCENT_GREEN if r["vs_spy"] >= 0 else ACCENT_RED
-        ret_cell = (f'<span style="line-height:1.2;display:block">'
-                    f'<span style="color:{ret_col};font-family:\'DM Mono\',monospace;'
-                    f'font-size:11px;font-weight:600">{ret:+.1f}%</span><br>'
-                    f'<span style="color:{vs_col};font-family:\'DM Mono\',monospace;'
-                    f'font-size:9px;opacity:0.9">{r["vs_spy"]:+.1f}% vs SPY</span></span>')
+        ret_cell = (f'<span style="color:{ret_col};font-family:\'DM Mono\',monospace;'
+                    f'font-size:11px;font-weight:600">{ret:+.1f}%</span>')
+        vs_cell = (f'<span style="color:{vs_col};font-family:\'DM Mono\',monospace;'
+                   f'font-size:11px;font-weight:600">{r["vs_spy"]:+.1f}%</span>')
 
         if r["flow"] >= 1.15:
             flow_badge = f'<span style="color:{GOLD};font-size:10px;font-weight:700">💰{r["flow"]:.1f}x</span>'
@@ -1988,14 +1990,15 @@ def _render_sectors():
             + f'background:{TEXT_MUTED}66"></div>' + bar + "</div>"
             + f'<span style="color:{col};font-family:\'DM Mono\',monospace;font-size:11px;'
             + f'font-weight:700">' + "{:.3f}".format(r["rs63"]) + "</span>"
-            + mom_cell + ret_cell
+            + mom_cell + ret_cell + vs_cell
             + flow_badge + signal_cell + leaders_cell + "</div>"
         )
 
     header = (f'<div style="display:grid;{GRID};gap:6px;padding:0 0 4px;color:{TEXT_MUTED};'
               f'font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">'
               f'<span>Sector</span><span>3-Mo vs SPY</span><span>RS 63d</span>'
-              f'<span>Momentum</span><span>1-Mo Return</span><span>Activity</span>'
+              f'<span>Momentum</span><span>1-Mo Return</span><span>1-Mo vs SPY</span>'
+              f'<span>Activity</span>'
               f'<span>What It Means</span><span>Sector Leaders (° = extended)</span></div>')
 
     # Leaders and emerging names are two different trades, so they get two
@@ -2030,8 +2033,9 @@ def _render_sectors():
         f'as a ratio (1.10 = beat SPY by ~10% over three months). '
         f'<b>Momentum</b> compares the last month\'s edge over SPY against its own 3-month '
         f'average pace, so ▲ means genuinely picking up speed, not merely still winning. '
-        f'<b>1-Mo Return</b> shows the sector\'s own move, with its market-relative result '
-        f'beneath — a sector can rise and still lose ground when SPY rises more. '
+        f'<b>1-Mo Return</b> is the sector\'s own move; <b>1-Mo vs SPY</b> is that same '
+        f'month measured against the market — a sector can rise and still lose ground '
+        f'when SPY rises more, which is what the rest of this table is measuring. '
         f'<b>Activity</b> is 5-day vs 63-day dollar volume (💰 ≥1.15×): it measures how much '
         f'is trading, <b>not</b> whether that is buying or selling. '
         f'<b>Leaders</b> = up to 10 names beating THAT SECTOR\'S own ETF (not just SPY), '
