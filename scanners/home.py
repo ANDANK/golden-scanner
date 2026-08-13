@@ -1873,18 +1873,30 @@ def _sector_leaders() -> dict:                  # slower than the live RS quadra
     return out
 
 
+# Every quadrant spells out all three momentum states explicitly. The
+# previous form only special-cased ▲ in three of the four quadrants and let
+# ▬ fall through to the ▼ wording, so a sector sitting flat was told it was
+# "Underperforming" or "Losing Steam" -- a directional claim the data
+# doesn't support. XLB at ▬ -0.0% reading "Avoid — Underperforming" was the
+# case that surfaced it. Flat now says flat.
+_SIGNAL_TEXT = {
+    "Leading":   {"▲": "Leading & Accelerating",  "▬": "Leading, Steady",
+                  "▼": "Leading but Decelerating"},
+    "Improving": {"▲": "Emerging — Turning Up",   "▬": "Emerging, Steady",
+                  "▼": "Emerging — Stalling"},
+    "Weakening": {"▲": "Weakening, Stabilizing",  "▬": "Weakening, Flat",
+                  "▼": "Weakening — Losing Steam"},
+    "Lagging":   {"▲": "Lagging, Stabilizing",    "▬": "Lagging, Flat",
+                  "▼": "Avoid — Underperforming"},
+}
+
+
 def _plain_signal(quad: str, m_arrow: str) -> str:
     """Plain-English translation of quadrant + momentum-arrow, e.g. 'Leading
     but Decelerating' -- the quadrant answers 'in or out' (Focus/Avoid), the
     arrow answers 'gaining or losing steam', together they tell the whole
     story in one phrase."""
-    if quad == "Leading":
-        return {"▲": "Leading & Accelerating", "▬": "Leading, Steady"}.get(m_arrow, "Leading but Decelerating")
-    if quad == "Improving":
-        return "Emerging — Turning Up" if m_arrow != "▼" else "Improving"
-    if quad == "Weakening":
-        return "Weakening, Stabilizing" if m_arrow == "▲" else "Weakening — Losing Steam"
-    return "Lagging, Stabilizing" if m_arrow == "▲" else "Avoid — Underperforming"
+    return _SIGNAL_TEXT.get(quad, _SIGNAL_TEXT["Lagging"]).get(m_arrow, "—")
 
 
 def _render_sectors():
@@ -1967,16 +1979,27 @@ def _render_sectors():
         signal_txt = _plain_signal(r["quad"], m_arrow)
         signal_cell = f'<span style="color:{col};font-size:11px;font-weight:600">{signal_txt}</span>'
 
-        # Extended names shown in gold with a degree mark rather than demoted:
-        # colour and symbol both, so the distinction survives a colour-blind
-        # reader and a grayscale screenshot alike.
+        # Three states, ranked strictly by RS either way:
+        #   gold + °  extended -- leading, but not an easy entry
+        #   green     the strongest name that ISN'T extended (best entry)
+        #   white     everything else
+        # Whole sectors can run extended at the top (XLE opens MPC°/VLO°/PSX°),
+        # and that is real information worth keeping -- but it buried the
+        # answer to "so what do I actually buy". Colour answers both at once
+        # without a second list or another column. Extended keeps its degree
+        # mark so the distinction survives greyscale and colour-blindness;
+        # green is positional (always exactly one per sector) so it stays
+        # readable from ordering alone.
         leader_pairs = leaders_by_etf.get(r["tkr"], [])
+        first_clean = next((i for i, (_t, ext) in enumerate(leader_pairs) if not ext), None)
         leaders_cell = (f'<span style="font-family:\'DM Mono\',monospace;'
                         f'font-size:10.5px;white-space:nowrap">'
                         + ", ".join(
                             f'<span style="color:{GOLD}">{t}°</span>' if ext
+                            else f'<span style="color:{ACCENT_GREEN};font-weight:700">{t}</span>'
+                            if i == first_clean
                             else f'<span style="color:{TEXT_PRIMARY}">{t}</span>'
-                            for t, ext in leader_pairs)
+                            for i, (t, ext) in enumerate(leader_pairs))
                         + "</span>") if leader_pairs else \
                        f'<span style="color:{TEXT_MUTED};font-size:11px">—</span>'
         bar_rows += (
@@ -2040,7 +2063,9 @@ def _render_sectors():
         f'is trading, <b>not</b> whether that is buying or selling. '
         f'<b>Leaders</b> = up to 10 names beating THAT SECTOR\'S own ETF (not just SPY), '
         f'strongest first; <span style="color:{GOLD}">gold°</span> = already extended '
-        f'(RSI&gt;68 or &gt;6% above EMA9), i.e. leading but not an easy entry. '
+        f'(RSI&gt;68 or &gt;6% above EMA9), i.e. leading but not an easy entry, and '
+        f'<span style="color:{ACCENT_GREEN};font-weight:700">green</span> = the strongest '
+        f'name that isn\'t extended — the pick when the top of a sector has run away. '
         f'Leaders update every 4h, the rest every 30 min. '
         f'QQQ/IWM/GLD/TLT have no leaders list (not a stock sector).</div>'
     )
