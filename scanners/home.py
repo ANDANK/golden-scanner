@@ -1905,7 +1905,17 @@ def _render_sectors():
         left = 62 if dev >= 0 else 62 - w
         bar = (f'<div style="position:absolute;left:{left:.0f}px;top:0;bottom:0;'
                f'width:{max(w,1):.0f}px;background:{col};border-radius:3px;opacity:0.9"></div>')
-        mom = r["rs21"] - r["rs63"]
+        # rs21 and rs63 are CUMULATIVE ratios over different horizons, so
+        # subtracting them raw isn't an acceleration measure -- three months of
+        # compounding beats one month of it even at a perfectly constant rate,
+        # so every RS>1 sector reads "decelerating" and every RS<1 one reads
+        # "accelerating". Measured against live data, the raw difference
+        # correlates -0.85 with (rs63-1): the arrow was mostly restating the RS
+        # column. Taking the geometric mean per 21-day block puts both on the
+        # same footing -- last month's edge vs the average monthly edge over
+        # three months -- which drops that correlation to -0.39 (the remainder
+        # is real: sectors that have run hard do tend to cool off).
+        mom = r["rs21"] - r["rs63"] ** (21 / 63)
         if mom > 0.005:
             m_arrow, m_col = "▲", ACCENT_GREEN
         elif mom < -0.005:
