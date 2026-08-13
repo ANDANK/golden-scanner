@@ -74,27 +74,26 @@ jobs:
           & "C:\Users\llcai\AppData\Local\Programs\Python\Python314\python.exe" scripts\overkill_shorts_scan.py
 
       - name: Commit updated picks + pending list
-        # Explicit bash: this step's script uses bash if/then/fi syntax and
-        # $(...) command substitution. On ubuntu-latest that's the default
-        # shell so it never needed stating -- on this Windows self-hosted
-        # runner the default is PowerShell, which can't parse it at all.
-        # Git for Windows (already required for checkout) ships bash too,
-        # confirmed present, so this works without installing anything new.
-        shell: bash
+        # PowerShell, not bash: `shell: bash` failed with "bash: command not
+        # found" on this runner -- same root cause as the earlier python/pip
+        # PATH issue (the runner service account's PATH doesn't include Git
+        # Bash's location either, even though it's genuinely installed).
+        # Rewritten natively instead of chasing a third tool's PATH.
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/overkill_shorts.json data/overkill_pending.json
-          if git diff --cached --quiet; then
-            echo "Nothing to commit — no new videos this run."
-          else
-            git commit -m "Update OverKill Shorts $(date -u +'%Y-%m-%d %H:%M UTC')"
-
-            if git pull --rebase -X ours origin main; then
-              git push origin main
-            else
-              echo "Rebase conflict could not be auto-resolved; force-pushing."
-              git rebase --abort
-              git push --force-with-lease origin main
-            fi
-          fi
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Nothing to commit -- no new videos this run."
+            exit 0
+          }
+          git commit -m "Update OverKill Shorts $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm')) UTC"
+          git pull --rebase -X ours origin main
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Rebase conflict could not be auto-resolved; force-pushing."
+            git rebase --abort
+            git push --force-with-lease origin main
+          } else {
+            git push origin main
+          }
