@@ -27,7 +27,14 @@ concurrency:
 jobs:
   refresh:
     name: Detect + extract new OverKill Shorts
-    runs-on: ubuntu-latest
+    # Self-hosted, not ubuntu-latest: GitHub-hosted runners sit on Google
+    # Cloud IPs, which YouTube blocks outright from the transcript endpoint
+    # (confirmed directly -- see this workflow's git history). A
+    # self-hosted runner uses a residential IP instead, sidestepping the
+    # block for free instead of paying for a proxy service. Requires a
+    # runner registered against this repo and online at schedule time --
+    # see the setup steps linked from the repo README / ask Claude.
+    runs-on: [self-hosted]
     timeout-minutes: 20
 
     steps:
@@ -54,15 +61,8 @@ jobs:
 
       - name: Run detection + extraction script
         env:
-          YOUTUBE_API_KEY:            ${{ secrets.YOUTUBE_API_KEY }}
-          ANTHROPIC_API_KEY:          ${{ secrets.ANTHROPIC_API_KEY }}
-          # Routes transcript fetches through a Webshare residential proxy --
-          # GitHub Actions runners are on Google Cloud IPs, which YouTube
-          # blocks from the transcript endpoint outright. Without these two
-          # secrets set, every video falls back to data/overkill_pending.json
-          # instead of being auto-extracted (still visible, just not automatic).
-          WEBSHARE_PROXY_USERNAME:    ${{ secrets.WEBSHARE_PROXY_USERNAME }}
-          WEBSHARE_PROXY_PASSWORD:    ${{ secrets.WEBSHARE_PROXY_PASSWORD }}
+          YOUTUBE_API_KEY:    ${{ secrets.YOUTUBE_API_KEY }}
+          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
         run: python scripts/overkill_shorts_scan.py
 
       - name: Commit updated picks + pending list
