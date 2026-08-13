@@ -3,10 +3,15 @@
 # Layout:
 #   ┌─ Market-regime header (Risk-On/Mixed/Off · indices · breadth) ─┐
 #   ├─ Tab 1  🎯 Best Scanners  — the 6 keeper scanners over a universe
-#   ├─ Tab 2  📺 OverKill Shorts — curated watch-list from the YouTube shorts
-#   ├─ Tab 3  🔄 Sector Rotation — RRG-style flows (preserved from the old page)
-#   └─ Tab 4  🔍 Overkill Check — WaveTrend dot + Volume Profile confluence
-#             scan on any user-entered ticker(s) (see scanners/overkill_check.py)
+#   ├─ Tab 2  🔄 Sector Rotation — RRG-style flows (preserved from the old page)
+#   ├─ Tab 3  🔍 Overkill Check — WaveTrend dot + Volume Profile confluence
+#   │         scan on any user-entered ticker(s) (see scanners/overkill_check.py)
+#   ├─ Tab 4  📺 OverKill Shorts — curated watch-list from the YouTube shorts
+#   │         (data/overkill_shorts.json, auto-updated daily by
+#   │         scripts/overkill_shorts_scan.py — see .github/workflows/refresh_overkill.yml)
+#   └─ Tab 5  🎯 OverKill Perf — alert performance tracker (moved here from the
+#             Admin-only nav; see scanners/overkill_performance.py), now visible
+#             to all users, not just admins
 #
 # The Fear & Greed gauge and the whole sidebar live in app.py — untouched here.
 # Backup of the previous command-center page: scanners/home_backup_2026-07-23.py
@@ -28,6 +33,7 @@ from config import *
 from utils import section_header, calc_sma
 from data_loader import get_price_history, get_market_overview, prefetch_tickers
 from scanners import overkill_check
+from scanners import overkill_performance
 from scanners import scan_history
 from scanners.ui_tables import sortable_table_html
 
@@ -1982,12 +1988,8 @@ def render():
         except Exception:
             st.warning("Regime bar unavailable.")
 
-    # "📺 Over Kill" (curated YouTube-Shorts watchlist, with its Refresh/Check-
-    # latest-run-status buttons) is hidden per request — code kept intact
-    # (_render_overkill_tab below) in case it's wanted back; just re-add its
-    # label + a `with` block below to restore it.
-    tab1, tab3, tab4 = st.tabs(
-        ["🎯  Best Scanners", "🔄  Sector Rotation", "🔍  OverKill"]
+    tab1, tab3, tab4, tab2, tab5 = st.tabs(
+        ["🎯  Best Scanners", "🔄  Sector Rotation", "🔍  OverKill", "📺  OverKill Shorts", "🎯  OverKill Perf"]
     )
 
     with tab1:
@@ -2008,6 +2010,18 @@ def render():
             overkill_check.render()
         except Exception as e:
             st.error(f"Overkill Check tab error: {e}")
+
+    with tab2:
+        try:
+            _render_overkill_tab()
+        except Exception as e:
+            st.error(f"OverKill Shorts tab error: {e}")
+
+    with tab5:
+        try:
+            overkill_performance.render()
+        except Exception as e:
+            st.error(f"OverKill Perf tab error: {e}")
 
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
