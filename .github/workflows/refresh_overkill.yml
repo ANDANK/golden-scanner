@@ -74,6 +74,13 @@ jobs:
           & "C:\Users\llcai\AppData\Local\Programs\Python\Python314\python.exe" scripts\overkill_shorts_scan.py
 
       - name: Commit updated picks + pending list
+        # Explicit bash: this step's script uses bash if/then/fi syntax and
+        # $(...) command substitution. On ubuntu-latest that's the default
+        # shell so it never needed stating -- on this Windows self-hosted
+        # runner the default is PowerShell, which can't parse it at all.
+        # Git for Windows (already required for checkout) ships bash too,
+        # confirmed present, so this works without installing anything new.
+        shell: bash
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
