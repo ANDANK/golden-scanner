@@ -12,15 +12,6 @@
       "bars_ago": 0
     },
     {
-      "ticker": "FAZ",
-      "color": "Green",
-      "stars": 3,
-      "price": 31.5,
-      "dot_date": "2026-08-10",
-      "event_date": "2026-08-10",
-      "bars_ago": 0
-    },
-    {
       "ticker": "PEP",
       "color": "Green",
       "stars": 3,
@@ -28,15 +19,6 @@
       "dot_date": "2026-07-27",
       "event_date": "2026-07-27",
       "bars_ago": 2
-    },
-    {
-      "ticker": "BAH",
-      "color": "Green",
-      "stars": 3,
-      "price": 64.80000305175781,
-      "dot_date": "2026-07-13",
-      "event_date": "2026-07-13",
-      "bars_ago": 4
     },
     {
       "ticker": "CACI",
@@ -59,11 +41,20 @@
     {
       "ticker": "KWEB",
       "color": "Green",
-      "stars": 4,
+      "stars": 3,
       "price": 25.59000015258789,
       "dot_date": "2026-07-06",
       "event_date": "2026-07-06",
       "bars_ago": 5
+    },
+    {
+      "ticker": "EXR",
+      "color": "Red",
+      "stars": 3,
+      "price": 146.66000366210938,
+      "dot_date": "2026-08-10",
+      "event_date": "2026-08-10",
+      "bars_ago": 0
     },
     {
       "ticker": "BXP",
@@ -84,10 +75,10 @@
       "bars_ago": 2
     },
     {
-      "ticker": "MOH",
+      "ticker": "RVTY",
       "color": "Red",
-      "stars": 5,
-      "price": 229.7100067138672,
+      "stars": 3,
+      "price": 106.44000244140625,
       "dot_date": "2026-07-20",
       "event_date": "2026-07-20",
       "bars_ago": 3
@@ -95,17 +86,8 @@
     {
       "ticker": "KMB",
       "color": "Red",
-      "stars": 4,
-      "price": 108.4800033569336,
-      "dot_date": "2026-07-20",
-      "event_date": "2026-07-20",
-      "bars_ago": 3
-    },
-    {
-      "ticker": "RVTY",
-      "color": "Red",
       "stars": 3,
-      "price": 106.44000244140625,
+      "price": 108.4800033569336,
       "dot_date": "2026-07-20",
       "event_date": "2026-07-20",
       "bars_ago": 3
