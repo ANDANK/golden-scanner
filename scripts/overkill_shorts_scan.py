@@ -12,19 +12,27 @@ commentary and any promotional talk about the host's own indicator/course.
 This replaces the old detect-only, twice-daily semi-auto pipeline: an
 earlier version tried yt-dlp for transcripts and got blocked wholesale by
 YouTube's bot-check from GitHub Actions' shared IPs ("Sign in to confirm
-you're not a bot" — IP-reputation based). youtube-transcript-api hits a
-different, lighter endpoint (the public caption/timedtext API, not a full
-video-extraction pipeline), so it was a reasonable bet not to share that
-exact failure mode. First real run confirmed it wasn't: a v0.6.3 pin
-(kept to preserve the old get_transcript() classmethod) returned a false
-"subtitles are disabled" for every single video, while the current 1.x
-API (YouTubeTranscriptApi().fetch(...)) retrieves the exact same videos'
-captions fine from a completely different network — an outdated library
-version talking to YouTube's current backend, not an IP block at all.
-Fixed by moving to the 1.x API and dropping the version pin below 1.0.
-The fallback path below stays regardless, since transcript fetches can
-still fail for legitimate reasons (captions actually off, a transient
-error) even with the right library version.
+you're not a bot" — IP-reputation based). Two issues showed up across the
+first two real runs, fixed in order:
+  1. A v0.6.3 library pin (kept to preserve the old get_transcript()
+     classmethod) returned a false "subtitles are disabled" for every
+     video — fixed by moving to the current 1.x API
+     (YouTubeTranscriptApi().fetch(...)) and dropping the <1.0 pin.
+  2. With that fixed, the REAL error underneath was YouTube's actual
+     IP-block: GitHub Actions runners sit on Google Cloud Platform IPs,
+     and YouTube blocks most cloud-provider ranges from the transcript
+     endpoint outright (confirmed via the library's own explicit
+     "YouTube is blocking requests from your IP... cloud provider" error).
+     Not a library bug — a structural block that yt-dlp hit too, just
+     with a different, less specific error message. Fixed by routing
+     through a residential proxy (Webshare, which the library has
+     first-class support for — see _build_transcript_api() below) when
+     WEBSHARE_PROXY_USERNAME/WEBSHARE_PROXY_PASSWORD are configured.
+     Falls back to a direct, unproxied connection (i.e. still blocked)
+     if those secrets aren't set yet.
+The fallback-to-pending path below stays regardless of proxy config,
+since transcript fetches can still fail for legitimate reasons (captions
+actually off, a transient error) even once routed through a proxy.
 
 Successfully-extracted picks are written directly into
 data/overkill_shorts.json (no human review step). Any video where the
@@ -38,8 +46,16 @@ Called by GitHub Actions once daily ~7am CT — see
 .github/workflows/refresh_overkill.yml.
 
 Required env vars (GitHub Actions secrets):
-  YOUTUBE_API_KEY      YouTube Data API v3 key (existing secret)
-  ANTHROPIC_API_KEY    Claude API key (new secret)
+  YOUTUBE_API_KEY      YouTube Data API v3 key
+  ANTHROPIC_API_KEY    Claude API key
+
+Optional env vars (GitHub Actions secrets) — without these, transcript
+fetches will keep hitting YouTube's cloud-IP block and every video will
+land in data/overkill_pending.json instead of being auto-extracted:
+  WEBSHARE_PROXY_USERNAME   "Proxy Username" from https://dashboard.webshare.io/proxy/settings
+  WEBSHARE_PROXY_PASSWORD   "Proxy Password" from the same page
+                            (Webshare account needs a "Residential" package,
+                            NOT "Proxy Server" or "Static Residential")
 
 Usage:
   python scripts/overkill_shorts_scan.py
@@ -101,22 +117,37 @@ def log(msg: str):
     print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def _build_transcript_api():
+    """A YouTubeTranscriptApi instance, routed through a Webshare residential
+    proxy when WEBSHARE_PROXY_USERNAME/WEBSHARE_PROXY_PASSWORD are set.
+
+    GitHub Actions runners sit on Google Cloud Platform IPs, and YouTube
+    blocks most cloud-provider ranges from the transcript endpoint outright
+    -- confirmed via the library's own explicit "YouTube is blocking
+    requests from your IP... cloud provider" error on the second real run
+    (the FIRST run's "subtitles are disabled" error was a separate, since-
+    fixed library-version bug that was masking this). A proxy is the
+    library-recommended, purpose-built fix for exactly this — not a code
+    issue to work around otherwise. Falls back to a direct, unproxied
+    connection (i.e. still blocked) if those secrets aren't configured."""
+    from youtube_transcript_api import YouTubeTranscriptApi
+    username = os.environ.get("WEBSHARE_PROXY_USERNAME")
+    password = os.environ.get("WEBSHARE_PROXY_PASSWORD")
+    if username and password:
+        from youtube_transcript_api.proxies import WebshareProxyConfig
+        return YouTubeTranscriptApi(proxy_config=WebshareProxyConfig(
+            proxy_username=username, proxy_password=password,
+        ))
+    return YouTubeTranscriptApi()
+
+
 def fetch_transcript(video_id: str) -> str | None:
     """Best-effort caption text for a video. Returns None if unavailable —
     no captions, captions disabled, or the fetch itself fails/gets blocked.
     Pulls whatever caption track YouTube offers (manual or auto-generated);
-    doesn't distinguish, since this channel has captions on either way.
-
-    Uses the modern instance-based API (YouTubeTranscriptApi().fetch(...)),
-    not the old get_transcript() classmethod -- confirmed by direct
-    side-by-side test that the classmethod path (via a <1.0 pin) returns a
-    false "subtitles are disabled" for videos that DO have captions,
-    while fetch() on the current library version retrieves them fine for
-    the exact same video IDs. Not a GitHub Actions IP-block after all --
-    an outdated library version talking to YouTube's current backend."""
+    doesn't distinguish, since this channel has captions on either way."""
     try:
-        from youtube_transcript_api import YouTubeTranscriptApi
-        result = YouTubeTranscriptApi().fetch(video_id)
+        result = _build_transcript_api().fetch(video_id)
         text = " ".join(seg.text for seg in result).strip()
         return text or None
     except Exception as e:

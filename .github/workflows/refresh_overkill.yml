@@ -54,8 +54,15 @@ jobs:
 
       - name: Run detection + extraction script
         env:
-          YOUTUBE_API_KEY:    ${{ secrets.YOUTUBE_API_KEY }}
-          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
+          YOUTUBE_API_KEY:            ${{ secrets.YOUTUBE_API_KEY }}
+          ANTHROPIC_API_KEY:          ${{ secrets.ANTHROPIC_API_KEY }}
+          # Routes transcript fetches through a Webshare residential proxy --
+          # GitHub Actions runners are on Google Cloud IPs, which YouTube
+          # blocks from the transcript endpoint outright. Without these two
+          # secrets set, every video falls back to data/overkill_pending.json
+          # instead of being auto-extracted (still visible, just not automatic).
+          WEBSHARE_PROXY_USERNAME:    ${{ secrets.WEBSHARE_PROXY_USERNAME }}
+          WEBSHARE_PROXY_PASSWORD:    ${{ secrets.WEBSHARE_PROXY_PASSWORD }}
         run: python scripts/overkill_shorts_scan.py
 
       - name: Commit updated picks + pending list
