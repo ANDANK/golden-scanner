@@ -292,6 +292,12 @@ def _track_row_html(row: dict) -> str:
     pct_color = "#726b5a" if pct is None else ("#3fcf7f" if pct >= 0 else "#ef5350")
     pct_txt = "—" if pct is None else f"{pct:+.1f}%"
     cur_txt = "—" if row.get("current_price") is None else f"${row['current_price']:,.2f}"
+    high, low = row.get("high"), row.get("low")
+    high_pct, low_pct = row.get("high_pct"), row.get("low_pct")
+    high_txt = "—" if high is None else f"${high:,.2f}"
+    low_txt = "—" if low is None else f"${low:,.2f}"
+    high_pct_txt = "—" if high_pct is None else f"{high_pct:+.1f}%"
+    low_pct_txt = "—" if low_pct is None else f"{low_pct:+.1f}%"
     return (
         '<tr>'
         f'<td style="padding:7px 9px;font-weight:bold;color:#F5C842;border-top:1px solid #262626">{row["ticker"]}</td>'
@@ -301,6 +307,10 @@ def _track_row_html(row: dict) -> str:
         f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">${row["first_price"]:,.2f}</td>'
         f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{cur_txt}</td>'
         f'<td style="padding:7px 9px;font-family:monospace;font-weight:bold;color:{pct_color};border-top:1px solid #262626">{pct_txt}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{high_txt}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:#3fcf7f;border-top:1px solid #262626">{high_pct_txt}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{low_txt}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;color:#ef5350;border-top:1px solid #262626">{low_pct_txt}</td>'
         '</tr>'
     )
 
@@ -317,6 +327,10 @@ def _track_record_table_html(track_rows: list[dict]) -> str:
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">First Price</th>'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Now</th>'
         '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Perf</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">High</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">% High</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">Low</th>'
+        '<th style="padding:8px 9px;text-align:left;font-size:10.5px">% Low</th>'
         '</tr>'
     )
     rows = "".join(_track_row_html(r) for r in track_rows)
@@ -328,7 +342,8 @@ def _track_record_table_html(track_rows: list[dict]) -> str:
 
 
 def build_email(filtered, top5, track_rows) -> tuple[str, str]:
-    subject = (f"Best Scanners [{SLOT}] — {len(filtered)} setups"
+    n_strong = int((filtered["_verdict"] == "Strong Setup").sum()) if not filtered.empty else 0
+    subject = (f"Best Scanners [{SLOT}] — {len(filtered)} setups ({n_strong} Strong Setup)"
                + (f", {len(top5)} featured" if len(top5) else "")
                + f" ({datetime.utcnow().strftime('%Y-%m-%d')})")
 

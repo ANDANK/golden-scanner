@@ -906,7 +906,9 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
         {"label": "Ticker", "type": "str"}, {"label": "Verdict", "type": "str"},
         {"label": "Scanners", "type": "str"}, {"label": "First Found", "type": "str"},
         {"label": "First Price", "type": "num"}, {"label": "Now", "type": "num"},
-        {"label": "Perf", "type": "num"},
+        {"label": "Perf", "type": "num"}, {"label": "High", "type": "num"},
+        {"label": "% High", "type": "num"}, {"label": "Low", "type": "num"},
+        {"label": "% Low", "type": "num"},
     ]
     table_rows = []
     for r in track_rows:
@@ -915,6 +917,12 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
         pct_txt = "—" if pct is None else f"{pct:+.1f}%"
         cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
         v_color = _VERDICT_COLOR.get(r.get("verdict"), TEXT_MUTED)
+        high, low = r.get("high"), r.get("low")
+        high_pct, low_pct = r.get("high_pct"), r.get("low_pct")
+        high_txt = "—" if high is None else f"${high:,.2f}"
+        low_txt = "—" if low is None else f"${low:,.2f}"
+        high_pct_txt = "—" if high_pct is None else f"{high_pct:+.1f}%"
+        low_pct_txt = "—" if low_pct is None else f"{low_pct:+.1f}%"
         table_rows.append([
             (f'<span style="font-weight:700;color:{GOLD}">{r["ticker"]}</span>', r["ticker"]),
             (f'<span style="color:{v_color};font-weight:600">{r.get("verdict") or "—"}</span>', r.get("verdict") or ""),
@@ -923,6 +931,10 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
             (f'${r["first_price"]:,.2f}', r["first_price"]),
             (cur_txt, r.get("current_price") if r.get("current_price") is not None else ""),
             (f'<span style="font-weight:700;color:{pct_color}">{pct_txt}</span>', pct if pct is not None else ""),
+            (high_txt, high if high is not None else ""),
+            (f'<span style="color:{ACCENT_GREEN}">{high_pct_txt}</span>', high_pct if high_pct is not None else ""),
+            (low_txt, low if low is not None else ""),
+            (f'<span style="color:{ACCENT_RED}">{low_pct_txt}</span>', low_pct if low_pct is not None else ""),
         ])
     # Imported here, not at module top-level: headless mode (the GitHub Actions
     # email scripts) mocks `streamlit` in sys.modules without a real streamlit

@@ -55,7 +55,7 @@ sys.modules["streamlit"] = _MockST()
 from config import FTF_UNIVERSE
 from scanners.overkill_check import (
     _scan_universe, _analyze_ticker, _color_variant, _sort_color_group,
-    _verdict_stars, _vp_position, _daily_confirm_badge,
+    _verdict_stars, _vp_position, _daily_confirm_badge, _apply_color_adjustment,
     DEFAULT_WEEKLY_FRESH_BARS, DEFAULT_MONTHLY_FRESH_BARS,
 )
 from scanners import scan_history
@@ -139,17 +139,24 @@ def _track_row_html(row: dict) -> str:
     pct_txt = "—" if pct is None else f"{pct:+.1f}%"
     cur_txt = "—" if row.get("current_price") is None else f"${row['current_price']:,.2f}"
     stars = "★" * int(row["stars"]) if row.get("stars") else "—"
-    color = row.get("color")
-    verdict_color = "#22C55E" if color == "Green" else ("#EF4444" if color == "Red" else "#888")
+    high, low = row.get("high"), row.get("low")
+    high_pct, low_pct = row.get("high_pct"), row.get("low_pct")
+    high_txt = "—" if high is None else f"${high:,.2f}"
+    low_txt = "—" if low is None else f"${low:,.2f}"
+    high_pct_txt = "—" if high_pct is None else f"{high_pct:+.1f}%"
+    low_pct_txt = "—" if low_pct is None else f"{low_pct:+.1f}%"
     return (
         '<tr>'
         f'<td style="padding:6px 10px;font-weight:bold;color:{"#F5C842"};border-bottom:1px solid #333">{row["ticker"]}</td>'
         f'<td style="padding:6px 10px;color:#F5C842;border-bottom:1px solid #333">{stars}</td>'
-        f'<td style="padding:6px 10px;font-weight:bold;color:{verdict_color};border-bottom:1px solid #333">{color or "—"}</td>'
         f'<td style="padding:6px 10px;color:#888;font-size:12px;border-bottom:1px solid #333">{_fmt_found_date(row["first_found"])}</td>'
         f'<td style="padding:6px 10px;border-bottom:1px solid #333">${row["first_price"]:,.2f}</td>'
         f'<td style="padding:6px 10px;border-bottom:1px solid #333">{cur_txt}</td>'
         f'<td style="padding:6px 10px;font-weight:bold;color:{pct_color};border-bottom:1px solid #333">{pct_txt}</td>'
+        f'<td style="padding:6px 10px;border-bottom:1px solid #333">{high_txt}</td>'
+        f'<td style="padding:6px 10px;color:#22C55E;border-bottom:1px solid #333">{high_pct_txt}</td>'
+        f'<td style="padding:6px 10px;border-bottom:1px solid #333">{low_txt}</td>'
+        f'<td style="padding:6px 10px;color:#EF4444;border-bottom:1px solid #333">{low_pct_txt}</td>'
         '</tr>'
     )
 
@@ -161,11 +168,14 @@ def _track_record_table_html(track_rows: list[dict]) -> str:
         '<tr style="background:#1a1a1a;color:#fff">'
         '<th style="padding:6px 10px;text-align:left">Ticker</th>'
         '<th style="padding:6px 10px;text-align:left">★</th>'
-        '<th style="padding:6px 10px;text-align:left">Verdict</th>'
         '<th style="padding:6px 10px;text-align:left">Dot Date</th>'
         '<th style="padding:6px 10px;text-align:left">Price @ Dot</th>'
         '<th style="padding:6px 10px;text-align:left">Now</th>'
         '<th style="padding:6px 10px;text-align:left">Perf</th>'
+        '<th style="padding:6px 10px;text-align:left">High</th>'
+        '<th style="padding:6px 10px;text-align:left">% High</th>'
+        '<th style="padding:6px 10px;text-align:left">Low</th>'
+        '<th style="padding:6px 10px;text-align:left">% Low</th>'
         '</tr>'
     )
     rows = "".join(_track_row_html(r) for r in track_rows)
@@ -208,7 +218,8 @@ def _star_tier_html(tiers: list[dict]) -> str:
     )
 
 
-def build_email(green: list[dict], red: list[dict], track_rows: list[dict]) -> tuple[str, str]:
+def build_email(green: list[dict], red: list[dict], track_rows_green: list[dict],
+                track_rows_red: list[dict], track_rows_all: list[dict]) -> tuple[str, str]:
     subject = (f"OverKill Scan [{SLOT}] — {len(green)} green / {len(red)} red "
               f"at {MIN_STARS}★+ ({datetime.utcnow().strftime('%Y-%m-%d')})")
     html = f"""
@@ -223,9 +234,15 @@ def build_email(green: list[dict], red: list[dict], track_rows: list[dict]) -> t
       <h3 style="color:#EF4444;margin-top:24px">\U0001F534 Red Dots ({len(red)})</h3>
       {_table_html(red, "red", "#EF4444")}
       <h3 style="color:#F5C842;margin-top:24px">Performance by Star Rating</h3>
-      {_star_tier_html(scan_history.star_tier_breakdown(track_rows))}
-      <h3 style="color:#F5C842;margin-top:24px">Track Record — last 6 months</h3>
-      {_track_record_table_html(track_rows)}
+      {_star_tier_html(scan_history.star_tier_breakdown(track_rows_all))}
+      <p style="color:#666;font-size:11px;margin-top:8px">
+        Perf is call-graded: for Red (bearish) dots a price decline counts as success, so it's
+        shown positive there — not raw "did price rise."
+      </p>
+      <h3 style="color:#22C55E;margin-top:24px">\U0001F7E2 Green Track Record — last 6 months ({len(track_rows_green)})</h3>
+      {_track_record_table_html(track_rows_green)}
+      <h3 style="color:#EF4444;margin-top:24px">\U0001F534 Red Track Record — last 6 months ({len(track_rows_red)})</h3>
+      {_track_record_table_html(track_rows_red)}
       <p style="color:#666;font-size:11px;margin-top:24px;line-height:1.5">
         Approximates a public WaveTrend + Volume Profile confluence read — not his exact proprietary
         indicator, and not financial advice. Educational/research use only. Open the OverKill tab in
@@ -324,9 +341,13 @@ def run():
         return
 
     track_rows = scan_history.track_record("overkill", HISTORY_TAG, TODAY, today_rows)
-    log(f"Track record: {len(track_rows)} distinct ticker(s) over the last 6 months.")
+    track_rows = _apply_color_adjustment(track_rows)
+    track_rows_green = [r for r in track_rows if r.get("color") == "Green"]
+    track_rows_red = [r for r in track_rows if r.get("color") == "Red"]
+    log(f"Track record: {len(track_rows_green)} green, {len(track_rows_red)} red, "
+        f"over the last 6 months.")
 
-    subject, html = build_email(green_sorted, red_sorted, track_rows)
+    subject, html = build_email(green_sorted, red_sorted, track_rows_green, track_rows_red, track_rows)
     send_email(subject, html)
 
 

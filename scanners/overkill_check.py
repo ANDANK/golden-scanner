@@ -1309,6 +1309,65 @@ def _fmt_found_date(date_str) -> str:
         return date_str or "—"
 
 
+def _apply_color_adjustment(track_rows: list[dict]) -> list[dict]:
+    """A Red (bearish) dot's thesis is that price FALLS, so a decline is
+    success, not failure -- flip pct's sign for Red rows so "Perf" always
+    means "how well did the call do," not "did price rise." Green is
+    unchanged (a rise is already success for a bullish call). Re-sorts
+    afterward since the adjustment can change relative order. High/Low stay
+    raw/factual (never flipped) -- they describe the trading range since
+    the dot, which reads the same regardless of which direction the call
+    was betting on."""
+    out = []
+    for r in track_rows:
+        pct = r.get("pct")
+        if r.get("color") == "Red" and pct is not None:
+            r = {**r, "pct": -pct}
+        out.append(r)
+    out.sort(key=lambda r: (r["pct"] is None, -(r["pct"] if r["pct"] is not None else 0)))
+    return out
+
+
+def _track_record_columns_and_rows(rows: list[dict]) -> tuple[list[dict], list[list]]:
+    """Column/row builder for a single-color track-record table -- no
+    Verdict/color column, since it's constant (redundant) once the caller
+    has already split rows by color into separate Green/Red tables."""
+    columns = [
+        {"label": "Ticker", "type": "str"}, {"label": "★", "type": "num"},
+        {"label": "Dot Date", "type": "str"}, {"label": "Price @ Dot", "type": "num"},
+        {"label": "Now", "type": "num"}, {"label": "Perf", "type": "num"},
+        {"label": "High", "type": "num"}, {"label": "% High", "type": "num"},
+        {"label": "Low", "type": "num"}, {"label": "% Low", "type": "num"},
+    ]
+    table_rows = []
+    for r in rows:
+        pct = r.get("pct")
+        pct_color = TEXT_MUTED if pct is None else (ACCENT_GREEN if pct >= 0 else ACCENT_RED)
+        pct_txt = "—" if pct is None else f"{pct:+.1f}%"
+        cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
+        n_stars = int(r["stars"]) if r.get("stars") else 0
+        stars_txt = "★" * n_stars if n_stars else "—"
+        high, low = r.get("high"), r.get("low")
+        high_pct, low_pct = r.get("high_pct"), r.get("low_pct")
+        high_txt = "—" if high is None else f"${high:,.2f}"
+        low_txt = "—" if low is None else f"${low:,.2f}"
+        high_pct_txt = "—" if high_pct is None else f"{high_pct:+.1f}%"
+        low_pct_txt = "—" if low_pct is None else f"{low_pct:+.1f}%"
+        table_rows.append([
+            (f'<span style="font-weight:700;color:{GOLD}">{r["ticker"]}</span>', r["ticker"]),
+            (f'<span style="color:{GOLD}">{stars_txt}</span>', n_stars),
+            (f'<span style="color:{TEXT_MUTED};font-size:11px">{_fmt_found_date(r["first_found"])}</span>', r["first_found"]),
+            (f'${r["first_price"]:,.2f}', r["first_price"]),
+            (cur_txt, r.get("current_price") if r.get("current_price") is not None else ""),
+            (f'<span style="font-weight:700;color:{pct_color}">{pct_txt}</span>', pct if pct is not None else ""),
+            (high_txt, high if high is not None else ""),
+            (f'<span style="color:{ACCENT_GREEN}">{high_pct_txt}</span>', high_pct if high_pct is not None else ""),
+            (low_txt, low if low is not None else ""),
+            (f'<span style="color:{ACCENT_RED}">{low_pct_txt}</span>', low_pct if low_pct is not None else ""),
+        ])
+    return columns, table_rows
+
+
 def _render_track_record_table():
     """Read-only: every ticker the daily email has flagged (4-5★) in the
     last 6 months, with % performance since it was first flagged. Reads the
@@ -1321,13 +1380,16 @@ def _render_track_record_table():
         f'<div style="margin-top:22px;color:{TEXT_MUTED};font-size:12px;font-weight:800;'
         f'text-transform:uppercase;letter-spacing:.06em">Track Record — last 6 months</div>'
         f'<div style="color:{TEXT_MUTED};font-size:11px;margin:4px 0 8px">'
-        f'Every ticker the daily email has flagged in the last 6 months, with % performance '
-        f'since it was first flagged.</div>',
+        f'Every ticker the daily email has flagged in the last 6 months, split by dot color. '
+        f'<b>Perf</b> is call-graded, not raw price direction: for a 🔴 Red (bearish) dot, a price '
+        f'<i>decline</i> shows as positive — that\'s the call working. High/Low are the raw trading '
+        f'range since the dot (never sign-flipped) either way.</div>',
         unsafe_allow_html=True,
     )
     today = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
     with st.spinner("Building track record — fetching current prices…"):
         track_rows = scan_history.track_record("overkill", "default", today, [])
+    track_rows = _apply_color_adjustment(track_rows)
     if not track_rows:
         st.caption("No track record yet — check back after the daily email has run a few times.")
         return
@@ -1358,40 +1420,38 @@ def _render_track_record_table():
         unsafe_allow_html=True,
     )
 
-    columns = [
-        {"label": "Ticker", "type": "str"}, {"label": "★", "type": "num"},
-        {"label": "Verdict", "type": "str"}, {"label": "Dot Date", "type": "str"},
-        {"label": "Price @ Dot", "type": "num"}, {"label": "Now", "type": "num"},
-        {"label": "Perf", "type": "num"},
-    ]
-    table_rows = []
-    for r in track_rows:
-        pct = r.get("pct")
-        pct_color = TEXT_MUTED if pct is None else (ACCENT_GREEN if pct >= 0 else ACCENT_RED)
-        pct_txt = "—" if pct is None else f"{pct:+.1f}%"
-        cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
-        n_stars = int(r["stars"]) if r.get("stars") else 0
-        stars_txt = "★" * n_stars if n_stars else "—"
-        color = r.get("color")
-        verdict_color = ACCENT_GREEN if color == "Green" else (ACCENT_RED if color == "Red" else TEXT_MUTED)
-        table_rows.append([
-            (f'<span style="font-weight:700;color:{GOLD}">{r["ticker"]}</span>', r["ticker"]),
-            (f'<span style="color:{GOLD}">{stars_txt}</span>', n_stars),
-            (f'<span style="color:{verdict_color};font-weight:700">{color or "—"}</span>', color or ""),
-            (f'<span style="color:{TEXT_MUTED};font-size:11px">{_fmt_found_date(r["first_found"])}</span>', r["first_found"]),
-            (f'${r["first_price"]:,.2f}', r["first_price"]),
-            (cur_txt, r.get("current_price") if r.get("current_price") is not None else ""),
-            (f'<span style="font-weight:700;color:{pct_color}">{pct_txt}</span>', pct if pct is not None else ""),
-        ])
+    green_rows = [r for r in track_rows if r.get("color") == "Green"]
+    red_rows = [r for r in track_rows if r.get("color") == "Red"]
+
     # Imported here, not at module top-level: headless mode (the GitHub Actions
     # email script) mocks `streamlit` without a real install, and this submodule
     # import fails against that mock -- headless mode never calls this render
     # function, so a lazy import avoids the issue without extending the mock.
     import streamlit.components.v1 as components
-    components.html(
-        sortable_table_html(columns, table_rows, default_sort_idx=6, default_desc=True),
-        height=440, scrolling=False,
+
+    st.markdown(
+        f'<div style="margin-top:6px;color:{ACCENT_GREEN};font-size:12px;font-weight:800;'
+        f'text-transform:uppercase;letter-spacing:.06em">🟢 Green Track Record ({len(green_rows)})</div>',
+        unsafe_allow_html=True,
     )
+    if green_rows:
+        cols, rows = _track_record_columns_and_rows(green_rows)
+        components.html(sortable_table_html(cols, rows, default_sort_idx=5, default_desc=True),
+                        height=440, scrolling=False)
+    else:
+        st.caption("No Green track record yet.")
+
+    st.markdown(
+        f'<div style="margin-top:16px;color:{ACCENT_RED};font-size:12px;font-weight:800;'
+        f'text-transform:uppercase;letter-spacing:.06em">🔴 Red Track Record ({len(red_rows)})</div>',
+        unsafe_allow_html=True,
+    )
+    if red_rows:
+        cols, rows = _track_record_columns_and_rows(red_rows)
+        components.html(sortable_table_html(cols, rows, default_sort_idx=5, default_desc=True),
+                        height=440, scrolling=False)
+    else:
+        st.caption("No Red track record yet.")
 
 
 def _render_scan_mode():

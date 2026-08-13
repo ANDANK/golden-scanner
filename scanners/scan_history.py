@@ -133,8 +133,8 @@ def rollup_window(kind: str, tag: str, today_date_str: str, today_rows: list[dic
     """Every distinct ticker seen within the rollup window (including
     today), each carrying whatever fields its snapshot row had (verdict,
     combo, scanners, stars, color, ...) plus "first_found" (the row's own
-    _event_date()) and "first_price". Does NOT fetch current prices — call
-    fetch_current_prices() separately and join, since that needs a live
+    _event_date()) and "first_price". Does NOT fetch current/high/low prices
+    — call fetch_range_stats() separately and join, since that needs a live
     network round-trip this function intentionally doesn't own."""
     cfg = _CONFIG[kind]
     snapshots = [s for s in _load_all(kind, tag) if s["date"] != today_date_str]
@@ -161,16 +161,30 @@ def rollup_window(kind: str, tag: str, today_date_str: str, today_rows: list[dic
 def track_record(kind: str, tag: str, today_date_str: str, today_rows: list[dict]) -> list[dict]:
     """The full 'how did our past picks do' rollup, ready to render: every
     distinct ticker in the window with first-found date/price, current
-    price, and % performance since first sighting — sorted best performer
-    first (tickers with no fetchable current price sort last, pct=None)."""
+    price + % performance since first sighting, and the high/low close
+    reached anywhere between first-found and today (+ % move to each) --
+    sorted best current performer first (tickers with no fetchable price
+    sort last, pct=None). high/low are raw/factual (never direction-
+    adjusted) since they're a trading range, not a verdict -- a caller that
+    needs a bearish-call-aware "Perf" (e.g. OverKill's Red dots) should
+    adjust `pct` itself and re-sort; this function has no notion of color."""
     base = rollup_window(kind, tag, today_date_str, today_rows)
-    prices = fetch_current_prices([r["ticker"] for r in base])
+    stats = fetch_range_stats([(r["ticker"], r["first_found"]) for r in base])
     out = []
     for r in base:
-        current = prices.get(r["ticker"])
+        s = stats.get(r["ticker"])
+        current = s["current"] if s else None
+        high = s["high"] if s else None
+        low = s["low"] if s else None
         first_price = r.get("first_price")
-        pct = (current - first_price) / first_price * 100 if current is not None and first_price else None
-        out.append({**r, "current_price": current, "pct": pct})
+
+        def _pct(target):
+            return (target - first_price) / first_price * 100 if target is not None and first_price else None
+
+        out.append({
+            **r, "current_price": current, "pct": _pct(current),
+            "high": high, "high_pct": _pct(high), "low": low, "low_pct": _pct(low),
+        })
     out.sort(key=lambda r: (r["pct"] is None, -(r["pct"] if r["pct"] is not None else 0)))
     return out
 
@@ -231,21 +245,35 @@ def fetch_prices_on_dates(ticker_dates: list[tuple[str, str]], period: str = "1y
     return out
 
 
-def fetch_current_prices(tickers: list[str]) -> dict[str, float]:
-    """Batch-fetch the latest close for each ticker (short lookback — this
-    is a "where is it now" check, not a chart). Missing/failed tickers are
-    simply absent from the returned dict."""
-    tickers = sorted(set(tickers))
+def fetch_range_stats(ticker_dates: list[tuple[str, str]], period: str = "1y") -> dict[str, dict]:
+    """Batch-fetch, for each (ticker, since_date) pair, the latest close plus
+    the highest and lowest close from since_date through today (inclusive).
+    `period` must comfortably cover the widest since_date in the batch --
+    1y default is safe for both scanners' rollup windows (90d / 182d). One
+    entry per ticker in the returned dict (assumes each ticker appears with
+    a single since_date per call, true for track_record()'s use — one row
+    per ticker from rollup_window()). Missing/failed tickers are simply
+    absent from the returned dict."""
+    pairs = sorted(set(ticker_dates))
+    tickers = sorted({t for t, _ in pairs})
     if not tickers:
         return {}
-    prefetch_tickers(tickers, "5d", "1d")
+    prefetch_tickers(tickers, period, "1d")
     out = {}
-    for t in tickers:
+    for t, date_str in pairs:
         try:
-            df = get_price_history(t, period="5d", interval="1d")
+            df = get_price_history(t, period=period, interval="1d")
             if df is None or df.empty:
                 continue
-            out[t] = float(df["Close"].squeeze().iloc[-1])
+            since = datetime.strptime(date_str, "%Y-%m-%d")
+            window = df[df.index >= since]["Close"]
+            if window.empty:
+                window = df["Close"]   # since_date beyond the fetched range (shouldn't happen given `period`)
+            out[t] = {
+                "current": float(df["Close"].iloc[-1]),
+                "high": float(window.max()),
+                "low": float(window.min()),
+            }
         except Exception:
             continue
     return out
