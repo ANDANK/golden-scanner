@@ -30,6 +30,13 @@ first two real runs, fixed in order:
      Fixed for free by switching the workflow to a self-hosted runner
      (see .github/workflows/refresh_overkill.yml) instead of paying for a
      proxy service — a residential IP isn't in YouTube's blocked ranges.
+  3. That runner then fetched all 12 backlog transcripts successfully once,
+     and got blocked on every run after — same error text, different cause:
+     a volume-based rate-limit, not the cloud-range block. 12 requests in
+     ~10 seconds, repeated every run, kept the ban alive because the loop
+     carried on firing requests after the first block. Fixed by capping
+     attempts per run, spacing them out, and stopping the run on the first
+     block (see MAX_TRANSCRIPTS_PER_RUN / THROTTLE_SECONDS below).
 The fallback-to-pending path below stays regardless, since transcript
 fetches can still fail for legitimate reasons (captions actually off, a
 transient error) even from a non-blocked IP.
@@ -61,7 +68,7 @@ Usage:
   python scripts/overkill_shorts_scan.py
 """
 
-import json, os, re, sys
+import json, os, re, sys, time
 from datetime import datetime, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -75,6 +82,17 @@ DATA_PATH = os.path.join(ROOT, "data", "overkill_shorts.json")
 PENDING_PATH = os.path.join(ROOT, "data", "overkill_pending.json")
 
 GEMINI_MODEL = "gemini-2.5-flash"   # confirmed-current model; free tier is plenty for ~1-12 requests/day here
+
+# ── YouTube rate-limit hygiene ────────────────────────────────────────
+# The self-hosted runner's residential IP is NOT in YouTube's blocked
+# cloud-provider ranges -- an early run fetched all 12 backlog transcripts
+# fine. What blocked it afterwards was request VOLUME: the script fired 12
+# transcript requests in ~10 seconds, every run, at the same video IDs, and
+# YouTube rate-limited the IP. Worse, once blocked, the run kept firing the
+# remaining 11 requests anyway, so each scheduled run re-confirmed the ban
+# and it never got a chance to age out. These three limits break that loop.
+MAX_TRANSCRIPTS_PER_RUN = 6   # drain a backlog over a few days rather than in one burst
+THROTTLE_SECONDS = 4          # space requests out instead of hammering
 
 _SYSTEM_PROMPT = """You extract structured stock picks from a trading YouTube Short's transcript.
 
@@ -119,19 +137,26 @@ def log(msg: str):
 
 
 def fetch_transcript(video_id: str) -> str | None:
-    """Best-effort caption text for a video. Returns None if unavailable —
-    no captions, captions disabled, or the fetch itself fails/gets blocked.
-    Pulls whatever caption track YouTube offers (manual or auto-generated);
-    doesn't distinguish, since this channel has captions on either way.
+    """Best-effort caption text for a video. Returns None for the ordinary
+    per-video failures (no captions, captions disabled, transient error);
+    those just send that one video to the pending list.
+
+    RequestBlocked (and its IpBlocked subclass) deliberately propagates
+    instead: that's an IP-level condition, not a per-video one, so every
+    remaining video this run would fail too — and each extra request while
+    blocked only re-confirms the rate-limit. The caller stops the run on it.
 
     Must run from a residential IP (a self-hosted runner, per this repo's
     workflow) — GitHub's own hosted runners sit on Google Cloud IPs, which
     YouTube blocks outright from this endpoint, confirmed directly."""
+    from youtube_transcript_api import YouTubeTranscriptApi
+    from youtube_transcript_api._errors import RequestBlocked
     try:
-        from youtube_transcript_api import YouTubeTranscriptApi
         result = YouTubeTranscriptApi().fetch(video_id)
         text = " ".join(seg.text for seg in result).strip()
         return text or None
+    except RequestBlocked:
+        raise
     except Exception as e:
         log(f"  transcript unavailable for {video_id}: {e}")
         return None
@@ -192,9 +217,32 @@ def main():
     from google import genai
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-    new_videos, still_pending = [], []
-    for v in candidates:
-        transcript = fetch_transcript(v["video_id"])
+    from youtube_transcript_api._errors import RequestBlocked
+
+    # Newest first, so a backlog drains most-recent-first -- old Shorts are
+    # the least useful to capture late anyway.
+    attempts = candidates[:MAX_TRANSCRIPTS_PER_RUN]
+    deferred = candidates[MAX_TRANSCRIPTS_PER_RUN:]
+    if deferred:
+        log(f"Attempting {len(attempts)} this run (cap={MAX_TRANSCRIPTS_PER_RUN}); "
+            f"{len(deferred)} deferred to the next run.")
+
+    new_videos, still_pending = [], list(deferred)
+    for i, v in enumerate(attempts):
+        if i:
+            time.sleep(THROTTLE_SECONDS)
+        try:
+            transcript = fetch_transcript(v["video_id"])
+        except RequestBlocked as e:
+            # IP-level block: every remaining request would fail AND would
+            # extend the rate-limit window, so stop here and let it age out.
+            remaining = attempts[i:]
+            log(f"  YouTube is rate-limiting/blocking this IP ({type(e).__name__}) — "
+                f"stopping after {i} fetch(es) rather than firing {len(remaining)} more "
+                f"doomed requests, which would only extend the block. "
+                f"Retrying on the next scheduled run.")
+            still_pending.extend(remaining)
+            break
         if transcript is None:
             still_pending.append(v)
             continue
@@ -225,6 +273,10 @@ def main():
             f.write("\n")
         log(f"Wrote {len(new_videos)} new video(s), "
             f"{sum(len(v['picks']) for v in new_videos)} pick(s) total, to {DATA_PATH}.")
+
+    # Deferred-by-cap and blocked entries get appended in different passes
+    # above; re-sort so the tab shows newest-first regardless of which.
+    still_pending.sort(key=lambda v: v["date"], reverse=True)
 
     with open(PENDING_PATH, "w", encoding="utf-8") as f:
         json.dump({
