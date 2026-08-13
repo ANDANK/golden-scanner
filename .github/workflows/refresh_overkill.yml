@@ -46,13 +46,17 @@ jobs:
       # installation", no further detail given). Self-hosted runners
       # already have whatever's installed on the machine -- unlike
       # ephemeral GitHub-hosted runners, there's no need to provision
-      # Python fresh each run. Confirmed Python 3.14 + working pip already
-      # on PATH here, well above this script's 3.10+ requirement (it uses
-      # `X | None` union type hints).
-
+      # Python fresh each run.
+      #
+      # Called by FULL PATH below, not bare `python`/`pip` -- the runner
+      # service almost certainly runs as a different Windows account (e.g.
+      # SYSTEM) than the interactive user, which doesn't inherit that
+      # user's PATH entries (confirmed: `pip` resolves fine interactively,
+      # "not recognized" when this workflow runs it). Update this path if
+      # Python is ever reinstalled/moved on this machine.
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          & "C:\Users\llcai\AppData\Local\Programs\Python\Python314\python.exe" -m pip install --upgrade pip
           # youtube-transcript-api pinned to the 1.x line, NOT <1.0 -- an
           # earlier version of this workflow pinned <1.0 to keep the old
           # get_transcript() classmethod API, but that old version returns
@@ -60,13 +64,14 @@ jobs:
           # backend (confirmed: identical video IDs fetch fine on 1.2.4,
           # fail on 0.6.3). Capped below 2.0 so a future breaking major
           # version doesn't silently break this unattended job.
-          pip install requests "youtube-transcript-api>=1.0,<2.0" anthropic
+          & "C:\Users\llcai\AppData\Local\Programs\Python\Python314\python.exe" -m pip install requests "youtube-transcript-api>=1.0,<2.0" anthropic
 
       - name: Run detection + extraction script
         env:
           YOUTUBE_API_KEY:    ${{ secrets.YOUTUBE_API_KEY }}
           ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python scripts/overkill_shorts_scan.py
+        run: |
+          & "C:\Users\llcai\AppData\Local\Programs\Python\Python314\python.exe" scripts\overkill_shorts_scan.py
 
       - name: Commit updated picks + pending list
         run: |
