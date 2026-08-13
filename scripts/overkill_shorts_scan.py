@@ -5,7 +5,9 @@ scripts/overkill_shorts_scan.py — Fully-automated OverKill Shorts pipeline.
 Detects new Shorts from @overkilltrading (reuses refresh_overkill_shorts.py's
 video-listing logic: get_uploads_playlist_id/list_recent_videos, official
 YouTube Data API), fetches each new video's caption transcript via
-youtube-transcript-api, and asks Claude (Anthropic API) to extract
+youtube-transcript-api, and asks Gemini (Google's genuinely-free API tier
+-- Anthropic's Developer API is pay-as-you-go with no free tier, a
+separate account/billing system from any Claude subscription) to extract
 structured ticker/bias/dot/notes picks from it — skipping general market
 commentary and any promotional talk about the host's own indicator/course.
 
@@ -34,7 +36,7 @@ transient error) even from a non-blocked IP.
 
 Successfully-extracted picks are written directly into
 data/overkill_shorts.json (no human review step). Any video where the
-transcript fetch fails (no captions, disabled, or blocked) or where Claude
+transcript fetch fails (no captions, disabled, or blocked) or where Gemini
 finds no clear ticker calls falls back to data/overkill_pending.json, same
 file/shape the old pipeline used — so a failure stays visible on the
 OverKill Shorts tab instead of silently vanishing, without requiring a
@@ -44,8 +46,10 @@ Called by GitHub Actions once daily ~7am CT — see
 .github/workflows/refresh_overkill.yml.
 
 Required env vars (GitHub Actions secrets):
-  YOUTUBE_API_KEY      YouTube Data API v3 key
-  ANTHROPIC_API_KEY    Claude API key
+  YOUTUBE_API_KEY   YouTube Data API v3 key
+  GEMINI_API_KEY    Google AI Studio API key (ai.google.dev) -- free tier,
+                    no credit card required; ~1-12 requests/day here is
+                    well within the free rate limit
 
 Must run on a self-hosted runner (see .github/workflows/refresh_overkill.yml)
 -- GitHub's own hosted runners are on cloud IPs YouTube blocks from the
@@ -70,7 +74,7 @@ from scripts.refresh_overkill_shorts import (
 DATA_PATH = os.path.join(ROOT, "data", "overkill_shorts.json")
 PENDING_PATH = os.path.join(ROOT, "data", "overkill_pending.json")
 
-CLAUDE_MODEL = "claude-haiku-4-5-20251001"   # cheap/fast, sufficient for a short structured-extraction task
+GEMINI_MODEL = "gemini-2.5-flash"   # confirmed-current model; free tier is plenty for ~1-12 requests/day here
 
 _SYSTEM_PROMPT = """You extract structured stock picks from a trading YouTube Short's transcript.
 
@@ -84,28 +88,29 @@ Rules:
 - If the transcript has no clear ticker calls at all, return an empty picks list — don't force one.
 - Never invent a ticker or price level that isn't actually stated in the transcript."""
 
-_EXTRACT_TOOL = {
-    "name": "extract_picks",
-    "description": "Record the stock ticker calls found in a trading video transcript.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "picks": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "ticker": {"type": "string", "description": "Stock ticker symbol, uppercase, no $ prefix"},
-                        "bias": {"type": "string", "enum": ["Bullish", "Bearish"]},
-                        "dot": {"type": "string", "enum": ["Green", "Red"]},
-                        "notes": {"type": "string"},
-                    },
-                    "required": ["ticker", "bias", "dot", "notes"],
+# Gemini's structured-output schema uses UPPERCASE type names (STRING/OBJECT/
+# ARRAY), not standard-JSON-Schema lowercase -- confirmed directly against
+# the installed google-genai package (GenerateContentConfig.response_json_schema),
+# not assumed from memory, after a couple of wrong assumptions elsewhere in
+# this same integration.
+_RESPONSE_JSON_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "picks": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "ticker": {"type": "STRING", "description": "Stock ticker symbol, uppercase, no $ prefix"},
+                    "bias": {"type": "STRING", "enum": ["Bullish", "Bearish"]},
+                    "dot": {"type": "STRING", "enum": ["Green", "Red"]},
+                    "notes": {"type": "STRING"},
                 },
+                "required": ["ticker", "bias", "dot", "notes"],
             },
         },
-        "required": ["picks"],
     },
+    "required": ["picks"],
 }
 
 
@@ -133,30 +138,30 @@ def fetch_transcript(video_id: str) -> str | None:
 
 
 def extract_picks(client, transcript: str) -> list[dict]:
-    resp = client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=1024,
-        system=_SYSTEM_PROMPT,
-        tools=[_EXTRACT_TOOL],
-        tool_choice={"type": "tool", "name": "extract_picks"},
-        messages=[{"role": "user", "content": f"Transcript:\n\n{transcript}"}],
+    from google.genai import types
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=f"{_SYSTEM_PROMPT}\n\nTranscript:\n\n{transcript}",
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_json_schema=_RESPONSE_JSON_SCHEMA,
+        ),
     )
-    for block in resp.content:
-        if block.type == "tool_use" and block.name == "extract_picks":
-            picks = block.input.get("picks", [])
-            # Defensive: enforce the bias<->dot pairing even if the model drifts from the rule.
-            for p in picks:
-                p["dot"] = "Green" if p.get("bias") == "Bullish" else "Red"
-            return picks
-    return []
+    if not response.text:
+        return []
+    picks = json.loads(response.text).get("picks", [])
+    # Defensive: enforce the bias<->dot pairing even if the model drifts from the rule.
+    for p in picks:
+        p["dot"] = "Green" if p.get("bias") == "Bullish" else "Red"
+    return picks
 
 
 def main():
     if not os.environ.get("YOUTUBE_API_KEY"):
         log("ERROR: YOUTUBE_API_KEY not set — add it as a GitHub Actions secret.")
         sys.exit(1)
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        log("ERROR: ANTHROPIC_API_KEY not set — add it as a GitHub Actions secret.")
+    if not os.environ.get("GEMINI_API_KEY"):
+        log("ERROR: GEMINI_API_KEY not set — add it as a GitHub Actions secret.")
         sys.exit(1)
 
     with open(DATA_PATH, encoding="utf-8") as f:
@@ -184,8 +189,8 @@ def main():
         log("Nothing new — done.")
         return
 
-    from anthropic import Anthropic
-    client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    from google import genai
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     new_videos, still_pending = [], []
     for v in candidates:
@@ -196,7 +201,7 @@ def main():
         try:
             picks = extract_picks(client, transcript)
         except Exception as e:
-            log(f"  Claude extraction failed for {v['video_id']}: {e}")
+            log(f"  Gemini extraction failed for {v['video_id']}: {e}")
             still_pending.append(v)
             continue
         if not picks:

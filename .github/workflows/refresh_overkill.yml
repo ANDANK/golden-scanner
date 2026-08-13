@@ -3,7 +3,7 @@ name: OverKill Shorts — Detect + Extract
 on:
   schedule:
     # Once daily now (was twice, detect-only) -- the pipeline is now fully
-    # automated end-to-end (detect -> fetch transcript -> Claude extracts
+    # automated end-to-end (detect -> fetch transcript -> Gemini extracts
     # picks -> writes straight into data/overkill_shorts.json), so there's
     # no human review step left to prompt twice a day for. One morning run
     # before market open covers whatever the channel posted since the last run.
@@ -64,12 +64,12 @@ jobs:
           # backend (confirmed: identical video IDs fetch fine on 1.2.4,
           # fail on 0.6.3). Capped below 2.0 so a future breaking major
           # version doesn't silently break this unattended job.
-          & "C:\Users\llcai\AppData\Local\Programs\Python\Python314\python.exe" -m pip install requests "youtube-transcript-api>=1.0,<2.0" anthropic
+          & "C:\Users\llcai\AppData\Local\Programs\Python\Python314\python.exe" -m pip install requests "youtube-transcript-api>=1.0,<2.0" google-genai
 
       - name: Run detection + extraction script
         env:
-          YOUTUBE_API_KEY:    ${{ secrets.YOUTUBE_API_KEY }}
-          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
+          YOUTUBE_API_KEY:  ${{ secrets.YOUTUBE_API_KEY }}
+          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
         run: |
           & "C:\Users\llcai\AppData\Local\Programs\Python\Python314\python.exe" scripts\overkill_shorts_scan.py
 
