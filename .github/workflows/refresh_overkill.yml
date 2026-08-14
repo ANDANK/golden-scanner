@@ -7,19 +7,20 @@ on:
     # picks -> writes straight into data/overkill_shorts.json), so there's
     # no human review step left to prompt twice a day for. One morning run
     # before market open covers whatever the channel posted since the last run.
-    # Deliberately :17, not :00 -- GitHub's cron is best-effort and drops or
-    # delays runs under load, and the top of the hour is by far its most
-    # contended slot. The first 12:00 UTC firing after this schedule was
-    # added never dispatched at all (runner was online and idle; no job ever
-    # reached it), which is the classic symptom. An odd minute avoids the
-    # stampede. Exact timing doesn't matter here -- it just needs to land
-    # before the market opens.
+    # NOTE: this schedule has not actually been dispatching. Two consecutive
+    # slots (12:00 UTC Aug 13, 12:17 UTC Aug 14) produced no run at all -- the
+    # self-hosted runner was Running and idle both times and no job ever
+    # reached it, so this is GitHub-side, not a runner problem. Every OTHER
+    # scheduled workflow in this repo fires reliably; the only difference here
+    # is `runs-on: [self-hosted]`. Moving the minute off :00 did not help.
+    # If it keeps skipping, trigger from the always-on machine instead
+    # (Windows Task Scheduler) rather than relying on GitHub's cron.
     # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
-    # 7:17 AM CDT = 12:17 UTC
-    - cron: "17 12 * * *"
+    # 8:45 AM CDT = 13:45 UTC
+    - cron: "45 13 * * *"
     # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
-    # 7:17 AM CST = 13:17 UTC   ← uncomment this and remove the CDT line in Nov
-    # - cron: "17 13 * * *"
+    # 8:45 AM CST = 14:45 UTC   ← uncomment this and remove the CDT line in Nov
+    # - cron: "45 14 * * *"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI, or the
                                # "Refresh Now" button on the OverKill Shorts tab
 
