@@ -348,6 +348,18 @@ def extract_picks(client, models: list[str], transcript: str) -> list[dict]:
         f"{len(RETRY_BACKOFF)} passes ({', '.join(shortlist)}): {last_err}")
 
 
+def _emit_new_pick_count(n: int):
+    """Publish the count as a GitHub Actions step output so the workflow can
+    skip the digest email when a run found nothing. The channel doesn't post
+    daily and this runs twice a day, so without this most emails would be
+    announcing that nothing happened. No-op outside Actions."""
+    gh_out = os.environ.get("GITHUB_OUTPUT")
+    if gh_out:
+        with open(gh_out, "a", encoding="utf-8") as f:
+            f.write(f"new_picks={n}\n")
+    log(f"new_picks={n}")
+
+
 def main():
     if not os.environ.get("YOUTUBE_API_KEY"):
         log("ERROR: YOUTUBE_API_KEY not set — add it as a GitHub Actions secret.")
@@ -379,6 +391,7 @@ def main():
                       indent=2, ensure_ascii=False)
             f.write("\n")
         log("Nothing new — done.")
+        _emit_new_pick_count(0)
         return
 
     from google import genai
@@ -464,6 +477,7 @@ def main():
         }, f, indent=2, ensure_ascii=False)
         f.write("\n")
     log(f"{len(still_pending)} still pending (transcript unavailable or extraction failed).")
+    _emit_new_pick_count(sum(len(v["picks"]) for v in new_videos))
 
 
 if __name__ == "__main__":

@@ -65,6 +65,10 @@ jobs:
   refresh:
     name: Detect + extract new OverKill Shorts
     needs: trigger-check
+    outputs:
+      # How many picks this run actually extracted -- gates the digest email
+      # below so it isn't sent twice a day to say nothing happened.
+      new_picks: ${{ steps.scan.outputs.new_picks }}
     # Self-hosted, not ubuntu-latest: GitHub-hosted runners sit on Google
     # Cloud IPs, which YouTube blocks outright from the transcript endpoint
     # (confirmed directly -- see this workflow's git history). A
@@ -113,6 +117,7 @@ jobs:
           & "C:\Users\llcai\AppData\Local\Programs\Python\Python314\python.exe" -m pip install requests "youtube-transcript-api>=1.0,<2.0" google-genai
 
       - name: Run detection + extraction script
+        id: scan
         env:
           YOUTUBE_API_KEY:  ${{ secrets.YOUTUBE_API_KEY }}
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
@@ -148,3 +153,41 @@ jobs:
           } else {
             git push origin main
           }
+
+  # Digest email. Runs on ubuntu-latest rather than the self-hosted runner:
+  # the perf table needs yfinance/pandas, which the runner deliberately does
+  # NOT have (installing them on its Python 3.14 risks breaking the scan), and
+  # nothing here needs a residential IP. Skipped entirely when the scan found
+  # no new picks -- twice daily against a channel that doesn't post daily would
+  # otherwise mostly deliver "nothing happened".
+  email:
+    name: Email the Shorts digest
+    needs: refresh
+    if: needs.refresh.outputs.new_picks != '0' && needs.refresh.outputs.new_picks != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # ref: main, not the triggering SHA -- the refresh job pushed a commit
+      # after this workflow started, and that commit is the picks we're emailing.
+      - name: Checkout repo (latest main, incl. the picks just pushed)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install yfinance pandas numpy requests
+
+      - name: Send digest
+        env:
+          GMAIL_ADDRESS:      ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          OVERKILL_EMAIL_TO:  ${{ secrets.OVERKILL_EMAIL_TO }}
+        run: python scripts/headless_overkill_shorts_email.py
