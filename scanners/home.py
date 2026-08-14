@@ -1704,16 +1704,19 @@ def _render_recent_ticker_line(flat: list[dict]):
         return
     joined = ", ".join(tickers)
     st.markdown(
-        f'<div style="background:{_rgba(GOLD, 0.07)};border:1px solid {GOLD}33;'
-        f'border-radius:8px;padding:8px 12px;margin-bottom:10px">'
-        f'<span style="color:{GOLD};font-size:10px;font-weight:700;'
-        f'text-transform:uppercase;letter-spacing:0.5px">Last 2 posting days '
-        f'({" · ".join(dates)}) — {len(tickers)} ticker(s)</span><br>'
-        f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;'
-        f'font-size:13px;font-weight:700;user-select:all">{joined}</span></div>',
+        f'<div style="color:{GOLD};font-size:10px;font-weight:700;'
+        f'text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">'
+        f'Last 2 posting days ({" · ".join(dates)}) — {len(tickers)} ticker(s)</div>',
         unsafe_allow_html=True,
     )
-    st.caption("Select the line above and copy it into the OverKill tab to chart these.")
+    # st.code rather than a styled div: it ships Streamlit's own copy-to-
+    # clipboard button, which beats hand-rolling one. A custom button would
+    # have to run navigator.clipboard inside a components.html iframe, where
+    # clipboard writes are commonly blocked by permissions policy -- a button
+    # that silently fails to copy is worse than no button. Trades the gold box
+    # for a control that reliably works.
+    st.code(joined, language=None)
+    st.caption("Copy with the button above, then paste into the OverKill tab to chart these.")
 
 
 def _render_overkill_tab():
