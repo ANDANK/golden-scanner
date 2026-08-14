@@ -31,14 +31,40 @@ on:
 permissions:
   contents: write          # allow the bot to commit + push extracted picks
 
-# Prevent overlapping runs from duplicate cron fires.
+# Scheduled and manual runs get SEPARATE concurrency groups. This previously
+# used one static group shared by both event types, which is the single
+# structural difference between this workflow and the three in this repo that
+# have been firing on schedule reliably all along -- they all key their group
+# on the event. With one shared group and cancel-in-progress: false, a manual
+# run and a scheduled run compete for the same slot, and GitHub keeps only the
+# newest pending run per group while cancelling the older one. That matches the
+# symptom exactly: manual triggers always worked, scheduled ones never appeared,
+# during a stretch of heavy manual triggering.
 concurrency:
-  group: refresh-overkill-shorts
+  group: refresh-overkill-shorts-${{ github.event_name }}
   cancel-in-progress: false
 
 jobs:
+  # A few seconds of GitHub-hosted time whose only purpose is to prove the
+  # workflow actually fired. Every reliably-scheduled workflow in this repo
+  # runs on ubuntu-latest; this was the only one whose sole job targeted a
+  # self-hosted runner. If a schedule is missed again, whether this job shows
+  # up separates "GitHub never triggered the workflow" from "it triggered but
+  # nothing picked up the self-hosted job" -- two different problems with two
+  # different fixes, and previously indistinguishable from the run list.
+  trigger-check:
+    name: Confirm the trigger fired
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Log how and when this run started
+        run: |
+          echo "event   : ${{ github.event_name }}"
+          echo "started : $(date -u '+%Y-%m-%d %H:%M:%S') UTC"
+
   refresh:
     name: Detect + extract new OverKill Shorts
+    needs: trigger-check
     # Self-hosted, not ubuntu-latest: GitHub-hosted runners sit on Google
     # Cloud IPs, which YouTube blocks outright from the transcript endpoint
     # (confirmed directly -- see this workflow's git history). A
