@@ -1,8 +1,33 @@
 {
-  "updated": "2026-07-25",
+  "updated": "2026-08-13",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-13",
+      "url": "https://www.youtube.com/shorts/YCv0amWOROU",
+      "title": "3 STOCKS TO WATCH NOW 📈 AUG 13",
+      "picks": [
+        {
+          "ticker": "FISV",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "The stock has sold off heavily from $240 down to around $55, triggering buy signals between $68 and $49. Earnings remain solid at 5 billion a quarter, presenting a favorable technical setup to buy on the monthly chart."
+        },
+        {
+          "ticker": "WLK",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "After pulling back from $125 down to $69, the stock is flashing green buy signals. The company crushed recent earnings, pays around a 5% dividend, and looks strong above $68."
+        },
+        {
+          "ticker": "DOW",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Following a pullback after its prior run from $20 to $42, the chemical company is showing a new buy signal. It also recently reported earnings and offers an attractive dividend of around 8%."
+        }
+      ]
+    },
     {
       "title": "DISCORD CHART REQUESTS 📈 ACHR DOW OPTT SBET $ETH - JULY 25",
       "date": "2026-07-25",
