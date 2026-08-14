@@ -5,6 +5,132 @@
   "videos": [
     {
       "date": "2026-08-13",
+      "url": "https://www.youtube.com/shorts/wm94V1TRB1k",
+      "title": "Taking profits here on $PATH",
+      "picks": [
+        {
+          "ticker": "PATH",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Taking profits at $16 after entering around $11.50, citing overextension off the 9 EMA and a red dot signal that could trigger a pullback to $13."
+        }
+      ]
+    },
+    {
+      "date": "2026-08-13",
+      "url": "https://www.youtube.com/shorts/jCfVi3ZLpGw",
+      "title": "$TSLA ORCL GOLD STOCK ANALYSIS 📈 AUG 12",
+      "picks": [
+        {
+          "ticker": "TSLA",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Tesla is sitting on its 4-year moving average at fair value, which the host considers a very good buying level while anticipating a green dot signal in the next 1 to 2 weeks."
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Oracle is sitting right on its moving average after re-entering around $125 on a green dot, and the host confirms it as a buy."
+        },
+        {
+          "ticker": "GLD",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Gold is bouncing off its moving average with buy signals present, offering a trade setup with a clear stop loss at $3,900."
+        }
+      ]
+    },
+    {
+      "date": "2026-08-13",
+      "url": "https://www.youtube.com/shorts/i3vqutKXbnU",
+      "title": "THESE STOCKS LOOK BULLISH 📈 AUG 12",
+      "picks": [
+        {
+          "ticker": "BBAI",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Host likes the stock as long as it can hold above $2 support, pointing out strong historical performance following green dot buy signals."
+        },
+        {
+          "ticker": "PSKY",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Host considers Paramount very undervalued at 17-year lows after receiving a buy signal around $8.50, driven by catalysts like acquiring major media companies."
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Host likes Netflix as it shows a buy signal around $70 after pulling back from $130 and sitting below its 4-year moving average."
+        }
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "url": "https://www.youtube.com/shorts/dCeBAGad37s",
+      "title": "$SMCI STOCK 📈 AUG 12",
+      "picks": [
+        {
+          "ticker": "SMCI",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "The host expects SMCI to go much higher with a target price between $60 and $90 after the company crushed earnings by about 84%. He notes strong momentum following a weekly MACD crossover with substantial upside room remaining on the stochastic RSI."
+        }
+      ]
+    },
+    {
+      "date": "2026-08-11",
+      "url": "https://www.youtube.com/shorts/ih3WwR_bU4k",
+      "title": "$XRP COINBASE ETHEREUM CHART ANALYSIS 📈 AUG 11",
+      "picks": [
+        {
+          "ticker": "XRP",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Considers XRP a strong buy at $1.00 after a 70% sell-off, noting it is trading 20% to 30% below its 4-year moving average."
+        },
+        {
+          "ticker": "COIN",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Highlights a red dot while trading near $130-$140 support, recommending a stop loss around $135 to protect against a breakdown."
+        },
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Remains very bullish on Ethereum with a green dot, stating the bottom is likely in at $1,500."
+        }
+      ]
+    },
+    {
+      "date": "2026-08-11",
+      "url": "https://www.youtube.com/shorts/U6BciZNvtQU",
+      "title": "GDRX $NFLX DIS STOCK ANALYSIS 📈 AUG 11",
+      "picks": [
+        {
+          "ticker": "GDRX",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Currently trading around $3.80 after a major rally from $2.20, the host is looking for a red dot signal to sell, though momentum remains bullish as long as it holds above $3.50."
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Trading at a 23 P/E ratio, Netflix has triggered a weekly green dot buy signal as an oversold swing trade."
+        },
+        {
+          "ticker": "DIS",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Triggered a green dot buy signal last week around $98, which acts as a strong buy support level with the stock currently sitting at $103."
+        }
+      ]
+    },
+    {
+      "date": "2026-08-13",
       "url": "https://www.youtube.com/shorts/YCv0amWOROU",
       "title": "3 STOCKS TO WATCH NOW 📈 AUG 13",
       "picks": [
