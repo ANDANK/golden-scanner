@@ -58,6 +58,14 @@ Required env vars (GitHub Actions secrets):
                     no credit card required; ~1-12 requests/day here is
                     well within the free rate limit
 
+Optional:
+  GEMINI_MODEL      Pin a specific model instead of auto-selecting one. Only
+                    needed to override the choice -- the script asks the API
+                    which models the key can use, so it survives Google
+                    retiring a model alias (which took the pinned
+                    gemini-2.5-flash out in Aug 2026 with a 404 "no longer
+                    available to new users").
+
 Must run on a self-hosted runner (see .github/workflows/refresh_overkill.yml)
 -- GitHub's own hosted runners are on cloud IPs YouTube blocks from the
 transcript endpoint; without a self-hosted runner online at schedule time,
@@ -81,7 +89,18 @@ from scripts.refresh_overkill_shorts import (
 DATA_PATH = os.path.join(ROOT, "data", "overkill_shorts.json")
 PENDING_PATH = os.path.join(ROOT, "data", "overkill_pending.json")
 
-GEMINI_MODEL = "gemini-2.5-flash"   # confirmed-current model; free tier is plenty for ~1-12 requests/day here
+# Model is DISCOVERED AT RUNTIME, not hardcoded. A pinned "gemini-2.5-flash"
+# worked for weeks and then started 404ing mid-August with "no longer
+# available to new users" -- Google retires model aliases on its own schedule,
+# and this job runs unattended, so a hardcoded name is a scheduled outage.
+# Asking the API which models the key can actually use costs one extra call
+# per run and can't go stale. Set the GEMINI_MODEL env var to pin a specific
+# one if you ever need to override the choice.
+GEMINI_MODEL_ENV = "GEMINI_MODEL"
+
+# Non-text models that can't do what we need, filtered out by name.
+_MODEL_BLOCKLIST = ("embedding", "aqa", "imagen", "veo", "tts", "image",
+                    "vision", "learnlm", "gemma")
 
 # ── YouTube rate-limit hygiene ────────────────────────────────────────
 # The self-hosted runner's residential IP is NOT in YouTube's blocked
@@ -162,23 +181,97 @@ def fetch_transcript(video_id: str) -> str | None:
         return None
 
 
-def extract_picks(client, transcript: str) -> list[dict]:
-    from google.genai import types
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=f"{_SYSTEM_PROMPT}\n\nTranscript:\n\n{transcript}",
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_json_schema=_RESPONSE_JSON_SCHEMA,
-        ),
+def _model_rank(name: str):
+    """Sort key, most-preferred first:
+      1. flash before pro   -- faster and far more generous on the free tier
+      2. '-latest' aliases  -- self-updating, so they can't go stale on us
+      3. stable before preview/experimental
+      4. newest version
+      5. full before lite   -- last, and deliberately so: a stable current-gen
+         lite model beats an experimental older full one for a job this simple
+         (short transcript in, small JSON out)."""
+    s = name.lower()
+    ver = re.search(r"(\d+)(?:\.(\d+))?", s)
+    major, minor = (int(ver.group(1)), int(ver.group(2) or 0)) if ver else (0, 0)
+    return (
+        0 if "flash" in s else 1,
+        0 if "latest" in s else 1,
+        0 if ("preview" not in s and "exp" not in s) else 1,
+        -major, -minor,
+        0 if "lite" not in s else 1,
+        s,
     )
-    if not response.text:
-        return []
-    picks = json.loads(response.text).get("picks", [])
-    # Defensive: enforce the bias<->dot pairing even if the model drifts from the rule.
-    for p in picks:
-        p["dot"] = "Green" if p.get("bias") == "Bullish" else "Red"
-    return picks
+
+
+def usable_models(client) -> list[str]:
+    """Models this API key can actually call generateContent on, best first.
+    A GEMINI_MODEL override short-circuits the lookup entirely."""
+    override = os.environ.get(GEMINI_MODEL_ENV, "").strip()
+    if override:
+        log(f"Using pinned model from {GEMINI_MODEL_ENV}: {override}")
+        return [override]
+
+    names = []
+    for m in client.models.list():
+        if "generateContent" not in (m.supported_actions or []):
+            continue
+        name = (m.name or "").split("/")[-1]
+        if name and not any(b in name.lower() for b in _MODEL_BLOCKLIST):
+            names.append(name)
+    if not names:
+        raise RuntimeError("No Gemini model supporting generateContent is available "
+                           "to this API key.")
+    names.sort(key=_model_rank)
+    log(f"Model candidates ({len(names)}), best first: {', '.join(names[:5])}"
+        + (" ..." if len(names) > 5 else ""))
+    return names
+
+
+_WORKING_MODEL: str | None = None   # cached across videos within a run
+
+
+def extract_picks(client, models: list[str], transcript: str) -> list[dict]:
+    """Extract picks, falling through the candidate list on a model-not-found.
+    The first model that answers is remembered for the rest of the run, so the
+    fallback costs at most one wasted call rather than one per video."""
+    from google.genai import types
+
+    global _WORKING_MODEL
+    order = ([_WORKING_MODEL] if _WORKING_MODEL else []) + \
+            [m for m in models if m != _WORKING_MODEL]
+
+    last_err = None
+    for model in order:
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=f"{_SYSTEM_PROMPT}\n\nTranscript:\n\n{transcript}",
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_json_schema=_RESPONSE_JSON_SCHEMA,
+                ),
+            )
+        except Exception as e:
+            # Only a missing/retired model is worth trying the next candidate
+            # for; quota, auth and network errors would fail identically on
+            # every model, so re-raise those immediately.
+            if "NOT_FOUND" not in str(e) and "404" not in str(e):
+                raise
+            log(f"  model {model} unavailable, trying next candidate")
+            last_err = e
+            continue
+        if model != _WORKING_MODEL:
+            log(f"  using model: {model}")
+            _WORKING_MODEL = model
+        if not response.text:
+            return []
+        picks = json.loads(response.text).get("picks", [])
+        # Defensive: enforce the bias<->dot pairing even if the model drifts from the rule.
+        for p in picks:
+            p["dot"] = "Green" if p.get("bias") == "Bullish" else "Red"
+        return picks
+
+    raise RuntimeError(f"No usable Gemini model among {order}: {last_err}")
 
 
 def main():
@@ -216,6 +309,7 @@ def main():
 
     from google import genai
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    models = usable_models(client)
 
     from youtube_transcript_api._errors import RequestBlocked
 
@@ -247,7 +341,7 @@ def main():
             still_pending.append(v)
             continue
         try:
-            picks = extract_picks(client, transcript)
+            picks = extract_picks(client, models, transcript)
         except Exception as e:
             log(f"  Gemini extraction failed for {v['video_id']}: {e}")
             still_pending.append(v)
