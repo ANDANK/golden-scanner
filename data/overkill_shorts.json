@@ -4,6 +4,113 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-08-11",
+      "url": "https://www.youtube.com/shorts/BFbe3sXEjEY",
+      "title": "4 STOCKS TO WATCH NOW 📈 AUG 11",
+      "picks": [
+        {
+          "ticker": "SMCI",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "The host re-entered the trade around the $30 support level ahead of earnings and plans to add more if price dips to $20."
+        },
+        {
+          "ticker": "PATH",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Having rallied from $10 to $16, the host views the move as completed and is looking to take profits and sell this week."
+        },
+        {
+          "ticker": "ISRG",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "The host entered at $400 and bought more around $340 following an earnings drop, anticipating a continued fast V-shaped recovery."
+        }
+      ]
+    },
+    {
+      "date": "2026-08-11",
+      "url": "https://www.youtube.com/shorts/GQGll9j6Bfo",
+      "title": "MICROSOFT STOCK 📈 AUG 11 $MSFT",
+      "picks": [
+        {
+          "ticker": "MSFT",
+          "bias": "Bearish",
+          "dot": "Red",
+          "notes": "Looking to trim positions around $500 as the stock is up in the red zone and significantly overextended off moving averages after a 30%+ move."
+        }
+      ]
+    },
+    {
+      "date": "2026-08-10",
+      "url": "https://www.youtube.com/shorts/iHceMHR6fs4",
+      "title": "BITCOIN BULL RUN LOADING… 👀",
+      "picks": [
+        {
+          "ticker": "BTC",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "The host considers this a great long-term accumulation period for Bitcoin, noting he is unbothered by a potential 10% to 20% dip down to around $50k as he looks to plant seeds for the next cycle."
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "url": "https://www.youtube.com/shorts/vyGg3ITBTgA",
+      "title": "THESE 4 STOCKS LOOK BULLISH THIS WEEK 📈JULY 27",
+      "picks": [
+        {
+          "ticker": "PEP",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Host notes a buy signal around $140 after a pullback from $170, expecting boring stocks to perform well over the next 6 to 12 months."
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Host sees a buy signal down 60% from its top and likes the stock as long as it holds above $65."
+        },
+        {
+          "ticker": "SOUN",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Host notes a buy signal at $6 with a higher low, liking it as an AI play ahead of earnings in a couple of weeks."
+        },
+        {
+          "ticker": "AVAV",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Host recommends buying this drone maker in the $150 to $180 range, citing potential tailwinds from military contracts and Iran tensions."
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "url": "https://www.youtube.com/shorts/WBNpe4qqXqk",
+      "title": "3 STOCKS $NOW 📈 JULY 27",
+      "picks": [
+        {
+          "ticker": "ISRG",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "The stock experienced an overreaction sell-off from $600 down to around $350 despite beating earnings by 11%. The host believes the bottom is in at $320 and is looking to buy on green dots."
+        },
+        {
+          "ticker": "SMCI",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "The host reentered the trade as a green dot appeared this week after previously taking profits on a run from $20 to $50. He considers it his favorite chip stock and a steal at $30 ahead of earnings in three weeks."
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Looking to reenter the trade off a green dot following strong earnings results. The stock looks very strong above $90 after previously taking profits on a move from $90 to $140."
+        }
+      ]
+    },
+    {
       "date": "2026-08-13",
       "url": "https://www.youtube.com/shorts/wm94V1TRB1k",
       "title": "Taking profits here on $PATH",
