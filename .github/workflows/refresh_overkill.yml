@@ -15,12 +15,16 @@ on:
     # is `runs-on: [self-hosted]`. Moving the minute off :00 did not help.
     # If it keeps skipping, trigger from the always-on machine instead
     # (Windows Task Scheduler) rather than relying on GitHub's cron.
+    # Twice daily: before the open, and after the close.
     # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
-    # 8:45 AM CDT = 13:45 UTC
-    - cron: "45 13 * * *"
+    # 7:10 AM CDT = 12:10 UTC   |   7:10 PM CDT = 00:10 UTC (next day)
+    - cron: "10 12 * * *"
+    - cron: "10 0 * * *"
     # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
-    # 8:45 AM CST = 14:45 UTC   ← uncomment this and remove the CDT line in Nov
-    # - cron: "45 14 * * *"
+    # 7:10 AM CST = 13:10 UTC   |   7:10 PM CST = 01:10 UTC
+    # ← swap to these two and comment out the CDT pair in Nov
+    # - cron: "10 13 * * *"
+    # - cron: "10 1 * * *"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI, or the
                                # "Refresh Now" button on the OverKill Shorts tab
 

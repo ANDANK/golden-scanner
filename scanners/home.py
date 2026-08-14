@@ -6,12 +6,17 @@
 #   ├─ Tab 2  🔄 Sector Rotation — RRG-style flows (preserved from the old page)
 #   ├─ Tab 3  🔍 Overkill Check — WaveTrend dot + Volume Profile confluence
 #   │         scan on any user-entered ticker(s) (see scanners/overkill_check.py)
-#   ├─ Tab 4  📺 OverKill Shorts — curated watch-list from the YouTube shorts
-#   │         (data/overkill_shorts.json, auto-updated daily by
+#   ├─ Tab 4  📺 OverKill Shorts — watch-list auto-extracted from the YouTube
+#   │         shorts (data/overkill_shorts.json, refreshed twice daily by
 #   │         scripts/overkill_shorts_scan.py — see .github/workflows/refresh_overkill.yml)
-#   └─ Tab 5  🎯 OverKill Perf — alert performance tracker (moved here from the
-#             Admin-only nav; see scanners/overkill_performance.py), now visible
-#             to all users, not just admins
+#   ├─ Tab 5  📊 Shorts Perf — how those auto-extracted picks actually did,
+#   │         scored from the price captured on the day of each call
+#   │         (see scanners/overkill_shorts_perf.py)
+#   └─ Tab 6  🎯 Shorts Backtest — performance of a HAND-CURATED list of
+#             OverKill scanner alerts (Golden Dot / Weekly / Monthly / Daily).
+#             Despite sitting next to Shorts Perf this reads a completely
+#             different source — see scanners/overkill_performance.py. Moved
+#             here from the Admin-only nav, now visible to all users.
 #
 # The Fear & Greed gauge and the whole sidebar live in app.py — untouched here.
 # Backup of the previous command-center page: scanners/home_backup_2026-07-23.py
@@ -34,6 +39,7 @@ from utils import section_header, calc_sma
 from data_loader import get_price_history, get_market_overview, prefetch_tickers
 from scanners import overkill_check
 from scanners import overkill_performance
+from scanners import overkill_shorts_perf
 from scanners import scan_history
 from scanners.ui_tables import sortable_table_html
 
@@ -1630,20 +1636,13 @@ def _render_overkill_trigger():
                                "which candidate videos were checked and why each was skipped (crypto, no "
                                "transcript yet, or no picks extracted).")
 
-    # Always-visible debug so token problems are self-diagnosable without asking Claude
-    token = _get_github_token()
-    with st.expander("🔧 Debug — GitHub token status", expanded=not token):
-        if token:
-            preview = token[:12] + "…" if len(token) > 12 else token
-            st.markdown(f"**Token read:** `{preview}` (length {len(token)})")
-            st.caption("If buttons still error with 401, the token is invalid/expired — regenerate it. "
-                       "If 404, its repo access or Actions permission isn't set on golden-scanner.")
-        else:
-            st.markdown("**Token read:** *(not found)* — `st.secrets[\"GITHUB_TOKEN\"]` returned nothing.")
-            st.caption("On Streamlit Cloud: Settings → Secrets must contain a top-level line "
-                       "`GITHUB_TOKEN = \"github_pat_...\"` (exact key name, not nested under a section). "
-                       "After saving, the app should auto-reboot — if this still shows 'not found' after "
-                       "a minute, use 'Reboot app' from the Cloud menu to force it.")
+    # The "Debug — GitHub token status" expander that used to sit here was
+    # removed once the token was confirmed working -- it was permanent UI for a
+    # one-time setup problem. If the Refresh/status buttons ever start erroring:
+    # 401 means the token is invalid or expired (regenerate it), 404 means its
+    # repo access or Actions permission isn't set on golden-scanner, and "not
+    # found" means st.secrets["GITHUB_TOKEN"] is missing or nested under a
+    # section instead of being a top-level line in Streamlit Cloud's Secrets.
 
 
 def _render_overkill_pending():
@@ -1682,6 +1681,39 @@ def _render_overkill_pending():
         f'for these manually if needed.</div></div>',
         unsafe_allow_html=True,
     )
+
+
+def _render_recent_ticker_line(flat: list[dict]):
+    """Comma-separated tickers from the two most recent posting dates, ready to
+    copy into the OverKill tab to pull the charts.
+
+    Two most recent DATES PRESENT, not the last two calendar days: the channel
+    doesn't post every day, so a calendar window would come up empty after a
+    quiet stretch, which is exactly when you'd still want the latest names.
+    Deduped, newest date first, order preserved within a date."""
+    dates = sorted({r.get("date", "") for r in flat if r.get("date")}, reverse=True)[:2]
+    if not dates:
+        return
+    seen, tickers = set(), []
+    for r in flat:                                    # already sorted newest-first
+        t = (r.get("ticker") or "").upper()
+        if r.get("date") in dates and t and t not in seen:
+            seen.add(t)
+            tickers.append(t)
+    if not tickers:
+        return
+    joined = ", ".join(tickers)
+    st.markdown(
+        f'<div style="background:{_rgba(GOLD, 0.07)};border:1px solid {GOLD}33;'
+        f'border-radius:8px;padding:8px 12px;margin-bottom:10px">'
+        f'<span style="color:{GOLD};font-size:10px;font-weight:700;'
+        f'text-transform:uppercase;letter-spacing:0.5px">Last 2 posting days '
+        f'({" · ".join(dates)}) — {len(tickers)} ticker(s)</span><br>'
+        f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace;'
+        f'font-size:13px;font-weight:700;user-select:all">{joined}</span></div>',
+        unsafe_allow_html=True,
+    )
+    st.caption("Select the line above and copy it into the OverKill tab to chart these.")
 
 
 def _render_overkill_tab():
@@ -1725,6 +1757,8 @@ def _render_overkill_tab():
             row["url"]   = vid.get("url", "")
             flat.append(row)
     flat.sort(key=lambda r: (r.get("date", ""), r.get("ticker", "")), reverse=True)
+
+    _render_recent_ticker_line(flat)
 
     hdr = "".join(f'<th style="{_TH}">{h}</th>' for h in ["Date", "Ticker", "Bias", "Dot", "Notes"])
     rows = ""
@@ -2094,8 +2128,13 @@ def render():
         except Exception:
             st.warning("Regime bar unavailable.")
 
-    tab1, tab3, tab4, tab2, tab5 = st.tabs(
-        ["🎯  Best Scanners", "🔄  Sector Rotation", "🔍  OverKill", "📺  OverKill Shorts", "🎯  OverKill Perf"]
+    # "Shorts Perf" and "Shorts Backtest" are deliberately different things:
+    # Perf scores the picks auto-extracted from the videos, Backtest scores a
+    # hand-curated list of OverKill scanner alerts (Golden Dot / Weekly /
+    # Monthly / Daily) that has no connection to the Shorts feed.
+    tab1, tab3, tab4, tab2, tab6, tab5 = st.tabs(
+        ["🎯  Best Scanners", "🔄  Sector Rotation", "🔍  OverKill",
+         "📺  OverKill Shorts", "📊  Shorts Perf", "🎯  Shorts Backtest"]
     )
 
     with tab1:
@@ -2123,11 +2162,17 @@ def render():
         except Exception as e:
             st.error(f"OverKill Shorts tab error: {e}")
 
+    with tab6:
+        try:
+            overkill_shorts_perf.render()
+        except Exception as e:
+            st.error(f"Shorts Perf tab error: {e}")
+
     with tab5:
         try:
             overkill_performance.render()
         except Exception as e:
-            st.error(f"OverKill Perf tab error: {e}")
+            st.error(f"Shorts Backtest tab error: {e}")
 
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'

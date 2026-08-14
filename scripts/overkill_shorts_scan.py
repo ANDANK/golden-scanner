@@ -79,6 +79,8 @@ Usage:
 import json, os, re, sys, time
 from datetime import datetime, timezone
 
+import requests
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
@@ -178,6 +180,45 @@ def fetch_transcript(video_id: str) -> str | None:
         raise
     except Exception as e:
         log(f"  transcript unavailable for {video_id}: {e}")
+        return None
+
+
+_YAHOO_CHART = "https://query1.finance.yahoo.com/v8/finance/chart/{}"
+_YAHOO_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+             "(KHTML, like Gecko) Chrome/122.0 Safari/537.36")
+
+
+def fetch_pick_price(ticker: str, date_str: str) -> float | None:
+    """Close price for `ticker` on the day the call was made (first close on
+    or after the video's date), which is what a 7pm run sees as today's close
+    and a 7am run sees as yesterday's.
+
+    Pegged to the VIDEO's date rather than "price right now" on purpose: when
+    a backlog video from three weeks ago finally gets processed, today's price
+    would be a badly misleading entry price for performance tracking. For a
+    freshly-posted Short the two are the same thing anyway.
+
+    Hits Yahoo's chart JSON directly through requests instead of yfinance --
+    the runner has no pandas/numpy/yfinance, and installing them on its Python
+    3.14 to obtain one number risks breaking a pipeline that finally works.
+    Always best-effort: a price lookup must never cost us an extracted pick,
+    so failures return None and the UI shows a dash."""
+    try:
+        r = requests.get(_YAHOO_CHART.format(ticker),
+                         params={"range": "6mo", "interval": "1d"},
+                         headers={"User-Agent": _YAHOO_UA}, timeout=20)
+        r.raise_for_status()
+        res = r.json()["chart"]["result"][0]
+        stamps = res.get("timestamp") or []
+        closes = ((res.get("indicators", {}).get("quote") or [{}])[0] or {}).get("close") or []
+        target = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp()
+        for ts, close in zip(stamps, closes):
+            if close is not None and ts >= target:
+                return round(float(close), 2)
+        done = [c for c in closes if c is not None]      # date is past the last bar
+        return round(float(done[-1]), 2) if done else None
+    except Exception as e:
+        log(f"  price lookup failed for {ticker}: {e}")
         return None
 
 
@@ -383,6 +424,12 @@ def main():
             log(f"  no ticker picks found in {v['video_id']} ({v['title']}) — has a transcript, "
                 f"just nothing to extract, so not added to pending either.")
             continue
+        # Price at the time of the call -- the entry price the Shorts Perf tab
+        # measures from. Recorded here rather than derived later so it stays
+        # fixed once captured.
+        for p in picks:
+            p["price"] = fetch_pick_price(p["ticker"], v["date"])
+
         new_videos.append({
             "date": v["date"],
             "url": f"https://www.youtube.com/shorts/{v['video_id']}",
@@ -390,7 +437,9 @@ def main():
             "picks": picks,
         })
         log(f"  extracted {len(picks)} pick(s) from {v['video_id']} ({v['title']}): "
-            f"{', '.join(p['ticker'] for p in picks)}")
+            + ", ".join(f"{p['ticker']}"
+                        + (f" @ ${p['price']}" if p.get("price") else " @ ?")
+                        for p in picks))
 
     if new_videos:
         data["videos"] = new_videos + data.get("videos", [])

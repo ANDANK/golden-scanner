@@ -1,0 +1,192 @@
+# scanners/overkill_shorts_perf.py
+# How the @overkilltrading Shorts picks actually performed.
+#
+# Distinct from scanners/overkill_performance.py ("Shorts Backtest"), which
+# tracks a hand-curated list of OverKill scanner alerts with their own alert
+# prices. This one is fully automatic: it measures the picks that
+# scripts/overkill_shorts_scan.py extracted from the videos themselves, using
+# the price captured at the time of each call.
+#
+# Green and Red are split into separate tables and Red's percentage is
+# sign-flipped, matching scanners/overkill_check.py's track record: a Red dot
+# is a sell/trim call, so a decline means the call was RIGHT. Both tables
+# therefore read "best call at the top". High/Low stay raw -- they describe
+# the trading range since the call, which is the same fact either way.
+
+import json
+import os
+
+import streamlit as st
+
+from config import *
+from scanners import scan_history
+from scanners.ui_tables import sortable_table_html
+
+DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         "data", "overkill_shorts.json")
+
+
+def _load_picks() -> list[dict]:
+    """One row per (ticker, dot), keyed to the EARLIEST call of that kind --
+    the channel repeats tickers across videos, and performance should be
+    measured from when the call was first made, not from the latest mention.
+    A ticker called Green in June and Red in August is two separate rows,
+    which is correct: those are two different calls to score."""
+    try:
+        with open(DATA_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return []
+
+    first: dict[tuple[str, str], dict] = {}
+    for vid in data.get("videos", []):
+        date = vid.get("date", "")
+        for p in vid.get("picks", []):
+            ticker, dot = (p.get("ticker") or "").upper(), p.get("dot") or "None"
+            if not ticker or dot not in ("Green", "Red"):
+                continue
+            key = (ticker, dot)
+            if key not in first or date < first[key]["date"]:
+                first[key] = {
+                    "ticker": ticker,
+                    "dot": dot,
+                    "date": date,
+                    "price": p.get("price"),
+                    "url": vid.get("url", ""),
+                    "title": vid.get("title", ""),
+                }
+    return sorted(first.values(), key=lambda r: (r["date"], r["ticker"]))
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def _score(rows: list[dict]) -> list[dict]:
+    """Attach current/high/low and the percentages. Entry price is whatever
+    the scan captured; picks recorded before price capture existed fall back
+    to the close on their call date, so older rows still score rather than
+    being dropped."""
+    if not rows:
+        return []
+    pairs = [(r["ticker"], r["date"]) for r in rows]
+    stats = scan_history.fetch_range_stats(pairs, period="1y")
+
+    missing = [(r["ticker"], r["date"]) for r in rows if not r.get("price")]
+    backfill = scan_history.fetch_prices_on_dates(missing, period="1y") if missing else {}
+
+    out = []
+    for r in rows:
+        s = stats.get(r["ticker"])
+        entry = r.get("price") or backfill.get((r["ticker"], r["date"]))
+        if not s or not entry:
+            continue
+        current, high, low = s["current"], s["high"], s["low"]
+        pct = (current / entry - 1) * 100
+        out.append({
+            **r,
+            "entry": entry,
+            "current": current,
+            # Red is a sell/trim call, so a fall is a win -- flip it so both
+            # tables sort best-first. High/Low deliberately stay unflipped.
+            "pct": -pct if r["dot"] == "Red" else pct,
+            "high": high,
+            "high_pct": (high / entry - 1) * 100,
+            "low": low,
+            "low_pct": (low / entry - 1) * 100,
+        })
+    out.sort(key=lambda r: -r["pct"])
+    return out
+
+
+def _pct_html(v: float) -> str:
+    col = ACCENT_GREEN if v >= 0 else ACCENT_RED
+    return (f'<span style="color:{col};font-family:\'DM Mono\',monospace;'
+            f'font-weight:700">{v:+.1f}%</span>')
+
+
+def _money(v: float) -> str:
+    return (f'<span style="color:{TEXT_PRIMARY};font-family:\'DM Mono\',monospace">'
+            f'${v:,.2f}</span>')
+
+
+_COLUMNS = [
+    {"label": "Ticker", "type": "str"},
+    {"label": "Called", "type": "str"},
+    {"label": "Price @ Call", "type": "num"},
+    {"label": "Now", "type": "num"},
+    {"label": "Perf %", "type": "num"},
+    {"label": "High", "type": "num"},
+    {"label": "% High", "type": "num"},
+    {"label": "Low", "type": "num"},
+    {"label": "% Low", "type": "num"},
+]
+
+
+def _table_rows(rows: list[dict]) -> list[list[tuple[str, object]]]:
+    out = []
+    for r in rows:
+        date_cell = (f'<a href="{r["url"]}" target="_blank" title="{r["title"]}" '
+                     f'style="color:{TEXT_MUTED};text-decoration:none">{r["date"]} ↗</a>'
+                     if r.get("url") else
+                     f'<span style="color:{TEXT_MUTED}">{r["date"]}</span>')
+        out.append([
+            (f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
+             f'font-weight:700">{r["ticker"]}</span>', r["ticker"]),
+            (date_cell, r["date"]),
+            (_money(r["entry"]), r["entry"]),
+            (_money(r["current"]), r["current"]),
+            (_pct_html(r["pct"]), r["pct"]),
+            (_money(r["high"]), r["high"]),
+            (_pct_html(r["high_pct"]), r["high_pct"]),
+            (_money(r["low"]), r["low"]),
+            (_pct_html(r["low_pct"]), r["low_pct"]),
+        ])
+    return out
+
+
+def _summary(rows: list[dict], label: str, color: str) -> str:
+    if not rows:
+        return ""
+    wins = sum(1 for r in rows if r["pct"] > 0)
+    avg = sum(r["pct"] for r in rows) / len(rows)
+    avg_col = ACCENT_GREEN if avg >= 0 else ACCENT_RED
+    return (f'<div style="font-size:11px;color:{TEXT_MUTED};margin:2px 0 6px">'
+            f'<b style="color:{color}">{label}</b> · {len(rows)} call(s) · '
+            f'hit rate <b style="color:{TEXT_PRIMARY}">{wins}/{len(rows)}'
+            f' ({wins / len(rows) * 100:.0f}%)</b> · '
+            f'avg <b style="color:{avg_col}">{avg:+.1f}%</b></div>')
+
+
+def render():
+    import streamlit.components.v1 as components   # lazy: headless mocks `streamlit`
+
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
+        f'How each <b>@overkilltrading</b> Shorts pick has done since the call, measured '
+        f'from the price on the day it was made. Scored per <b>first</b> call of each kind — '
+        f'a ticker called Green in June and Red in August counts as two separate calls. '
+        f'🔴 Red is a sell/trim call, so its <b>Perf %</b> is flipped: a price <i>drop</i> '
+        f'shows positive, meaning the call was right. <b>High/Low</b> are the raw range since '
+        f'the call and are never flipped. Not financial advice.</div>',
+        unsafe_allow_html=True,
+    )
+
+    scored = _score(_load_picks())
+    if not scored:
+        st.info("No scored picks yet — they appear once the Shorts scan has stored picks "
+                "with prices, or once prices can be resolved for existing ones.")
+        return
+
+    for dot, label, color in (("Green", "🟢 Green — buy calls", ACCENT_GREEN),
+                              ("Red", "🔴 Red — sell/trim calls", ACCENT_RED)):
+        rows = [r for r in scored if r["dot"] == dot]
+        st.markdown(f"##### {label}")
+        if not rows:
+            st.caption("No calls of this type yet.")
+            continue
+        st.markdown(_summary(rows, label, color), unsafe_allow_html=True)
+        components.html(
+            sortable_table_html(_COLUMNS, _table_rows(rows),
+                                default_sort_idx=4, default_desc=True,
+                                max_height=380),
+            height=min(380, 90 + 32 * len(rows)) + 20,
+            scrolling=False,
+        )
