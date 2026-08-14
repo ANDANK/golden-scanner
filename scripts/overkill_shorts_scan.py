@@ -184,10 +184,14 @@ def fetch_transcript(video_id: str) -> str | None:
 def _model_rank(name: str):
     """Sort key, most-preferred first:
       1. flash before pro   -- faster and far more generous on the free tier
-      2. '-latest' aliases  -- self-updating, so they can't go stale on us
-      3. stable before preview/experimental
-      4. newest version
-      5. full before lite   -- last, and deliberately so: a stable current-gen
+      2. stable before preview/experimental
+      3. newest version     -- unversioned '-latest' aliases sort to the BACK
+         of their group, deliberately. They were ranked first at one point for
+         staleness protection, but discovering the list at runtime already
+         gives us that, and '-latest' is the busiest alias on the service:
+         gemini-flash-latest returned 503 "high demand" on 5 of 6 videos in a
+         single run. A pinned current version is the quieter door.
+      4. full before lite   -- last, and deliberately so: a stable current-gen
          lite model beats an experimental older full one for a job this simple
          (short transcript in, small JSON out)."""
     s = name.lower()
@@ -195,7 +199,6 @@ def _model_rank(name: str):
     major, minor = (int(ver.group(1)), int(ver.group(2) or 0)) if ver else (0, 0)
     return (
         0 if "flash" in s else 1,
-        0 if "latest" in s else 1,
         0 if ("preview" not in s and "exp" not in s) else 1,
         -major, -minor,
         0 if "lite" not in s else 1,
@@ -229,49 +232,79 @@ def usable_models(client) -> list[str]:
 
 _WORKING_MODEL: str | None = None   # cached across videos within a run
 
+# A retired model. Move on immediately -- no amount of waiting brings it back.
+_MODEL_GONE = ("404", "NOT_FOUND")
+
+# Transient. Crucially, 503 "high demand" is PER-MODEL load, not account-wide:
+# gemini-flash-latest served one video and 503'd on five others in the same
+# run. An earlier version of this function re-raised everything that wasn't a
+# 404, on the assumption that any other error "would fail identically on every
+# model" -- that assumption was wrong, and it threw away five transcripts that
+# had been fetched successfully. Try a different model, then wait and retry.
+_TRANSIENT = ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED",
+              "500", "INTERNAL", "deadline", "timeout", "timed out")
+
+MODELS_PER_VIDEO = 3        # distinct models to try before backing off
+RETRY_BACKOFF = (0, 10)     # seconds before each pass; len() == number of passes
+
 
 def extract_picks(client, models: list[str], transcript: str) -> list[dict]:
-    """Extract picks, falling through the candidate list on a model-not-found.
-    The first model that answers is remembered for the rest of the run, so the
-    fallback costs at most one wasted call rather than one per video."""
+    """Extract picks, moving to another model when one is retired or busy and
+    backing off if the whole shortlist is busy at once. The model that answers
+    is remembered for the rest of the run, so the search costs at most a few
+    wasted calls per run rather than repeating for every video.
+
+    Kept deliberately narrow: auth, permission and malformed-request errors
+    re-raise on the first try, since those really would fail identically
+    everywhere and retrying them just burns quota."""
     from google.genai import types
 
     global _WORKING_MODEL
-    order = ([_WORKING_MODEL] if _WORKING_MODEL else []) + \
+    order = ([_WORKING_MODEL] if _WORKING_MODEL in models else []) + \
             [m for m in models if m != _WORKING_MODEL]
+    shortlist = order[:MODELS_PER_VIDEO]
 
     last_err = None
-    for model in order:
-        try:
-            response = client.models.generate_content(
-                model=model,
-                contents=f"{_SYSTEM_PROMPT}\n\nTranscript:\n\n{transcript}",
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_json_schema=_RESPONSE_JSON_SCHEMA,
-                ),
-            )
-        except Exception as e:
-            # Only a missing/retired model is worth trying the next candidate
-            # for; quota, auth and network errors would fail identically on
-            # every model, so re-raise those immediately.
-            if "NOT_FOUND" not in str(e) and "404" not in str(e):
-                raise
-            log(f"  model {model} unavailable, trying next candidate")
-            last_err = e
-            continue
-        if model != _WORKING_MODEL:
-            log(f"  using model: {model}")
-            _WORKING_MODEL = model
-        if not response.text:
-            return []
-        picks = json.loads(response.text).get("picks", [])
-        # Defensive: enforce the bias<->dot pairing even if the model drifts from the rule.
-        for p in picks:
-            p["dot"] = "Green" if p.get("bias") == "Bullish" else "Red"
-        return picks
+    for attempt, wait in enumerate(RETRY_BACKOFF):
+        if wait:
+            log(f"  all {len(shortlist)} candidate model(s) busy — waiting {wait}s "
+                f"before retrying")
+            time.sleep(wait)
+        for model in shortlist:
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=f"{_SYSTEM_PROMPT}\n\nTranscript:\n\n{transcript}",
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_json_schema=_RESPONSE_JSON_SCHEMA,
+                    ),
+                )
+            except Exception as e:
+                msg = str(e)
+                if any(t in msg for t in _MODEL_GONE):
+                    log(f"  model {model} retired, trying next candidate")
+                elif any(t in msg for t in _TRANSIENT):
+                    log(f"  model {model} busy, trying next candidate")
+                else:
+                    raise
+                last_err = e
+                continue
 
-    raise RuntimeError(f"No usable Gemini model among {order}: {last_err}")
+            if model != _WORKING_MODEL:
+                log(f"  using model: {model}")
+                _WORKING_MODEL = model
+            if not response.text:
+                return []
+            picks = json.loads(response.text).get("picks", [])
+            # Defensive: enforce the bias<->dot pairing even if the model drifts.
+            for p in picks:
+                p["dot"] = "Green" if p.get("bias") == "Bullish" else "Red"
+            return picks
+
+    raise RuntimeError(
+        f"All {len(shortlist)} candidate models unavailable after "
+        f"{len(RETRY_BACKOFF)} passes ({', '.join(shortlist)}): {last_err}")
 
 
 def main():
