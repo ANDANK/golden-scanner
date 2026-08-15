@@ -15,28 +15,33 @@ on:
     # is `runs-on: [self-hosted]`. Moving the minute off :00 did not help.
     # If it keeps skipping, trigger from the always-on machine instead
     # (Windows Task Scheduler) rather than relying on GitHub's cron.
-    # Twice daily: before the open, and after the close.
+    # Twice daily. These times are chosen around when the SELF-HOSTED MACHINE
+    # is actually awake, which turned out to matter far more than market hours.
     #
-    # The morning cron is set ~90 min EARLIER than the time we actually want,
-    # to absorb GitHub's scheduler lag. Its cron is best-effort and routinely
-    # runs late: the first scheduled run here was requested at 00:10 UTC and
-    # actually started at 01:47 UTC, 97 minutes behind. Asking for 7:10 AM
-    # would therefore have delivered the pre-market digest around 8:47 AM CT,
-    # AFTER the 8:30 open, defeating the point. Requesting 5:30 AM lands it
-    # somewhere between 5:30 and ~8:00 AM CT depending on the day's lag --
-    # early on a good day, still pre-open on a bad one.
+    # An earlier version requested 5:30 AM to absorb GitHub's scheduler lag and
+    # land the digest pre-open. That failed for a different reason: the laptop
+    # hosting the runner enters connected standby overnight (confirmed in
+    # Kernel-Power events 506/507 -- e.g. 10:25 UTC standby, 14:14 UTC resume).
+    # A run dispatched into a sleeping machine either finds no runner at all,
+    # or gets picked up, frozen mid-job, and fails on completion with
+    # VssUnauthorizedException once its job token has expired -- exactly what
+    # happened on 2026-08-15, where a 30-second job spanned 60 minutes with a
+    # 59-minute dead gap in the middle.
     #
-    # The evening run needs no such padding: the market is long closed, so
-    # arriving at 7:10 or 8:47 PM makes no difference.
+    # So: dispatch when the machine is reliably up, and accept that GitHub's
+    # lag (~1-2h, best-effort) pushes actual start later than the requested
+    # time. The morning digest will typically land mid-morning rather than
+    # before the 8:30 open. Padding earlier to beat the open is not an option
+    # -- it just aims the run at a sleeping laptop.
     #
     # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
-    # 5:30 AM CDT = 10:30 UTC   |   7:10 PM CDT = 00:10 UTC (next day)
-    - cron: "30 10 * * *"
+    # 8:10 AM CDT = 13:10 UTC   |   7:10 PM CDT = 00:10 UTC (next day)
+    - cron: "10 13 * * *"
     - cron: "10 0 * * *"
     # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
-    # 5:30 AM CST = 11:30 UTC   |   7:10 PM CST = 01:10 UTC
+    # 8:10 AM CST = 14:10 UTC   |   7:10 PM CST = 01:10 UTC
     # ← swap to these two and comment out the CDT pair in Nov
-    # - cron: "30 11 * * *"
+    # - cron: "10 14 * * *"
     # - cron: "10 1 * * *"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI, or the
                                # "Refresh Now" button on the OverKill Shorts tab
