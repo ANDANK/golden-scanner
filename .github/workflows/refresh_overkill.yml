@@ -16,14 +16,27 @@ on:
     # If it keeps skipping, trigger from the always-on machine instead
     # (Windows Task Scheduler) rather than relying on GitHub's cron.
     # Twice daily: before the open, and after the close.
+    #
+    # The morning cron is set ~90 min EARLIER than the time we actually want,
+    # to absorb GitHub's scheduler lag. Its cron is best-effort and routinely
+    # runs late: the first scheduled run here was requested at 00:10 UTC and
+    # actually started at 01:47 UTC, 97 minutes behind. Asking for 7:10 AM
+    # would therefore have delivered the pre-market digest around 8:47 AM CT,
+    # AFTER the 8:30 open, defeating the point. Requesting 5:30 AM lands it
+    # somewhere between 5:30 and ~8:00 AM CT depending on the day's lag --
+    # early on a good day, still pre-open on a bad one.
+    #
+    # The evening run needs no such padding: the market is long closed, so
+    # arriving at 7:10 or 8:47 PM makes no difference.
+    #
     # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
-    # 7:10 AM CDT = 12:10 UTC   |   7:10 PM CDT = 00:10 UTC (next day)
-    - cron: "10 12 * * *"
+    # 5:30 AM CDT = 10:30 UTC   |   7:10 PM CDT = 00:10 UTC (next day)
+    - cron: "30 10 * * *"
     - cron: "10 0 * * *"
     # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
-    # 7:10 AM CST = 13:10 UTC   |   7:10 PM CST = 01:10 UTC
+    # 5:30 AM CST = 11:30 UTC   |   7:10 PM CST = 01:10 UTC
     # ← swap to these two and comment out the CDT pair in Nov
-    # - cron: "10 13 * * *"
+    # - cron: "30 11 * * *"
     # - cron: "10 1 * * *"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI, or the
                                # "Refresh Now" button on the OverKill Shorts tab
