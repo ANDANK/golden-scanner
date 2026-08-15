@@ -1,8 +1,22 @@
 {
-  "updated": "2026-08-13",
+  "updated": "2026-08-14",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-14",
+      "url": "https://www.youtube.com/shorts/8oHRaZaGo7o",
+      "title": "$LINK IS READY TO EXPLODE! 📈 AUG 14",
+      "picks": [
+        {
+          "ticker": "LINK",
+          "bias": "Bullish",
+          "dot": "Green",
+          "notes": "Chainlink is presenting a monthly buy signal around $9 within a multi-year consolidation, which the host views as a generational accumulation opportunity before targeting prior highs.",
+          "price": 5.78
+        }
+      ]
+    },
     {
       "date": "2026-08-11",
       "url": "https://www.youtube.com/shorts/BFbe3sXEjEY",
