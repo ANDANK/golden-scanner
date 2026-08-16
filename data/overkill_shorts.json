@@ -1,8 +1,314 @@
 {
-  "updated": "2026-08-15",
+  "updated": "2026-08-16",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-15",
+      "url": "https://www.youtube.com/shorts/G1bAirb-itA",
+      "title": "🚨 CRUCIAL Market Update (Why stocks should SOAR)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Market leadership is rotating beyond the Magnificent Seven as broader S&P 500 sectors, particularly energy, healthcare, and industrials, deliver strong earnings and double-digit growth.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "July CPI rose 0.1% MoM (3.4% YoY), PPI was flat, and retail sales dropped 0.6%, indicating cooling consumer activity that eases pressure on the Fed to hike rates.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising US-Iran tensions and shipping disruptions in the Strait of Hormuz pose inflation risks as Brent crude climbs into the upper $80s, which could limit Fed policy flexibility.",
+          "price": null
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Neutral",
+          "notes": "Nvidia's August 26 earnings report serves as a crucial bellwether to determine if heavy enterprise AI capex is translating into sustained revenue and profit growth.",
+          "price": 225.16
+        }
+      ]
+    },
+    {
+      "date": "2026-08-14",
+      "url": "https://www.youtube.com/shorts/yMH1BAJv0Ds",
+      "title": "Top 4 Stocks to Buy UNDER $30 each‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi is well-positioned to attract younger generations like Millennials, Gen Z, and Gen Alpha as wealth transfers from older generations. Currently trading around $18 per share, the host sees incredible long-term upside.",
+          "price": 18.29
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius Holdings owns the Celsius and Alani energy drink brands and acquired Rockstar, driving continued US and international expansion. The stock currently trades in the $20s.",
+          "price": 29.09
+        },
+        {
+          "ticker": "RVLV",
+          "bias": "Bullish",
+          "notes": "Revolve is a higher-end female-focused e-commerce company boasting a strong balance sheet, excellent income statement, and great management team. It currently trades in the low-to-mid $20s.",
+          "price": 23.69
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "The Honest Company trades around $5 per share with strong balance sheet metrics, expanding margins, growing organic revenue, and building profitability.",
+          "price": 4.84
+        }
+      ]
+    },
+    {
+      "date": "2026-08-16",
+      "url": "https://www.youtube.com/shorts/pwbogncEIZA",
+      "title": "How I Quit my Job with Options Trading in 5 Years (FULL COURSE)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host is bullish on SoFi as an innovative fintech disruptor with strong growth, favoring selling $17 put options to collect premium or buy shares at an effective break-even under $16.",
+          "price": 18.29
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host looks to enter Nvidia at a discount by selling $205 put options while the stock trades around $211, collecting $6 in premium for an effective break-even entry price of $199.",
+          "price": 225.16
+        },
+        {
+          "ticker": "MCD",
+          "bias": "Bullish",
+          "notes": "The host considers McDonald's undervalued after a drop to around $264-$273, holding shares and long call options while selling 280-strike covered calls for extra yield.",
+          "price": 272.83
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "The host maintains a bullish outlook on Meta's advertising growth at a 21 PE ratio, holding a large equity position while selling covered calls around the 650 strike.",
+          "price": 589.85
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "The host held Palantir as a top conviction play when it was undervalued around $109, holding through earnings before writing covered calls at the $175 strike post-rally.",
+          "price": 174.04
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The traditional 4% safe retirement withdrawal rate from the 1998 Trinity Study may be outdated, with researchers now suggesting 3% to 3.5% due to today's inflation and lower expected returns.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Research indicates that about three out of four options expire worthless, giving option sellers a statistical edge driven by time decay (theta) and implied volatility overestimating actual stock moves.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Wheel Strategy systematically generates income by selling 20-30 delta cash-secured put options on high-quality stocks until assigned, then selling covered calls on those shares until called away.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To enforce strict risk management and avoid catastrophic portfolio losses, traders should limit single wheel or option positions to 10% to 20% of total account capital.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-14",
+      "url": "https://www.youtube.com/shorts/ibqs9t6kkfo",
+      "title": "The Money Mindset That Builds Real Wealth",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Physical gold serves as a strong store of value due to the time and effort required to mine it, though it functions poorly as a day-to-day means of exchange compared to currency.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Reading top business books and biographies can provide a practical business education for under $200, serving as a cost-effective alternative to a traditional $100,000 MBA.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Recessions occur roughly every decade as a regular part of the economic cycle and historically create significant opportunities for long-term wealth building.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-13",
+      "url": "https://www.youtube.com/shorts/Rq6-Mz_3U_o",
+      "title": "MU Micron 🚨Major Buy NOW",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Micron reported record earnings with high-bandwidth memory sold out through 2027, demonstrating strong pricing power despite Chinese competition fears. While trading at roughly 6x forward earnings with an average analyst target of $1,500, it carries high-risk, high-reward cyclical dynamics.",
+          "price": 949.83
+        }
+      ]
+    },
+    {
+      "date": "2026-08-14",
+      "url": "https://www.youtube.com/shorts/pPMG50H1HeY",
+      "title": "This stock will go to $1,000‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "July PPI data showed flat producer prices and easing inflation pressures, causing Treasury yields to drop and increasing the market appeal of stocks over cash.",
+          "price": null
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Micron is down 30% from recent highs but is positioned to make significant profits over the next few years, with strong potential for a rebound toward $1,000+.",
+          "price": 971.66
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "While heavy CapEx spending creates short-term pressure, Meta remains a top long-term business targeted to reach $1,000 to $2,000 per share over time.",
+          "price": 589.85
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius possesses high growth potential with a three-year target of $75 to $100 per share, backed by brand diversification with Alani and Rockstar.",
+          "price": 29.09
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "American Express remains a consistent compounder protected by an affluent customer base, with its main downside risk limited to a deep broader recession.",
+          "price": 342.48
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Amazon remains a strong long-term compounder supported by accelerating AWS growth and ad revenue, though rising CapEx and chip depreciation will weigh on earnings.",
+          "price": 262.65
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Netflix is the top stock pick for the next three years due to its attractive 21 forward P/E, lack of heavy tech CapEx burdens, and strong moat in streaming.",
+          "price": 78.16
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD is projected to reach $1,000 to $1,200 in the base case over the next few years, driven by five upcoming quarters of accelerating revenue growth.",
+          "price": 514.39
+        },
+        {
+          "ticker": "21",
+          "bias": "Neutral",
+          "notes": "Stock market momentum remains positive for the early fall as rate hike fears subside, though CapEx anxiety surrounding major tech spenders could trigger volatility by late fall or winter.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-13",
+      "url": "https://www.youtube.com/shorts/1U9IUZbaYdM",
+      "title": "11 Years of Covered Calls Advice in 29 Minutes",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host expects Nvidia to continue growing over the long term, calling it an ideal stock for a covered call strategy due to its solid support and attractive option premiums.",
+          "price": 225.3
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "The host expresses a strong liking for Robinhood stock, holding a position while utilizing covered call options at a $95 strike price.",
+          "price": 99.37
+        },
+        {
+          "ticker": "WMT",
+          "bias": "Bullish",
+          "notes": "The host views Walmart as a favorite core holding, using covered calls for income and rolling contracts out in time to retain long-term share ownership.",
+          "price": 115.72
+        },
+        {
+          "ticker": "KO",
+          "bias": "Neutral",
+          "notes": "The host considers Coca-Cola unattractive for a covered call strategy due to its low implied volatility and low option premiums.",
+          "price": 87.42
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Selling covered calls against 100-share stock holdings generates monthly cash flow and reduces overall portfolio volatility by lowering break-even costs, though it caps upside potential.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Higher market volatility elevates options premiums, offering options sellers greater income potential when picking stocks with high implied volatility.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "url": "https://www.youtube.com/shorts/r57fJn7eLWo",
+      "title": "How To Actually Escape The Paycheck Cycle",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investing accessibility has increased significantly, enabling individuals to start investing with as little as $1 across asset classes such as stocks, real estate, gold, and startups.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Statistics indicate widespread financial vulnerability in the U.S., with over 60% of Americans living paycheck to paycheck, half holding less than $1,000 in emergency savings, and 50% having no investments.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Long-term wealth in the stock market is best achieved through consistent, continuous purchasing rather than chasing short-term hot stocks or timing market cycles.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-08-15",
       "url": "https://www.youtube.com/shorts/sooP9fdIyUI",
