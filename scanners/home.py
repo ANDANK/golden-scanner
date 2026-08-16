@@ -1728,42 +1728,62 @@ def _render_overkill_tab():
         st.info("No OverKill Shorts summary stored yet.")
         return
 
+    n_ch = len(data.get("channels", [])) or 1
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
-        f'Latest stock picks from <b>{data.get("channel","@overkilltrading")}</b> Shorts '
-        f'(crypto skipped). <b>Dot</b> = his wave-indicator call <i>as stated in the video</i> '
-        f'(🟢 Green = buy · 🔴 Red = sell/trim · — = not formed). '
+        f'Stock calls and takeaways auto-extracted from the captions of finance Shorts '
+        f'across <b>{n_ch} channel(s)</b> (crypto skipped). <b>Bias</b> is the direction '
+        f'stated in the video — rows with no ticker are general takeaways (a rate call, a '
+        f'tax rule, a market view) rather than trade ideas. '
         f'Updated <b>{data.get("updated","")}</b> · not financial advice.</div>',
         unsafe_allow_html=True,
     )
-
-    _render_overkill_trigger()
-    _render_overkill_pending()
 
     def _bias_html(b):
         col = ACCENT_GREEN if b == "Bullish" else ACCENT_RED if b == "Bearish" else TEXT_MUTED
         return f'<span style="color:{col};font-weight:700;font-size:11px">{b}</span>'
 
-    def _dot_html(d):
-        if d == "Green":
-            return '<span style="color:#34D399;font-size:13px">🟢 Green</span>'
-        if d == "Red":
-            return '<span style="color:#F87171;font-size:13px">🔴 Red</span>'
-        return f'<span style="color:{TEXT_MUTED};font-size:11px">— none</span>'
-
     flat = []
     for vid in data.get("videos", []):
         for p in vid.get("picks", []):
             row = dict(p)
-            row["date"]  = vid.get("date", "")
-            row["video"] = vid.get("title", "")
-            row["url"]   = vid.get("url", "")
+            row["date"]    = vid.get("date", "")
+            row["video"]   = vid.get("title", "")
+            row["url"]     = vid.get("url", "")
+            row["channel"] = vid.get("channel_name") or "OverKill"
             flat.append(row)
     flat.sort(key=lambda r: (r.get("date", ""), r.get("ticker", "")), reverse=True)
 
+    # Filters sit at the very top, above the refresh controls and the pending
+    # list: with seven channels the feed is long, and the two questions you
+    # arrive with are "what did X say" and "just show me the tickers".
+    names = sorted({r["channel"] for r in flat})
+    fc, ft = st.columns([3, 2])
+    with fc:
+        picked = st.multiselect("Channels", names, default=names,
+                                key="yt_shorts_channels",
+                                help="Filter the table to specific channels.")
+    with ft:
+        only_tickers = st.checkbox("Ticker calls only", value=False,
+                                   key="yt_shorts_only_tickers",
+                                   help="Hide general takeaways that have no ticker attached.")
+    if picked:
+        flat = [r for r in flat if r["channel"] in picked]
+    if only_tickers:
+        flat = [r for r in flat if r.get("ticker")]
+    st.caption(f"Showing {len(flat)} row(s) from {len(picked) or len(names)} of "
+               f"{len(names)} channel(s).")
+
+    _render_overkill_trigger()
+    _render_overkill_pending()
     _render_recent_ticker_line(flat)
 
-    hdr = "".join(f'<th style="{_TH}">{h}</th>' for h in ["Date", "Ticker", "Bias", "Dot", "Notes"])
+    # "Dot" used to sit between Bias and Notes. It was set as
+    # `dot = "Green" if bias == "Bullish" else "Red"` -- a recolouring of Bias
+    # with no information of its own, and meaningless for channels that don't
+    # trade a dot indicator. Its column now carries the source Channel.
+    hdr = "".join(f'<th style="{_TH}">{h}</th>'
+                  for h in ["Date", "Channel", "Ticker", "Bias", "Notes"])
     rows = ""
     for r in flat:
         url = r.get("url", "")
@@ -1773,12 +1793,16 @@ def _render_overkill_tab():
                          str(r.get("date", "")) + ' ↗</a>')
         else:
             date_cell = f'<span style="color:{TEXT_MUTED};font-size:10px">' + str(r.get("date", "")) + '</span>'
+        ticker = str(r.get("ticker", ""))
+        ticker_cell = (_mono(ticker, GOLD, 13, True) if ticker else
+                       f'<span style="color:{TEXT_MUTED};font-size:10px">general</span>')
         rows += (
             "<tr>"
             + f'<td style="{_TD}">' + date_cell + "</td>"
-            + f'<td style="{_TD}">' + _mono(str(r.get("ticker", "")), GOLD, 13, True) + "</td>"
+            + f'<td style="{_TD};color:{ACCENT_BLUE};font-size:11px;font-weight:600;white-space:nowrap">'
+            + str(r.get("channel", "")) + "</td>"
+            + f'<td style="{_TD}">' + ticker_cell + "</td>"
             + f'<td style="{_TD}">' + _bias_html(r.get("bias", "Neutral")) + "</td>"
-            + f'<td style="{_TD}">' + _dot_html(r.get("dot", "None")) + "</td>"
             + f'<td style="{_TD};white-space:normal;color:{TEXT_PRIMARY};font-size:11px;line-height:1.5">'
             + str(r.get("notes", "")) + "</td>"
             + "</tr>"
@@ -2137,7 +2161,7 @@ def render():
     # Monthly / Daily) that has no connection to the Shorts feed.
     tab1, tab3, tab4, tab2, tab6, tab5 = st.tabs(
         ["🎯  Best Scanners", "🔄  Sector Rotation", "🔍  OverKill",
-         "📺  OverKill Shorts", "📊  Shorts Perf", "🎯  Shorts Backtest"]
+         "📺  YouTube Shorts", "📊  Shorts Perf", "🎯  Shorts Backtest"]
     )
 
     with tab1:

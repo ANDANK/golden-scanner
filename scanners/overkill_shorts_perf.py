@@ -1,5 +1,5 @@
 # scanners/overkill_shorts_perf.py
-# How the @overkilltrading Shorts picks actually performed.
+# How the YouTube Shorts stock calls actually performed.
 #
 # Distinct from scanners/overkill_performance.py ("Shorts Backtest"), which
 # tracks a hand-curated list of OverKill scanner alerts with their own alert
@@ -7,11 +7,12 @@
 # scripts/overkill_shorts_scan.py extracted from the videos themselves, using
 # the price captured at the time of each call.
 #
-# Green and Red are split into separate tables and Red's percentage is
-# sign-flipped, matching scanners/overkill_check.py's track record: a Red dot
-# is a sell/trim call, so a decline means the call was RIGHT. Both tables
-# therefore read "best call at the top". High/Low stay raw -- they describe
-# the trading range since the call, which is the same fact either way.
+
+# Bullish and Bearish are split into separate tables and Bearish's percentage
+# is sign-flipped, matching scanners/overkill_check.py's track record: a
+# bearish call wins when price FALLS. Both tables therefore read "best call at
+# the top". High/Low stay raw -- they describe the trading range since the
+# call, which is the same fact either way.
 
 import json
 import os
@@ -20,6 +21,7 @@ import streamlit as st
 
 from config import *
 from scanners import scan_history
+from scripts import yt_channels
 from scanners.ui_tables import sortable_table_html
 
 DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -27,11 +29,19 @@ DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file_
 
 
 def _load_picks() -> list[dict]:
-    """One row per (ticker, dot), keyed to the EARLIEST call of that kind --
-    the channel repeats tickers across videos, and performance should be
-    measured from when the call was first made, not from the latest mention.
-    A ticker called Green in June and Red in August is two separate rows,
-    which is correct: those are two different calls to score."""
+    """One row per (ticker, bias), keyed to the EARLIEST call of that kind --
+    channels repeat tickers across videos, and performance should be measured
+    from when the call was first made, not from the latest mention. A ticker
+    called Bullish in June and Bearish in August is two separate rows, which
+    is correct: those are two different calls to score.
+
+    Two exclusions, both deliberate:
+      * Entries with no ticker are general takeaways ("the Fed cut rates"),
+        which have nothing to price and so nothing to score.
+      * Channels flagged scored=False in scripts/yt_channels.py -- tax, macro
+        and personal-finance commentary. Their occasional ticker mentions
+        aren't trade calls, and scoring them would make the hit rate answer a
+        different question from the one it appears to answer."""
     try:
         with open(DATA_PATH, encoding="utf-8") as f:
             data = json.load(f)
@@ -41,19 +51,26 @@ def _load_picks() -> list[dict]:
     first: dict[tuple[str, str], dict] = {}
     for vid in data.get("videos", []):
         date = vid.get("date", "")
+        # Videos captured before multi-channel support predate the field and
+        # are all OverKill, which is scored.
+        handle = vid.get("channel", "@overkilltrading")
+        if not yt_channels.is_scored(handle):
+            continue
         for p in vid.get("picks", []):
-            ticker, dot = (p.get("ticker") or "").upper(), p.get("dot") or "None"
-            if not ticker or dot not in ("Green", "Red"):
+            ticker = (p.get("ticker") or "").strip().upper()
+            bias = p.get("bias")
+            if not ticker or bias not in ("Bullish", "Bearish"):
                 continue
-            key = (ticker, dot)
+            key = (ticker, bias)
             if key not in first or date < first[key]["date"]:
                 first[key] = {
                     "ticker": ticker,
-                    "dot": dot,
+                    "bias": bias,
                     "date": date,
                     "price": p.get("price"),
                     "url": vid.get("url", ""),
                     "title": vid.get("title", ""),
+                    "channel": vid.get("channel_name") or yt_channels.channel_name(handle),
                 }
     return sorted(first.values(), key=lambda r: (r["date"], r["ticker"]))
 
@@ -84,9 +101,9 @@ def _score(rows: list[dict]) -> list[dict]:
             **r,
             "entry": entry,
             "current": current,
-            # Red is a sell/trim call, so a fall is a win -- flip it so both
-            # tables sort best-first. High/Low deliberately stay unflipped.
-            "pct": -pct if r["dot"] == "Red" else pct,
+            # A bearish call wins when price falls -- flip it so both tables
+            # sort best-first. High/Low deliberately stay unflipped.
+            "pct": -pct if r["bias"] == "Bearish" else pct,
             "high": high,
             "high_pct": (high / entry - 1) * 100,
             "low": low,
@@ -109,6 +126,7 @@ def _money(v: float) -> str:
 
 _COLUMNS = [
     {"label": "Ticker", "type": "str"},
+    {"label": "Channel", "type": "str"},
     {"label": "Called", "type": "str"},
     {"label": "Price @ Call", "type": "num"},
     {"label": "Now", "type": "num"},
@@ -130,6 +148,8 @@ def _table_rows(rows: list[dict]) -> list[list[tuple[str, object]]]:
         out.append([
             (f'<span style="color:{GOLD};font-family:\'DM Mono\',monospace;'
              f'font-weight:700">{r["ticker"]}</span>', r["ticker"]),
+            (f'<span style="color:{ACCENT_BLUE};font-size:11px">{r.get("channel","")}</span>',
+             r.get("channel", "")),
             (date_cell, r["date"]),
             (_money(r["entry"]), r["entry"]),
             (_money(r["current"]), r["current"]),
@@ -160,10 +180,10 @@ def render():
 
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
-        f'How each <b>@overkilltrading</b> Shorts pick has done since the call, measured '
+        f'How each Shorts stock call has done since it was made, measured '
         f'from the price on the day it was made. Scored per <b>first</b> call of each kind — '
-        f'a ticker called Green in June and Red in August counts as two separate calls. '
-        f'🔴 Red is a sell/trim call, so its <b>Perf %</b> is flipped: a price <i>drop</i> '
+        f'a ticker called Bullish in June and Bearish in August counts as two separate calls. '
+        f'🔴 A bearish call wins when price falls, so its <b>Perf %</b> is flipped: a price <i>drop</i> '
         f'shows positive, meaning the call was right. <b>High/Low</b> are the raw range since '
         f'the call and are never flipped. Not financial advice.</div>',
         unsafe_allow_html=True,
@@ -175,9 +195,9 @@ def render():
                 "with prices, or once prices can be resolved for existing ones.")
         return
 
-    for dot, label, color in (("Green", "🟢 Green — buy calls", ACCENT_GREEN),
-                              ("Red", "🔴 Red — sell/trim calls", ACCENT_RED)):
-        rows = [r for r in scored if r["dot"] == dot]
+    for bias, label, color in (("Bullish", "🟢 Bullish — buy calls", ACCENT_GREEN),
+                               ("Bearish", "🔴 Bearish — sell/short calls", ACCENT_RED)):
+        rows = [r for r in scored if r["bias"] == bias]
         st.markdown(f"##### {label}")
         if not rows:
             st.caption("No calls of this type yet.")

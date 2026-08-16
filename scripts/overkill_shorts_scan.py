@@ -76,7 +76,7 @@ Usage:
   python scripts/overkill_shorts_scan.py
 """
 
-import json, os, re, sys, time
+import json, os, random, re, sys, time
 from datetime import datetime, timezone
 
 import requests
@@ -84,9 +84,8 @@ import requests
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from scripts.refresh_overkill_shorts import (
-    CHANNEL_ID, _CRYPTO_TITLE_RE, get_uploads_playlist_id, list_recent_videos,
-)
+from scripts.refresh_overkill_shorts import _CRYPTO_TITLE_RE
+from scripts import yt_channels
 
 DATA_PATH = os.path.join(ROOT, "data", "overkill_shorts.json")
 PENDING_PATH = os.path.join(ROOT, "data", "overkill_pending.json")
@@ -112,20 +111,41 @@ _MODEL_BLOCKLIST = ("embedding", "aqa", "imagen", "veo", "tts", "image",
 # YouTube rate-limited the IP. Worse, once blocked, the run kept firing the
 # remaining 11 requests anyway, so each scheduled run re-confirmed the ban
 # and it never got a chance to age out. These three limits break that loop.
-MAX_TRANSCRIPTS_PER_RUN = 6   # drain a backlog over a few days rather than in one burst
-THROTTLE_SECONDS = 4          # space requests out instead of hammering
+MAX_TRANSCRIPTS_PER_RUN = 10  # total per run across ALL channels
+MAX_PER_CHANNEL_PER_RUN = 2   # ...and at most this many from any one channel, so a
+                              # prolific channel can't starve the others
 
-_SYSTEM_PROMPT = """You extract structured stock picks from a trading YouTube Short's transcript.
+# Spacing matters more than the daily total -- YouTube's limiter reacts to
+# request RATE in a short window, and the run that got us blocked fired 12
+# requests in ~10 seconds (~72/min). Widening from 4s to 6-8s means 10 requests
+# now spread over ~65 seconds (~9/min), which is a LOWER rate than the 6-at-4s
+# setting it replaces (~18/min) despite fetching more per run. The jitter is
+# deliberate: perfectly even intervals are an obvious automation signature.
+THROTTLE_SECONDS = 6          # base gap between transcript fetches
+THROTTLE_JITTER = 2           # plus a random 0-2s, so the cadence isn't metronomic
+
+_SYSTEM_PROMPT = """You extract structured takeaways from a finance/investing YouTube Short's transcript.
+
+Return one entry per distinct point the host makes. There are two kinds:
+
+1. TICKER CALL — the host gives a specific directional view on a specific stock.
+   - Set "ticker" to the symbol (uppercase, no $ prefix) and "bias" to Bullish or Bearish.
+   - "notes" summarises in 1-2 sentences what he said about THAT ticker: price levels,
+     targets, catalysts, risks, in his own reasoning.
+
+2. GENERAL TAKEAWAY — a substantive point with no single stock attached: a Fed or rate
+   call, a tax rule or deadline, an economic datapoint, a market-wide view, a concrete
+   personal-finance action.
+   - Leave "ticker" as an empty string and set "bias" to Neutral.
+   - "notes" states the takeaway in 1-2 sentences, specific enough to be useful later.
 
 Rules:
-- Only include tickers the host gives a specific directional call on (bullish/buy or bearish/sell-short).
-- "bias" and "dot" always pair together: Bullish -> Green, Bearish -> Red.
-- "notes" is a concise 1-2 sentence summary of what the host specifically said about THAT ticker
-  (price levels, targets, catalysts, risk) in his own words/reasoning — not generic commentary.
-- Skip: general market commentary not tied to one specific ticker, and any talk about the host's
-  own indicator, course, Discord, sponsorships, or other promotional content.
-- If the transcript has no clear ticker calls at all, return an empty picks list — don't force one.
-- Never invent a ticker or price level that isn't actually stated in the transcript."""
+- Never invent a ticker, price or figure that isn't actually stated in the transcript.
+- If a point names several tickers, emit one entry per ticker.
+- Skip promotional content entirely: the host's own course, newsletter, Discord, indicator,
+  sponsor reads, "link in bio", giveaways.
+- Skip filler with no informational content ("markets were wild today", "comment below").
+- If the transcript has nothing substantive at all, return an empty list — never force one."""
 
 # Gemini's structured-output schema uses UPPERCASE type names (STRING/OBJECT/
 # ARRAY), not standard-JSON-Schema lowercase -- confirmed directly against
@@ -140,12 +160,18 @@ _RESPONSE_JSON_SCHEMA = {
             "items": {
                 "type": "OBJECT",
                 "properties": {
-                    "ticker": {"type": "STRING", "description": "Stock ticker symbol, uppercase, no $ prefix"},
-                    "bias": {"type": "STRING", "enum": ["Bullish", "Bearish"]},
-                    "dot": {"type": "STRING", "enum": ["Green", "Red"]},
+                    "ticker": {"type": "STRING",
+                               "description": "Stock ticker, uppercase, no $ prefix. "
+                                              "Empty string for a general takeaway."},
+                    "bias": {"type": "STRING", "enum": ["Bullish", "Bearish", "Neutral"]},
                     "notes": {"type": "STRING"},
                 },
-                "required": ["ticker", "bias", "dot", "notes"],
+                # `dot` used to live here as Green/Red. It was derived one-to-one
+                # from `bias` (Bullish -> Green), so it carried no information the
+                # Bias column didn't already show, and it made no sense at all for
+                # channels that don't trade a dot indicator. Dropped; the table
+                # column it occupied now shows the source Channel instead.
+                "required": ["ticker", "bias", "notes"],
             },
         },
     },
@@ -338,10 +364,23 @@ def extract_picks(client, models: list[str], transcript: str) -> list[dict]:
             if not response.text:
                 return []
             picks = json.loads(response.text).get("picks", [])
-            # Defensive: enforce the bias<->dot pairing even if the model drifts.
+            # Normalise what the model returns rather than trusting it: tickers
+            # uppercased and stripped of a stray $, and any entry without a
+            # ticker forced to Neutral so a general takeaway can never be
+            # mistaken for a directional call by the scoring tab.
+            clean = []
             for p in picks:
-                p["dot"] = "Green" if p.get("bias") == "Bullish" else "Red"
-            return picks
+                ticker = (p.get("ticker") or "").strip().lstrip("$").upper()
+                notes = (p.get("notes") or "").strip()
+                if not notes:
+                    continue
+                bias = p.get("bias") if p.get("bias") in ("Bullish", "Bearish") else "Neutral"
+                clean.append({
+                    "ticker": ticker,
+                    "bias": bias if ticker else "Neutral",
+                    "notes": notes,
+                })
+            return clean
 
     raise RuntimeError(
         f"All {len(shortlist)} candidate models unavailable after "
@@ -377,17 +416,55 @@ def main():
         if m:
             known_ids.add(m.group(1))
 
-    playlist_id = get_uploads_playlist_id()
-    recent = list_recent_videos(playlist_id)
-    candidates = [v for v in recent if v["video_id"] not in known_ids
-                  and not _CRYPTO_TITLE_RE.search(v["title"])]
-    log(f"Checked {len(recent)} recent upload(s) from {CHANNEL_ID}; "
-        f"{len(known_ids)} already known; {len(candidates)} new non-crypto candidate(s).")
+    # ── Gather candidates from every watched channel ──────────────────
+    per_channel: dict[str, list] = {}
+    newest_date = None
+    for ch in yt_channels.CHANNELS:
+        handle = ch["handle"]
+        try:
+            playlist_id = yt_channels.uploads_playlist_for_handle(handle)
+            if not playlist_id:
+                log(f"  {handle}: handle did not resolve — skipping this channel.")
+                continue
+            recent = yt_channels.list_recent_videos(playlist_id)
+        except Exception as e:
+            # One bad channel shouldn't cost us the whole run.
+            log(f"  {handle}: listing failed ({e}) — skipping this channel.")
+            continue
+        if recent and (newest_date is None or recent[0]["date"] > newest_date):
+            newest_date = recent[0]["date"]
+        fresh = [{**v, "channel": handle, "channel_name": ch["name"]}
+                 for v in recent
+                 if v["video_id"] not in known_ids
+                 and not _CRYPTO_TITLE_RE.search(v["title"])]
+        per_channel[handle] = fresh
+        log(f"  {ch['name']:<16} {len(recent):>3} recent · {len(fresh):>3} new")
+
+    # Round-robin across channels so one prolific poster can't consume the
+    # whole run's budget while the others go unread for days.
+    candidates, round_no = [], 0
+    while len(candidates) < MAX_TRANSCRIPTS_PER_RUN and round_no < MAX_PER_CHANNEL_PER_RUN:
+        added = False
+        for handle in per_channel:
+            if len(candidates) >= MAX_TRANSCRIPTS_PER_RUN:
+                break
+            if len(per_channel[handle]) > round_no:
+                candidates.append(per_channel[handle][round_no])
+                added = True
+        if not added:
+            break
+        round_no += 1
+
+    total_new = sum(len(v) for v in per_channel.values())
+    deferred = [v for lst in per_channel.values() for v in lst if v not in candidates]
+    log(f"{len(known_ids)} already known; {total_new} new candidate(s) across "
+        f"{len(per_channel)} channel(s); attempting {len(candidates)} this run "
+        f"(cap {MAX_TRANSCRIPTS_PER_RUN}, max {MAX_PER_CHANNEL_PER_RUN}/channel).")
 
     if not candidates:
         # Still rewrite pending (even to empty) so stale entries drop off once captured elsewhere.
         with open(PENDING_PATH, "w", encoding="utf-8") as f:
-            json.dump({"checked": recent[0]["date"] if recent else None, "pending": []}, f,
+            json.dump({"checked": newest_date, "pending": []}, f,
                       indent=2, ensure_ascii=False)
             f.write("\n")
         log("Nothing new — done.")
@@ -400,18 +477,11 @@ def main():
 
     from youtube_transcript_api._errors import RequestBlocked
 
-    # Newest first, so a backlog drains most-recent-first -- old Shorts are
-    # the least useful to capture late anyway.
-    attempts = candidates[:MAX_TRANSCRIPTS_PER_RUN]
-    deferred = candidates[MAX_TRANSCRIPTS_PER_RUN:]
-    if deferred:
-        log(f"Attempting {len(attempts)} this run (cap={MAX_TRANSCRIPTS_PER_RUN}); "
-            f"{len(deferred)} deferred to the next run.")
-
+    attempts = candidates
     new_videos, still_pending = [], list(deferred)
     for i, v in enumerate(attempts):
         if i:
-            time.sleep(THROTTLE_SECONDS)
+            time.sleep(THROTTLE_SECONDS + random.uniform(0, THROTTLE_JITTER))
         try:
             transcript = fetch_transcript(v["video_id"])
         except RequestBlocked as e:
@@ -434,29 +504,34 @@ def main():
             still_pending.append(v)
             continue
         if not picks:
-            log(f"  no ticker picks found in {v['video_id']} ({v['title']}) — has a transcript, "
-                f"just nothing to extract, so not added to pending either.")
+            log(f"  nothing substantive in {v['video_id']} ({v['title']}) — has a transcript, "
+                f"just nothing worth extracting, so not added to pending either.")
             continue
         # Price at the time of the call -- the entry price the Shorts Perf tab
         # measures from. Recorded here rather than derived later so it stays
-        # fixed once captured.
+        # fixed once captured. Only ticker entries need one; a general takeaway
+        # ("the Fed cut rates") has nothing to price.
         for p in picks:
-            p["price"] = fetch_pick_price(p["ticker"], v["date"])
+            p["price"] = fetch_pick_price(p["ticker"], v["date"]) if p.get("ticker") else None
 
         new_videos.append({
             "date": v["date"],
             "url": f"https://www.youtube.com/shorts/{v['video_id']}",
             "title": v["title"],
+            "channel": v["channel"],
+            "channel_name": v["channel_name"],
             "picks": picks,
         })
-        log(f"  extracted {len(picks)} pick(s) from {v['video_id']} ({v['title']}): "
-            + ", ".join(f"{p['ticker']}"
-                        + (f" @ ${p['price']}" if p.get("price") else " @ ?")
+        n_tick = sum(1 for p in picks if p.get("ticker"))
+        log(f"  [{v['channel_name']}] {v['video_id']}: {len(picks)} entr(ies), "
+            f"{n_tick} with a ticker — "
+            + ", ".join((f"{p['ticker']}" + (f" @ ${p['price']}" if p.get("price") else ""))
+                        if p.get("ticker") else "general"
                         for p in picks))
 
     if new_videos:
         data["videos"] = new_videos + data.get("videos", [])
-        data["updated"] = recent[0]["date"] if recent else data.get("updated")
+        data["updated"] = newest_date or data.get("updated")
         with open(DATA_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
             f.write("\n")
@@ -469,9 +544,10 @@ def main():
 
     with open(PENDING_PATH, "w", encoding="utf-8") as f:
         json.dump({
-            "checked": recent[0]["date"] if recent else None,
+            "checked": newest_date,
             "pending": [{
                 "video_id": v["video_id"], "title": v["title"], "date": v["date"],
+                "channel_name": v.get("channel_name", ""),
                 "url": f"https://www.youtube.com/shorts/{v['video_id']}",
             } for v in still_pending],
         }, f, indent=2, ensure_ascii=False)
