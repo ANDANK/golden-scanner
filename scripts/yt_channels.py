@@ -21,15 +21,23 @@ import os
 import requests
 
 # ── The watchlist ────────────────────────────────────────────────────────
-# name  = what shows in the Channel column (short enough for a table cell)
-# scored = feeds the Shorts Perf scoring tab
+# name       = what shows in the Channel column (short enough for a table cell)
+# scored     = feeds the Shorts Perf scoring tab
+# channel_id = optional. When present it's used directly and the handle is
+#              never resolved -- handles are display names that can be changed
+#              by their owner, channel IDs cannot. Worth pinning for any
+#              channel whose handle has already proved unreliable.
 CHANNELS = [
     {"handle": "@overkilltrading",   "name": "OverKill",        "scored": True},
     {"handle": "@NolanGouveia",      "name": "Nolan Gouveia",   "scored": True},
     {"handle": "@FinancialEducation","name": "Financial Ed",    "scored": True},
     {"handle": "@InvestwithHenry",   "name": "Invest w/ Henry", "scored": True},
-    {"handle": "@InTheMoney",        "name": "In The Money",    "scored": False},
-    {"handle": "@ClearValueTax",     "name": "ClearValue Tax",  "scored": False},
+    # Was "@InTheMoney", which does not resolve -- the channel's actual handle
+    # is @InTheMoneyAdam. It silently produced no rows at all until the
+    # absence was spotted against the other channels.
+    {"handle": "@InTheMoneyAdam",    "name": "In The Money",    "scored": False},
+    {"handle": "@ClearValueTax",     "name": "ClearValue Tax",  "scored": False,
+     "channel_id": "UCigUBIf-zt_DA6xyOQtq2WA"},
     {"handle": "@MinorityMindset",   "name": "Minority Mindset","scored": False},
 ]
 
@@ -60,10 +68,21 @@ def _yt_api_get(path: str, params: dict) -> dict:
 
 
 def uploads_playlist_for_handle(handle: str) -> str | None:
-    """Resolve a @handle straight to its uploads playlist ID in one call.
-    Returns None if the handle no longer resolves -- a renamed or deleted
-    channel shouldn't take the whole run down with it."""
-    data = _yt_api_get("channels", {"part": "contentDetails", "forHandle": handle})
+    """Resolve a channel to its uploads playlist ID in one call.
+
+    Prefers an explicit `channel_id` from the registry when one is set, since
+    channel IDs are immutable while handles are display names their owner can
+    change -- and a handle that stops resolving fails silently, producing a
+    channel with no rows and no error until someone notices the gap.
+
+    Returns None if the channel can't be resolved, so one dead entry doesn't
+    take the whole run down with it."""
+    cfg = _BY_HANDLE.get((handle or "").lower(), {})
+    if cfg.get("channel_id"):
+        params = {"part": "contentDetails", "id": cfg["channel_id"]}
+    else:
+        params = {"part": "contentDetails", "forHandle": handle}
+    data = _yt_api_get("channels", params)
     items = data.get("items") or []
     if not items:
         return None

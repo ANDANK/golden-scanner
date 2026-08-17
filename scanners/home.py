@@ -1555,19 +1555,41 @@ def _trigger_overkill_workflow() -> tuple:
 
 
 def _latest_overkill_run():
-    """Fetch the most recent run of the refresh workflow, or None on failure."""
+    """Most recent run of the refresh workflow, as (run, error_message).
+
+    Returns the specific reason rather than a bare None. The previous version
+    swallowed every failure into `return None` and the caller then blamed the
+    token for all of them -- so an expired token, a permissions gap, a renamed
+    workflow file and a network blip all produced the identical "check
+    GITHUB_TOKEN" message. Three of those four are not the token, and the
+    message sent you looking in the wrong place."""
     token = _get_github_token()
     if not token:
-        return None
+        return None, ("No **GITHUB_TOKEN** in Streamlit secrets. Add it as a top-level line: "
+                      "`GITHUB_TOKEN = \"github_pat_...\"`")
     url = (f"https://api.github.com/repos/{_GH_OWNER}/{_GH_REPO}/actions/workflows/"
            f"{_GH_WORKFLOW_FILE}/runs")
     try:
         r = requests.get(url, headers=_gh_headers(token), params={"per_page": 1}, timeout=15)
+        if r.status_code == 401:
+            return None, ("GitHub rejected the token (**401**) — it has expired or been revoked. "
+                          "Regenerate the PAT and update the Streamlit secret.")
+        if r.status_code == 403:
+            return None, ("Token authenticated but lacks permission (**403**) — it needs "
+                          "`Actions: Read and write` on this repo. Read-only shows this on the "
+                          "Refresh button while status still loads.")
+        if r.status_code == 404:
+            return None, (f"`{_GH_WORKFLOW_FILE}` not found (**404**) — either the token can't see "
+                          f"`{_GH_OWNER}/{_GH_REPO}`, or the workflow file was renamed.")
         r.raise_for_status()
         runs = r.json().get("workflow_runs", [])
-        return runs[0] if runs else None
-    except Exception:
-        return None
+        if not runs:
+            return None, "No runs recorded for this workflow yet."
+        return runs[0], None
+    except requests.Timeout:
+        return None, "GitHub timed out. Try again in a moment."
+    except Exception as e:
+        return None, f"Couldn't reach GitHub: {e}"
 
 
 def _to_ct(iso_utc: str) -> str:
@@ -1619,9 +1641,9 @@ def _render_overkill_trigger():
     with c2:
         if st.button("Check latest run status", key="overkill_status_btn"):
             with st.spinner("Checking…"):
-                run = _latest_overkill_run()
+                run, err = _latest_overkill_run()
             if run is None:
-                st.info("Couldn't fetch run status — check GITHUB_TOKEN in secrets.")
+                st.warning(f"Couldn't fetch run status — {err}")
             else:
                 label = run.get("conclusion") or run.get("status") or "unknown"
                 icon = {"success": "✅", "failure": "❌", "in_progress": "⏳",
@@ -1646,15 +1668,14 @@ def _render_overkill_trigger():
 
 
 def _render_overkill_pending():
-    """The GitHub Action (scripts/overkill_shorts_scan.py) detects new Shorts,
-    fetches each transcript, and asks Claude to extract picks automatically --
-    this list is now the FAILURE fallback, not the normal path: a video lands
-    here only when the transcript couldn't be fetched (no captions, or
-    blocked) or Claude found no clear ticker calls in it. (An earlier
-    version tried yt-dlp for transcripts and got blocked wholesale by
-    YouTube's bot-check on GitHub Actions' shared IPs -- the current
-    approach uses a lighter, different fetch method that doesn't share that
-    exact failure mode, though it isn't guaranteed either.)"""
+    """Videos not yet in the table, split by WHY.
+
+    These are two unrelated situations and were previously shown as one list
+    headed "couldn't be auto-analyzed". After the jump to seven channels that
+    read as "92 Shorts couldn't be auto-analyzed" when in fact nearly all of
+    them were simply queued behind the per-run cap and would be picked up over
+    the following days. Queued is the healthy state of a backlog draining; only
+    `failed` means a transcript genuinely couldn't be fetched."""
     path = os.path.join(DATA_DIR, "overkill_pending.json")
     try:
         with open(path, encoding="utf-8") as f:
@@ -1664,23 +1685,47 @@ def _render_overkill_pending():
     pending = pending_data.get("pending", [])
     if not pending:
         return
-    items = "".join(
-        f'<li style="margin-bottom:4px"><a href="{p.get("url","")}" target="_blank" '
-        f'style="color:{TEXT_PRIMARY}">{p.get("title","")}</a> '
-        f'<span style="color:{TEXT_MUTED};font-size:10px">· {p.get("date","")}</span></li>'
-        for p in pending
-    )
-    st.markdown(
-        f'<div style="background:{_rgba(GOLD, 0.08)};border:1px solid {GOLD}44;border-radius:10px;'
-        f'padding:12px 16px;margin:4px 0 14px">'
-        f'<div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:6px">'
-        f'🕒 {len(pending)} Short(s) couldn\'t be auto-analyzed</div>'
-        f'<ul style="margin:0;padding-left:18px;font-size:12px">{items}</ul>'
-        f'<div style="color:{TEXT_MUTED};font-size:10.5px;margin-top:8px">'
-        f'Transcript unavailable or no clear ticker call found — ask Claude to pull picks '
-        f'for these manually if needed.</div></div>',
-        unsafe_allow_html=True,
-    )
+
+    # Entries written before this split carried no reason. Treat them as
+    # queued: that's the overwhelmingly common case, and it errs toward the
+    # calmer reading rather than crying failure over a healthy backlog.
+    failed = [p for p in pending if p.get("reason") == "failed"]
+    queued = [p for p in pending if p.get("reason") != "failed"]
+
+    def _items(rows):
+        return "".join(
+            f'<li style="margin-bottom:4px"><a href="{p.get("url","")}" target="_blank" '
+            f'style="color:{TEXT_PRIMARY}">{p.get("title","")}</a> '
+            f'<span style="color:{TEXT_MUTED};font-size:10px">· {p.get("date","")}'
+            + (f' · {p["channel_name"]}' if p.get("channel_name") else "")
+            + '</span></li>'
+            for p in rows)
+
+    if failed:
+        st.markdown(
+            f'<div style="background:{_rgba(GOLD, 0.08)};border:1px solid {GOLD}44;'
+            f'border-radius:10px;padding:12px 16px;margin:4px 0 10px">'
+            f'<div style="color:{GOLD};font-size:12px;font-weight:700;margin-bottom:6px">'
+            f'⚠️ {len(failed)} Short(s) couldn\'t be analysed</div>'
+            f'<ul style="margin:0;padding-left:18px;font-size:12px">{_items(failed)}</ul>'
+            f'<div style="color:{TEXT_MUTED};font-size:10.5px;margin-top:8px">'
+            f'Transcript unavailable — captions off, or the fetch was blocked. '
+            f'These are retried on later runs.</div></div>',
+            unsafe_allow_html=True,
+        )
+
+    if queued:
+        with st.expander(f"🕒 {len(queued)} Short(s) queued for upcoming runs", expanded=False):
+            st.caption(
+                "Waiting their turn behind the per-run fetch cap, not a problem. The cap "
+                "keeps request volume low enough to avoid the YouTube rate limit, so a "
+                "backlog drains over several days. Nothing to do."
+            )
+            st.markdown(f'<ul style="margin:0;padding-left:18px;font-size:12px">'
+                        f'{_items(queued[:40])}</ul>'
+                        + (f'<div style="color:{TEXT_MUTED};font-size:10.5px;margin-top:6px">'
+                           f'…and {len(queued) - 40} more.</div>' if len(queued) > 40 else ""),
+                        unsafe_allow_html=True)
 
 
 def _render_recent_ticker_line(flat: list[dict]):

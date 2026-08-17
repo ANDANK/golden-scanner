@@ -317,25 +317,24 @@
         {
           "ticker": "RR",
           "bias": "Bullish",
-          "dot": "Green",
           "notes": "Sitting at $1.80 with a recent buy signal, this robotics penny stock partners with Nvidia and has previously reached $7. The host plans to open a small position for exposure to the robotics sector.",
           "price": 1.8
         },
         {
           "ticker": "GRAB",
           "bias": "Bullish",
-          "dot": "Green",
           "notes": "Grab Holdings is showing strong revenue growth near $1 billion per quarter. Down at $3.62 from highs of $6.60 and $17, the host considers it an absolute steal.",
           "price": 3.62
         },
         {
           "ticker": "BSX",
           "bias": "Bullish",
-          "dot": "Green",
           "notes": "Currently sitting at $51 after previous buy signals between $40 and $50. It is breaking out over the 9 EMA, indicating momentum is shifting to the upside with bulls taking control.",
           "price": 51.83
         }
-      ]
+      ],
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill"
     },
     {
       "date": "2026-07-27",
@@ -345,25 +344,24 @@
         {
           "ticker": "BTG",
           "bias": "Bullish",
-          "dot": "Green",
           "notes": "Giving a buy signal right at its four-year moving average after pulling back to $3-$4, and looks to be bottoming out above $3.50 ahead of earnings on the 6th.",
           "price": 3.87
         },
         {
           "ticker": "SIL",
           "bias": "Bullish",
-          "dot": "Green",
           "notes": "Has dropped nearly 50% from $120 down to $75 and is flashing a buy signal as it attempts to bottom, with the host liking it above $68.",
           "price": 75.78
         },
         {
           "ticker": "JNUG",
           "bias": "Bullish",
-          "dot": "Green",
           "notes": "Down 60-70% from $350 to $100 and appears to be bottoming with a buy signal triggered last week, provided it holds the $100 level.",
           "price": 120.15
         }
-      ]
+      ],
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill"
     },
     {
       "date": "2026-08-14",
@@ -373,11 +371,12 @@
         {
           "ticker": "LINK",
           "bias": "Bullish",
-          "dot": "Green",
           "notes": "Chainlink is presenting a monthly buy signal around $9 within a multi-year consolidation, which the host views as a generational accumulation opportunity before targeting prior highs.",
           "price": 5.78
         }
-      ]
+      ],
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill"
     },
     {
       "date": "2026-08-11",
@@ -1037,7 +1036,7 @@
     "@NolanGouveia",
     "@FinancialEducation",
     "@InvestwithHenry",
-    "@InTheMoney",
+    "@InTheMoneyAdam",
     "@ClearValueTax",
     "@MinorityMindset"
   ]

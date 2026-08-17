@@ -478,6 +478,14 @@ def main():
     from youtube_transcript_api._errors import RequestBlocked
 
     attempts = candidates
+    # Two very different reasons a video isn't in the table yet, tracked
+    # separately: "queued" is simply waiting its turn under the per-run cap
+    # (normal, self-resolving), while "failed" means the transcript couldn't be
+    # fetched at all (may need a look). Lumping them together made a healthy
+    # 92-video backlog read as "92 Shorts couldn't be auto-analyzed", which is
+    # alarming and wrong.
+    for v in deferred:
+        v["reason"] = "queued"
     new_videos, still_pending = [], list(deferred)
     for i, v in enumerate(attempts):
         if i:
@@ -492,16 +500,18 @@ def main():
                 f"stopping after {i} fetch(es) rather than firing {len(remaining)} more "
                 f"doomed requests, which would only extend the block. "
                 f"Retrying on the next scheduled run.")
+            for rv in remaining:
+                rv["reason"] = "failed"
             still_pending.extend(remaining)
             break
         if transcript is None:
-            still_pending.append(v)
+            still_pending.append({**v, "reason": "failed"})
             continue
         try:
             picks = extract_picks(client, models, transcript)
         except Exception as e:
             log(f"  Gemini extraction failed for {v['video_id']}: {e}")
-            still_pending.append(v)
+            still_pending.append({**v, "reason": "failed"})
             continue
         if not picks:
             log(f"  nothing substantive in {v['video_id']} ({v['title']}) — has a transcript, "
@@ -548,11 +558,14 @@ def main():
             "pending": [{
                 "video_id": v["video_id"], "title": v["title"], "date": v["date"],
                 "channel_name": v.get("channel_name", ""),
+                "reason": v.get("reason", "queued"),
                 "url": f"https://www.youtube.com/shorts/{v['video_id']}",
             } for v in still_pending],
         }, f, indent=2, ensure_ascii=False)
         f.write("\n")
-    log(f"{len(still_pending)} still pending (transcript unavailable or extraction failed).")
+    n_failed = sum(1 for v in still_pending if v.get("reason") == "failed")
+    log(f"{len(still_pending)} not captured: {len(still_pending) - n_failed} queued for a later "
+        f"run, {n_failed} failed (transcript unavailable or extraction error).")
     _emit_new_pick_count(sum(len(v["picks"]) for v in new_videos))
 
 
