@@ -1533,20 +1533,27 @@ def _gh_headers(token: str) -> dict:
     }
 
 
-def _trigger_overkill_workflow() -> tuple:
-    """POST a workflow_dispatch event. Returns (ok, message)."""
+def _trigger_overkill_workflow(handles: list[str] | None = None) -> tuple:
+    """POST a workflow_dispatch event. Returns (ok, message).
+
+    `handles` narrows the scan to those channels. Passing every channel (or
+    none) sends an empty input, which the script reads as "scan everything" --
+    so the default behaviour and every scheduled run are untouched."""
     token = _get_github_token()
     if not token:
         return False, ("No GitHub token configured. Add **GITHUB_TOKEN** (a PAT with `actions:write` "
                         "or `repo` scope on this repo) to your Streamlit secrets to enable this button.")
     url = (f"https://api.github.com/repos/{_GH_OWNER}/{_GH_REPO}/actions/workflows/"
            f"{_GH_WORKFLOW_FILE}/dispatches")
+    payload = {"ref": "main", "inputs": {"channels": ",".join(handles or [])}}
     try:
-        r = requests.post(url, headers=_gh_headers(token), json={"ref": "main"}, timeout=15)
+        r = requests.post(url, headers=_gh_headers(token), json=payload, timeout=15)
     except Exception as e:
         return False, f"Request failed: {e}"
     if r.status_code == 204:
-        return True, "Triggered — the run usually finishes in a minute or two. Use *Check status* below."
+        scope = (f"{len(handles)} channel(s)" if handles else "all channels")
+        return True, (f"Triggered for {scope} — the run usually finishes in a minute or two. "
+                      f"Use *Check status* below.")
     if r.status_code == 401:
         return False, "GitHub rejected the token (401) — GITHUB_TOKEN may be invalid or expired."
     if r.status_code == 404:
@@ -1630,13 +1637,22 @@ def _job_log_tail(run_id: int, lines: int = 150) -> str:
         return f"(couldn't fetch logs: {e})"
 
 
-def _render_overkill_trigger():
+def _render_overkill_trigger(handles: list[str] | None = None):
+    """`handles` comes from the channel filter above the table, so Refresh Now
+    scans exactly what you're looking at. Selecting every channel (the default)
+    passes nothing and scans them all."""
     c1, c2 = st.columns([1, 1])
     with c1:
-        if st.button("🔄 Refresh Now", key="overkill_trigger_btn",
-                      help="Runs the GitHub Action that pulls new Shorts, right from here"):
+        scoped = bool(handles)
+        label = f"🔄 Refresh {len(handles)} channel(s)" if scoped else "🔄 Refresh Now"
+        if st.button(label, key="overkill_trigger_btn",
+                     help=("Runs the GitHub Action for just the channels selected above — "
+                           "the whole per-run fetch budget goes to them, so one channel's "
+                           "backlog drains far faster."
+                           if scoped else
+                           "Runs the GitHub Action across every watched channel.")):
             with st.spinner("Triggering GitHub Action…"):
-                ok, msg = _trigger_overkill_workflow()
+                ok, msg = _trigger_overkill_workflow(handles)
             (st.success if ok else st.error)(msg)
     with c2:
         if st.button("Check latest run status", key="overkill_status_btn"):
@@ -1803,11 +1819,18 @@ def _render_overkill_tab():
     # list: with seven channels the feed is long, and the two questions you
     # arrive with are "what did X say" and "just show me the tickers".
     names = sorted({r["channel"] for r in flat})
+    # Defaults to OverKill alone rather than everything: it's the channel with
+    # the real history and the one worth seeing first, and because this
+    # selection also scopes Refresh Now, defaulting to all seven would make
+    # every casual refresh a seven-channel fetch. Widen the selection
+    # deliberately when you want more.
+    default_sel = [n for n in names if n == "OverKill"] or names
     fc, ft = st.columns([3, 2])
     with fc:
-        picked = st.multiselect("Channels", names, default=names,
+        picked = st.multiselect("Channels", names, default=default_sel,
                                 key="yt_shorts_channels",
-                                help="Filter the table to specific channels.")
+                                help="Filters the table AND scopes the Refresh button — "
+                                     "only the channels selected here get scanned.")
     with ft:
         only_tickers = st.checkbox("Ticker calls only", value=False,
                                    key="yt_shorts_only_tickers",
@@ -1819,7 +1842,16 @@ def _render_overkill_tab():
     st.caption(f"Showing {len(flat)} row(s) from {len(picked) or len(names)} of "
                f"{len(names)} channel(s).")
 
-    _render_overkill_trigger()
+    # Map the display names back to handles for the refresh call. Only pass
+    # them when the selection is an actual subset -- "everything selected" and
+    # "nothing selected" both mean scan all, and sending the full list would
+    # just be a noisier way of saying the same thing.
+    from scripts.yt_channels import CHANNELS as _ALL_CHANNELS
+    name_to_handle = {c["name"]: c["handle"] for c in _ALL_CHANNELS}
+    subset = (sorted({name_to_handle[n] for n in picked if n in name_to_handle})
+              if picked and len(picked) < len(names) else None)
+
+    _render_overkill_trigger(subset)
     _render_overkill_pending()
     _render_recent_ticker_line(flat)
 

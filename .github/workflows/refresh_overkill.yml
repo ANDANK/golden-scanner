@@ -44,7 +44,14 @@ on:
     # - cron: "10 14 * * *"
     # - cron: "10 1 * * *"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI, or the
-                               # "Refresh Now" button on the OverKill Shorts tab
+                              # "Refresh Now" button on the YouTube Shorts tab
+    inputs:
+      channels:
+        description: >-
+          Comma-separated channel handles to scan (e.g. @NolanGouveia,@ClearValueTax).
+          Leave blank to scan every channel in scripts/yt_channels.py.
+        required: false
+        default: ""
 
 permissions:
   contents: write          # allow the bot to commit + push extracted picks
@@ -139,6 +146,9 @@ jobs:
         env:
           YOUTUBE_API_KEY:  ${{ secrets.YOUTUBE_API_KEY }}
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          # Empty on scheduled runs, so cron always scans everything. Only a
+          # manual dispatch narrows it.
+          SCAN_CHANNELS:    ${{ github.event.inputs.channels }}
           # Python 3.14 on Windows still encodes stdout with the locale
           # codepage (cp1252), so em-dashes etc. in log messages arrive in
           # the Actions log as mojibake. Force UTF-8 rather than restricting

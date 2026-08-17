@@ -416,10 +416,26 @@ def main():
         if m:
             known_ids.add(m.group(1))
 
-    # ── Gather candidates from every watched channel ──────────────────
+    # ── Gather candidates from the watched channels ───────────────────
+    # SCAN_CHANNELS narrows a manual run to specific handles (set by the
+    # workflow's `channels` input, which the app's Refresh button fills from
+    # the channel filter). Empty means all, so scheduled runs are unaffected.
+    # Narrowing also concentrates the per-run budget: pick one channel and it
+    # gets the full 10 slots instead of 2, which is the fast way to drain one
+    # backlog without raising total request volume.
+    wanted = [h.strip().lower() for h in os.environ.get("SCAN_CHANNELS", "").split(",") if h.strip()]
+    channels = [c for c in yt_channels.CHANNELS
+                if not wanted or c["handle"].lower() in wanted]
+    if wanted:
+        log(f"Scanning {len(channels)} of {len(yt_channels.CHANNELS)} channel(s) "
+            f"(SCAN_CHANNELS={','.join(wanted)}).")
+        if not channels:
+            log("ERROR: SCAN_CHANNELS matched no known handle — check spelling.")
+            sys.exit(1)
+
     per_channel: dict[str, list] = {}
     newest_date = None
-    for ch in yt_channels.CHANNELS:
+    for ch in channels:
         handle = ch["handle"]
         try:
             playlist_id = yt_channels.uploads_playlist_for_handle(handle)
@@ -441,9 +457,14 @@ def main():
         log(f"  {ch['name']:<16} {len(recent):>3} recent · {len(fresh):>3} new")
 
     # Round-robin across channels so one prolific poster can't consume the
-    # whole run's budget while the others go unread for days.
+    # whole run's budget while the others go unread for days. The per-channel
+    # cap scales with how many channels are in play: across all 7 it stays 2,
+    # but a run narrowed to one channel lets that channel use all 10 slots.
+    # Total request volume is unchanged either way -- only its distribution.
+    per_channel_cap = max(MAX_PER_CHANNEL_PER_RUN,
+                          -(-MAX_TRANSCRIPTS_PER_RUN // max(len(per_channel), 1)))
     candidates, round_no = [], 0
-    while len(candidates) < MAX_TRANSCRIPTS_PER_RUN and round_no < MAX_PER_CHANNEL_PER_RUN:
+    while len(candidates) < MAX_TRANSCRIPTS_PER_RUN and round_no < per_channel_cap:
         added = False
         for handle in per_channel:
             if len(candidates) >= MAX_TRANSCRIPTS_PER_RUN:
@@ -459,7 +480,7 @@ def main():
     deferred = [v for lst in per_channel.values() for v in lst if v not in candidates]
     log(f"{len(known_ids)} already known; {total_new} new candidate(s) across "
         f"{len(per_channel)} channel(s); attempting {len(candidates)} this run "
-        f"(cap {MAX_TRANSCRIPTS_PER_RUN}, max {MAX_PER_CHANNEL_PER_RUN}/channel).")
+        f"(cap {MAX_TRANSCRIPTS_PER_RUN}, max {per_channel_cap}/channel).")
 
     if not candidates:
         # Still rewrite pending (even to empty) so stale entries drop off once captured elsewhere.
@@ -500,8 +521,13 @@ def main():
                 f"stopping after {i} fetch(es) rather than firing {len(remaining)} more "
                 f"doomed requests, which would only extend the block. "
                 f"Retrying on the next scheduled run.")
+            # "queued", not "failed": a block is a run-level condition, not a
+            # defect in these videos. Everything after the first block was
+            # never even attempted, and the one that triggered it is perfectly
+            # fine -- our IP wasn't. Marking them failed made a single blocked
+            # run look like ten broken Shorts.
             for rv in remaining:
-                rv["reason"] = "failed"
+                rv["reason"] = "queued"
             still_pending.extend(remaining)
             break
         if transcript is None:
