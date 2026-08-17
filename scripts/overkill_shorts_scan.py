@@ -574,15 +574,40 @@ def main():
         log(f"Wrote {len(new_videos)} new video(s), "
             f"{sum(len(v['picks']) for v in new_videos)} pick(s) total, to {DATA_PATH}.")
 
+    # Carry forward pending entries for channels this run did NOT scan.
+    # The file is rewritten wholesale each run, but still_pending only ever
+    # holds channels that were scanned -- so a run scoped to one channel used
+    # to erase every other channel's queue, making their backlogs look drained
+    # when nothing had been fetched. Only rebuild the part of the list this
+    # run actually had visibility over.
+    scanned = {c["handle"] for c in channels}
+    if len(scanned) < len(yt_channels.CHANNELS):
+        try:
+            with open(PENDING_PATH, encoding="utf-8") as f:
+                previous = json.load(f).get("pending", [])
+        except Exception:
+            previous = []
+        carried = [p for p in previous
+                   if p.get("channel") not in scanned
+                   and p.get("channel_name") not in {c["name"] for c in channels}]
+        if carried:
+            log(f"Carrying forward {len(carried)} pending entr(ies) from "
+                f"{len(yt_channels.CHANNELS) - len(scanned)} unscanned channel(s).")
+            still_pending.extend(carried)
+
     # Deferred-by-cap and blocked entries get appended in different passes
     # above; re-sort so the tab shows newest-first regardless of which.
-    still_pending.sort(key=lambda v: v["date"], reverse=True)
+    still_pending.sort(key=lambda v: v.get("date", ""), reverse=True)
 
     with open(PENDING_PATH, "w", encoding="utf-8") as f:
         json.dump({
             "checked": newest_date,
             "pending": [{
                 "video_id": v["video_id"], "title": v["title"], "date": v["date"],
+                # Handle as well as display name: the carry-forward above
+                # filters on it, and matching by display name alone breaks the
+                # moment a channel is renamed in the registry.
+                "channel": v.get("channel", ""),
                 "channel_name": v.get("channel_name", ""),
                 "reason": v.get("reason", "queued"),
                 "url": f"https://www.youtube.com/shorts/{v['video_id']}",
