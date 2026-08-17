@@ -36,6 +36,8 @@ from email import encoders
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
+from scripts.email_footer import with_footer, TAG_FULL_ANALYSIS
+
 from unittest.mock import MagicMock
 
 class _FakeSS(dict):
@@ -180,7 +182,7 @@ def send_email(subject: str, html_body: str, attachment_path: str | None) -> Non
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = ", ".join(recipients)
-    msg.attach(MIMEText(html_body, "html"))
+    msg.attach(MIMEText(with_footer(html_body, TAG_FULL_ANALYSIS), "html"))
 
     if attachment_path and os.path.exists(attachment_path):
         with open(attachment_path, "rb") as f:

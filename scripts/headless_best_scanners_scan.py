@@ -53,6 +53,8 @@ from email.mime.text import MIMEText
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
+from scripts.email_footer import with_footer, TAG_BEST_SCANNERS
+
 # ── Mock Streamlit so scanner modules import/run without a server, same
 # approach as scripts/headless_overkill_scan.py.
 from unittest.mock import MagicMock
@@ -422,7 +424,7 @@ def send_email(subject: str, html_body: str) -> None:
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = ", ".join(recipients)
-    msg.attach(MIMEText(html_body, "html"))
+    msg.attach(MIMEText(with_footer(html_body, TAG_BEST_SCANNERS), "html"))
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(sender, password)

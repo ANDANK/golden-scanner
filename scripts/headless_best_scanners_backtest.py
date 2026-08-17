@@ -48,6 +48,8 @@ from email import encoders
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
+from scripts.email_footer import with_footer, TAG_BACKTEST
+
 # ── Mock Streamlit so scanner modules import/run without a server, same
 # approach as the other headless_*.py scripts.
 from unittest.mock import MagicMock
@@ -154,7 +156,7 @@ def send_email(subject: str, html_body: str, csv_path: str | None) -> None:
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = ", ".join(recipients)
-    msg.attach(MIMEText(html_body, "html"))
+    msg.attach(MIMEText(with_footer(html_body, TAG_BACKTEST), "html"))
 
     if csv_path and os.path.exists(csv_path):
         with open(csv_path, "rb") as f:

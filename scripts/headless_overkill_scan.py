@@ -32,6 +32,8 @@ from email.mime.text import MIMEText
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
+from scripts.email_footer import with_footer, TAG_OVERKILL
+
 # ── Mock Streamlit so scanner modules import/run without a server, same
 # approach as scripts/headless_scan.py — quiet logs, no-op UI calls, and
 # st.cache_data becomes a passthrough (no caching needed for a single run).
@@ -264,7 +266,7 @@ def send_email(subject: str, html_body: str) -> None:
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = ", ".join(recipients)
-    msg.attach(MIMEText(html_body, "html"))
+    msg.attach(MIMEText(with_footer(html_body, TAG_OVERKILL), "html"))
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(sender, password)
