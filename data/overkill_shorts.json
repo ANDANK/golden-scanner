@@ -1,8 +1,410 @@
 {
-  "updated": "2026-08-16",
+  "updated": "2026-08-18",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-17",
+      "url": "https://www.youtube.com/shorts/9H4WIhkoBzs",
+      "title": "3 STOCKS TO WATCH THIS WEEK 📈 AUGUST 17",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "CRCL",
+          "bias": "Bullish",
+          "notes": "Circle is showing signs of a breakout after bouncing off $60 support to $75 and moving above its 90 MA. As the issuer of USDC, it stands to benefit significantly from the pending vote on the Clarity Act.",
+          "price": 71.76
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius Holdings has pulled back 50% to 60% from $65 down to $30, presenting an attractive entry point on green technical signal dots for a 1 to 6 month swing trade.",
+          "price": 29.83
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Netflix is down significantly from its top, holding near its 4-year moving average at a 21 P/E ratio after receiving a buy signal around $73.",
+          "price": 78.05
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
+      "url": "https://www.youtube.com/shorts/ldI21OoPrkQ",
+      "title": "If You Have $100,000 Invested, Do THIS to Reach $1 Million",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Fidelity data reveals that only 2.5% of 401(k) accounts reach $1 million, and the median 401(k) balance for Americans aged 55 to 64 is around $107,000.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Assuming a 10% average annual return, a $100,000 portfolio reaches $1 million in 24 years with no extra contributions, 19 years adding $500 monthly, or 16 years adding $1,000 monthly.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "More than 40% of employees cash out their 401(k) accounts when changing jobs instead of rolling them over, halting compounding and resetting their balance to zero.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Attempting to time the market by moving to cash during perceived overvaluations or political shifts usually backfires, forcing investors to buy back in at higher prices after missing gains.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A Vanguard study found that behavioral coaching and guidance can add up to 3% per year to net returns by keeping investors from making emotional decisions during market corrections.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "url": "https://www.youtube.com/shorts/-G7N_-cvEyo",
+      "title": "Top 3 Best stocks to Buy Now (Mid/Late 2026)",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Trading around $27-$28 per share, Celsius is viewed as a $100+ stock over a 3-7 year horizon. Key growth drivers include the rapid expansion of Alani and the recent acquisition of Rockstar.",
+          "price": 27.62
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "The host considers Netflix a top opportunity due to its sticky recurring revenue, subscriber retention, pricing power, and long-term expansion potential in its advertising business.",
+          "price": 74.21
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "American Express stands out for its strong balance sheet and cash flow, charging customers annual fees while attracting high-income users with top credit scores.",
+          "price": 344.08
+        }
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "url": "https://www.youtube.com/shorts/XgaYmPXafuI",
+      "title": "IMPORTANT WARNING: A Once in a Lifetime Event is Coming",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host warns that valuation metrics are flashing historic warnings, with the Shiller PE around 40 and the Buffett indicator at 215%, signaling extreme bubble conditions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To navigate an overvalued market, the host advocates for dollar-cost averaging into quality stocks, trimming massive winners, and implementing hedging strategies like covered calls.",
+          "price": null
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "The host expects Amazon to reach toward $300 per share over the coming months, highlighting strong AWS growth and its historical valuation discount.",
+          "price": 267.28
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bearish",
+          "notes": "The host believes Palantir is tapped out in the short term as upside momentum fades following post-earnings gains, recommending investors trim profits.",
+          "price": 171.04
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "The host remains bullish on Google, seeing a strong price floor around $320 per share while actively utilizing covered call option strategies.",
+          "price": 343.54
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "The host is dollar-cost averaging into Meta by purchasing 25-share tranches, aiming to accumulate 100 shares to sell covered calls for income.",
+          "price": 578.85
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "url": "https://www.youtube.com/shorts/HKgJn3I26_g",
+      "title": "When Will the AI Bubble Pop? - Circular Financing is Circular",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Neutral",
+          "notes": "Circular financing with smaller companies like SpaceX creates isolated revenue inflation, but does not pose a systemic AI bubble risk unless major hyperscalers begin circular funding.",
+          "price": 219.99
+        },
+        {
+          "ticker": "SOXX",
+          "bias": "Neutral",
+          "notes": "The semiconductor ETF has already undergone its correction and is currently undergoing sideways consolidation rather than a market collapse.",
+          "price": 532.38
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Two consecutive cool CPI inflation prints have successfully delayed potential interest rate hikes, though immediate rate cuts remain unlikely.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-13",
+      "url": "https://www.youtube.com/shorts/4cSZY-AEuog",
+      "title": "Inflation Fell to 3.4%... But There's a Problem",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "July CPI inflation was reported at 3.4%, which outpaces the 3.2% wage growth rate and results in declining real purchasing power for Americans.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The M2 money supply is growing at 7.2%, reflecting a true inflation rate significantly higher than the government's official 3.4% CPI figure.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Social Security's 2027 cost-of-living adjustment relies only on Q3 inflation data, likely capping the adjustment around 3% despite higher actual inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The market probability of a Federal Reserve rate hike at the September 16 meeting has dropped to 40.1% due to weak jobs data and moderate CPI numbers.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "url": "https://www.youtube.com/shorts/J5FPMla-A1E",
+      "title": "Why The Wealthy Think About Money Completely Differently",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Consistently investing $100 per month into the S&P 500 from age 21 to 65 can build a portfolio worth over one million dollars by retirement through long-term compounding.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Wealthy individuals focus on acquiring cash-flowing assets that generate income to cover non-essential lifestyle expenses, rather than using earned income or debt to buy liabilities.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Under the 'rule of five' for personal finance, if you cannot afford to buy five of a non-essential item in cash, you cannot truly afford to buy one.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Entrepreneurs and consumers should avoid taking on debt for early-stage business ventures or depreciating assets like vehicles, using leverage only to scale established, cash-flowing operations.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Real estate investments should be selected based on positive cash flow—such as a target 7% cash-on-cash return—rather than relying on speculative property appreciation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Wealth is built through equity and business ownership, which can be systematically acquired in the stock market by making consistent investments over long time horizons.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Idle cash sitting in basic bank accounts should be moved into high-yield savings accounts to earn 4% to 5% FDIC-insured interest.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "url": "https://www.youtube.com/shorts/3RTXRp-d7Vg",
+      "title": "COIN $SOFI SMCI STOCK ANALYSIS 📈 AUG 17",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "COIN",
+          "bias": "Bullish",
+          "notes": "Coinbase is holding a key two-year support level around $140 with multiple weekly buy signals present. The host suggests holding a position with a stop loss around $135, noting a risk of another leg down if $140 breaks.",
+          "price": 147.24
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi pulled back from $33 to $15 at its four-year moving average, triggering a buy signal in a stealth smart-money phase. The host holds a position and expects a rally toward $30 if the stock can clear $20.",
+          "price": 18.04
+        },
+        {
+          "ticker": "SMCI",
+          "bias": "Bullish",
+          "notes": "SMCI climbed to around $40 post-earnings after a buy signal at $27. The host believes the stock still has room to run this week and is holding until a sell signal triggers.",
+          "price": 37.35
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "url": "https://www.youtube.com/shorts/CoSd0Lqbz64",
+      "title": "How to survive the next stock market correction (with proof & data!)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Attempting to time the market often leads to severe losses, as missing just the 10 best trading days reduces an investment's value by more than half, and seven of the 10 best market days historically occur during bear markets.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-11",
+      "url": "https://www.youtube.com/shorts/jmPb-t2WSvQ",
+      "title": "This Stock is Next to make NEW$millionaires‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Cheesecake Factory has gained 172%, and while short-term upside may slow, potential valuation re-rating driven by growth concepts like Flower Child and North Italia offers solid long-term potential.",
+          "price": 113.06
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Netflix in the $70s is highlighted as one of the cleanest long-term growth stories in big tech due to strong subscriber growth, improving margins, and predictable revenue.",
+          "price": 74.79
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "Salesforce has rebounded over 25% from its summer lows as institutional capital rotates out of semiconductor stocks and into SaaS companies.",
+          "price": 197.47
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "ServiceNow has rallied over 28% since June as part of a broader rotation of funds moving away from chip stocks into high-performing SaaS plays.",
+          "price": 127.54
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bearish",
+          "notes": "AMD is showing technical weakness with consecutive lower highs and a 19% drop from all-time highs as money rotates out of semiconductors.",
+          "price": 474.32
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bearish",
+          "notes": "Micron is down 30% from its peak and continues to form lower highs during the seasonally weak summer period for chip stocks.",
+          "price": 868.52
+        },
+        {
+          "ticker": "SNDK",
+          "bias": "Bearish",
+          "notes": "SanDisk has dropped 47% from its highs, displaying a clear downtrend of lower highs amid selling pressure in the semiconductor sector.",
+          "price": 1271.05
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Palantir has rallied 64% from its June lows, demonstrating strong momentum within the SaaS space.",
+          "price": 174.94
+        },
+        {
+          "ticker": "HIMS",
+          "bias": "Neutral",
+          "notes": "Hims delivered a weak quarterly earnings report with a 48% increase in operating expenses and operating losses, keeping it on the watch list rather than making it an immediate buy.",
+          "price": 30.51
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius trading in the $20s is seen as very attractive with potential to 3x to 5x over the next five years.",
+          "price": 28.09
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "American Express priced under $350 is viewed as a high-conviction investment over a five-year horizon.",
+          "price": 340.81
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "Estee Lauder under $100 is considered a strong buy heading into earnings based on multi-year upside potential.",
+          "price": 87.78
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "RH is primed for substantial gains over the next two to three years if falling interest rates spur a recovery in housing.",
+          "price": 182.85
+        },
+        {
+          "ticker": "POOL",
+          "bias": "Bullish",
+          "notes": "Pool Corporation is well-positioned to rally over the next few years as lower interest rates drive new home construction and pool installations.",
+          "price": 201.5
+        },
+        {
+          "ticker": "WHR",
+          "bias": "Bullish",
+          "notes": "Whirlpool could see renewed momentum as lower interest rates support a rebound in the real estate market.",
+          "price": 43.59
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Semiconductor stocks historically experience seasonal weakness from June through September before entering their strongest performance period from October through February.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Berkshire Hathaway has begun deploying its $397 billion cash reserve by repurchasing its own stock and buying shares in Google and Taylor Morrison.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-08-15",
       "url": "https://www.youtube.com/shorts/G1bAirb-itA",
