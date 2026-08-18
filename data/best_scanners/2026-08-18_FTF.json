@@ -1,0 +1,32 @@
+{
+  "date": "2026-08-18",
+  "tag": "FTF",
+  "rows": [
+    {
+      "ticker": "NEM",
+      "price": 115.98,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "ARKK",
+      "price": 79.15,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    }
+  ]
+}
