@@ -160,9 +160,11 @@ def _track_row_html(row: dict) -> str:
         f'<td style="padding:6px 10px;border-bottom:1px solid #333">{cur_txt}</td>'
         f'<td style="padding:6px 10px;font-weight:bold;color:{pct_color};border-bottom:1px solid #333">{pct_txt}</td>'
         f'<td style="padding:6px 10px;border-bottom:1px solid #333">{high_txt}</td>'
-        f'<td style="padding:6px 10px;color:#22C55E;border-bottom:1px solid #333">{high_pct_txt}</td>'
+        f'<td style="padding:6px 10px;color:{"#22C55E" if (high_pct or 0) >= 0 else "#EF4444"};'
+        f'border-bottom:1px solid #333">{high_pct_txt}</td>'
         f'<td style="padding:6px 10px;border-bottom:1px solid #333">{low_txt}</td>'
-        f'<td style="padding:6px 10px;color:#EF4444;border-bottom:1px solid #333">{low_pct_txt}</td>'
+        f'<td style="padding:6px 10px;color:{"#22C55E" if (low_pct or 0) >= 0 else "#EF4444"};'
+        f'border-bottom:1px solid #333">{low_pct_txt}</td>'
         '</tr>'
     )
 

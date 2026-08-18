@@ -310,9 +310,13 @@ def _track_row_html(row: dict) -> str:
         f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{cur_txt}</td>'
         f'<td style="padding:7px 9px;font-family:monospace;font-weight:bold;color:{pct_color};border-top:1px solid #262626">{pct_txt}</td>'
         f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{high_txt}</td>'
-        f'<td style="padding:7px 9px;font-family:monospace;color:#3fcf7f;border-top:1px solid #262626">{high_pct_txt}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;'
+        f'color:{"#3fcf7f" if (high_pct or 0) >= 0 else "#ef5350"};'
+        f'border-top:1px solid #262626">{high_pct_txt}</td>'
         f'<td style="padding:7px 9px;font-family:monospace;color:#a89f8a;border-top:1px solid #262626">{low_txt}</td>'
-        f'<td style="padding:7px 9px;font-family:monospace;color:#ef5350;border-top:1px solid #262626">{low_pct_txt}</td>'
+        f'<td style="padding:7px 9px;font-family:monospace;'
+        f'color:{"#3fcf7f" if (low_pct or 0) >= 0 else "#ef5350"};'
+        f'border-top:1px solid #262626">{low_pct_txt}</td>'
         '</tr>'
     )
 

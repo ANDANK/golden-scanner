@@ -922,10 +922,16 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
         {"label": "% High", "type": "num"}, {"label": "Low", "type": "num"},
         {"label": "% Low", "type": "num"},
     ]
+    def _pct_color(v):
+        """Green above zero, red below, muted when there's no value. Used for
+        every percentage in this table so none of them can be coloured by
+        which column it sits in."""
+        return TEXT_MUTED if v is None else (ACCENT_GREEN if v >= 0 else ACCENT_RED)
+
     table_rows = []
     for r in track_rows:
         pct = r.get("pct")
-        pct_color = TEXT_MUTED if pct is None else (ACCENT_GREEN if pct >= 0 else ACCENT_RED)
+        pct_color = _pct_color(pct)
         pct_txt = "—" if pct is None else f"{pct:+.1f}%"
         cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
         v_color = _VERDICT_COLOR.get(r.get("verdict"), TEXT_MUTED)
@@ -935,6 +941,13 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
         low_txt = "—" if low is None else f"${low:,.2f}"
         high_pct_txt = "—" if high_pct is None else f"{high_pct:+.1f}%"
         low_pct_txt = "—" if low_pct is None else f"{low_pct:+.1f}%"
+        # Colour by SIGN, not by column. % High was hardcoded green, but it
+        # goes negative whenever the stock never traded above the entry price
+        # since it was found -- so a losing position showed "-3.3%" in green,
+        # which reads as good news at a glance. % Low can likewise be positive
+        # when a name only ever traded up.
+        high_pct_color = _pct_color(high_pct)
+        low_pct_color = _pct_color(low_pct)
         table_rows.append([
             (f'<span style="font-weight:700;color:{GOLD}">{r["ticker"]}</span>', r["ticker"]),
             (f'<span style="color:{v_color};font-weight:600">{r.get("verdict") or "—"}</span>', r.get("verdict") or ""),
@@ -944,9 +957,9 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
             (cur_txt, r.get("current_price") if r.get("current_price") is not None else ""),
             (f'<span style="font-weight:700;color:{pct_color}">{pct_txt}</span>', pct if pct is not None else ""),
             (high_txt, high if high is not None else ""),
-            (f'<span style="color:{ACCENT_GREEN}">{high_pct_txt}</span>', high_pct if high_pct is not None else ""),
+            (f'<span style="color:{high_pct_color}">{high_pct_txt}</span>', high_pct if high_pct is not None else ""),
             (low_txt, low if low is not None else ""),
-            (f'<span style="color:{ACCENT_RED}">{low_pct_txt}</span>', low_pct if low_pct is not None else ""),
+            (f'<span style="color:{low_pct_color}">{low_pct_txt}</span>', low_pct if low_pct is not None else ""),
         ])
     # Imported here, not at module top-level: headless mode (the GitHub Actions
     # email scripts) mocks `streamlit` in sys.modules without a real streamlit
