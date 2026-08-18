@@ -139,7 +139,7 @@ def _perf_table(rows: list[dict]) -> str:
         return '<p style="color:#888;font-size:13px">No scored calls in this window yet.</p>'
     header = ("".join(f'<th style="{_TH}">{h}</th>'
                       for h in ["Ticker", "Channel", "Called", "Price @ Call", "Now", "Perf",
-                                "High", "% High", "Low", "% Low"]))
+                                "Best", "% Best", "Worst", "% Worst"]))
     body = ""
     for r in rows:
         body += (
@@ -150,10 +150,10 @@ def _perf_table(rows: list[dict]) -> str:
             f'<td style="{_TD};white-space:nowrap">${r["entry"]:,.2f}</td>'
             f'<td style="{_TD};white-space:nowrap">${r["current"]:,.2f}</td>'
             f'<td style="{_TD};white-space:nowrap">{_pct(r["pct"])}</td>'
-            f'<td style="{_TD};white-space:nowrap">${r["high"]:,.2f}</td>'
-            f'<td style="{_TD};white-space:nowrap">{_pct(r["high_pct"])}</td>'
-            f'<td style="{_TD};white-space:nowrap">${r["low"]:,.2f}</td>'
-            f'<td style="{_TD};white-space:nowrap">{_pct(r["low_pct"])}</td>'
+            f'<td style="{_TD};white-space:nowrap">${r["best"]:,.2f}</td>'
+            f'<td style="{_TD};white-space:nowrap">{_pct(r["best_pct"])}</td>'
+            f'<td style="{_TD};white-space:nowrap">${r["worst"]:,.2f}</td>'
+            f'<td style="{_TD};white-space:nowrap">{_pct(r["worst_pct"])}</td>'
             "</tr>"
         )
     return ('<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;'

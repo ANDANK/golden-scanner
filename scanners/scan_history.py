@@ -158,6 +158,27 @@ def rollup_window(kind: str, tag: str, today_date_str: str, today_rows: list[dic
     return sorted(first_seen.values(), key=lambda v: v["first_found"])
 
 
+def directional_stats(pct, high, high_pct, low, low_pct, bearish: bool):
+    """Re-express a row's performance in the CALL'S terms rather than the
+    price's, and return (pct, best, best_pct, worst, worst_pct).
+
+    For a bullish call the two are the same thing: price up is good, so the
+    high is the best moment and the low the worst. For a bearish call they
+    invert -- the trade wins when price FALLS, so the low is its best moment
+    and the high its worst, and every percentage flips sign.
+
+    This exists because showing a flipped Perf beside a raw High/Low put two
+    sign conventions in one row: a Red row could read Perf +11.6% next to
+    % High +0.0% and % Low -16.7%, which looks broken even though every
+    figure is correct. Expressed this way, every row satisfies
+    best >= perf >= worst regardless of direction, and one reading works for
+    both tables."""
+    if not bearish:
+        return pct, high, high_pct, low, low_pct
+    neg = lambda v: None if v is None else -v
+    return neg(pct), low, neg(low_pct), high, neg(high_pct)
+
+
 def track_record(kind: str, tag: str, today_date_str: str, today_rows: list[dict]) -> list[dict]:
     """The full 'how did our past picks do' rollup, ready to render: every
     distinct ticker in the window with first-found date/price, current

@@ -8,11 +8,15 @@
 # the price captured at the time of each call.
 #
 
-# Bullish and Bearish are split into separate tables and Bearish's percentage
-# is sign-flipped, matching scanners/overkill_check.py's track record: a
-# bearish call wins when price FALLS. Both tables therefore read "best call at
-# the top". High/Low stay raw -- they describe the trading range since the
-# call, which is the same fact either way.
+# Bullish and Bearish are split into separate tables, and every column on a
+# Bearish row is expressed in the CALL's direction rather than the price's: a
+# bearish call wins when price FALLS, so its Perf flips sign AND its best
+# moment is the price low. Both tables therefore read "best call at the top",
+# and every row satisfies Best >= Perf >= Worst.
+#
+# An earlier version flipped only Perf and left the range raw, which put two
+# sign conventions in one row -- Perf +11.6% beside % High +0.0% and % Low
+# -16.7%. Every figure was correct and the row still looked broken.
 
 import json
 import os
@@ -96,19 +100,16 @@ def _score(rows: list[dict]) -> list[dict]:
         if not s or not entry:
             continue
         current, high, low = s["current"], s["high"], s["low"]
-        pct = (current / entry - 1) * 100
-        out.append({
-            **r,
-            "entry": entry,
-            "current": current,
-            # A bearish call wins when price falls -- flip it so both tables
-            # sort best-first. High/Low deliberately stay unflipped.
-            "pct": -pct if r["bias"] == "Bearish" else pct,
-            "high": high,
-            "high_pct": (high / entry - 1) * 100,
-            "low": low,
-            "low_pct": (low / entry - 1) * 100,
-        })
+        # Everything expressed in the CALL's direction, not the price's: a
+        # bearish call wins when price falls, so its best moment is the LOW.
+        # Keeping Perf flipped while the range stayed raw put two sign
+        # conventions in one row and made correct numbers look wrong.
+        pct, best, best_pct, worst, worst_pct = scan_history.directional_stats(
+            (current / entry - 1) * 100, high, (high / entry - 1) * 100,
+            low, (low / entry - 1) * 100, bearish=(r["bias"] == "Bearish"))
+        out.append({**r, "entry": entry, "current": current, "pct": pct,
+                    "best": best, "best_pct": best_pct,
+                    "worst": worst, "worst_pct": worst_pct})
     out.sort(key=lambda r: -r["pct"])
     return out
 
@@ -131,10 +132,10 @@ _COLUMNS = [
     {"label": "Price @ Call", "type": "num"},
     {"label": "Now", "type": "num"},
     {"label": "Perf %", "type": "num"},
-    {"label": "High", "type": "num"},
-    {"label": "% High", "type": "num"},
-    {"label": "Low", "type": "num"},
-    {"label": "% Low", "type": "num"},
+    {"label": "Best", "type": "num"},
+    {"label": "% Best", "type": "num"},
+    {"label": "Worst", "type": "num"},
+    {"label": "% Worst", "type": "num"},
 ]
 
 
@@ -154,10 +155,10 @@ def _table_rows(rows: list[dict]) -> list[list[tuple[str, object]]]:
             (_money(r["entry"]), r["entry"]),
             (_money(r["current"]), r["current"]),
             (_pct_html(r["pct"]), r["pct"]),
-            (_money(r["high"]), r["high"]),
-            (_pct_html(r["high_pct"]), r["high_pct"]),
-            (_money(r["low"]), r["low"]),
-            (_pct_html(r["low_pct"]), r["low_pct"]),
+            (_money(r["best"]), r["best"]),
+            (_pct_html(r["best_pct"]), r["best_pct"]),
+            (_money(r["worst"]), r["worst"]),
+            (_pct_html(r["worst_pct"]), r["worst_pct"]),
         ])
     return out
 

@@ -1310,20 +1310,26 @@ def _fmt_found_date(date_str) -> str:
 
 
 def _apply_color_adjustment(track_rows: list[dict]) -> list[dict]:
-    """A Red (bearish) dot's thesis is that price FALLS, so a decline is
-    success, not failure -- flip pct's sign for Red rows so "Perf" always
-    means "how well did the call do," not "did price rise." Green is
-    unchanged (a rise is already success for a bullish call). Re-sorts
-    afterward since the adjustment can change relative order. High/Low stay
-    raw/factual (never flipped) -- they describe the trading range since
-    the dot, which reads the same regardless of which direction the call
-    was betting on."""
+    """Express every row in the CALL'S terms, not the price's, so Perf and the
+    range columns share one direction.
+
+    A Red dot's thesis is that price FALLS, so for those rows a decline is
+    success: Perf flips sign, and the range flips with it -- the LOW becomes
+    the call's best moment and the HIGH its worst. Green rows are unchanged,
+    since a rise is already success for a bullish call.
+
+    Previously only Perf flipped while High/Low stayed raw, which put two sign
+    conventions in one row: a Red row could show Perf +11.6% beside % High
+    +0.0% and % Low -16.7%. Every figure was correct, but you had to invert
+    two of them mentally to read the row. Now every row satisfies
+    best >= perf >= worst whichever way the call was betting."""
     out = []
     for r in track_rows:
-        pct = r.get("pct")
-        if r.get("color") == "Red" and pct is not None:
-            r = {**r, "pct": -pct}
-        out.append(r)
+        pct, best, best_pct, worst, worst_pct = scan_history.directional_stats(
+            r.get("pct"), r.get("high"), r.get("high_pct"),
+            r.get("low"), r.get("low_pct"), bearish=(r.get("color") == "Red"))
+        out.append({**r, "pct": pct, "best": best, "best_pct": best_pct,
+                    "worst": worst, "worst_pct": worst_pct})
     out.sort(key=lambda r: (r["pct"] is None, -(r["pct"] if r["pct"] is not None else 0)))
     return out
 
@@ -1336,8 +1342,11 @@ def _track_record_columns_and_rows(rows: list[dict]) -> tuple[list[dict], list[l
         {"label": "Ticker", "type": "str"}, {"label": "★", "type": "num"},
         {"label": "Dot Date", "type": "str"}, {"label": "Price @ Dot", "type": "num"},
         {"label": "Now", "type": "num"}, {"label": "Perf", "type": "num"},
-        {"label": "High", "type": "num"}, {"label": "% High", "type": "num"},
-        {"label": "Low", "type": "num"}, {"label": "% Low", "type": "num"},
+        # Best/Worst rather than High/Low: for a Red row the price low IS the
+        # call's best moment, so labelling it "Low" while showing a positive
+        # percentage was the confusing part.
+        {"label": "Best", "type": "num"}, {"label": "% Best", "type": "num"},
+        {"label": "Worst", "type": "num"}, {"label": "% Worst", "type": "num"},
     ]
     table_rows = []
     for r in rows:
@@ -1347,8 +1356,11 @@ def _track_record_columns_and_rows(rows: list[dict]) -> tuple[list[dict], list[l
         cur_txt = "—" if r.get("current_price") is None else f"${r['current_price']:,.2f}"
         n_stars = int(r["stars"]) if r.get("stars") else 0
         stars_txt = "★" * n_stars if n_stars else "—"
-        high, low = r.get("high"), r.get("low")
-        high_pct, low_pct = r.get("high_pct"), r.get("low_pct")
+        # Already expressed in the call's direction by _apply_color_adjustment;
+        # fall back to raw high/low for any row that skipped it.
+        high, low = r.get("best", r.get("high")), r.get("worst", r.get("low"))
+        high_pct = r.get("best_pct", r.get("high_pct"))
+        low_pct = r.get("worst_pct", r.get("low_pct"))
         high_txt = "—" if high is None else f"${high:,.2f}"
         low_txt = "—" if low is None else f"${low:,.2f}"
         high_pct_txt = "—" if high_pct is None else f"{high_pct:+.1f}%"
@@ -1361,9 +1373,11 @@ def _track_record_columns_and_rows(rows: list[dict]) -> tuple[list[dict], list[l
             (cur_txt, r.get("current_price") if r.get("current_price") is not None else ""),
             (f'<span style="font-weight:700;color:{pct_color}">{pct_txt}</span>', pct if pct is not None else ""),
             (high_txt, high if high is not None else ""),
-            (f'<span style="color:{ACCENT_GREEN}">{high_pct_txt}</span>', high_pct if high_pct is not None else ""),
+            (f'<span style="color:{ACCENT_GREEN if (high_pct or 0) >= 0 else ACCENT_RED}">'
+             f'{high_pct_txt}</span>', high_pct if high_pct is not None else ""),
             (low_txt, low if low is not None else ""),
-            (f'<span style="color:{ACCENT_RED}">{low_pct_txt}</span>', low_pct if low_pct is not None else ""),
+            (f'<span style="color:{ACCENT_GREEN if (low_pct or 0) >= 0 else ACCENT_RED}">'
+             f'{low_pct_txt}</span>', low_pct if low_pct is not None else ""),
         ])
     return columns, table_rows
 

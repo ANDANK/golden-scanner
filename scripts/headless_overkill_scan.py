@@ -141,8 +141,12 @@ def _track_row_html(row: dict) -> str:
     pct_txt = "—" if pct is None else f"{pct:+.1f}%"
     cur_txt = "—" if row.get("current_price") is None else f"${row['current_price']:,.2f}"
     stars = "★" * int(row["stars"]) if row.get("stars") else "—"
-    high, low = row.get("high"), row.get("low")
-    high_pct, low_pct = row.get("high_pct"), row.get("low_pct")
+    # Best/Worst are already expressed in the call's direction by
+    # _apply_color_adjustment (a bearish call's best moment is the price LOW).
+    # Fall back to raw high/low for any row that bypassed it.
+    high, low = row.get("best", row.get("high")), row.get("worst", row.get("low"))
+    high_pct = row.get("best_pct", row.get("high_pct"))
+    low_pct = row.get("worst_pct", row.get("low_pct"))
     high_txt = "—" if high is None else f"${high:,.2f}"
     low_txt = "—" if low is None else f"${low:,.2f}"
     high_pct_txt = "—" if high_pct is None else f"{high_pct:+.1f}%"
@@ -174,10 +178,10 @@ def _track_record_table_html(track_rows: list[dict]) -> str:
         '<th style="padding:6px 10px;text-align:left">Price @ Dot</th>'
         '<th style="padding:6px 10px;text-align:left">Now</th>'
         '<th style="padding:6px 10px;text-align:left">Perf</th>'
-        '<th style="padding:6px 10px;text-align:left">High</th>'
-        '<th style="padding:6px 10px;text-align:left">% High</th>'
-        '<th style="padding:6px 10px;text-align:left">Low</th>'
-        '<th style="padding:6px 10px;text-align:left">% Low</th>'
+        '<th style="padding:6px 10px;text-align:left">Best</th>'
+        '<th style="padding:6px 10px;text-align:left">% Best</th>'
+        '<th style="padding:6px 10px;text-align:left">Worst</th>'
+        '<th style="padding:6px 10px;text-align:left">% Worst</th>'
         '</tr>'
     )
     rows = "".join(_track_row_html(r) for r in track_rows)
