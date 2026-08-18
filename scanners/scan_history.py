@@ -158,6 +158,20 @@ def rollup_window(kind: str, tag: str, today_date_str: str, today_rows: list[dic
     return sorted(first_seen.values(), key=lambda v: v["first_found"])
 
 
+def _align_to_index(dt, index):
+    """Make a naive datetime comparable to a price index that may be
+    timezone-aware. Comparing the two directly raises TypeError, which the
+    callers swallow -- so the ticker would silently vanish from the table
+    rather than fail loudly. yfinance returns naive daily indexes today, but
+    that has changed before and the guard costs nothing."""
+    tz = getattr(index, "tz", None)
+    if tz is None:
+        return dt
+    import pandas as pd
+    ts = pd.Timestamp(dt)
+    return ts.tz_localize(tz) if ts.tzinfo is None else ts.tz_convert(tz)
+
+
 def directional_stats(pct, high, high_pct, low, low_pct, bearish: bool):
     """Re-express a row's performance in the CALL'S terms rather than the
     price's, and return (pct, best, best_pct, worst, worst_pct).
@@ -254,13 +268,17 @@ def fetch_prices_on_dates(ticker_dates: list[tuple[str, str]], period: str = "1y
             df = get_price_history(t, period=period, interval="1d")
             if df is None or df.empty:
                 continue
-            target = datetime.strptime(date_str, "%Y-%m-%d")
-            idx = df.index
-            eligible = idx[idx >= target]
-            row_date = eligible[0] if len(eligible) else (idx[-1] if len(idx) else None)
-            if row_date is None:
+            # Same NaN guard as fetch_range_stats: a trailing placeholder bar
+            # with a null close would otherwise become a NaN entry price, and
+            # every percentage derived from it renders as "nan%".
+            close = df["Close"].dropna()
+            if close.empty:
                 continue
-            out[(t, date_str)] = float(df.loc[row_date, "Close"])
+            idx = close.index
+            target = _align_to_index(datetime.strptime(date_str, "%Y-%m-%d"), idx)
+            eligible = idx[idx >= target]
+            row_date = eligible[0] if len(eligible) else idx[-1]
+            out[(t, date_str)] = float(close.loc[row_date])
         except Exception:
             continue
     return out
@@ -286,12 +304,26 @@ def fetch_range_stats(ticker_dates: list[tuple[str, str]], period: str = "1y") -
             df = get_price_history(t, period=period, interval="1d")
             if df is None or df.empty:
                 continue
-            since = datetime.strptime(date_str, "%Y-%m-%d")
-            window = df[df.index >= since]["Close"]
+            # Drop NaN closes before anything else: yfinance can hand back a
+            # trailing placeholder bar with a null close (halted names, or an
+            # in-progress session), and taking .iloc[-1] off that put a literal
+            # "$nan" and "+nan%" straight into the emailed table.
+            close = df["Close"].dropna()
+            if close.empty:
+                continue
+            since = _align_to_index(datetime.strptime(date_str, "%Y-%m-%d"), close.index)
+            window = close[close.index >= since]
             if window.empty:
-                window = df["Close"]   # since_date beyond the fetched range (shouldn't happen given `period`)
+                # Found today, before today's bar exists. The range SINCE the
+                # find is therefore just the current price -- no high or low
+                # has had time to form. This previously fell back to the whole
+                # fetched period, so a ticker first seen today reported its
+                # 52-week high as "% High": LYFT, found today at $17.42,
+                # showed High $24.57 (+41%) and Low $12.65 (-27%), neither of
+                # which happened since the call.
+                window = close.iloc[-1:]
             out[t] = {
-                "current": float(df["Close"].iloc[-1]),
+                "current": float(close.iloc[-1]),
                 "high": float(window.max()),
                 "low": float(window.min()),
             }
