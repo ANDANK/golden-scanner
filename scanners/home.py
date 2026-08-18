@@ -294,8 +294,16 @@ _EDGE_MIN_N_MEDIUM = 200
 def _edge_verdict(labels: list) -> dict:
     """Finds the best-matching shortlist combo for a ticker's CURRENT matched
     labels (same 'is a subset of what fired' logic as _star_rating). Returns
-    a plain-language verdict plus the numbers behind it; 'Too New' means
-    nothing on the shortlist matched -- not a bad sign, just unconfirmed.
+    a plain-language verdict plus the numbers behind it.
+
+    'Untested combo' means nothing on the shortlist matched -- and note it
+    describes the SIGNAL COMBINATION, not the ticker. Eight labels give 255
+    possible combinations and only 11 have been backtested with enough
+    samples to measure, so most combinations simply have no evidence either
+    way. It is not a judgement that the setup is weak, and it says nothing
+    about how long the ticker has been on the list. (It used to be called
+    'Too New', which read as a statement about the stock's age and caused
+    exactly that confusion.)
 
     A ticker can match several shortlist combos at once (e.g. matching both
     1Mom+8Cross and a smaller-sample triple that happens to have a bigger raw
@@ -306,7 +314,7 @@ def _edge_verdict(labels: list) -> dict:
     label_set = frozenset(labels)
     matches = [entry for entry in _EDGE_SHORTLIST if entry[0] <= label_set]
     if not matches:
-        return dict(verdict="Too New", confidence=None, score=None, n=None,
+        return dict(verdict="Untested combo", confidence=None, score=None, n=None,
                    hold_range=None, combo=None)
     combo, score, n, hold_range = max(
         matches, key=lambda e: (e[2] >= _EDGE_MIN_N_HIGH, e[1])
@@ -553,11 +561,11 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
 
     df_out = pd.DataFrame(rows)
     if not df_out.empty:
-        # Strong Setup first, then Mixed Signal, then Too New; within a tier,
+        # Strong Setup first, then Mixed Signal, then Untested combo; within a tier,
         # higher edge score first. Replaces the old _count-based sort now that
         # raw scanner count is known not to be a reliable ranker (see the
         # cross-run analysis -- it doesn't move monotonically either way).
-        verdict_rank = {"Strong Setup": 2, "Mixed Signal": 1, "Too New": 0}
+        verdict_rank = {"Strong Setup": 2, "Mixed Signal": 1, "Untested combo": 0}
         df_out["_verdict_rank"] = df_out["_verdict"].map(verdict_rank)
         df_out = df_out.sort_values(
             ["_verdict_rank", "_edge_score"], ascending=[False, False], na_position="last"
@@ -581,7 +589,7 @@ def _annotate_history(df: pd.DataFrame, tag: str) -> pd.DataFrame:
     df = df.copy()
     df["_is_new"] = df["Ticker"].map(lambda t: history.get(t, {}).get("is_new", True))
     df["_first_found"] = df["Ticker"].map(lambda t: history.get(t, {}).get("first_found", today))
-    verdict_rank = {"Strong Setup": 2, "Mixed Signal": 1, "Too New": 0}
+    verdict_rank = {"Strong Setup": 2, "Mixed Signal": 1, "Untested combo": 0}
     df["_verdict_rank"] = df["_verdict"].map(verdict_rank)
     df = df.sort_values(
         ["_verdict_rank", "_is_new", "_edge_score"], ascending=[False, False, False], na_position="last"
@@ -590,7 +598,7 @@ def _annotate_history(df: pd.DataFrame, tag: str) -> pd.DataFrame:
 
 
 _SORT_COLUMNS = {
-    # All three keys rank by Verdict tier first (Strong Setup > Mixed Signal > Too New),
+    # All three keys rank by Verdict tier first (Strong Setup > Mixed Signal > Untested combo),
     # New tickers next within a tier, then Edge Score -- a thin-sample combo's flashy
     # score can no longer outrank a well-validated one just because "Edge Score" was
     # picked, and a fresh signal always rises above a day-5 repeat in the same tier.
@@ -604,8 +612,8 @@ _SORT_COLUMNS = {
     "RS·SPY": "RS·SPY",
 }
 
-_VERDICT_COLOR = {"Strong Setup": ACCENT_GREEN, "Mixed Signal": GOLD, "Too New": TEXT_MUTED}
-_VERDICT_RANK = {"Strong Setup": 2, "Mixed Signal": 1, "Too New": 0}
+_VERDICT_COLOR = {"Strong Setup": ACCENT_GREEN, "Mixed Signal": GOLD, "Untested combo": TEXT_MUTED}
+_VERDICT_RANK = {"Strong Setup": 2, "Mixed Signal": 1, "Untested combo": 0}
 
 
 def _hold_range_text(hold_range) -> str:
@@ -979,8 +987,10 @@ _EDGE_LEGEND = [
      "backed by a large number of past examples."),
     ("Mixed Signal", GOLD,
      "Some historical edge, but backed by fewer past examples — worth a look, not a first pick."),
-    ("Too New", TEXT_MUTED,
-     "We haven't seen this exact combination often enough yet to say whether it works."),
+    ("Untested combo", TEXT_MUTED,
+     "This combination of scanners has never been backtested with enough samples to "
+     "measure — so there is no evidence either way. It says nothing about the ticker "
+     "itself, and is not a sign the setup is weak."),
 ]
 
 

@@ -452,7 +452,7 @@ def run():
         log("Nothing flagged at all this run — skipping email.")
         return
 
-    filtered = df[df["_verdict"] != "Too New"].copy().reset_index(drop=True)
+    filtered = df[df["_verdict"] != "Untested combo"].copy().reset_index(drop=True)
     log(f"After filter (Strong Setup or Mixed Signal): {len(filtered)} ticker(s).")
 
     today_rows = [
