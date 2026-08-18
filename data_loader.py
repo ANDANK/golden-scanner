@@ -167,6 +167,24 @@ def _fetch_price_history(ticker: str, period: str, interval: str) -> pd.DataFram
         return pd.DataFrame()
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
+    # Drop bars with no close. yfinance can return a trailing placeholder row
+    # for an in-progress or halted session whose Close is NaN, and a single
+    # such row poisons everything downstream: `close.iloc[-1]` is NaN, so
+    # every ratio, percentage and comparison built on it is NaN too. That is
+    # what turned the whole Sector Rotation table and the regime bar into
+    # "nan" -- SPY's latest bar had no close, and SPY is the denominator of
+    # every relative-strength figure on the page.
+    #
+    # Silent NaN is the worst failure mode here: sorts that use it produce
+    # arbitrary order rather than an error, so the Leaders lists were being
+    # ranked meaninglessly without anything looking broken.
+    #
+    # Fixed centrally rather than in each caller -- there are a dozen, they
+    # each did their own thing, and the one that got it right
+    # (_fetch_info_from_download, immediately below) proved the pattern was
+    # already known and just not applied consistently.
+    if "Close" in df.columns:
+        df = df[df["Close"].notna()]
     return df
 
 
