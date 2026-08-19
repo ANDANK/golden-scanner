@@ -4,6 +4,402 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-08-18",
+      "url": "https://www.youtube.com/shorts/tZfJxse2nZ8",
+      "title": "$MSFT MSTR ETHA STOCK ANALYSIS 📈 AUGUST 18",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "MSFT",
+          "bias": "Bearish",
+          "notes": "Suggests trimming or selling Microsoft around $500 following a 40% rally from buy signals near $370-$375, as the chart has reached a profit-taking sell zone.",
+          "price": 481.63
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host cautions that the overall stock market is currently not in a very healthy place.",
+          "price": null
+        },
+        {
+          "ticker": "MSTR",
+          "bias": "Bullish",
+          "notes": "Considers MicroStrategy a buy around $90 for investors who believe in the company and Bitcoin, recommending a stop loss at $80.",
+          "price": 92.52
+        },
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "notes": "Bullish on Ethereum at current levels after it flashed a buy signal similar to the previous cycle that ran from 11 to around 35.",
+          "price": 18.26
+        }
+      ]
+    },
+    {
+      "date": "2026-08-11",
+      "url": "https://www.youtube.com/shorts/KGGsJTISv6g",
+      "title": "🚨This Dip Won't Last (Buying These 6 Stocks Now)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "AMAT",
+          "bias": "Bullish",
+          "notes": "Applied Materials is currently flagged by Investing Pro's AI model as a top stock pick with historical outperformance over the S&P 500.",
+          "price": 525.61
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Amazon remains undervalued trading around 27 times forward earnings after strong quarterly revenue growth driven by AWS and AI demand, with Morningstar raising its fair value to $300.",
+          "price": 272.27
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Alphabet is trading at a discount due to market fears over doubled AI capital spending, despite massive cloud revenue growth and a $514 billion signed backlog.",
+          "price": 343.8
+        },
+        {
+          "ticker": "DIS",
+          "bias": "Bullish",
+          "notes": "Disney is down roughly 52% from its peak and trades at just 13 times forward earnings, presenting upside toward analyst price targets around $127.",
+          "price": 103.53
+        },
+        {
+          "ticker": "HSY",
+          "bias": "Bullish",
+          "notes": "Hershey is down 36% due to temporary cocoa cost spikes that are expected to ease by 2027, offering a 3.3% dividend yield while investors wait for recovery.",
+          "price": 181.98
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Micron trades at just six times expected earnings with high-bandwidth memory sold out through 2027, though short-term volatility and Chinese competition present cyclical risks.",
+          "price": 868.52
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi is down 50% from its high despite reaching profitability and strong revenue growth, making it an attractive but high-volatility addition to the speculative portion of a portfolio.",
+          "price": 17.98
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When buying stock market dips, investors should distinguish temporary fear from broken business models, dollar-cost average into positions, and strictly size holdings based on risk.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
+      "url": "https://www.youtube.com/shorts/31Q2K0f9kgU",
+      "title": "Big market move has STARTED‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US corporate bond issuance reached $1.68 trillion through July (up 27% year-over-year) as tech giants borrow aggressively for AI infrastructure, making corporate debt roughly 0.5% more expensive than a year ago.",
+          "price": null
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Nvidia's 5-year credit default swap spread doubled from 35-40 basis points to 80 basis points as credit markets price in default risks surrounding heavy circular financing and potential future pullbacks in AI capex.",
+          "price": 219.74
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Bearish",
+          "notes": "Oracle's 5-year credit default swap spread surged 200 basis points to push implied default probability over 16%, as ballooning capex guidance toward $90-$95 billion severely degrades its free cash flow.",
+          "price": 142.79
+        },
+        {
+          "ticker": "META",
+          "bias": "Bearish",
+          "notes": "Meta is in a short-term 'hurricane' facing a child privacy lawsuit with potential damages between $200 billion and $1.4 trillion, alongside shrinking quarterly EPS and cash flow pressure from massive unproven AI capex.",
+          "price": 543.67
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bearish",
+          "notes": "Amazon's free cash flow has plunged into negative territory due to massive AI infrastructure spending, and cash flow performance is expected to get worse over the next one to four years.",
+          "price": 259.45
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Netflix offers a clean and undervalued story with a forward P/E in the low 20s, predictable subscriber growth, price increase leverage, and steady ad and international expansion.",
+          "price": 77.77
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Honest Company is a clean, undervalued business with over $100 million in cash, no debt, expanding margins, and stable demand for its needs-based consumer products.",
+          "price": 4.75
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius Holdings is heavily discounted in the $20s with strong core growth across its Celsius and Alani brands, making it well-positioned if it can resolve and divest its Rockstar brand situation.",
+          "price": 29.9
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "e.l.f. Beauty has resolved its tariff and acquisition challenges, demonstrating strong sales momentum with an expected stock target between $100 and $140 by the end of the year.",
+          "price": 92.51
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Cheesecake Factory is seeing expanding operating cash flow and fundamental growth, propelled by its Flower Child concept posting 13% same-store sales growth and expanding toward 700 potential domestic locations.",
+          "price": 106.36
+        }
+      ]
+    },
+    {
+      "date": "2026-08-11",
+      "url": "https://www.youtube.com/shorts/PrdA0HeF2lo",
+      "title": "SOFI & Robinhood Investors BEWARE— Don't Make This Mistake!",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Views anything under $20 as a good value with a price target of $25 to $27, citing its national bank charter, high customer lifetime value, and financial services productivity loop.",
+          "price": 17.98
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "Projects market cap to expand to $142 billion based on strong earnings growth, European international expansion, and high-margin recurring cash flow from Robinhood Gold subscribers.",
+          "price": 94.38
+        }
+      ]
+    },
+    {
+      "date": "2026-07-07",
+      "url": "https://www.youtube.com/shorts/OzJOIwoEDiY",
+      "title": "You Scared? Good. Pick up the phone and start dialin’.",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "SOXX",
+          "bias": "Bullish",
+          "notes": "The host views the 10% decline in the SOXX semiconductor ETF as a minor correction relative to its massive bull run and ongoing tech boom, advising investors to hold or buy the dip.",
+          "price": 551.69
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "The host highlights Micron's strong recent earnings to reassure investors that the fundamental outlook for the semiconductor sector remains sound.",
+          "price": 938.38
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Maintaining an indefinite or long-term investment horizon helps build immunity to short-term market volatility, making dollar-cost averaging into dips historically beneficial.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
+      "url": "https://www.youtube.com/shorts/StdA6-BovKw",
+      "title": "Japan's Yen Crisis is Becoming America's Problem",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The yen carry trade involves borrowing money from Japan at near-zero rates, selling the yen for US dollars, and investing in higher-yielding US Treasuries or stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Japan cannot raise interest rates significantly to defend its weakening currency because its massive 250% debt-to-GDP ratio would make the government's interest expenses unsustainable.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To prevent Japan from dumping its $1.1 trillion in US Treasuries to raise dollars, the Fed set up the FEMA repo facility to lend Japan up to $60 billion, which effectively prints money and risks driving US inflation higher.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host holds a bearish view on fiat currencies, calling the 55-year system a failing experiment, and is buying gold as protection against eventual hyperinflation and financial reset.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve has a strong incentive not to raise interest rates in September to avoid worsening the Treasury market pressure, aligned with a 65.1% market probability of keeping rates steady.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Foreign ownership of US Treasuries represents a major economic vulnerability, as a massive selloff by foreign holders would spike US interest rates, crash the stock market, and trigger a deep recession.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-11",
+      "url": "https://www.youtube.com/shorts/lRISUtlFaTs",
+      "title": "The Millionaire Formula Anyone Can Follow",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Credit cards should be used strictly as a medium of exchange to earn perks like cash back, fraud protection, and insurance, rather than as a source of high-interest debt.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The average American household has $6,200 in variable-rate credit card debt, which carries high interest rates of 15% to 28% that increase when the Federal Reserve raises rates.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Debt payoff strategies include the snowball method, which focuses on paying off the smallest balances first for psychological wins, and the debt avalanche method, which targets the highest interest rate first to save money.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Savings alone will not build wealth due to inflation, so cash should only be saved strategically for emergencies (3 to 12 months of expenses), big purchases, or investments.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 75-15-10 plan suggests limiting lifestyle spending to a maximum of 75% of income, while allocating a minimum of 15% to investments and 10% to savings.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "For those who prefer a hands-off approach to managing money, passive investing in low-cost ETFs and index funds is recommended regardless of market fluctuations.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To determine affordability for lifestyle liabilities, apply the rule of five: if you cannot buy five of an item, you cannot afford to buy one of them.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Buy Now Pay Later (BNPL) services encourage overspending and can lead to hefty fees and high interest rates if the balance is not fully paid off within the promotional period.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Deciding whether to pay off a mortgage or invest depends on risk tolerance; paying off a mortgage provides a guaranteed return, while investing in the markets offers higher potential but carries risk.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To accelerate wealth building, focus on increasing your income through promotions, starting side hustles, or freelancing on platforms like Upwork.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When starting a business, focus on leveraging your mind and negotiating deals to keep initial startup costs as low as possible until revenue is generated.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
+      "url": "https://www.youtube.com/shorts/_r--TbF6DQE",
+      "title": "THIS STOCK LOOKS BULLISH 📈 (INSIDER BUYING) - AUGUST 18",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "SNAP",
+          "bias": "Bullish",
+          "notes": "The host re-entered a position in SNAP as it tests historical support around $5, noting technical buy signals on the monthly and weekly charts. Catalysts include significant insider buying by five directors, hedge funds opening new positions, and potential acquisition interest from tech giants due to its 400 million daily active users.",
+          "price": 5.11
+        }
+      ]
+    },
+    {
+      "date": "2026-08-10",
+      "url": "https://www.youtube.com/shorts/dWBVjpvvbaA",
+      "title": "Planning for Retirement? DO THIS NOW",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Standard retirement calculators are unrealistic because they assume smooth annual compounded returns of 8% to 10% instead of accounting for volatile bull and bear markets.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A retiree in 1966 who skipped withdrawals during the four worst years after downturns would have saved their portfolio, ending with $4 million instead of running out of money.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "url": "https://www.youtube.com/shorts/pLl1Y9bbU44",
+      "title": "1 of my big stocks has an emergency‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "The former Rockstar CEO has acquired a large stake and is seeking the CEO role, which the host opposes as current CEO John has positioned the brand to fight Monster and Red Bull. However, the host remains long-term confident in the company, believing the Rockstar founder will keep his money invested even if rejected.",
+          "price": 27.77
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "The stock has nearly doubled in the last two months, moving from around $49 to near $100 a share.",
+          "price": 98.49
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Palantir continues its strong run, showing significant upward momentum.",
+          "price": 172.01
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "ServiceNow remains hot, with the host's public portfolio up 25% on the stock.",
+          "price": 124.88
+        }
+      ]
+    },
+    {
       "date": "2026-08-17",
       "url": "https://www.youtube.com/shorts/9H4WIhkoBzs",
       "title": "3 STOCKS TO WATCH THIS WEEK 📈 AUGUST 17",
