@@ -5,6 +5,426 @@
   "videos": [
     {
       "date": "2026-08-18",
+      "url": "https://www.youtube.com/shorts/zzkEdwzJ5FQ",
+      "title": "XRP GIVEAWAY IS LIVE ON THE DISCORD!!! $XRP",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "XRP",
+          "bias": "Bullish",
+          "notes": "XRP is currently sitting at $1.00, which the host believes is a very good price to be accumulating.",
+          "price": 11.19
+        }
+      ]
+    },
+    {
+      "date": "2026-08-08",
+      "url": "https://www.youtube.com/shorts/W2sfQUvvZIs",
+      "title": "Major OverPriced Market (How to invest now late 2026)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "ETF overlap is far less concerning than sector concentration risk, and expense ratios under 0.20% have a negligible drag on returns compared to overall asset allocation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High-growth assets belong in a Roth IRA to maximize tax-free growth, whereas tax-efficient broad index funds and qualified dividend ETFs are best kept in taxable accounts.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Retirement account withdrawals should be managed flexibly year-by-year to minimize lifetime tax liability rather than blindly avoiding Roth IRA withdrawals until the end.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Studies show that dollar-cost averaging frequency (daily, weekly, or monthly) has negligible impact on long-term returns, so capital should simply be invested as soon as it becomes available.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Keeping a simple portfolio with a few core funds reduces emotional meddling and avoids major tax friction when trying to consolidate dozens of positions near retirement.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Transitions in global reserve currencies occur over decades rather than years, so long-term investors should stay diversified in global US equities rather than radically altering their strategy.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Gold serves as a reliable long-term store of value and currency hedge, but it should not be treated as a high-growth asset expected to outperform equities long term.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "url": "https://www.youtube.com/shorts/wgVqeTIWXmk",
+      "title": "These 2 STOCKS will Boost Now‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "SHOP",
+          "bias": "Bullish",
+          "notes": "Shopify is a top long-term buy that consistently grows its revenue at over 30% and net income at 60% year-over-year. While the stock has always commanded a high premium, its exceptional growth and solid fundamentals justify the expensive valuation.",
+          "price": 147.44
+        },
+        {
+          "ticker": "WYNN",
+          "bias": "Bullish",
+          "notes": "Wynn Resorts is a buy anytime the stock is below $120, with potential to reach $250 to $300 in the coming years. Growth is anchored by stellar Las Vegas operations and a highly anticipated 40%-owned luxury resort opening in the Middle East in late 2027.",
+          "price": 101.5
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Honest is an exceptional small-cap buy that raised its full-year guidance across revenue, margins, and EBITDA. The debt-free company boasts nearly $106 million in cash, and the host believes the stock has momentum to cross $5 and head toward $10.",
+          "price": 5.42
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Elf reported an A+ quarter with 36% net sales growth, raised its full-year guidance, and holds $344 million in cash. The host expects the stock to end the year between $100 and $140, fueled by major international expansion opportunities.",
+          "price": 92.31
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius is highlighted alongside Elf as one of the host's favorite stocks for the next few years due to its massive long-term growth and margin opportunities.",
+          "price": 23.77
+        },
+        {
+          "ticker": "BROS",
+          "bias": "Neutral",
+          "notes": "Dutch Bros posted solid revenue growth of 32% and plans to convert 65 acquired Salad and Go locations to accelerate expansion. However, the host finds the forward P/E of 70 to be expensive compared to other opportunities.",
+          "price": 53.33
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Cheesecake Factory is a high-conviction hold trading at a low forward P/E in the 20s. It provides strong cash flows and excellent expansion potential through its Flower Child and North Italia concepts.",
+          "price": 107.31
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "During busy earnings seasons, investors should avoid focusing solely on whether a single quarter was perfect and instead focus on a company's long-term trajectory, valuation, and management execution.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "url": "https://www.youtube.com/shorts/IP7_gozIipw",
+      "title": "My New LEAP Purchase (LEAP Options Explained for Beginners)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host has a $250 price target on Nvidia and considers any price around $200 to be an absolute steal. He is opening deep-in-the-money LEAP options ahead of late August earnings, citing an intact AI buildout.",
+          "price": 223.96
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Deep-in-the-money LEAP options with a delta between 0.70 and 0.85 can act as stock replacements, controlling 100 shares at roughly a third of the cost of buying the actual stock. This strategy provides leverage, allowing for more than double the percentage return for a given move in the underlying stock.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-06-21",
+      "url": "https://www.youtube.com/shorts/MOEC9th5qs8",
+      "title": "Pain is Coming",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "VUG",
+          "bias": "Bullish",
+          "notes": "The host recommends VUG as a safer, well-diversified tech-focused ETF that will reliably meet long-term financial goals.",
+          "price": 85.9
+        },
+        {
+          "ticker": "QQQM",
+          "bias": "Neutral",
+          "notes": "Identified as a relatively conservative tech option, though it is more heavily weighted and less diversified than VUG.",
+          "price": 303.9
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bearish",
+          "notes": "The host rejects shifting capital into safe dividend ETFs like SCHD during market downturns, viewing them as 'do-nothing' positions that sacrifice long-term growth.",
+          "price": 31.89
+        },
+        {
+          "ticker": "SGOV",
+          "bias": "Bearish",
+          "notes": "The host refuses to pivot to cash equivalents like SGOV during market corrections, preferring to ride out the volatility and buy the dip instead.",
+          "price": 100.6
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host holds Nvidia as a long-term position, having originally bought into the stock long ago for non-AI reasons.",
+          "price": 208.65
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "A long-term holding of the host that was originally purchased long ago for non-AI reasons.",
+          "price": 551.63
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "The host took a position in Micron after noticing local physical expansion and researching the strong fundamental story, which led to significant returns.",
+          "price": 1211.38
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High-beta portfolios will inevitably experience severe drawdowns of 30% to 50% during market corrections, and investors must be prepared to dollar-cost average rather than panic.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Constantly trading and chasing hot stocks leads to 'changing lanes' at the wrong time; staying patient in existing positions yields better results over time.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host limits portfolio turnover on the Autopilot copy-trading platform specifically to minimize short-term capital gains tax liabilities for his followers.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-10",
+      "url": "https://www.youtube.com/shorts/XOmEIOWwaJs",
+      "title": "Jobs Report Was a Disaster... But The Stock Market Loves It",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The July US jobs report showed a weakening labor market with a reported loss of 23,000 jobs and 103,000 in downward revisions for May and June.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The drop in the July unemployment rate to 4.1% was driven by a decline in the labor force participation rate, as individuals who stopped looking for work were no longer counted as unemployed.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US wage growth slowed to 3.2% in July, falling below the June inflation rate of 3.5%, meaning real wages are declining for the average American as expenses rise faster than income.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "AI accounted for 33% of technology sector job cuts in July, serving as the leading driver of layoffs in the industry for five consecutive months.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Market expectations of a September Fed interest rate hike dropped to 51.7% after the weak jobs report, with the host betting that the Fed will hold rates steady.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-10",
+      "url": "https://www.youtube.com/shorts/ruXXWeKo1Ck",
+      "title": "The 75/15/10 Money System That Builds Wealth On Any Income",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Build wealth by using earned income to buy assets that generate cash flow, and then use that cash flow to fund your lifestyle rather than using earned income to fund it directly.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Building equity in a primary residence is highly inefficient because it does not generate cash flow and still requires continuous out-of-pocket expenses like property taxes and maintenance.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The financial and tax systems are structurally designed to benefit investors, who pay lower tax rates on investment income compared to the rates employees pay on labor income.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Inflation benefits asset owners and investors over consumers, as rising prices increase the revenue and profits flowing to the owners of businesses.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To escape the financial danger zone, save an initial $2,000 emergency fund as quickly as possible and then aggressively pay off all high-interest credit card debt.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Manage money using a 75-15-10 system, where you limit spending to 75% of income, passively invest a minimum of 15%, and save a minimum of 10% across separate bank accounts.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Save between 3 to 12 months of living expenses for emergencies depending on your risk tolerance, and once fully funded, redirect your savings allocation entirely toward investing.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Do not finance lifestyle purchases or depreciating assets, even at 0% APR, as these promotional rates are designed to induce higher spending. The only exception is a primary home.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Apply the Rule of Five for luxury items: if you cannot afford to buy five of the item in cash, you cannot afford to buy one.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
+      "url": "https://www.youtube.com/shorts/7MI97halZQo",
+      "title": "$HBAR JUST GAVE A MASSIVE SIGNAL!! 📈 AUG 18",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "HBAR",
+          "bias": "Bullish",
+          "notes": "HBAR triggered a 'gold dot' swing trade signal around 6 cents. The last time this signal appeared, the price went from 4 cents to 40 cents within 30 days, indicating a strong potential 1-to-6-month swing trade.",
+          "price": null
+        },
+        {
+          "ticker": "MEGA",
+          "bias": "Bullish",
+          "notes": "MEGA, a relatively new project listed on Robin Hood, has triggered the same 'gold dot' swing trade signal after falling from 17 cents to 3 cents.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "url": "https://www.youtube.com/shorts/jvKmnRoKC5M",
+      "title": "How to invest NOW in volatile stock market 2026 👀",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The stock market spends significantly more time in an uptrend or bull market than in a downtrend. Because of this asymmetry, being overly balanced or conservative in a 401(k) or portfolio can cause investors to miss out on substantial upside.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-04",
+      "url": "https://www.youtube.com/shorts/n6P-r98bpm0",
+      "title": "Investors life will be changed by this stock‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "PLTR",
+          "bias": "Bearish",
+          "notes": "Despite posting strong earnings, the stock is entering a revenue growth deceleration phase and customer count growth is slowing, which will likely keep the stock stuck between 125 and 200 for years.",
+          "price": 162.66
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Amazon remains a mandatory core holding, driven by AWS being in a revenue growth acceleration phase, a dominant e-commerce business, and a highly profitable advertising segment.",
+          "price": 277.42
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Down over 40% from its highs, SoFi offers a great long-term opportunity as it posts roughly 40% revenue growth on its path to becoming a massive financial banking giant.",
+          "price": 18.7
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius is expected to be the biggest long-term winner in the energy drink space, with international expansion serving as a major growth lever to drive the stock to $50+ next summer and $100+ long-term.",
+          "price": 29.54
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Driven by retail shelf space expansion, new products, and international markets, the stock is on a strong run and is targeted to reach between $100 and $140 by the end of the year.",
+          "price": 87.84
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host believes analyst estimates are way too low and predicts AMD will hit $600+ soon, with a long-term target of $1,000 to $2,000 as CPU and GPU demand accelerates.",
+          "price": 518.58
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Cheesecake Factory is a legendary value and dividend stock with massive growth runways ahead from its Flower Child and North Italia concepts.",
+          "price": 105.83
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "The Honest Company is a strong speculative play with a clean balance sheet and improving margins, expected to exit the year above $5 and reach $10 to $20 long-term.",
+          "price": 3.89
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Trading around a 20 forward P/E, Netflix is a steady double-digit grower poised to leverage its growing ad-tier business and potentially acquire more sports streaming rights.",
+          "price": 73.57
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "Estée Lauder is a solid value and dividend play that owns premium global cosmetics brands with exceptionally high margins.",
+          "price": 86.97
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
       "url": "https://www.youtube.com/shorts/tZfJxse2nZ8",
       "title": "$MSFT MSTR ETHA STOCK ANALYSIS 📈 AUGUST 18",
       "channel": "@overkilltrading",
