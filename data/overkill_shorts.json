@@ -1,8 +1,320 @@
 {
-  "updated": "2026-08-18",
+  "updated": "2026-08-19",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-05",
+      "url": "https://www.youtube.com/shorts/oSpbmqx2X7w",
+      "title": "What to do if (WHEN) next market crash happens soon in 2026..",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "VTV",
+          "bias": "Bullish",
+          "notes": "Suggests rebalancing portfolios that are over-concentrated in technology by adding value funds like VTV. This helps diversify exposure as market dynamics begin to shift.",
+          "price": 223.99
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "Recommends adding SCHD to rebalance away from heavy tech allocations into value-focused assets that are less correlated to pure technology.",
+          "price": 33.64
+        },
+        {
+          "ticker": "VYM",
+          "bias": "Bullish",
+          "notes": "Highlights VYM as a strong value option to diversify and rebalance portfolios currently overweight in tech.",
+          "price": 165.13
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Selling during market corrections severely impairs long-term returns because seven of the ten best market days occur during bear markets. Staying invested or aggressively dollar-cost averaging during 20% to 30% drawdowns historically produces superior recoveries.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To prepare for downturns without being forced to sell equities, maintain an emergency fund of 3-6 months for individuals, 1 year for single-income families, or 3 years of non-correlated cash/HYSA for retirees.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-30",
+      "url": "https://www.youtube.com/shorts/EiRAMR8ixEA",
+      "title": "Im Going to LOAD THE BOAT on this Stock Now‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Cheesecake Factory reported 25% net income growth on 8% revenue growth, driven by strong unit economics and 13% comp store sales at Flower Child. The host sees multi-year compounding growth as store counts expand across its concepts.",
+          "price": 101.31
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi delivered an A+ quarter with net interest income up 52% and net income up 61% year-over-year while adding 4.1 million members over the past 12 months. The host views short-term price weakness as a buying opportunity and plans to load the boat.",
+          "price": 16.47
+        },
+        {
+          "ticker": "META",
+          "bias": "Bearish",
+          "notes": "Meta posted a weak quarter with net income falling 14% as capex and legal costs continue to surge. The host expects expense issues to worsen before improving, creating short-term downside risk toward the $350 level.",
+          "price": 539.03
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Neutral",
+          "notes": "Robinhood reported a C+ quarter as operating expenses outpaced total revenue growth. The host views the stock as highly cyclical and is waiting for a broader 10%+ S&P 500 pullback before buying.",
+          "price": 86.6
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Netflix presents a clean story with multiple revenue drivers, strong expense controls, and an attractive valuation. The host intends to keep loading up on shares.",
+          "price": 73.17
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius Holdings continues to show positive channel data according to recent Nielsen reports. The host remains bullish and likes buying shares in the $20 range.",
+          "price": 29.35
+        },
+        {
+          "ticker": "TSLA",
+          "bias": "Bearish",
+          "notes": "The host states that Tesla is not a stock to play or buy anytime soon.",
+          "price": 308.85
+        }
+      ]
+    },
+    {
+      "date": "2026-08-19",
+      "url": "https://www.youtube.com/shorts/hiEv_Ra3thg",
+      "title": "12 Years Of Brutal Options Trading Advice In One Course",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Nvidia is highlighted as a primary leader in AI, with the host allocating up to 10% of his portfolio to the stock while actively selling put options and covered calls.",
+          "price": 217.56
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "The host holds a heavy, high-conviction position in Google as part of his core mega-cap holdings.",
+          "price": 344.72
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Long-term bullish on Amazon following strong earnings growth, though current levels are elevated near resistance, making selling put options the preferred entry strategy over buying shares directly.",
+          "price": 265.84
+        },
+        {
+          "ticker": "MSFT",
+          "bias": "Bullish",
+          "notes": "Host projects Microsoft will reach $500 per share within six months following strong earnings, recommending selling out-of-the-money put options to harvest yield or acquire shares at a discount.",
+          "price": 484.31
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Host expects Meta to hit $700 within 12 months based on strength in its core advertising business, utilizing 70-delta LEAP call options as a capital-efficient stock replacement.",
+          "price": 546.03
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Wheel strategy generates consistent income by selling 20-to-30 delta put options 30 to 40 days out, accepting share assignment if exercised, and subsequently selling covered calls above the net cost basis.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Delta indicates how much an option premium changes per $1 movement in the underlying stock and estimates the percentage probability that the option will expire in the money.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Implied volatility above 50 signifies high expected price movement, resulting in richer option premiums that benefit option sellers while raising upfront costs for option buyers.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Using 70-delta LEAP call options with expirations over one year away acts as a capital-efficient stock replacement strategy, offering upside leverage while minimizing daily theta decay.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-06-10",
+      "url": "https://www.youtube.com/shorts/oDsxzwUcfFo",
+      "title": "SpaceX IPO: It’s Time",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "SpaceX is targeting an IPO price of $135 per share at a $1.77 trillion valuation despite posting a $4.94 billion net loss in 2025. The host views this valuation as severely detached from fundamentals and driven by narrative.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Starlink is SpaceX's primary cash generator with $4.45 billion in operating income, while launch operations break even and the AI segment incurs a $6.4 billion loss.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "SpaceX's long-term thesis relies on solving terrestrial AI power and water cooling bottlenecks by building orbital solar-powered data centers, though the timeline remains highly speculative.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host advises against buying SpaceX at the $135 IPO price due to crash risk, suggesting investors instead sell puts or set staggered limit orders around $25 after initial hype subsides.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "url": "https://www.youtube.com/shorts/0jZ6Tz7zYME",
+      "title": "U.S. National Debt: Government Announces Massive New Borrowing",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US Treasury expects to borrow over $1.36 trillion in the second half of fiscal year 2026, which is projected to push national debt beyond $41 trillion by year-end.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US government interest payments reached $827 billion through June, surpassing spending on Medicare, national defense, and welfare programs.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve is predicted to act as a buyer of last resort in the next crisis by printing trillions of dollars, accelerating inflation and benefiting asset holders over non-asset holders.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "url": "https://www.youtube.com/shorts/EkveIkCYhXU",
+      "title": "Why Anyone Under 45 Needs To Rethink Retirement",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "True wealth is built by acquiring cash-flowing assets rather than accumulating liabilities or spending money to look wealthy.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A primary residence acts primarily as a liability due to ongoing property taxes, maintenance, and interest costs, whereas rental real estate generates income to cover its expenses.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Banks front-load 30-year mortgages so that for approximately the first 15 years, the majority of monthly payments go toward interest rather than building principal equity.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To responsibly afford a home, buyers should put down at least a 20% down payment, budget for moving and setup expenses, and fit all monthly housing costs within a broader financial plan.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 75/15/10 budget framework cap spending at 75% of income, while directing a minimum of 15% toward investing and 10% toward savings.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-04",
+      "url": "https://www.youtube.com/shorts/jOf8v8w8AZY",
+      "title": "Building TRUE Wealth (Simple Tips)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Building long-term wealth requires prioritizing acquiring assets over liabilities, even though re-investing cash into assets may temporarily reduce liquid cash reserves in the short term.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-29",
+      "url": "https://www.youtube.com/shorts/kk5_a94VOS0",
+      "title": "Stocks crashing‼️(AMD, MU, SNDK, SOFI) Do this now",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi is trading around $15 per share, and the host advises long-term investors to buy if they like the company despite short-term market volatility.",
+          "price": 15.25
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Micron (MU) is in a 35-40% drawdown from its all-time highs down to $777, presenting a long-term buying opportunity.",
+          "price": 739.0
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host encourages long-term investors to buy AMD at current levels and look past short-term leverage unwinding.",
+          "price": 429.56
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Cheesecake Factory touched nearly $100 per share, proving to be one of the host's top value and dividend investments after buying in the $30s.",
+          "price": 101.14
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "ServiceNow stock is heating up, trading at $116 after being up over 5% on the day and rising significantly from its lows in the $80s.",
+          "price": 115.76
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Significant margin and leverage are currently being unwound in the market, requiring long-term investors to stay focused on fundamental opportunities rather than short-term volatility.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-08-18",
       "url": "https://www.youtube.com/shorts/zzkEdwzJ5FQ",
