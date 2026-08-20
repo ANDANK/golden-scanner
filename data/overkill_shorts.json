@@ -1,8 +1,302 @@
 {
-  "updated": "2026-08-19",
+  "updated": "2026-08-20",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-01",
+      "url": "https://www.youtube.com/shorts/P107sx4OeSo",
+      "title": "Extreme Fear: Complete Market Failure (It Gets Worse..)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Using leverage or margin to invest strips away the advantage of time, forcing devastating liquidations during temporary market downturns.",
+          "price": null
+        },
+        {
+          "ticker": "DRAM",
+          "bias": "Bullish",
+          "notes": "The host is holding and buying more of the DRAM ETF during its 40% dip, arguing that high-bandwidth memory remains a critical bottleneck for AI and long-term demand is intact.",
+          "price": 51.13
+        },
+        {
+          "ticker": "MSFT",
+          "bias": "Bullish",
+          "notes": "Microsoft's Azure cloud growth accelerated to 43%, delivering one of the strongest proofs yet that AI investments are already producing meaningful revenue.",
+          "price": 487.65
+        },
+        {
+          "ticker": "META",
+          "bias": "Bearish",
+          "notes": "Meta fell after profits declined and AI CAPEX increased, showing that heavy spending must quickly translate to clear profits to satisfy investors.",
+          "price": 590.24
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Amazon shares rose as AWS growth accelerated and earnings beat expectations, even as free cash flow remained negative due to heavy AI investments.",
+          "price": 284.02
+        },
+        {
+          "ticker": "AAPL",
+          "bias": "Bearish",
+          "notes": "Apple declined after services revenue missed expectations, demonstrating that mature companies face massive downward pressure if they don't exceed sky-high expectations.",
+          "price": 303.42
+        },
+        {
+          "ticker": "V",
+          "bias": "Bullish",
+          "notes": "Visa's strong payment volume and cross-border spending indicate that the US consumer remains resilient, even as growth begins to normalize.",
+          "price": 365.67
+        },
+        {
+          "ticker": "QCOM",
+          "bias": "Bullish",
+          "notes": "Qualcomm delivered a solid earnings report, signalling that the AI hardware upgrade cycle is successfully expanding beyond centralized data centers.",
+          "price": 151.57
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The upcoming U.S. jobs report is a critical catalyst that will shape market expectations regarding the Federal Reserve's next interest rate decision.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The ISM manufacturing and services PMIs will provide crucial insights into whether the US economy is continuing to expand or starting to experience a slowdown.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "url": "https://www.youtube.com/shorts/-fhON4Ll9DI",
+      "title": "Don’t miss this LIFE Changing Stock‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host predicts AMD will reach new all-time highs above $580 before its earnings release in six days, and potentially hit $700 within 60 days. He expects guidance to come in significantly above Wall Street expectations, establishing it as a must-own stock.",
+          "price": 494.95
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "The host sees an 80% probability of Micron returning to the $1,200 range and a 50% probability of reaching $1,500. He notes it will likely rise alongside AMD, though it remains a cyclical play prone to sharp eventual downcycles.",
+          "price": 900.2
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "The host believes ServiceNow has clearly bottomed out, pointing to a consistent pattern of higher lows since its April bottom. Strong dip-buying behavior from investors even after a mediocre recent earnings report supports this bullish outlook.",
+          "price": 105.56
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Neutral",
+          "notes": "The host warns that Palantir's bottom is questionable due to an impending deceleration in revenue growth expected in the next quarter or two. He advises waiting to see how the market reacts to this deceleration before calling a true bottom.",
+          "price": 131.53
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Neutral",
+          "notes": "Salesforce's bottom is considered questionable and highly dependent on its next earnings report. A strong revenue growth acceleration of 14% to 16% could propel the stock back over $200, whereas weak guidance of 10% to 12% could send it back to $150.",
+          "price": 173.6
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "The host highlights American Express as an easy money stock with highly predictable double-digit returns, even in his bear case scenario which projects a 10% to 16% CAGR. He expects EPS to jump significantly as major capital expenses moderate in upcoming quarters.",
+          "price": 335.39
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The current semiconductor boom is a cyclical supercycle expected to last another 18 to 36 months before flatlining and entering a steep down cycle. Investors should prepare to rotate out before the flatline occurs, as these stocks historically drop 50% to 80% once the cycle turns.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "url": "https://www.youtube.com/shorts/nftAePxO3HA",
+      "title": "Stop Buying AI Stocks NOW. Watch Out For THIS...",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Retail investor engagement and sentiment metrics, such as search volume, social media interest, and video views, show a high positive correlation with market performance, where extreme complacency often flags market tops and absolute disinterest can signal bottoms.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "True diversification is defined by low correlation rather than a high number of stocks, as holding multiple assets in the same sector (like AI stocks NVDA, AMD, and IREN) can result in correlation scores above 0.90, offering very little actual risk protection.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "During periods of market stress and systemic selling, asset correlations tend to increase significantly across different sectors, causing most stocks to fall together regardless of individual company fundamentals.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-06-05",
+      "url": "https://www.youtube.com/shorts/9vQfAJxKQMI",
+      "title": "The Space X IPO is NOT Chill - A Channel Update",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Infrequent portfolio monitoring can lead to superior long-term results, as illustrated by an untouched Roth IRA gaining 300% since 2022.",
+          "price": null
+        },
+        {
+          "ticker": "SPACEX",
+          "bias": "Bearish",
+          "notes": "The host views the targeted SpaceX IPO valuation as highly overvalued and expects a potential rug pull, advising investors to use staggered limit orders from $100 down to $20 instead of market orders.",
+          "price": null
+        },
+        {
+          "ticker": "AVGO",
+          "bias": "Neutral",
+          "notes": "Despite a major earnings beat, AVGO's stock experienced pressure due to exceptionally high market expectations, highlighting increased volatility in the AI and tech sectors.",
+          "price": 385.73
+        },
+        {
+          "ticker": "ETSY",
+          "bias": "Bearish",
+          "notes": "The host dropped Etsy from his long-term holdings, choosing to reallocate funds to more popular and stronger-performing assets.",
+          "price": 66.86
+        },
+        {
+          "ticker": "AAPL",
+          "bias": "Neutral",
+          "notes": "The host removed Apple from his portfolio due to low interest, though he indicated he might eventually add it back.",
+          "price": 307.34
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The historical edge in stock market investing lies in being long and buying dips, as short positions are highly prone to losing over the long term.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors must maintain sufficient liquidity and avoid investing capital in the market that they will need within a year, such as money for a home purchase.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-03",
+      "url": "https://www.youtube.com/shorts/XGtzoJK0Smw",
+      "title": "GDP Report: Americans Are Burning Through Their Savings",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US Q2 2026 real GDP growth slowed to 1.5%, missing economists' expectations of 1.8% due to drags from imports, declining government spending, and reduced business inventories.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Massive business investments in AI infrastructure represent future growth but mathematically dragged down Q2 GDP because many components like chips and servers are imported from overseas.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US personal savings rate fell to 2.7% as personal spending grew by 0.3% in June while personal income only grew by 0.2%, signaling that consumer spending may eventually face a slowdown.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-20",
+      "url": "https://www.youtube.com/shorts/GZW4TjiQUHU",
+      "title": "George Kamel: How To Actually Become A Millionaire",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Prioritize building a portfolio of productive assets like stocks, real estate, or businesses before purchasing depreciating luxury goods.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Wealthy individuals avoid holding excess cash, choosing instead to deploy capital into assets where their money can generate more money.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Committing to a decade of sacrifice in your 20s by earning more, spending less, and investing the difference leverages time to secure lifelong financial freedom.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Economic recessions are inevitable cycles that cannot be precisely timed, but they historically serve as major opportunities for creating new millionaires.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-30",
+      "url": "https://www.youtube.com/shorts/RNzbKCyuJMA",
+      "title": "How to not run out of money in retirement (Sequence of Returns Risk)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Sequence of return risk means that the stock market's performance during the first five years of retirement heavily dictates whether a portfolio will survive, regardless of having the same average long-term returns.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "url": "https://www.youtube.com/shorts/xyoCK3CkABw",
+      "title": "AMD stock is crashing‼️ Here is why",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host expects AMD's upcoming earnings to be highly successful, which could push the stock to $600+ in the short term, despite its recent momentum loss.",
+          "price": 494.95
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The current market rotation from semiconductor stocks into SAS stocks is expected to be temporary, as upcoming earnings reports from Meta, Amazon, and Microsoft are projected to show increased CapEx spending.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-08-05",
       "url": "https://www.youtube.com/shorts/oSpbmqx2X7w",
