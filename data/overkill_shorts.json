@@ -4,6 +4,474 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-08-20",
+      "url": "https://www.youtube.com/shorts/hW42geOuTrI",
+      "title": "$LTC GIVING THE SIGNAL 📈 AUG 20",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "LTC",
+          "bias": "Bullish",
+          "notes": "The host took a position in Litecoin around $47 following a rare buy signal off the long-term $40 support level. Based on prior signals that led to rallies up to $138 and $400 (gains of 200% to 1,000%), he expects a similar massive move over the next 6 to 12 months.",
+          "price": 40.75
+        }
+      ]
+    },
+    {
+      "date": "2026-07-28",
+      "url": "https://www.youtube.com/shorts/ZwCyoqy3nCk",
+      "title": "📈Smart Money is Investing Different: The AI Execution Pivot",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The market is pivoting from speculative AI hype to demanding proven revenue, positive free cash flow, and high return on equity from tech companies.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Hyperscalers are projected to spend $725 billion on AI capital expenditures in 2026, driving institutional capital toward energy infrastructure, data center power, and mature enterprise software.",
+          "price": null
+        },
+        {
+          "ticker": "MSFT",
+          "bias": "Bullish",
+          "notes": "Microsoft is successfully monetizing AI execution, highlighted by Copilot adding 5 million paid seats in a single quarter and securing dedicated power for its expanding data centers.",
+          "price": 393.35
+        },
+        {
+          "ticker": "CEG",
+          "bias": "Bullish",
+          "notes": "Constellation Energy is benefiting directly from AI data center power demands, highlighted by its agreement to revive a nuclear plant to power Microsoft's infrastructure.",
+          "price": 259.82
+        },
+        {
+          "ticker": "COWZ",
+          "bias": "Bullish",
+          "notes": "This ETF filters for 100 companies with the highest free cash flow yields (averaging 7% to 8.5%) and high return on equity, providing strong protection against high-multiple tech volatility.",
+          "price": 67.52
+        }
+      ]
+    },
+    {
+      "date": "2026-08-20",
+      "url": "https://www.youtube.com/shorts/wFy5J-ObxtA",
+      "title": "Top 7 Stocks to Buy Now‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Currently trading in the $4 range with a long-term price target of $20, backed by dramatically improved margins and a strong balance sheet.",
+          "price": 4.96
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Currently trading around $32 a share, with an estimated long-term upside target of $100.",
+          "price": 32.54
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Currently at $17 with long-term upside to $50-$100 as it expands its fintech and banking presence over the next 5 to 10 years.",
+          "price": 17.92
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Trading around $80 a share, driven by growing international subscribers, an expanding ad business, and opportunities for price increases.",
+          "price": 80.14
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "Trading in the low $300s at a fair valuation, offering strong compounding potential to significantly outperform the broader market.",
+          "price": 331.15
+        },
+        {
+          "ticker": "NKE",
+          "bias": "Bullish",
+          "notes": "Currently in the high $30s, representing a strong long-term brand that presents an opportunity despite short-term negative sentiment.",
+          "price": 40.21
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "Trading under $100 a share after doubling from recent lows, with significant remaining upside for long-term investors.",
+          "price": 96.15
+        }
+      ]
+    },
+    {
+      "date": "2026-08-20",
+      "url": "https://www.youtube.com/shorts/O8QsM6gy47k",
+      "title": "Why You Shouldn't Run the Wheel Strategy (This is what to do instead).",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "The host views Meta as super oversold at current levels.",
+          "price": 545.83
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "For option selling strategies like the wheel, target monthly expirations (30-45 days out around the third Friday) and approximately 0.30 delta out-of-the-money strikes to optimize time decay against assignment risk.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Under the 'Wheel 2.0' strategy, add small credit spreads (sized at roughly 5-8% of the core position) against deep in-the-money legs—selling call credit spreads when short puts face assignment, or put credit spreads when covered calls are tested.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Before entering options trades, always verify high open interest and narrow bid-ask spreads to avoid losing significant capital to indirect slippage and execution costs.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-06-03",
+      "url": "https://www.youtube.com/shorts/h9G1JiWfVm0",
+      "title": "Why SoFi Ain’t It",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bearish",
+          "notes": "Warns of high opportunity cost and risk regarding short-seller allegations of accounting manipulation to inflate income, amid 15% short interest. He also criticizes the platform's paid subscription model, aggressive upselling, and superficial AI features.",
+          "price": 16.68
+        }
+      ]
+    },
+    {
+      "date": "2026-07-29",
+      "url": "https://www.youtube.com/shorts/5e8txMnFbB0",
+      "title": "The Fed on Inflation: \"Americans Are Being Impatient\"",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve held interest rates unchanged at 3.75%, providing no new forward guidance.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Fed Chair Kevin Warsh indicated that policy decisions will focus on underlying data trends across a broader set of inflation metrics rather than relying solely on standard PCE or CPI prints to reach the 2% target.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "url": "https://www.youtube.com/shorts/sxzysTE7H2o",
+      "title": "The Assets That Replace Your Paycheck",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "SPG",
+          "bias": "Bullish",
+          "notes": "Simon Property Group is a REIT investing in mixed-use developments that pays a 6.5% annual yield, offering passive real estate income without tenant management.",
+          "price": 221.83
+        },
+        {
+          "ticker": "NLY",
+          "bias": "Bullish",
+          "notes": "Annaly Capital Management invests in commercial mortgage-backed securities and pays an 11.5% annual return, though higher yields carry increased risk.",
+          "price": 22.66
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should not make decisions solely based on high dividend yields, as a collapsing stock price can deceptively inflate the yield of a struggling company.",
+          "price": null
+        },
+        {
+          "ticker": "VO",
+          "bias": "Bullish",
+          "notes": "VO is an S&P 500 index fund offering exposure to the top 500 U.S. companies while paying a 1.75% dividend yield.",
+          "price": 82.14
+        },
+        {
+          "ticker": "VNQ",
+          "bias": "Bullish",
+          "notes": "Vanguard Real Estate Index Fund provides diversified exposure to multiple REITs and pays a 3.85% annual dividend yield.",
+          "price": 98.04
+        },
+        {
+          "ticker": "VYM",
+          "bias": "Bullish",
+          "notes": "Vanguard High Dividend Yield Index Fund focuses on high-dividend-paying U.S. companies and pays a 3.62% annual dividend.",
+          "price": 164.77
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Crowdfunded real estate platforms like Fundrise offer direct property exposure with historic returns of 8% to 12% through rent dividends and depreciation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Peer-to-peer lending through platforms like Lending Club can yield a net return of around 5% after factoring in defaults and a 1% platform fee.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Renting out extra space or subletting on Airbnb can generate between $200 to $1,000 per month in passive income with little initial investment.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Municipal bonds allow investors to loan money to local governments for tax-free interest income at both federal and state levels if residing in the issuing state.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A successful long-term strategy is Dollar Cost Averaging, automatically investing a consistent amount at regular intervals regardless of market conditions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Residential real estate is a highly resilient lifetime investment because the fundamental human need for housing protects it from retail and office disruptions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Real estate tax laws allow residential rental properties to be depreciated over 27.5 years, and commercial properties over 39 years to offset taxable income.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Holding real estate until death allows heirs to receive the property at a stepped-up basis, enabling them to sell it immediately tax-free.",
+          "price": null
+        },
+        {
+          "ticker": "SPY",
+          "bias": "Bullish",
+          "notes": "SPY is an ETF that tracks the S&P 500, allowing investors to bet on the long-term growth of the broader American economy.",
+          "price": 768.56
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "Charles Schwab's SCHD ETF focuses on high-dividend-paying U.S. companies to build steady dividend cash flow and capital appreciation.",
+          "price": 33.7
+        },
+        {
+          "ticker": "VMI",
+          "bias": "Bullish",
+          "notes": "VMI is a Vanguard ETF that targets high-dividend-paying companies outside of the United States, offering higher growth potential but with added risk.",
+          "price": 491.91
+        },
+        {
+          "ticker": "QQQ",
+          "bias": "Bullish",
+          "notes": "QQQ tracks the NASDAQ 100 non-financial companies, giving investors heavily tech-concentrated exposure for growth.",
+          "price": 714.65
+        },
+        {
+          "ticker": "VUG",
+          "bias": "Bullish",
+          "notes": "Vanguard's VUG ETF focuses on growth stocks that reinvest profits to maximize share price appreciation rather than paying out dividends.",
+          "price": 88.68
+        },
+        {
+          "ticker": "BOTZ",
+          "bias": "Bullish",
+          "notes": "BOTZ is a niche ETF targeting AI and robotics companies for investors looking to capitalize on this technological shift.",
+          "price": 36.94
+        },
+        {
+          "ticker": "AGNG",
+          "bias": "Bullish",
+          "notes": "AGNG is an ETF that targets companies servicing the healthcare and lifestyle needs of America's growing older demographic.",
+          "price": 37.28
+        },
+        {
+          "ticker": "IYG",
+          "bias": "Bullish",
+          "notes": "IYG is an ETF providing exposure to financial services and banking institutions.",
+          "price": 97.04
+        },
+        {
+          "ticker": "NOBL",
+          "bias": "Bullish",
+          "notes": "NOBL is an ETF focusing strictly on S&P 500 Dividend Aristocrats that have paid and increased their dividends for at least 25 consecutive years.",
+          "price": 58.12
+        },
+        {
+          "ticker": "IWF",
+          "bias": "Bullish",
+          "notes": "IWF is an iShares ETF designed to give exposure to large-cap U.S. growth stocks that reinvest their earnings.",
+          "price": 123.5
+        },
+        {
+          "ticker": "VGT",
+          "bias": "Bullish",
+          "notes": "VGT is a Vanguard ETF specializing in information technology stocks, offering concentrated growth in the tech sector.",
+          "price": 119.6
+        },
+        {
+          "ticker": "QTUM",
+          "bias": "Bullish",
+          "notes": "QTUM is a highly speculative ETF focusing on quantum computing and advanced processor companies.",
+          "price": 149.24
+        },
+        {
+          "ticker": "AIQ",
+          "bias": "Bullish",
+          "notes": "AIQ is an ETF designed to track companies advancing and implementing artificial intelligence technologies.",
+          "price": 61.95
+        }
+      ]
+    },
+    {
+      "date": "2026-08-19",
+      "url": "https://www.youtube.com/shorts/BFILKqmm378",
+      "title": "JOIN DISCORD 📈",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host believes the cryptocurrency market is at the beginning of a new bull run that is expected to significantly take off over the next one to two years.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "url": "https://www.youtube.com/shorts/NP1og_Jqefk",
+      "title": "Why I’m Investing in Quantum Computing (🚀2030 BOOM)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Quantum computing is necessary to solve highly complex optimization problems, such as global supply chain logistics, financial risk modeling, and real-time air traffic control, which are beyond the computational limits of classical supercomputers.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-23",
+      "url": "https://www.youtube.com/shorts/xpMrS1V6-Rw",
+      "title": "This 1 Stock SOARS starting tomorrow‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host highlights AMD's continuous upward momentum, noting that strong investor demand is driving expectations of the stock eventually reaching $1,000 or more.",
+          "price": 539.69
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "The host believes Celsius has officially bottomed out and is set for an upward trend, declaring it 'Celsius the wealthiest.'",
+          "price": 27.17
+        },
+        {
+          "ticker": "CSX",
+          "bias": "Bullish",
+          "notes": "CSX reported a highly clean, outstanding quarter with 10% revenue growth and a 6% increase in shipping volumes, showcasing strong execution and economic resilience.",
+          "price": 52.81
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Railroad operators are critical leading indicators for the economy, where rising shipping volumes signify overall economic strength.",
+          "price": null
+        },
+        {
+          "ticker": "GOOG",
+          "bias": "Neutral",
+          "notes": "Despite stellar 82% Google Cloud growth, massive capex hikes to $200 billion have turned Google's free cash flow negative, creating a messy near-term outlook.",
+          "price": 318.34
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Google upping its capex forecast to $200 billion is highly bullish for memory chip manufacturers like Micron, signaling sustained data center demand.",
+          "price": 990.21
+        },
+        {
+          "ticker": "META",
+          "bias": "Bearish",
+          "notes": "The host anticipates Meta will be forced to raise its capex outlook, which will pressure free cash flow and likely limit the stock's near-term performance.",
+          "price": 606.1
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bearish",
+          "notes": "Amazon is expected to increase capex spending to keep up in the AI race, likely dragging free cash flow into negative territory and weighing on the stock.",
+          "price": 233.66
+        },
+        {
+          "ticker": "MSFT",
+          "bias": "Bearish",
+          "notes": "Like its hyperscaler peers, Microsoft faces heavy capex pressures that are expected to strain free cash flow and cap near-term stock appreciation.",
+          "price": 381.58
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "The host remains long-term bullish on Service Now's AI agent potential, but warns of a severe near-term cost problem after operating income plunged 55%.",
+          "price": 91.94
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Neutral",
+          "notes": "Although Salesforce is likely to beat revenue estimates, the host is cautious due to untrustworthy forward EPS projections caused by rising industry-wide expenses.",
+          "price": 156.93
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Neutral",
+          "notes": "Palantir operates independently of typical SaaS trends, but it faces its own challenges with potentially decelerating revenue growth over the next year.",
+          "price": 123.37
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The technology sector currently features the messiest setups since the financial crisis due to unpredictable capex, making certain non-tech stocks more attractive.",
+          "price": null
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "The host holds high expectations for American Express's upcoming earnings, predicting they will be strong enough to propel the stock past $350.",
+          "price": 340.84
+        }
+      ]
+    },
+    {
       "date": "2026-08-01",
       "url": "https://www.youtube.com/shorts/P107sx4OeSo",
       "title": "Extreme Fear: Complete Market Failure (It Gets Worse..)",
