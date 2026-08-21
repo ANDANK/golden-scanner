@@ -4,6 +4,369 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-07-25",
+      "url": "https://www.youtube.com/shorts/vSCkjvE-VIo",
+      "title": "BREAKING Market Update: July Ends in CHAOS",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "New U.S. tariffs of 10% to 12.5% on goods from key trading partners signal a permanent trade policy shift that could drive inflation and limit the Federal Reserve's ability to cut interest rates.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Brent crude surging above $100 per barrel amid Middle East tensions threatens to reaccelerate inflation, which could result in fewer Fed rate cuts and pressure high-valuation growth stocks while favoring energy stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising 10-year Treasury yields are increasing corporate borrowing costs and pulling capital toward safer fixed-income returns, creating headwind pressure for high-valuation technology stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Market sentiment around AI is shifting from rewarding massive capital expenditures to demanding proof of actual revenue, profitability, and free cash flow.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-21",
+      "url": "https://www.youtube.com/shorts/C4ypPDa-xsQ",
+      "title": "I might buy a NEW STOCK‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "The host highlights that ELF is up 62% over the past seven weeks and believes the stock will move significantly higher over the rest of the year and into future years.",
+          "price": 79.9
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "The host sees Netflix as an easy buy and is actively buying shares, citing steady subscriber growth, expanding profit margins, lower valuation multiples, and strong execution.",
+          "price": 68.67
+        },
+        {
+          "ticker": "TSLA",
+          "bias": "Bearish",
+          "notes": "The host considers Tesla a questionable buy built on hope, pointing to falling margins, stagnant revenue, weak US vehicle market share of 3%, and a history of unfulfilled promises.",
+          "price": 378.93
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "The host predicts a triple beat on revenue, EPS, and guidance for American Express, praising its sticky membership business model and resilient, high-net-worth customer base.",
+          "price": 350.79
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "The host expects a triple beat for Google's upcoming quarterly results, but cautions that a sharp rise in capital expenditures due to expensive memory could trigger short-term downside.",
+          "price": 347.15
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Neutral",
+          "notes": "The host expects a double beat from ServiceNow but is uncertain about its guidance, fearing corporate AI spending might be shifting toward standalone models like Anthropic's Claude.",
+          "price": 102.06
+        },
+        {
+          "ticker": "OXY",
+          "bias": "Bullish",
+          "notes": "The host plans to build a position in Occidental Petroleum, seeing high probability of doubling his money over five years through dividend growth, share buybacks, and upside in carbon capture.",
+          "price": 56.5
+        },
+        {
+          "ticker": "SPACEX",
+          "bias": "Bearish",
+          "notes": "The host projects SpaceX stock will fall under $75 before finding a bottom in late 2026 or early 2027, driven by extremely high price-to-sales valuation and massive upcoming insider lockup expirations.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "url": "https://www.youtube.com/shorts/dAddPpGoJlk",
+      "title": "The PLTR Wheel Strategy Mistake That Costs Investors Thousands",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "If a stock drops 10% below your put strike, sell covered calls 2 to 4 weeks out at your original cost basis to collect 1-2% premium while waiting for recovery.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "If a stock falls 20% below your cost basis, hold for recovery or sell covered calls below cost basis, rolling them to higher strikes if tested near expiration.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When dollar-cost averaging into the wheel strategy by selling additional puts, limit individual stock position sizes to 5-15% of your total portfolio.",
+          "price": null
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "The host holds $412,000 worth of Palantir shares and targets $170-$180 per share following strong earnings reports and guidance.",
+          "price": 158.43
+        }
+      ]
+    },
+    {
+      "date": "2026-06-03",
+      "url": "https://www.youtube.com/shorts/2m8slpUkukA",
+      "title": "The Average SoFi Investor",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host considers SoFi a long-term value investment despite short-term market volatility, highlighting app features like HELOC availability and SoFi Plus subscription benefits.",
+          "price": 16.68
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "url": "https://www.youtube.com/shorts/4ATQ_MarE1I",
+      "title": "Housing Market Update: Truth About Home Prices & Mortgage Rates",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US home prices rose 0.3% month-over-month in June with the median existing home price hitting $440,600, up 1.8% year-over-year. Inventory remains tight and stable at 1.56 million homes for sale (4.6 months of supply), indicating no housing market crash.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "First-half foreclosure filings rose 21% year-over-year to 227,548, but the surge is off a low base and remains far below 2010 crisis levels of 1.65 million.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "30-year fixed mortgage interest rates remain tightly correlated with 10-year Treasury yields, which fluctuate with energy prices and inflation expectations.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "30-year mortgage rates are expected to stay range-bound between 6% and 7% for the foreseeable future, absent major shifts in Federal Reserve policy or geopolitical conflicts.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "url": "https://www.youtube.com/shorts/D_NThm91IDI",
+      "title": "How The Wealthy Invest Before A Market Downturn",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Recessions occur historically every decade and create wealth-building opportunities to buy quality assets at discounted prices, though exact timing is unpredictable.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Bitcoin trades more similarly to high-growth tech stocks than physical gold during market volatility, making its role as a recession hedge unproven.",
+          "price": null
+        },
+        {
+          "ticker": "GLD",
+          "bias": "Bullish",
+          "notes": "GLD provides paper exposure to gold, which historically surges during economic downturns and dollar weakness as investors seek safe havens.",
+          "price": 389.64
+        },
+        {
+          "ticker": "IAU",
+          "bias": "Bullish",
+          "notes": "IAU offers exposure to gold prices, serving as a traditional hedge against inflation, currency devaluation, and market crashes.",
+          "price": 79.85
+        },
+        {
+          "ticker": "TLT",
+          "bias": "Bullish",
+          "notes": "TLT tracks 20-year Treasuries and tends to gain during market crashes as investors flee to risk-free government bonds.",
+          "price": 83.0
+        },
+        {
+          "ticker": "IEF",
+          "bias": "Bullish",
+          "notes": "IEF provides exposure to 7-to-10-year Treasury bonds, capturing capital inflows from investors seeking fixed-income safety during recessions.",
+          "price": 93.31
+        },
+        {
+          "ticker": "NOBL",
+          "bias": "Bullish",
+          "notes": "NOBL holds S&P 500 Dividend Aristocrats that have raised payouts for 25+ consecutive years, offering strong downside defense in bear markets.",
+          "price": 58.31
+        },
+        {
+          "ticker": "VIG",
+          "bias": "Bullish",
+          "notes": "VIG targets large-cap companies with growing dividends, attracting investors seeking financial stability and cash flow during downturns.",
+          "price": 244.38
+        },
+        {
+          "ticker": "XLP",
+          "bias": "Bullish",
+          "notes": "XLP holds 37 consumer staples stocks, representing daily essential products that people continue buying regardless of economic conditions.",
+          "price": 85.33
+        },
+        {
+          "ticker": "VDC",
+          "bias": "Bullish",
+          "notes": "VDC offers broad consumer staples exposure across 106 holdings, providing defensive positioning against market pullbacks.",
+          "price": 231.23
+        },
+        {
+          "ticker": "ITA",
+          "bias": "Bullish",
+          "notes": "ITA tracks U.S. aerospace and defense stocks, benefiting from sustained military spending and elevated geopolitical tensions.",
+          "price": 252.28
+        },
+        {
+          "ticker": "PPA",
+          "bias": "Bullish",
+          "notes": "PPA offers diversified coverage of roughly 60 defense and aerospace companies that remain resilient through macro uncertainty.",
+          "price": 183.47
+        }
+      ]
+    },
+    {
+      "date": "2026-07-23",
+      "url": "https://www.youtube.com/shorts/u30rdysuTxA",
+      "title": "Warren Buffett’s Last Warning to All Investors",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Buffett Indicator is currently at a record high of around 230%, meaning total U.S. stock market capitalization is over double U.S. GDP and well above its 2000 and 2021 peaks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Broad market valuations are historically stretched across multiple gauges, with the Shiller CAPE ratio around 41—a level crossed only once before during the dot-com bubble—and the S&P 500 forward P/E around 20x.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Berkshire Hathaway holds a record cash reserve of nearly $400 billion and has been a net seller of over $150 billion in equities since late 2022, reflecting difficulty finding value at current market prices.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High market valuations are not a short-term timing tool or crash predictor, but historically correlate with lower expected annualized returns over the subsequent decade.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "During expensive market environments, investors should maintain dollar-cost averaging into index funds, focus stock selection on discounted quality value names, and hold cash reserves to take advantage of market pullbacks.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-16",
+      "url": "https://www.youtube.com/shorts/C-NCMpaGAaM",
+      "title": "I Sold it all. I’m 100% out‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Retail investor net single stock buying has dropped to a post-pandemic low, which serves as a contrarian signal that now is an opportune time to buy individual stocks while general interest is low.",
+          "price": null
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Host notes Cheesecake Factory stock continues to perform strongly and states that the stock is always a buy whenever it trades under $100.",
+          "price": 83.31
+        },
+        {
+          "ticker": "PYPL",
+          "bias": "Bearish",
+          "notes": "Host sold out of his entire $165,000 PayPal position, stating that single-digit revenue growth turns off growth investors while fears of long-term disruption deter value investors.",
+          "price": 56.73
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Host purchased 375 shares of Netflix with plans to buy $50,000 more post-earnings, setting a long-term price target of $200 driven by long-term growth in its advertising business.",
+          "price": 74.35
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Host bought 555 shares at $17.52 and issued a long-term price target of $50 to $100, citing its ability to attract younger demographics who will transfer wealth to the platform over time.",
+          "price": 17.32
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Host added 475 shares at $74.57, ranking e.l.f. Beauty as one of the strongest long-term growth opportunities in the market with significant upside remaining.",
+          "price": 74.49
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Host bought 1,456 shares at $29.77, labeling Celsius one of the best long-term opportunities outside of big tech due to its strong brand momentum and Pepsi distribution deal.",
+          "price": 29.98
+        }
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "url": "https://www.youtube.com/shorts/0f1snCiTLpw",
+      "title": "Leopold Aschenbrenner Just Lost $35 Billion in One Day",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Using heavy leverage combined with concentrated positions in a single sector creates extreme risk, where a normal pull-back can trigger forced margin calls and blow up a portfolio.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should prioritize risk management and survival over high-risk leveraged bets, avoiding excessive leverage to ensure long-term market participation.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-08-20",
       "url": "https://www.youtube.com/shorts/hW42geOuTrI",
       "title": "$LTC GIVING THE SIGNAL 📈 AUG 20",
