@@ -1,6 +1,15 @@
 {
-  "checked": "2026-08-21",
+  "checked": "2026-08-22",
   "pending": [
+    {
+      "video_id": "Di0o2Aprev0",
+      "title": "How I’d Invest $10,000 vs. $100,000 right now in late 2026",
+      "date": "2026-08-22",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/Di0o2Aprev0"
+    },
     {
       "video_id": "we4_uFY5PfQ",
       "title": "How the Fastest Growing Hedge Fund in the World Just Lost Everything (Leopold Aschenbrenner)",
@@ -29,15 +38,6 @@
       "url": "https://www.youtube.com/shorts/ScSqPs1NFIs"
     },
     {
-      "video_id": "y8TNsyXp3n4",
-      "title": "Here's How to Invest Your Money like the Top 1% Traders",
-      "date": "2026-07-28",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/y8TNsyXp3n4"
-    },
-    {
       "video_id": "ZCfjDfKW6S8",
       "title": "The Mistake Almost Every Investor Is About To Make",
       "date": "2026-07-28",
@@ -45,6 +45,15 @@
       "channel_name": "Minority Mindset",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/ZCfjDfKW6S8"
+    },
+    {
+      "video_id": "y8TNsyXp3n4",
+      "title": "Here's How to Invest Your Money like the Top 1% Traders",
+      "date": "2026-07-28",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/y8TNsyXp3n4"
     },
     {
       "video_id": "LEwxTrh4lc4",
@@ -83,15 +92,6 @@
       "url": "https://www.youtube.com/shorts/tzMb6ue9HwY"
     },
     {
-      "video_id": "nFWk-wa2Ndk",
-      "title": "How to Invest Your First $1,000 in The Stock Market",
-      "date": "2026-07-24",
-      "channel": "@ClearValueTax",
-      "channel_name": "ClearValue Tax",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/nFWk-wa2Ndk"
-    },
-    {
       "video_id": "M11M9kMsYgQ",
       "title": "Watch This Now If You Ever Want To Retire - The Game Has Changed",
       "date": "2026-07-24",
@@ -99,6 +99,15 @@
       "channel_name": "Minority Mindset",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/M11M9kMsYgQ"
+    },
+    {
+      "video_id": "nFWk-wa2Ndk",
+      "title": "How to Invest Your First $1,000 in The Stock Market",
+      "date": "2026-07-24",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/nFWk-wa2Ndk"
     },
     {
       "video_id": "QurtmsoyVio",
@@ -155,15 +164,6 @@
       "url": "https://www.youtube.com/shorts/PbDzhpZH5Xw"
     },
     {
-      "video_id": "eRZ39NF8SRo",
-      "title": "If you missed SMH, this ETF could be MUCH BIGGER 👀📈",
-      "date": "2026-07-20",
-      "channel": "@NolanGouveia",
-      "channel_name": "Nolan Gouveia",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/eRZ39NF8SRo"
-    },
-    {
       "video_id": "i_4gZxGESKU",
       "title": "The Simple Payday Hack That Creates Millionaires (STILL WORKS)",
       "date": "2026-07-20",
@@ -171,6 +171,15 @@
       "channel_name": "Minority Mindset",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/i_4gZxGESKU"
+    },
+    {
+      "video_id": "eRZ39NF8SRo",
+      "title": "If you missed SMH, this ETF could be MUCH BIGGER 👀📈",
+      "date": "2026-07-20",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/eRZ39NF8SRo"
     },
     {
       "video_id": "4ItZFsE_-go",
@@ -326,15 +335,6 @@
       "url": "https://www.youtube.com/shorts/C3tTmjJyPmU"
     },
     {
-      "video_id": "UuNTz0_IDPA",
-      "title": "This Stock will go to $500‼️",
-      "date": "2026-07-09",
-      "channel": "@FinancialEducation",
-      "channel_name": "Financial Ed",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/UuNTz0_IDPA"
-    },
-    {
       "video_id": "e-_Sskm2dws",
       "title": "The UNTHINKABLE is About to Happen to Stocks #SOFI #HOOD #PLTR #NVDA",
       "date": "2026-07-09",
@@ -342,6 +342,15 @@
       "channel_name": "Invest w/ Henry",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/e-_Sskm2dws"
+    },
+    {
+      "video_id": "UuNTz0_IDPA",
+      "title": "This Stock will go to $500‼️",
+      "date": "2026-07-09",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/UuNTz0_IDPA"
     },
     {
       "video_id": "pG-EDo3-mfM",
@@ -378,15 +387,6 @@
       "channel_name": "Financial Ed",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/9EZzyjAZ-Zc"
-    },
-    {
-      "video_id": "YIT4GvKznxk",
-      "title": "$2 Million Invested - Can I retire soon?! 🤔",
-      "date": "2026-07-06",
-      "channel": "@NolanGouveia",
-      "channel_name": "Nolan Gouveia",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/YIT4GvKznxk"
     },
     {
       "video_id": "meesr2gDINA",
@@ -538,7 +538,7 @@
       "date": "2026-05-01",
       "channel": "@InTheMoneyAdam",
       "channel_name": "In The Money",
-      "reason": "failed",
+      "reason": "queued",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
     },
     {
