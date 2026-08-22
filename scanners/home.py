@@ -2234,6 +2234,61 @@ def _render_sectors():
     st.markdown(_card("Sector Rotation — follow the big money", "🔄", MINT,
                       header + bar_rows + summary), unsafe_allow_html=True)
 
+    # ── Freshness, history and validation ─────────────────────────────────
+    # Everything above is computed off the LAST bar, and during market hours
+    # that bar is still forming -- so the table legitimately moves between
+    # refreshes (and _sector_flows caches for 30 min on top, which makes the
+    # movement arrive in jumps rather than smoothly). Say which of the two is
+    # happening, then offer the history that tells signal from noise.
+    _render_sector_tracking(ranked)
+
+
+def _render_sector_tracking(ranked: list[dict]):
+    """Freshness label + Rotation History + independent validation, shared
+    with the Strategies page's Sector Rotation tab.
+
+    The panels live in scanners/sector_rotation.py so both pages show the
+    same history rather than two implementations that can disagree. They key
+    off the ticker list only, so the fact that this tab ranks by its own
+    rs63/quadrant maths and that one by RS-vs-SPY does not matter -- both are
+    the 63-day ratio against SPY, and the history is rebuilt from prices
+    either way.
+    """
+    from scanners.sector_rotation import (
+        _is_live_bar, _render_history_panel, _render_validation_panel,
+        _sector_history_cached,
+    )
+
+    try:
+        spy = get_price_history("SPY", period="1y")
+        spy_close = spy["Close"].squeeze() if spy is not None and not spy.empty else None
+        if spy_close is None or spy_close.empty:
+            return
+        live = _is_live_bar(spy_close)
+        as_of = pd.Timestamp(spy_close.index[-1]).strftime("%Y-%m-%d")
+    except Exception:
+        return
+
+    col = GOLD if live else ACCENT_GREEN
+    lbl = ("⚡ LIVE BAR — today's session is still open, so these numbers move "
+           "with the tape") if live else \
+          "✓ Settled close — these numbers are fixed until the next session"
+    st.markdown(
+        f'<div style="background:{col}12;border-left:3px solid {col};'
+        f'padding:6px 12px;border-radius:0 6px 6px 0;margin:10px 0 12px;'
+        f'color:{TEXT_MUTED};font-size:11px">'
+        f'<b style="color:{col}">{lbl}</b> · last bar {as_of}</div>',
+        unsafe_allow_html=True,
+    )
+
+    try:
+        hist = _sector_history_cached(as_of=as_of)
+        order = pd.DataFrame([{"Ticker": r["tkr"], "Sector": r["name"]} for r in ranked])
+        _render_history_panel(order, hist)
+        _render_validation_panel(order, key_prefix="home_sr")
+    except Exception as e:
+        st.caption(f"Rotation history unavailable: {e}")
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN RENDER

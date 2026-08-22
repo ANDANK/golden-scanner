@@ -909,9 +909,14 @@ def _render_history_panel(df: pd.DataFrame, hist: pd.DataFrame):
 
 # ── Validation panel ───────────────────────────────────────────────────────────
 
-def _render_validation_panel(df: pd.DataFrame):
+def _render_validation_panel(df: pd.DataFrame, key_prefix: str = "sr"):
     """Cross-check the table against an independent price feed, and list the
-    published references worth eyeballing."""
+    published references worth eyeballing.
+
+    key_prefix namespaces the button and the stored results: this panel is
+    rendered from two different pages (Strategies and Home), and Streamlit
+    raises DuplicateWidgetID if two buttons share a key.
+    """
     from config import (
         GOLD, BG_CARD, BG_PANEL, ACCENT_GREEN, ACCENT_RED, ACCENT_BLUE,
         TEXT_PRIMARY, TEXT_MUTED,
@@ -931,7 +936,7 @@ def _render_validation_panel(df: pd.DataFrame):
             unsafe_allow_html=True,
         )
 
-        if st.button("🔍 Run independent check", key="sr_validate",
+        if st.button("🔍 Run independent check", key=f"{key_prefix}_validate",
                      use_container_width=False):
             prog = st.progress(0, text="Fetching reference data…")
 
@@ -949,11 +954,11 @@ def _render_validation_panel(df: pd.DataFrame):
 
             vdf, vsum = cross_check(ours, SECTORS, bench="SPY", progress_fn=_st)
             prog.empty()
-            st.session_state["sr_val_df"] = vdf
-            st.session_state["sr_val_sum"] = vsum
+            st.session_state[f"{key_prefix}_val_df"] = vdf
+            st.session_state[f"{key_prefix}_val_sum"] = vsum
 
-        vdf = st.session_state.get("sr_val_df")
-        vsum = st.session_state.get("sr_val_sum") or {}
+        vdf = st.session_state.get(f"{key_prefix}_val_df")
+        vsum = st.session_state.get(f"{key_prefix}_val_sum") or {}
 
         if vsum.get("status") == "unreachable":
             st.warning(
