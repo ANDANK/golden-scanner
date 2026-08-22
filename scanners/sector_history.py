@@ -55,6 +55,8 @@ _FIELD_MAP = {
     "1M Ret %":    "ret_1m",
     "3M Ret %":    "ret_3m",
     "RS vs SPY":   "rs",
+    "RS 21d":      "rs_21",
+    "Quadrant":    "quadrant",
     "RS Trend":    "rs_trend",
     "RSI":         "rsi",
     "Vol Ratio":   "vol_ratio",
@@ -260,8 +262,13 @@ def rank_deltas(history: pd.DataFrame, current: pd.DataFrame) -> dict:
     return out
 
 
-def stability_report(history: pd.DataFrame) -> pd.DataFrame:
+def stability_report(history: pd.DataFrame, label_col: str = "Trade Idea") -> pd.DataFrame:
     """Per-sector: how much does this row ACTUALLY move day to day?
+
+    label_col picks which verdict to measure the stability OF: the trade
+    actions this scanner emits ("Trade Idea"), or the RRG quadrant the
+    Market Overview tab shows ("Quadrant"). Same maths either way — the
+    caller decides which vocabulary its page already speaks.
 
     Columns:
       Sessions        observations in the window
@@ -276,11 +283,14 @@ def stability_report(history: pd.DataFrame) -> pd.DataFrame:
     if history is None or history.empty:
         return pd.DataFrame()
 
+    if label_col not in history.columns:
+        label_col = "Trade Idea" if "Trade Idea" in history.columns else None
+
     rows = []
     for ticker, g in history.sort_values("Date").groupby("Ticker"):
         ranks = g["Rank"].astype(float)
         rs = g["RS vs SPY"].astype(float)
-        ideas = list(g["Trade Idea"])
+        ideas = list(g[label_col]) if label_col else []
 
         flips = sum(1 for a, b in zip(ideas, ideas[1:]) if a != b)
         streak = 1
@@ -310,7 +320,8 @@ def stability_report(history: pd.DataFrame) -> pd.DataFrame:
             .reset_index(drop=True))
 
 
-def churn_summary(history: pd.DataFrame, top_n: int = 3) -> dict:
+def churn_summary(history: pd.DataFrame, top_n: int = 3,
+                  label_col: str = "Trade Idea") -> dict:
     """Window-level answer to "does this thing change as fast as it feels?".
 
     top_turnover_pct   % of sessions where the top-N set gained/lost a member
@@ -334,10 +345,13 @@ def churn_summary(history: pd.DataFrame, top_n: int = 3) -> dict:
     turnover = sum(1 for a, b in zip(top_sets, top_sets[1:]) if a != b)
     leader_changes = sum(1 for a, b in zip(leaders, leaders[1:]) if a != b)
 
+    if label_col not in history.columns:
+        label_col = "Trade Idea" if "Trade Idea" in history.columns else None
+
     moves, flips, obs = [], 0, 0
     for _, g in history.sort_values("Date").groupby("Ticker"):
         moves.extend(g["Rank"].astype(float).diff().abs().dropna().tolist())
-        ideas = list(g["Trade Idea"])
+        ideas = list(g[label_col]) if label_col else []
         flips += sum(1 for a, b in zip(ideas, ideas[1:]) if a != b)
         obs += max(0, len(ideas) - 1)
 

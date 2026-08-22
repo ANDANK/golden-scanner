@@ -2284,7 +2284,11 @@ def _render_sector_tracking(ranked: list[dict]):
     try:
         hist = _sector_history_cached(as_of=as_of)
         order = pd.DataFrame([{"Ticker": r["tkr"], "Sector": r["name"]} for r in ranked])
-        _render_history_panel(order, hist)
+        # Quadrant vocabulary, not trade actions: the card directly above
+        # already labels these sectors Leading/Improving/Weakening/Lagging,
+        # and two names for one state on one screen confuses more than it
+        # informs.
+        _render_history_panel(order, hist, label_col="Quadrant")
         _render_validation_panel(order, key_prefix="home_sr")
     except Exception as e:
         st.caption(f"Rotation history unavailable: {e}")

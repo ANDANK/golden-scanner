@@ -144,9 +144,18 @@ def compute_row(ticker: str, name: str, close, volume, spy_close) -> dict | None
     ret_1m = round((price / float(close.iloc[-21]) - 1) * 100, 1) if len(close) >= 21 else 0.0
     ret_3m = round((price / float(close.iloc[-63]) - 1) * 100, 1) if len(close) >= 63 else 0.0
 
-    # Relative strength vs SPY
+    # Relative strength vs SPY, over both horizons.
     rs_val = _rs(close, spy_close) if spy_close is not None else 1.0
+    rs_21  = _rs(close, spy_close, 21) if spy_close is not None else 1.0
     rs_dir = _rs_trend(close, spy_close) if spy_close is not None else "—"
+
+    # RRG quadrant, same rule as home.py's _sector_flows() so the Market
+    # Overview tab can label its history in the vocabulary already on that
+    # page (Leading/Improving/...) rather than the trade-action vocabulary
+    # this page uses. Two names for one state confuses more than it informs.
+    quadrant = ("Leading"   if rs_val >= 1 and rs_21 >= 1 else
+                "Weakening" if rs_val >= 1 else
+                "Improving" if rs_21 >= 1 else "Lagging")
 
     # Volume. iloc[-2] deliberately: the final bar is the one being evaluated
     # and is still forming during market hours, so its volume is a partial
@@ -170,6 +179,8 @@ def compute_row(ticker: str, name: str, close, volume, spy_close) -> dict | None
         "1M Ret %":    ret_1m,
         "3M Ret %":    ret_3m,
         "RS vs SPY":   rs_val,
+        "RS 21d":      rs_21,
+        "Quadrant":    quadrant,
         "RS Trend":    rs_dir,
         "RSI":         round(rsi, 1),
         "Vol Ratio":   vol_ratio,
@@ -656,10 +667,17 @@ def _stored_history() -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def _render_history_panel(df: pd.DataFrame, hist: pd.DataFrame):
+def _render_history_panel(df: pd.DataFrame, hist: pd.DataFrame,
+                          label_col: str = "Trade Idea"):
     """Rotation over time: is the leaderboard actually churning, or does it
     only look that way because every refresh lands on a different moment of
-    the same session?"""
+    the same session?
+
+    label_col picks the verdict vocabulary — "Trade Idea" (LEAP / CSP /
+    Avoid) on the Strategies page, "Quadrant" (Leading / Improving /
+    Weakening / Lagging) on Market Overview, which already speaks that
+    language in the card above this panel.
+    """
     from config import (
         GOLD, BG_CARD, BG_PANEL, ACCENT_GREEN, ACCENT_RED,
         TEXT_PRIMARY, TEXT_MUTED, BORDER_COLOR,
@@ -700,7 +718,77 @@ def _render_history_panel(df: pd.DataFrame, hist: pd.DataFrame):
         )
 
         # ── The headline answer, in numbers ──────────────────────────────
-        churn = churn_summary(hist, top_n=3)
+        if label_col not in hist.columns:
+            label_col = "Trade Idea"
+        label_noun = "Quadrant" if label_col == "Quadrant" else "Trade Idea"
+
+        # Plain-English guide. A raw <details> block rather than st.expander:
+        # this panel is ALREADY inside an expander and Streamlit refuses to
+        # nest them, so the collapsible has to be HTML.
+        _n = len(SECTORS)
+        st.markdown(
+            f'<details style="background:{BG_PANEL};border:1px solid {GL}33;'
+            f'border-radius:8px;padding:8px 12px;margin-bottom:14px">'
+            f'<summary style="color:{GL};font-size:11px;font-weight:700;cursor:pointer;'
+            f'text-transform:uppercase;letter-spacing:0.7px">'
+            f'📖 How to read these two tables</summary>'
+
+            f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.75;margin-top:10px">'
+
+            f'<b style="color:{TEXT_PRIMARY}">Rank trail</b> — each day the {_n} sectors '
+            f'are sorted by relative strength vs SPY and numbered '
+            f'<b style="color:{G}">1</b> (strongest) to '
+            f'<b style="color:{R}">{_n}</b> (weakest). Rows are sectors, columns are '
+            f'trading days (oldest left, newest right). Colours are just those ranks '
+            f'banded: <span style="color:{G}">green = 1-3</span>, '
+            f'<span style="color:{GL}">gold = 4-6</span>, grey = middle, '
+            f'<span style="color:{R}">red = bottom 3</span>.'
+
+            f'<div style="margin:8px 0 8px 10px;color:{TEXT_MUTED}">'
+            f'· <b style="color:{TEXT_PRIMARY}">flat and low</b> (2 2 1 2 3) = durable '
+            f'leadership, tradeable<br>'
+            f'· <b style="color:{TEXT_PRIMARY}">flat and high</b> (13 14 15 14) = genuinely '
+            f'broken, stay away<br>'
+            f'· <b style="color:{TEXT_PRIMARY}">zig-zag</b> (3 11 5 12 4) = noise, one day\'s '
+            f'reading means nothing<br>'
+            f'· <b style="color:{TEXT_PRIMARY}">trending</b> (12 10 9 7 5 3) = money rotating '
+            f'IN — the one to watch</div>'
+
+            f'A single snapshot cannot tell "rank 3 and climbing for six weeks" from '
+            f'"rank 3 for one day by accident". That is what this grid is for.'
+
+            f'<div style="height:10px"></div>'
+
+            f'<b style="color:{TEXT_PRIMARY}">Per-sector stability</b> — the same data '
+            f'summarised per sector instead of per day.'
+            f'<div style="margin:8px 0 8px 10px">'
+            f'· <b style="color:{TEXT_PRIMARY}">Avg Rank</b> — its average spot. Lower is '
+            f'better; under 5 = consistently strong.<br>'
+            f'· <b style="color:{TEXT_PRIMARY}">Best / Worst</b> — the range it covered. '
+            f'Best 1 / Worst 14 is a rollercoaster, not leadership.<br>'
+            f'· <b style="color:{TEXT_PRIMARY}">Rank Churn</b> — places moved on an average '
+            f'day. <span style="color:{G}">≤1 = steady</span>; '
+            f'<span style="color:{R}">&gt;2 = jumpy</span>, do not trust one reading.<br>'
+            f'· <b style="color:{TEXT_PRIMARY}">{label_noun} Flips / Hold</b> — how often the '
+            f'label changed, and how many sessions it survives on average. '
+            f'<span style="color:{G}">≥5 = solid</span>; '
+            f'<span style="color:{R}">&lt;3 = a hint, not an instruction</span>.<br>'
+            f'· <b style="color:{TEXT_PRIMARY}">Streak</b> — days the current label has held. '
+            f'A 15-day streak is far more confirmed than a 1-day one.</div>'
+
+            f'<div style="background:{G}12;border-left:3px solid {G};padding:7px 11px;'
+            f'border-radius:0 6px 6px 0;color:{TEXT_PRIMARY};margin-top:4px">'
+            f'<b>The rule:</b> favour sectors with a <b style="color:{G}">low Avg Rank</b> '
+            f'AND <b style="color:{G}">low Rank Churn</b>. Low rank alone can be a one-day '
+            f'fluke; low churn alone just means reliably mediocre. You want consistently '
+            f'near the top and not bouncing. Then use <b>Streak</b> as the confidence '
+            f'check.</div>'
+
+            f'</div></details>',
+            unsafe_allow_html=True,
+        )
+
+        churn = churn_summary(hist, top_n=3, label_col=label_col)
         if churn:
             chips = [
                 ("Top-3 changed", f'{churn["top_turnover_pct"]:.0f}% of sessions',
@@ -708,7 +796,7 @@ def _render_history_panel(df: pd.DataFrame, hist: pd.DataFrame):
                 ("#1 changed hands", f'{churn["leader_changes"]}× in {churn["sessions"]}', GL),
                 ("Median daily rank move", f'{churn["median_rank_move"]:.1f} places',
                  G if churn["median_rank_move"] <= 1 else GL),
-                ("Trade Idea flipped", f'{churn["idea_change_pct"]:.0f}% of days',
+                (f"{label_noun} flipped", f'{churn["idea_change_pct"]:.0f}% of days',
                  G if churn["idea_change_pct"] < 20 else R),
             ]
             st.markdown(
@@ -838,13 +926,14 @@ def _render_history_panel(df: pd.DataFrame, hist: pd.DataFrame):
             pass
 
         # ── Per-sector stability ─────────────────────────────────────────
-        rep = stability_report(hist)
+        rep = stability_report(hist, label_col=label_col)
         if not rep.empty:
             _TH2 = (f'background:{BG_PANEL};color:{TEXT_MUTED};font-size:9px;font-weight:700;'
                     f'text-transform:uppercase;letter-spacing:0.7px;padding:7px 10px;'
                     f'border-bottom:2px solid {GL}44;white-space:nowrap;text-align:left')
             cols = ["Sector", "Avg Rank", "Best", "Worst", "Rank Churn",
-                    "Idea Flips", "Idea Hold", "Current Idea", "Streak"]
+                    f"{label_noun} Flips", f"{label_noun} Hold",
+                    f"Current {label_noun}", "Streak"]
             h2 = "".join(f'<th style="{_TH2}">{c}</th>' for c in cols)
             b2 = ""
             for i, r in rep.iterrows():
@@ -876,8 +965,9 @@ def _render_history_panel(df: pd.DataFrame, hist: pd.DataFrame):
                 f'<thead><tr>{h2}</tr></thead><tbody>{b2}</tbody></table></div>'
                 f'<div style="color:{TEXT_MUTED};font-size:10px;margin:6px 0 16px">'
                 f'<b>Rank Churn</b> = average places moved per session. '
-                f'<b>Idea Hold</b> = how many sessions a Trade Idea survives on average — '
-                f'anything under 3 is a badge to treat as a hint, not an instruction.</div>',
+                f'<b>{label_noun} Hold</b> = how many sessions a {label_noun} survives on '
+                f'average — anything under 3 is a label to treat as a hint, not an '
+                f'instruction.</div>',
                 unsafe_allow_html=True,
             )
 
