@@ -1013,16 +1013,60 @@ def _render_validation_panel(df: pd.DataFrame, key_prefix: str = "sr"):
     )
     G, GL, R, B = ACCENT_GREEN, GOLD, ACCENT_RED, ACCENT_BLUE
 
-    from scanners.sector_validate import RANK_CORR_MIN, SOURCES, cross_check
+    from scanners.sector_validate import (
+        RANK_CORR_MIN, SOURCES, cross_check, self_checks,
+    )
 
     with st.expander("🔍 Validate — cross-check against independent sources", expanded=False):
         st.markdown(
             f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.7;margin-bottom:12px">'
             f'Everything on this page comes from one feed (Yahoo Finance), and SPY is the '
             f'denominator of every RS figure — so a single bad SPY bar quietly skews all '
-            f'15 rows at once. This re-pulls the same tickers from '
-            f'<b style="color:{TEXT_PRIMARY}">Stooq</b>, an unrelated provider, and '
-            f'recomputes the leaderboard from scratch.</div>',
+            f'15 rows at once. Two layers of checking: '
+            f'<b style="color:{TEXT_PRIMARY}">self-checks</b> below run automatically and '
+            f'need no other provider, and the button re-pulls the same tickers from '
+            f'<b style="color:{TEXT_PRIMARY}">Stooq</b>, an unrelated provider, to '
+            f'recompute the leaderboard from scratch.</div>',
+            unsafe_allow_html=True,
+        )
+
+        # ── Self-checks: always available ────────────────────────────────
+        # These used to be absent, so when Stooq was unreachable the panel
+        # had nothing at all to say. They test arithmetic that must hold
+        # regardless of who supplied the prices, so they work offline.
+        try:
+            ours_now = {}
+            for ticker, _ in SECTORS + [("SPY", "Benchmark")]:
+                d = get_price_history(ticker, period="1y", interval="1d")
+                if d is not None and not d.empty:
+                    ours_now[ticker] = d["Close"].squeeze()
+            checks = self_checks(ours_now, SECTORS, bench="SPY")
+        except Exception as e:
+            checks = [{"name": "Self-checks", "status": "fail",
+                       "detail": f"could not run: {e}"}]
+
+        _S_COL = {"pass": (G, "✓"), "warn": (GL, "!"), "fail": (R, "✕")}
+        n_fail = sum(1 for c in checks if c["status"] == "fail")
+        n_warn = sum(1 for c in checks if c["status"] == "warn")
+        head_col = R if n_fail else (GL if n_warn else G)
+        head_txt = ("✓ All self-checks passed" if not (n_fail or n_warn) else
+                    f'{n_fail} failed · {n_warn} warning(s)')
+        rows_html = ""
+        for c in checks:
+            col, icon = _S_COL.get(c["status"], (TEXT_MUTED, "·"))
+            rows_html += (
+                f'<div style="display:flex;gap:8px;align-items:baseline;'
+                f'padding:4px 0;font-size:11px">'
+                f'<span style="color:{col};font-weight:700;width:12px">{icon}</span>'
+                f'<span style="color:{TEXT_PRIMARY};min-width:210px">{c["name"]}</span>'
+                f'<span style="color:{TEXT_MUTED}">{c["detail"]}</span></div>'
+            )
+        st.markdown(
+            f'<div style="background:{BG_PANEL};border-left:3px solid {head_col};'
+            f'padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:14px">'
+            f'<div style="color:{head_col};font-size:11px;font-weight:700;'
+            f'text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px">'
+            f'Self-checks — {head_txt}</div>{rows_html}</div>',
             unsafe_allow_html=True,
         )
 
@@ -1051,10 +1095,24 @@ def _render_validation_panel(df: pd.DataFrame, key_prefix: str = "sr"):
         vsum = st.session_state.get(f"{key_prefix}_val_sum") or {}
 
         if vsum.get("status") == "unreachable":
-            st.warning(
-                f'{vsum.get("message", "Reference source unreachable.")} '
-                "This is usually a blocked outbound request from the host rather than "
-                "a data problem — the manual references below still apply."
+            why = vsum.get("reasons") or []
+            st.markdown(
+                f'<div style="background:{GL}12;border-left:3px solid {GL};'
+                f'padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:12px;'
+                f'font-size:11px;line-height:1.7;color:{TEXT_MUTED}">'
+                f'<b style="color:{GL}">Independent cross-check unavailable.</b> '
+                f'{vsum.get("message", "")}'
+                + (('<div style="margin-top:6px;color:' + TEXT_PRIMARY
+                    + ';font-family:\'DM Mono\',monospace;font-size:10px">'
+                    + "<br>".join(w for w in why[:4]) + '</div>') if why else '')
+                + f'<div style="margin-top:6px">Stooq rate-limits and blocks datacenter '
+                  f'IP ranges, which is what this app runs on — so this usually means '
+                  f'<b>Stooq refused us</b>, not that the host has no outbound network '
+                  f'(the price feed on this same page works). '
+                  f'The self-checks above are unaffected, and the published references '
+                  f'below still apply.</div>'
+                f'</div>',
+                unsafe_allow_html=True,
             )
         elif vdf is not None and not vdf.empty:
             corr = vsum.get("rank_corr")

@@ -38,7 +38,11 @@ import time
 
 import pandas as pd
 
-STOOQ_CSV = "https://stooq.com/q/d/l/?s={sym}.us&i=d"
+# Stooq mirrors. The .com host blocks or rate-limits datacenter IPs (which is
+# what a Streamlit Cloud dyno is), and answers with a 403 or a plain-text
+# notice rather than an HTTP error, so both are tried before giving up.
+STOOQ_HOSTS = ("https://stooq.com", "https://stooq.pl")
+STOOQ_PATH = "/q/d/l/?s={sym}.us&i=d"
 
 # Tolerances. Deliberately loose enough to absorb the dividend-adjustment
 # gap and a one-session lag, tight enough that a genuinely stale or wrong
@@ -46,6 +50,13 @@ STOOQ_CSV = "https://stooq.com/q/d/l/?s={sym}.us&i=d"
 PRICE_TOL_PCT  = 0.35   # same-date close: should be near-exact
 RETURN_TOL_PCT = 1.25   # 21/63-session return, absorbing ~a quarter's yield
 RANK_CORR_MIN  = 0.90   # Spearman floor for the leaderboard to count as confirmed
+
+# The 11 GICS sector ETFs, i.e. the ones that actually partition the S&P 500.
+# QQQ/IWM/GLD/TLT ride along in the rotation table for context but are not
+# S&P components, so they are excluded from any check that treats the set as
+# a decomposition of the index.
+GICS_SECTORS = ("XLK", "XLF", "XLV", "XLI", "XLE", "XLY",
+                "XLP", "XLC", "XLB", "XLRE", "XLU")
 
 
 # ── Published references for eyeballing ────────────────────────────────────────
@@ -107,33 +118,180 @@ SOURCES = [
 def fetch_stooq_daily(ticker: str, timeout: int = 15) -> pd.Series:
     """Daily closes from Stooq as a date-indexed Series (oldest first).
 
-    Returns an empty Series on any failure — a validation panel that cannot
-    reach its reference source must say so, never quietly pass.
+    Thin wrapper kept for callers that only want the data; use
+    fetch_reference_daily() when the reason for a failure matters.
+    """
+    return fetch_reference_daily(ticker, timeout)[0]
+
+
+def fetch_reference_daily(ticker: str, timeout: int = 15) -> tuple[pd.Series, str]:
+    """(closes, reason) from the reference feed, trying each mirror in turn.
+
+    The reason string exists because the previous version collapsed every
+    failure mode into an empty Series, which left the panel guessing at the
+    cause -- and guessing wrong: it blamed the host's outbound network on a
+    box where yfinance works fine. HTTP 403, a rate-limit notice, an unknown
+    symbol and a timeout are four different problems with four different
+    fixes, so they are reported as four different strings.
     """
     import requests
 
     sym = ticker.lower().replace("-", ".")   # BRK-B → brk.b
+    reasons = []
+    for host in STOOQ_HOSTS:
+        url = host + STOOQ_PATH.format(sym=sym)
+        try:
+            resp = requests.get(
+                url,
+                timeout=timeout,
+                headers={
+                    # Stooq serves datacenter IPs differently from browsers;
+                    # a real UA and an explicit Accept get through more often.
+                    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                   "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                   "Chrome/124.0.0.0 Safari/537.36"),
+                    "Accept": "text/csv,text/plain,*/*",
+                    "Accept-Language": "en-US,en;q=0.9",
+                },
+            )
+        except Exception as e:
+            reasons.append(f"{host}: {type(e).__name__}")
+            continue
+
+        if resp.status_code != 200:
+            reasons.append(f"{host}: HTTP {resp.status_code}")
+            continue
+
+        text = resp.text or ""
+        head = text.lstrip()
+        if not head.lower().startswith("date,"):
+            # Stooq answers a blocked or throttled request with a plain-text
+            # notice and a 200, so the body is the only signal there is.
+            snippet = " ".join(head.split())[:80] or "empty body"
+            reasons.append(f"{host}: {snippet}")
+            continue
+
+        try:
+            df = pd.read_csv(io.StringIO(text))
+            if df.empty or "Close" not in df.columns:
+                reasons.append(f"{host}: CSV had no Close column")
+                continue
+            out = pd.Series(df["Close"].values,
+                            index=pd.to_datetime(df["Date"]).values,
+                            dtype=float).dropna()
+            if out.empty:
+                reasons.append(f"{host}: CSV had no usable rows")
+                continue
+            return out.sort_index(), "ok"
+        except Exception as e:
+            reasons.append(f"{host}: parse {type(e).__name__}")
+
+    return pd.Series(dtype=float), "; ".join(reasons) or "no response"
+
+
+# ── Self-consistency checks (no external source needed) ────────────────────────
+
+def _pct_over(s: pd.Series, bars: int):
     try:
-        resp = requests.get(
-            STOOQ_CSV.format(sym=sym),
-            timeout=timeout,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; golden-scanner/1.0)"},
-        )
-        resp.raise_for_status()
-        text = resp.text
-        # Stooq answers an unknown/blocked symbol with a plain-text body, not
-        # an HTTP error, so check the CSV header before trusting it.
-        if not text.lstrip().lower().startswith("date,"):
-            return pd.Series(dtype=float)
-        df = pd.read_csv(io.StringIO(text))
-        if df.empty or "Close" not in df.columns:
-            return pd.Series(dtype=float)
-        s = pd.Series(df["Close"].values,
-                      index=pd.to_datetime(df["Date"]).values,
-                      dtype=float).dropna()
-        return s.sort_index()
+        if s is None or len(s) <= bars:
+            return None
+        base = float(s.iloc[-(bars + 1)])
+        return None if base == 0 else (float(s.iloc[-1]) / base - 1) * 100
     except Exception:
-        return pd.Series(dtype=float)
+        return None
+
+
+def self_checks(ours: dict, sectors: list[tuple[str, str]], bench: str = "SPY") -> list[dict]:
+    """Checks that need no second provider, so they run even when the
+    reference feed is unreachable.
+
+    These catch the failure mode that actually bit this app before (see the
+    note in data_loader.py about a NaN SPY bar poisoning every RS figure):
+    a single bad or stale bar in one ticker. Each returns
+    {name, status, detail} with status in {"pass", "warn", "fail"}.
+    """
+    out = []
+    series = {t: _norm_index(s) for t, s in ours.items() if s is not None}
+    series = {t: s for t, s in series.items() if not s.empty}
+
+    if not series:
+        return [{"name": "Price data present", "status": "fail",
+                 "detail": "No price series were loaded at all."}]
+
+    # 1. Every ticker in the table has data.
+    expected = [t for t, _ in sectors] + [bench]
+    missing = [t for t in expected if t not in series]
+    out.append({
+        "name": "All tickers loaded",
+        "status": "pass" if not missing else "fail",
+        "detail": (f"{len(expected)} of {len(expected)} present"
+                   if not missing else f"missing: {', '.join(missing)}"),
+    })
+
+    # 2. Everything is on the same last bar. A ticker lagging the rest is
+    #    stale data, and stale data in a RANKING silently mis-sorts the page.
+    last_dates = {t: s.index.max() for t, s in series.items()}
+    newest = max(last_dates.values())
+    lagging = {t: d for t, d in last_dates.items() if (newest - d).days > 4}
+    out.append({
+        "name": "Bars are in step",
+        "status": "pass" if not lagging else "warn",
+        "detail": (f"all {len(series)} tickers end {pd.Timestamp(newest):%Y-%m-%d}"
+                   if not lagging else
+                   "behind: " + ", ".join(f"{t} ({pd.Timestamp(d):%Y-%m-%d})"
+                                          for t, d in lagging.items())),
+    })
+
+    # 3. The benchmark's return must sit INSIDE the range of the 11 GICS
+    #    sectors. SPY is a weighted average of them, and a weighted average
+    #    cannot fall outside the range of its inputs -- so if it does, either
+    #    SPY's bar or a sector's bar is wrong. No external data required;
+    #    it is an arithmetic identity of the index construction.
+    sec_rets = {t: _pct_over(series[t], 63) for t in GICS_SECTORS if t in series}
+    sec_rets = {t: v for t, v in sec_rets.items() if v is not None}
+    bench_ret = _pct_over(series.get(bench), 63)
+    if len(sec_rets) >= 8 and bench_ret is not None:
+        lo, hi = min(sec_rets.values()), max(sec_rets.values())
+        inside = lo <= bench_ret <= hi
+        out.append({
+            "name": f"{bench} sits inside the sector range",
+            "status": "pass" if inside else "fail",
+            "detail": (f"{bench} {bench_ret:+.1f}% over 3M, sectors span "
+                       f"{lo:+.1f}% to {hi:+.1f}%"
+                       + ("" if inside else
+                          " — impossible for an index against its own components, "
+                          "so one of these bars is wrong")),
+        })
+
+    # 4. No single-session move big enough to mean an unadjusted split.
+    wild = []
+    for t, sr in series.items():
+        try:
+            mx = sr.iloc[-63:].pct_change().abs().max() * 100
+            if mx > 25:
+                wild.append(f"{t} ({mx:.0f}%)")
+        except Exception:
+            continue
+    out.append({
+        "name": "No split-sized jumps",
+        "status": "pass" if not wild else "warn",
+        "detail": ("no single-day move over 25% in the last 63 sessions"
+                   if not wild else
+                   "unusually large jumps: " + ", ".join(wild)
+                   + " — check for an unadjusted split"),
+    })
+
+    # 5. No non-positive or missing closes feeding the maths.
+    bad = [t for t, sr in series.items()
+           if sr.iloc[-63:].isna().any() or (sr.iloc[-63:] <= 0).any()]
+    out.append({
+        "name": "Closes are clean",
+        "status": "pass" if not bad else "fail",
+        "detail": ("no NaN or non-positive closes in the last 63 sessions"
+                   if not bad else "bad closes in: " + ", ".join(bad)),
+    })
+
+    return out
 
 
 def _norm_index(s: pd.Series) -> pd.Series:
@@ -174,20 +332,30 @@ def cross_check(ours: dict, sectors: list[tuple[str, str]],
     names = dict(sectors)
 
     ref: dict[str, pd.Series] = {}
+    reasons: dict[str, str] = {}
     to_fetch = tickers + ([bench] if bench in ours else [])
     for i, t in enumerate(to_fetch):
         if progress_fn:
             progress_fn(i, len(to_fetch), t)
-        ref[t] = _norm_index(fetch_stooq_daily(t))
+        series, why = fetch_reference_daily(t)
+        ref[t] = _norm_index(series)
+        reasons[t] = why
         if pause:
             time.sleep(pause)
 
-    reachable = sum(1 for s in ref.values() if not s.empty)
+    reachable = sum(1 for v in ref.values() if not v.empty)
     if reachable == 0:
+        # Report what the server actually said. The distinct reasons are
+        # usually one or two strings repeated across every ticker, so
+        # deduplicating them gives a short, actionable message instead of
+        # sixteen copies of the same line.
+        distinct = sorted({r for r in reasons.values() if r and r != "ok"})
         return pd.DataFrame(), {
             "status": "unreachable",
-            "message": "Could not reach the reference source (Stooq). "
-                       "No independent confirmation was performed.",
+            "attempted": len(to_fetch),
+            "reasons": distinct,
+            "message": ("Reference feed (Stooq) returned no usable data for any of "
+                        f"{len(to_fetch)} tickers."),
         }
 
     ours_n = {t: _norm_index(s) for t, s in ours.items()}
