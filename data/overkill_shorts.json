@@ -1,8 +1,479 @@
 {
-  "updated": "2026-08-20",
+  "updated": "2026-08-21",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-21",
+      "url": "https://www.youtube.com/shorts/EV0IechRFyE",
+      "title": "HUGE SIGNAL FOR BITCOIN 📈 AUGUST 21",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "BTC",
+          "bias": "Bullish",
+          "notes": "The host asserts that the generational bottom for Bitcoin is confirmed after a monthly buy signal flashed, historically initiating multi-year bull runs lasting around two years.",
+          "price": 34.08
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "url": "https://www.youtube.com/shorts/rQlabZK6Kcw",
+      "title": "The next big market crash (what to expect)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Every bull market inevitably faces a correction driven by a repeatable emotional fear cycle, regardless of whether the catalyst is tariffs, inflation, or crises. This fear-driven selling eventually makes great companies cheaper, allowing buyers to step in and markets to recover.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "url": "https://www.youtube.com/shorts/cAEpnfP760w",
+      "title": "The Market is About to Do Something Insane Next Week…",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "The Cheesecake Factory continues to perform strongly, contributing over $20,000 in daily gains to the host's portfolio.",
+          "price": 113.33
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "Estee Lauder is a high-quality beauty brand undergoing a profit recovery, with base-case projections yielding 11-16% annual returns and strong downside protection.",
+          "price": 101.94
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi continues to rally strongly, and the host sees long-term potential for the stock to reach over $50 per share.",
+          "price": 18.91
+        },
+        {
+          "ticker": "WMT",
+          "bias": "Bearish",
+          "notes": "While Walmart's underlying earnings were solid after accounting for one-off hits, its forward P/E of 37 makes it unappealing compared to faster-growing opportunities.",
+          "price": 103.7
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius offers the best projected return profile in the host's coverage, with base-case annual return expectations deep in the 20% range and potential to invest another $50,000.",
+          "price": 33.36
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Netflix represents easy money given its superior business model and reasonable forward P/E of 22 compared to mega-cap peers.",
+          "price": 79.59
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "American Express has one of the best business models globally and trades at an attractive valuation below 20x forward earnings.",
+          "price": 336.0
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Neutral",
+          "notes": "Nvidia faces exceptionally high earnings expectations and needs significant beats on revenue and guidance to push higher as year-over-year growth slows.",
+          "price": 214.72
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD is projected to grow revenue by 60-65% next year, positioning it to dramatically outperform Nvidia over the next two to three years.",
+          "price": 473.25
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "The Honest Company offers what the host views as the single best risk-reward trade among stocks with market caps under $1 billion.",
+          "price": 5.05
+        }
+      ]
+    },
+    {
+      "date": "2026-08-04",
+      "url": "https://www.youtube.com/shorts/yUncLL8_dD4",
+      "title": "The UNTHINKABLE is About to Happen to Stocks #SOFI #HOOD #PLTR #NVDA",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host is bullish on SoFi long-term, projecting the stock to reach $25 or higher in the first half of 2027. He highlights strong loan demand, high-income borrowers, and record deposit growth while favoring option-selling strategies during sideways movement.",
+          "price": 18.7
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "The host sees a clear path for Robinhood to return to $150 per share, driven by predictable revenue from record Robinhood Gold subscribers, credit card growth, and international expansion.",
+          "price": 93.51
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "The host remains bullish on Palantir, setting a price target of $170 to $180 in the first half of 2027 following a 93% year-over-year revenue increase and a $500 million full-year guidance raise.",
+          "price": 162.66
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host considers Nvidia to be a great value at $208 per share, maintaining a large personal position and trading weekly options ahead of its earnings report.",
+          "price": 211.94
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A high P/E ratio is only one evaluation metric and should not automatically signal that a fast-growing business is overvalued.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "url": "https://www.youtube.com/shorts/fzdK8wZosRs",
+      "title": "US Government is Running Out of People to Borrow Money From",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US government faces a severe budget deficit, spending roughly $7 trillion against $5 trillion in tax collections, driving annual federal debt interest expenses above $1.1 trillion.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Major foreign holders like Japan and China are reducing or selling their US Treasury holdings, creating a supply-demand imbalance that exerts upward pressure on US bond yields.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To cap rising interest rates, the Fed and Treasury are intervening by purchasing hundreds of billions in Treasuries, a debt-monetization strategy likely to reignite inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The third year of a US presidential election cycle has historically been the strongest year for stock market performance by a wide margin.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-03",
+      "url": "https://www.youtube.com/shorts/os1f2r-YD38",
+      "title": "What To Do In Your 40s To Retire Wealthy In Your 50s",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Establish a minimum emergency fund of $2,000 as quickly as possible to prevent going into credit card debt when unexpected expenses occur.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Pay off high-interest debt like credit cards and payday loans immediately to avoid compounding interest costs that severely drain personal wealth.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Follow the 75/15/10 budget rule by spending a maximum of 75% of income, investing at least 15%, and saving at least 10% using automated transfers to separate bank accounts.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Avoid financing consumer items like phones or cars with monthly payments or 0% APR offers, choosing instead to pay cash outright so cash flow can be put toward investments.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Protect accumulated wealth by establishing legal entities like LLCs, maintaining proper insurance coverage, and creating an estate plan with a trust or will.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-21",
+      "url": "https://www.youtube.com/shorts/L-mTrFOD57M",
+      "title": "To Live Off Dividends.. You Must Understand This (SCHD vs. JEPI)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "SCHD offers a 3.5% current yield with an average 10% annual dividend growth rate, projecting a yield on cost of roughly 9% after 10 years, making it a strong long-term income producer.",
+          "price": 32.82
+        },
+        {
+          "ticker": "JEPI",
+          "bias": "Neutral",
+          "notes": "JEPI yields roughly 8% today through option premiums, but provides minimal dividend growth over time, making it best suited for investors needing immediate income rather than long-term growth.",
+          "price": 56.62
+        },
+        {
+          "ticker": "T",
+          "bias": "Neutral",
+          "notes": "AT&T offers a 4% current yield with roughly 3% annual dividend growth, reaching an estimated 5.4% yield on cost after 10 years as a middle ground between high yield and high growth.",
+          "price": 22.26
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should evaluate dividend assets by both current yield and expected dividend growth, balancing immediate cash flow needs against future yield on cost.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-13",
+      "url": "https://www.youtube.com/shorts/wWYVt59SYLY",
+      "title": "I rank the BEST Stocks You Should Buy Right Now‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Ranked 7/10 as a respectable buy following its pullback to the $120-$130 range from $200+. Its two-year forward P/E is now in the 30s to 40s alongside 70%+ expected revenue growth and triple-digit EPS growth.",
+          "price": 130.04
+        },
+        {
+          "ticker": "AAPL",
+          "bias": "Neutral",
+          "notes": "Ranked 5/10 due to an elevated forward P/E of 35 despite modest 13% projected revenue and EPS growth. Its massive ecosystem and iPhone dominance make it an ultimate safety play, but valuation limits upside.",
+          "price": 317.31
+        },
+        {
+          "ticker": "MSFT",
+          "bias": "Bullish",
+          "notes": "Ranked 6/10 with a better risk/reward profile than Apple due to stronger expected revenue growth and a lower P/E. It stands to be a major beneficiary of AI trends.",
+          "price": 390.99
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Neutral",
+          "notes": "Ranked 5/10 because a weak balance sheet and recent S&P downgrade to BBB- keep him on the sidelines despite a solid business model.",
+          "price": 131.54
+        },
+        {
+          "ticker": "SHOP",
+          "bias": "Bullish",
+          "notes": "Ranked 7/10 as an underrated tech company with 30%+ projected revenue growth. Its two-year forward P/E sits in the 30s as management prioritizes top-line expansion.",
+          "price": 124.74
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Ranked 9/10 as a core long-term holding trading attractively at a forward P/E in the 20s. AWS and e-commerce should drive exponential earnings growth for decades toward a potential $10T market cap.",
+          "price": 247.31
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Ranked 9/10 trading at a forward P/E under 20 with near 30% revenue growth. The stock has potential to reach $1,000+ once questions around heavy CapEx spending are resolved.",
+          "price": 656.73
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "Ranked 8.5/10 as one of the best-positioned SaaS plays to thrive in the AI era. It trades around a 30 forward P/E with expected 20s revenue growth and faster EPS expansion.",
+          "price": 111.26
+        },
+        {
+          "ticker": "UBER",
+          "bias": "Bearish",
+          "notes": "Ranked 3/10 due to severe long-term disruption risks from autonomous robotaxi fleets (Tesla, Waymo, Zoox). Expects its valuation multiple to compress significantly over the next five years.",
+          "price": 74.26
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "Ranked 8.5/10 after a 32% year-to-date drop, trading at a low-teens forward P/E and a 9-10 two-year forward P/E. It is well-positioned to thrive in the AI era with double-digit revenue growth.",
+          "price": 171.22
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Ranked 9/10 as a strong buy trading at a forward P/E of 20 and a two-year forward P/E of 15. It maintains unmatched competitive dominance in streaming with strong double-digit earnings growth.",
+          "price": 73.83
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Ranked 6.5/10 with a 24 forward P/E, though analyst expectations for revenue growth may be slightly too optimistic compared to peers like Meta and Amazon.",
+          "price": 352.51
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Ranked 7.5/10 with upside toward a long-term $1.5T to $2T market cap. The current chip boom cycle still has several years left before any cyclical slowdown.",
+          "price": 534.39
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Ranked 8.5/10 as a high-conviction buy putting up 30%+ revenue growth. It has long-term potential to expand from a $20B valuation into a $100B+ generational financial giant.",
+          "price": 18.13
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Ranked 8/10 trading at the lowest end of fair value at a 20 forward P/E. Growth will be supported by expanding concepts like Flower Child and North Italia alongside consistent dividends.",
+          "price": 81.95
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Ranked 9.5/10 with a price target of $100+ over the next three years. Growth is expected to accelerate through international expansion, Alani Nu growth, and reviving the Rockstar brand.",
+          "price": 29.83
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Ranked 9.5/10 as a top growth pick poised for 15-25% annual top-line growth. Margins and EPS are expected to expand significantly over the next two years as recent cost headwinds reverse.",
+          "price": 75.1
+        },
+        {
+          "ticker": "TSLA",
+          "bias": "Bearish",
+          "notes": "Ranked 3/10 due to stalled revenue growth (2% trailing), declining EPS, and high valuation multiples. Robotaxi deployments are lagging competitors and home humanoid robots remain decades away from mass adoption.",
+          "price": 394.76
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should maintain a balanced portfolio across growth, value, and dividend stocks (GVD) and consistently listen to quarterly conference calls for fundamental understanding.",
+          "price": null
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Neutral",
+          "notes": "Ranked 5/10 because it is best purchased during broader market panics rather than when major stock indices are sitting near all-time highs.",
+          "price": 109.86
+        },
+        {
+          "ticker": "FUBO",
+          "bias": "Bullish",
+          "notes": "Ranked 6/10 as the removal of its former CEO and increased control by Disney leadership could catalyze strong performance over the next 1-2 years.",
+          "price": 9.83
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Ranked 8/10 as a high-conviction small-cap pick up 47% year-to-date. Expected to exit the year trading with a $5 share price or higher.",
+          "price": 3.9
+        },
+        {
+          "ticker": "TTD",
+          "bias": "Bullish",
+          "notes": "Ranked 6/10 as an attractively valued business transitioning from hyper-growth to a steady-growth value investment profile.",
+          "price": 19.79
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "Ranked 8/10 as a very strong buy trading around the $80-$81 range.",
+          "price": 81.15
+        },
+        {
+          "ticker": "PYPL",
+          "bias": "Bullish",
+          "notes": "Ranked 7/10 as a solid value play trading at single-digit P/E multiples, supported by reliable cash flow despite slow top-line and user growth.",
+          "price": 47.65
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "Ranked 8/10 due to its highly defensive membership model and consistent earnings power trading at a fair valuation.",
+          "price": 354.43
+        },
+        {
+          "ticker": "BBWI",
+          "bias": "Bullish",
+          "notes": "Ranked 7.5/10 based on its low valuation multiple, steady retail business model, and dividend payout.",
+          "price": 20.42
+        },
+        {
+          "ticker": "NKE",
+          "bias": "Bullish",
+          "notes": "Ranked 10/10 as a once-in-a-decade generational buying opportunity trading in the low $40s.",
+          "price": 43.76
+        },
+        {
+          "ticker": "HIMS",
+          "bias": "Neutral",
+          "notes": "Ranked 5/10 due to uncertainty over whether the company will emerge as a dominant healthcare disruptor or be disrupted itself.",
+          "price": 34.38
+        },
+        {
+          "ticker": "WHR",
+          "bias": "Bullish",
+          "notes": "Ranked 7/10 trading near Great Financial Crisis lows around $39 per share due to housing market stagnation, though appliance manufacturing presents sector-specific headwinds.",
+          "price": 38.85
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Ranked 7.5/10 as a solid luxury brand and operator, though broader upside is capped by the cyclical nature of the furniture retail industry.",
+          "price": 161.82
+        }
+      ]
+    },
+    {
+      "date": "2026-08-02",
+      "url": "https://www.youtube.com/shorts/E5eKpDWhyJQ",
+      "title": "How I Sell Covered Calls to Generate Monthly Income (2026 & 2027 Guide)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "MCD",
+          "bias": "Bullish",
+          "notes": "McDonald's is viewed as undervalued with strong support established between $264 and $270 and a low P/E ratio of 21. The host is running a low-volatility covered call strategy by holding shares and selling the $280 strike call for September to capture income and upside.",
+          "price": 265.23
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "The host remains bullish on Meta due to its improving advertising business and is utilizing a medium-volatility covered call setup into earnings. He is selling the September $650 strike call to harvest elevated implied volatility while maintaining room for capital appreciation.",
+          "price": 590.24
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Holding since its IPO, the host likes Palantir as a high implied volatility holding to sell far out-of-the-money covered calls at strikes like $150 to $165. This allows collecting substantial premium with low deltas around 0.20 while reducing assignment risk.",
+          "price": 125.65
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When selling covered calls, implied volatility dictates strike selection: low IV stocks require higher deltas (around 40) closer to the money to generate sufficient yield, while high IV stocks allow selling much further out-of-the-money (around 20 delta) while still collecting attractive premiums.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-07-25",
       "url": "https://www.youtube.com/shorts/vSCkjvE-VIo",

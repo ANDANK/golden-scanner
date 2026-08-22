@@ -1,33 +1,6 @@
 {
-  "checked": "2026-08-20",
+  "checked": "2026-08-21",
   "pending": [
-    {
-      "video_id": "yUncLL8_dD4",
-      "title": "The UNTHINKABLE is About to Happen to Stocks #SOFI #HOOD #PLTR #NVDA",
-      "date": "2026-08-04",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/yUncLL8_dD4"
-    },
-    {
-      "video_id": "os1f2r-YD38",
-      "title": "What To Do In Your 40s To Retire Wealthy In Your 50s",
-      "date": "2026-08-03",
-      "channel": "@MinorityMindset",
-      "channel_name": "Minority Mindset",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/os1f2r-YD38"
-    },
-    {
-      "video_id": "E5eKpDWhyJQ",
-      "title": "How I Sell Covered Calls to Generate Monthly Income (2026 & 2027 Guide)",
-      "date": "2026-08-02",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/E5eKpDWhyJQ"
-    },
     {
       "video_id": "we4_uFY5PfQ",
       "title": "How the Fastest Growing Hedge Fund in the World Just Lost Everything (Leopold Aschenbrenner)",
@@ -162,15 +135,6 @@
       "channel_name": "Minority Mindset",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/d43N3V_NoVk"
-    },
-    {
-      "video_id": "L-mTrFOD57M",
-      "title": "To Live Off Dividends.. You Must Understand This (SCHD vs. JEPI)",
-      "date": "2026-07-21",
-      "channel": "@NolanGouveia",
-      "channel_name": "Nolan Gouveia",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/L-mTrFOD57M"
     },
     {
       "video_id": "_Iih8RG5UTo",
@@ -308,15 +272,6 @@
       "url": "https://www.youtube.com/shorts/H44O0imIqto"
     },
     {
-      "video_id": "wWYVt59SYLY",
-      "title": "I rank the BEST Stocks You Should Buy Right Now‼️",
-      "date": "2026-07-13",
-      "channel": "@FinancialEducation",
-      "channel_name": "Financial Ed",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/wWYVt59SYLY"
-    },
-    {
       "video_id": "xxKl1i7iD88",
       "title": "The Stock Market's Midterm Election Pattern: 98 Years of Data",
       "date": "2026-07-13",
@@ -443,15 +398,6 @@
       "url": "https://www.youtube.com/shorts/meesr2gDINA"
     },
     {
-      "video_id": "iGgOk2tZ3xE",
-      "title": "The Real Reason Your Portfolio Isn't Growing Faster",
-      "date": "2026-07-04",
-      "channel": "@NolanGouveia",
-      "channel_name": "Nolan Gouveia",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/iGgOk2tZ3xE"
-    },
-    {
       "video_id": "yMxyaLwDZvg",
       "title": "How much CASH I’m sitting on right now",
       "date": "2026-07-02",
@@ -542,15 +488,6 @@
       "url": "https://www.youtube.com/shorts/fyl1_MclCOU"
     },
     {
-      "video_id": "Gy3fzD0h4Ns",
-      "title": "I just bought my next GREAT STOCK‼️(NEW STOCK BUY)",
-      "date": "2026-06-18",
-      "channel": "@FinancialEducation",
-      "channel_name": "Financial Ed",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/Gy3fzD0h4Ns"
-    },
-    {
       "video_id": "CvQbW19GxWQ",
       "title": "The Fed Quietly Abandoned the 2% Inflation Target",
       "date": "2026-06-18",
@@ -596,21 +533,12 @@
       "url": "https://www.youtube.com/shorts/iJGMYvFnH9Y"
     },
     {
-      "video_id": "BSlpQ4CrsVI",
-      "title": "Oil Crisis Warning — Here's What Happens Next",
-      "date": "2026-06-01",
-      "channel": "@ClearValueTax",
-      "channel_name": "ClearValue Tax",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/BSlpQ4CrsVI"
-    },
-    {
       "video_id": "w-S6OnQ-3lA",
       "title": "Good Afternoon.",
       "date": "2026-05-01",
       "channel": "@InTheMoneyAdam",
       "channel_name": "In The Money",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
     },
     {
