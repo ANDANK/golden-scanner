@@ -1,0 +1,79 @@
+name: Sector Rotation Snapshot
+
+# One snapshot per trading day, taken AFTER the close so every point in the
+# series is a settled bar. Snapshots taken during market hours would record
+# a still-forming bar and the day-to-day series would measure the clock as
+# much as the market.
+
+on:
+  schedule:
+    # ── EDT (summer, Mar–Nov): UTC-4 ─────────────────────────────
+    # 4:45 PM ET = 20:45 UTC — 15 min after the close, enough for the
+    # final print to settle on the data provider.
+    - cron: "45 20 * * 1-5"
+    # ── EST (winter, Nov–Mar): UTC-5 ─────────────────────────────
+    # 4:45 PM ET = 21:45 UTC  ← swap these two in November
+    # - cron: "45 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Snapshot even if the last bar is still forming"
+        required: false
+        default: "0"
+        type: choice
+        options: ["0", "1"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sector-rotation-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    name: Snapshot sector rotation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          # Install everything from requirements.txt except streamlit (mocked in headless mode)
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+
+      - name: Write snapshot
+        env:
+          SECTOR_SNAPSHOT_FORCE: ${{ github.event.inputs.force || '0' }}
+        run: python scripts/headless_sector_rotation.py
+
+      - name: Commit snapshot
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/sector_rotation
+          if git diff --cached --quiet; then
+            echo "Nothing to commit — market holiday, or the bar was still live."
+          else
+            git commit -m "Sector rotation snapshot $(date -u +'%Y-%m-%d %H:%M UTC')"
+
+            # Pull anything committed since checkout (the scan workflows also
+            # push to main). -X ours keeps THIS run's snapshot on conflict.
+            if git pull --rebase -X ours origin main; then
+              git push origin main
+            else
+              echo "Rebase conflict could not be auto-resolved; force-pushing snapshot."
+              git rebase --abort
+              git push --force-with-lease origin main
+            fi
+          fi
