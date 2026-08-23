@@ -78,6 +78,48 @@ VERDICTS = {
 }
 
 
+# Why each verdict lands in its bucket, phrased as the decision itself. The
+# longer VERDICTS text explains the state; this explains the ACTION.
+WHY = {
+    "Emerging":     "BUY — money is moving in before the ranking shows it",
+    "Accelerating": "BUY — trend is intact and still speeding up",
+    "Leading":      "HOLD — already ahead and staying there",
+    "Improving":    "WATCH — gaining on the market, peers gaining faster",
+    "Cooling":      "WAIT — slipping vs the market, rank has not caught up",
+    "Fading":       "TRIM — leadership is rolling over while the price is still good",
+    "Falling":      "AVOID — weak and getting weaker",
+    "Flat":         "IGNORE — no edge either way",
+}
+
+# Which way a row is drifting, i.e. what it is likely to become next. This is
+# the whole answer to "it says HOLD, but is it on its way up or down?" -- a
+# bucket label alone cannot say, and the middle bucket is where that matters
+# most because it contains both a leader coasting and one quietly rolling over.
+DRIFTS = {
+    "Strengthening": ("↗", "green", "getting stronger — on track to become a buy"),
+    "Steady":        ("→", "muted", "holding its pace — no change expected"),
+    "Weakening":     ("↘", "red",   "losing steam — on track to become a sell"),
+}
+
+
+def _drift(fast_pct: float, slow_pct: float) -> str:
+    """Is the recent fortnight running hotter or cooler than the month?
+
+    Both figures are clean relative returns but over different lengths, so
+    they are compared as PER-SESSION rates -- 4% over 21 sessions is a slower
+    pace than 3% over 10, and comparing the totals would get that backwards.
+    """
+    if fast_pct <= -MOM_MIN:
+        return "Weakening"
+    fast_rate = fast_pct / FAST_WINDOW
+    slow_rate = slow_pct / MOM_WINDOW
+    if fast_pct >= MOM_MIN and fast_rate >= slow_rate:
+        return "Strengthening"
+    if fast_rate < slow_rate:
+        return "Weakening" if fast_pct < 0 else "Steady"
+    return "Steady"
+
+
 def _slope_pct_per_week(values: np.ndarray) -> float:
     """Least-squares slope of an RS series, as % of its own mean per week.
 
@@ -239,6 +281,8 @@ def build_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None =
             verdict = "Leading" if top else "Flat"
 
         bucket, colour, icon, meaning = VERDICTS[verdict]
+        drift = _drift(mom_fast, rs_mom)
+        d_icon, d_colour, d_note = DRIFTS[drift]
 
         rows.append({
             "Ticker":     ticker,
@@ -254,6 +298,11 @@ def build_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None =
             "RS Pctile":  round(pctile, 0),
             "1M Price %": round(ret_1m, 1),
             "Trajectory": verdict,
+            "Why":        WHY[verdict],
+            "Heading":    drift,
+            "HeadIcon":   d_icon,
+            "HeadColour": d_colour,
+            "HeadNote":   d_note,
             "Bucket":     bucket,
             "Colour":     colour,
             "Icon":       icon,
@@ -372,14 +421,18 @@ def render_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None 
     # ── Three buckets ───────────────────────────────────────────────
     buckets = [
         ("in",   "💰 MONEY MOVING IN — buy candidates", G,
-         "Relative strength climbing. The top of this list is the earliest signal "
-         "on the page — and the least confirmed."),
+         "<b>Why buy:</b> these are beating the market right now and gaining "
+         "places. You are getting in while the ranking still looks unremarkable, "
+         "which is where the good prices are — and where the least confirmation is."),
         ("hold", "👑 LEADING / WATCH — hold what you have", GL,
-         "Already ahead and holding (👑), or gaining on the market while peers "
-         "gain faster (📈). Fine to hold; a late place to start."),
+         "<b>Why hold:</b> ahead of the market, but either already at the top "
+         "(late to start a new position) or still behind its peers. Check the "
+         "<b>↗ ↘ arrow</b> on each row — that says whether it is on its way to "
+         "becoming a buy or a sell."),
         ("out",  "🚪 MONEY MOVING OUT — trim / avoid", R,
-         "Losing ground to the market. 'Fading' still ranks high, which is exactly "
-         "when trimming is easy and feels wrong."),
+         "<b>Why sell:</b> losing ground to the market. ⚠️ Fading still ranks "
+         "high and still feels fine to own — that is exactly why it is the good "
+         "moment to trim, rather than after the rank drops."),
     ]
 
     cols = st.columns(3)
@@ -418,9 +471,16 @@ def render_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None 
                     f'<span style="color:{TEXT_MUTED};font-size:10px">{r["Sector"]}</span></span>'
                     f'<span style="color:{c};font-size:10px;font-weight:700">'
                     f'{r["Icon"]} {r["Trajectory"]}</span></div>'
+                    f'<div style="color:{COL.get(r["HeadColour"], TEXT_MUTED)};'
+                    f'font-size:10px;font-weight:700;margin-top:2px">'
+                    f'{r["HeadIcon"]} {r["Heading"]} — {r["HeadNote"]}</div>'
+                    f'<div style="color:{TEXT_PRIMARY};font-size:10px;margin-top:2px">'
+                    f'{r["Why"]}</div>'
                     f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:3px;'
                     f'line-height:1.6">'
-                    f'RS momentum <b style="color:{c}">{r["RS Mom %"]:+.1f}%</b> · '
+                    f'vs SPY <b style="color:{c}">{r["RS Mom %"]:+.1f}%</b> 1M / '
+                    f'<b style="color:{G if r["Fast Mom %"] >= 0 else R}">'
+                    f'{r["Fast Mom %"]:+.1f}%</b> 2W · '
                     f'rank <b style="color:{TEXT_PRIMARY}">#{r["Rank"]}</b> '
                     f'<b style="color:{a_col}">{arrow}</b> · '
                     f'price <b style="color:{G if r["1M Price %"] >= 0 else R}">'
@@ -431,12 +491,108 @@ def render_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None 
                     unsafe_allow_html=True,
                 )
 
+    # ── The three reference tables ──────────────────────────────────
+    # Put on the page rather than left in chat: this is the part that gets
+    # re-read every week, and a rule you have to go looking for is a rule you
+    # stop applying. <details> rather than st.expander because this renders
+    # inside one already and Streamlit will not nest them.
+    _TT = (f'background:{BG_PANEL};color:{TEXT_MUTED};font-size:9px;font-weight:700;'
+           f'text-transform:uppercase;letter-spacing:0.6px;padding:6px 9px;'
+           f'border-bottom:2px solid {GL}44;text-align:left;white-space:nowrap')
+    _TD = f'padding:6px 9px;font-size:11px;border-bottom:1px solid {BORDER_COLOR}'
+
+    label_rows = "".join(
+        f'<tr>'
+        f'<td style="{_TD};white-space:nowrap;color:{COL.get(VERDICTS[v][1], TEXT_MUTED)};'
+        f'font-weight:700">{VERDICTS[v][2]} {v}</td>'
+        f'<td style="{_TD};color:{TEXT_MUTED}">{VERDICTS[v][3]}</td>'
+        f'<td style="{_TD};color:{TEXT_PRIMARY};font-weight:700;white-space:nowrap">'
+        f'{WHY[v].split(" — ")[0]}</td>'
+        f'</tr>'
+        for v in ("Emerging", "Accelerating", "Leading", "Improving",
+                  "Flat", "Cooling", "Fading", "Falling")
+    )
+
+    check_rows = "".join(
+        f'<tr><td style="{_TD};color:{TEXT_PRIMARY}">{q}</td>'
+        f'<td style="{_TD};color:{GL};font-weight:700;white-space:nowrap">{colname}</td>'
+        f'<td style="{_TD};color:{G};white-space:nowrap">{ok}</td>'
+        f'<td style="{_TD};color:{R};white-space:nowrap">{no}</td></tr>'
+        for q, colname, ok, no in [
+            ("Is the climb real?", "Steady",
+             f"{int(MOM_WINDOW * 0.6)} or more of {MOM_WINDOW}",
+             f"under {int(MOM_WINDOW * 0.45)} of {MOM_WINDOW}"),
+            ("Am I early or late?", "RS Range", "under 40%", "over 80% = late"),
+            ("Is it still working?", "Heading / Δ10", "↗ or → , Δ10 green", "↘ , Δ10 red"),
+        ]
+    )
+
+    step_rows = "".join(
+        f'<tr><td style="{_TD};color:{GL};font-weight:700;width:28px">{i}</td>'
+        f'<td style="{_TD};color:{TEXT_PRIMARY}">{t}</td></tr>'
+        for i, t in enumerate([
+            "Open the green <b>MONEY MOVING IN</b> column",
+            f"Skip anything with <b>Steady</b> under {int(MOM_WINDOW * 0.45)}/{MOM_WINDOW}",
+            "Skip anything with <b>RS Range</b> over 80% — the move is mostly done",
+            "Buy what is left. 🌱 Emerging first, 🚀 Accelerating if you want safer",
+            "Check <b>LEADING / WATCH</b>. ↗ means add on weakness, ↘ means get ready to exit",
+            "Anything you own showing ⚠️ Fading in the red column — trim it",
+            "Repeat weekly, not daily. These labels are built to hold for weeks",
+        ], start=1)
+    )
+
+    st.markdown(
+        f'<details style="background:{BG_PANEL};border:1px solid {GL}33;border-radius:8px;'
+        f'padding:8px 12px;margin:14px 0 4px" open>'
+        f'<summary style="color:{GL};font-size:11px;font-weight:700;cursor:pointer;'
+        f'text-transform:uppercase;letter-spacing:0.7px">'
+        f'🧾 Buy / hold / sell — the whole rulebook</summary>'
+
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin:10px 0 4px;'
+        f'text-transform:uppercase;letter-spacing:0.6px;font-weight:700">'
+        f'1 · What each label means, and what to do</div>'
+        f'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;'
+        f'font-family:Inter,sans-serif">'
+        f'<thead><tr><th style="{_TT}">You see</th><th style="{_TT}">What it means</th>'
+        f'<th style="{_TT}">Your move</th></tr></thead>'
+        f'<tbody>{label_rows}</tbody></table></div>'
+
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin:14px 0 4px;'
+        f'text-transform:uppercase;letter-spacing:0.6px;font-weight:700">'
+        f'2 · Three checks before you act</div>'
+        f'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;'
+        f'font-family:Inter,sans-serif">'
+        f'<thead><tr><th style="{_TT}">Question</th><th style="{_TT}">Column</th>'
+        f'<th style="{_TT}">Go ✅</th><th style="{_TT}">Stop ❌</th></tr></thead>'
+        f'<tbody>{check_rows}</tbody></table></div>'
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:6px;line-height:1.6">'
+        f'<b style="color:{TEXT_PRIMARY}">Steady matters most.</b> '
+        f'14/20 means it beat the market on 14 of the last 20 days — a real trend. '
+        f'9/20 with the same headline number is one big day and a lot of noise.</div>'
+
+        f'<div style="color:{TEXT_MUTED};font-size:10px;margin:14px 0 4px;'
+        f'text-transform:uppercase;letter-spacing:0.6px;font-weight:700">'
+        f'3 · The weekly routine</div>'
+        f'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;'
+        f'font-family:Inter,sans-serif"><tbody>{step_rows}</tbody></table></div>'
+
+        f'<div style="background:{R}12;border-left:3px solid {R};padding:7px 11px;'
+        f'border-radius:0 6px 6px 0;margin-top:12px;color:{TEXT_PRIMARY};font-size:11px;'
+        f'line-height:1.7">'
+        f'<b>Two things that will feel wrong.</b> ⚠️ Fading always looks fine to keep '
+        f'— it still ranks high, which is the point: that is when you get a good exit '
+        f'price. And 🌱 Emerging is early, which sometimes means early <i>and wrong</i>; '
+        f'treat it as a shortlist to look into, not a guarantee.</div>'
+        f'</details>',
+        unsafe_allow_html=True,
+    )
+
     # ── Full trajectory table ───────────────────────────────────────
     _TH = (f'background:{BG_PANEL};color:{TEXT_MUTED};font-size:9px;font-weight:700;'
            f'text-transform:uppercase;letter-spacing:0.7px;padding:7px 10px;'
            f'border-bottom:2px solid {GL}44;white-space:nowrap;text-align:left')
-    cols_t = ["Sector", "Trajectory", "vs SPY 1M", "vs SPY 2W", "Rank", "Δ20", "Δ10",
-              "Steady", "RS Range", "1M Price"]
+    cols_t = ["Sector", "Trajectory", "Heading", "vs SPY 1M", "vs SPY 2W", "Rank",
+              "Δ20", "Δ10", "Steady", "RS Range", "1M Price"]
     head = "".join(f'<th style="{_TH}">{c}</th>' for c in cols_t)
 
     body = ""
@@ -498,6 +654,12 @@ def render_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None 
         f'places gained (▲) or lost (▼) over 20 and 10 sessions. A low rank with a big ▲ '
         f'is the early-entry case; Δ10 turning negative while Δ20 is positive is the first '
         f'sign a climb is stalling.<br>'
+        f'· <b style="color:{TEXT_PRIMARY}">Heading</b> — which way the row is drifting, '
+        f'from comparing the 2W pace against the 1M pace. <b>↗</b> means the recent '
+        f'fortnight is running hotter than the month, so it is on its way to becoming a '
+        f'buy; <b>↘</b> means it is cooling toward a sell; <b>→</b> means no change '
+        f'expected. This is the column to read on anything in LEADING / WATCH, where the '
+        f'label alone cannot tell a leader coasting from one quietly rolling over.<br>'
         f'· <b style="color:{TEXT_PRIMARY}">Steady</b> — of the last {MOM_WINDOW} sessions, '
         f'how many actually rose. <b>The trust column.</b> 14/20 is a real trend; 10/20 with '
         f'the same momentum is one big day and a lot of noise.<br>'
