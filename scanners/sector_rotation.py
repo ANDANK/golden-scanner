@@ -24,6 +24,7 @@ companion modules exist so that movement can be judged rather than guessed at:
 
 from __future__ import annotations
 
+import html as _html
 import numpy as np
 import pandas as pd
 import pytz
@@ -1104,13 +1105,30 @@ def _render_validation_panel(df: pd.DataFrame, key_prefix: str = "sr"):
                 f'{vsum.get("message", "")}'
                 + (('<div style="margin-top:6px;color:' + TEXT_PRIMARY
                     + ';font-family:\'DM Mono\',monospace;font-size:10px">'
-                    + "<br>".join(w for w in why[:4]) + '</div>') if why else '')
-                + f'<div style="margin-top:6px">Stooq rate-limits and blocks datacenter '
-                  f'IP ranges, which is what this app runs on — so this usually means '
-                  f'<b>Stooq refused us</b>, not that the host has no outbound network '
-                  f'(the price feed on this same page works). '
-                  f'The self-checks above are unaffected, and the published references '
-                  f'below still apply.</div>'
+                    # ESCAPE. These strings are server-controlled response
+                    # bodies, and this block renders with unsafe_allow_html.
+                    # Unescaped, an HTML block page renders as markup instead
+                    # of text: the diagnostic came out blank and an unclosed
+                    # tag swallowed the reason after it.
+                    + "<br>".join(_html.escape(str(w)) for w in why[:4])
+                    + '</div>') if why else '')
+                + (f'<div style="margin-top:6px">Stooq blocks datacenter IP ranges, '
+                   f'which is what this app runs on — so this means <b>Stooq refused '
+                   f'us</b>, not that the host lacks outbound network (the price feed '
+                   f'on this same page works). '
+                   f'To turn the cross-check on, add a free '
+                   f'<a href="https://www.tiingo.com/" target="_blank" '
+                   f'style="color:{GL}">Tiingo</a> key to the app\'s secrets as '
+                   f'<code style="color:{TEXT_PRIMARY}">[reference]</code> '
+                   f'<code style="color:{TEXT_PRIMARY}">tiingo = "..."</code> — it '
+                   f'serves datacenter IPs and is dividend-adjusted like our own '
+                   f'data.</div>'
+                   if not vsum.get("keyed") else
+                   f'<div style="margin-top:6px">A Tiingo key <b>is</b> configured, so '
+                   f'this is a key or quota problem rather than a blocked host — check '
+                   f'the value and the daily request limit.</div>')
+                + f'<div style="margin-top:6px">The self-checks above are unaffected, '
+                  f'and the published references below still apply.</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -1124,8 +1142,9 @@ def _render_validation_panel(df: pd.DataFrame, key_prefix: str = "sr"):
                 f'padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:12px;font-size:12px">'
                 f'<b style="color:{hdr_col}">'
                 f'{"✓ Leaderboard confirmed" if ok else "⚠️ Leaderboard disagrees"}</b>'
-                f'<span style="color:{TEXT_MUTED}"> — rank correlation with the independent '
-                f'feed is <b style="color:{TEXT_PRIMARY}">{corr_txt}</b> '
+                f'<span style="color:{TEXT_MUTED}"> — rank correlation with '
+                f'<b style="color:{TEXT_PRIMARY}">{vsum.get("source", "the reference feed")}</b> '
+                f'is <b style="color:{TEXT_PRIMARY}">{corr_txt}</b> '
                 f'(need ≥ {RANK_CORR_MIN}); '
                 f'{vsum.get("top3_overlap", 0)}/3 of the top three match; '
                 f'{vsum.get("confirmed", 0)}/{vsum.get("checked", 0)} rows agree on price '
@@ -1172,11 +1191,15 @@ def _render_validation_panel(df: pd.DataFrame, key_prefix: str = "sr"):
                 f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
                 f'<thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
                 f'<div style="color:{TEXT_MUTED};font-size:10px;margin:6px 0 16px;line-height:1.6">'
-                f'Our closes are dividend-adjusted; the reference feed\'s are not — so our '
-                f'3-month return reading <b>slightly higher</b> (about a quarter\'s yield, '
-                f'more on XLU / XLP / XLRE) is agreement, not drift. '
+                + ('Both feeds are dividend-adjusted here, so the 3-month returns should '
+                   'line up closely and a gap is a real difference. '
+                   if vsum.get("div_adjusted") else
+                   'Our closes are dividend-adjusted; this reference feed\'s are not — so '
+                   'our 3-month return reading <b>slightly higher</b> (about a quarter\'s '
+                   'yield, more on XLU / XLP / XLRE) is agreement, not drift. ')
+                + f'''<b style="color:{TEXT_PRIMARY}">Δ Price %</b> is the check that should be '
                 f'<b style="color:{TEXT_PRIMARY}">Δ Price %</b> is the check that should be '
-                f'near zero: it compares the same close on the same date.</div>',
+                f'near zero: it compares the same close on the same date.</div>''',
                 unsafe_allow_html=True,
             )
 

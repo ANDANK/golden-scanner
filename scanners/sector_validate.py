@@ -119,13 +119,119 @@ def fetch_stooq_daily(ticker: str, timeout: int = 15) -> pd.Series:
     """Daily closes from Stooq as a date-indexed Series (oldest first).
 
     Thin wrapper kept for callers that only want the data; use
-    fetch_reference_daily() when the reason for a failure matters.
+    fetch_reference_daily() when the reason or the provider matters.
     """
     return fetch_reference_daily(ticker, timeout)[0]
 
 
-def fetch_reference_daily(ticker: str, timeout: int = 15) -> tuple[pd.Series, str]:
-    """(closes, reason) from the reference feed, trying each mirror in turn.
+def _describe_body(body: str) -> str:
+    """One-line description of a non-CSV response body.
+
+    An HTML block page is summarised rather than quoted: 80 characters of
+    markup tells the reader nothing, and (before this) it was being injected
+    into the panel unescaped, so the browser rendered the tags and the
+    diagnostic came out BLANK — the evidence hid itself. Any text returned
+    from here is escaped again at the render site.
+    """
+    if not body:
+        return "empty body"
+    low = body[:400].lower()
+    if low.startswith("<") or "<html" in low or "<!doctype" in low:
+        title = ""
+        if "<title" in low:
+            try:
+                seg = body[low.index("<title"):]
+                seg = seg[seg.index(">") + 1: seg.lower().index("</title>")]
+                title = " ".join(seg.split())[:60]
+            except Exception:
+                title = ""
+        return (f"HTML page ({len(body)} bytes)"
+                + (f' — "{title}"' if title else "")
+                + " — a block or challenge page, not CSV")
+    return " ".join(body.split())[:100]
+
+
+def reference_key(name: str = "tiingo") -> str:
+    """API key for a keyed reference provider, from Streamlit secrets or env.
+
+    Stooq needs no key but blocks datacenter IPs, which is exactly where this
+    app runs — so on Streamlit Cloud the free, keyless path is the one that
+    does not work. A key turns the cross-check back on; without one nothing
+    breaks, the panel just falls back to Stooq and says so.
+
+    Set either:
+        .streamlit/secrets.toml →  [reference]
+                                   tiingo = "your-key"
+        environment            →  TIINGO_API_KEY=your-key
+    """
+    try:
+        import streamlit as st
+        sec = st.secrets.get("reference", {})
+        val = sec.get(name) if hasattr(sec, "get") else None
+        if val:
+            return str(val).strip()
+    except Exception:
+        pass
+    import os
+    return os.environ.get(f"{name.upper()}_API_KEY", "").strip()
+
+
+def fetch_tiingo_daily(ticker: str, key: str, timeout: int = 15) -> tuple[pd.Series, str]:
+    """(closes, reason) from Tiingo's daily endpoint.
+
+    Uses adjClose, which is split AND dividend adjusted — the same basis as
+    data_loader's auto_adjust=True. So unlike Stooq there is no dividend gap
+    to allow for, and a difference here is a real difference.
+    """
+    import requests
+
+    if not key:
+        return pd.Series(dtype=float), "no API key configured"
+
+    start = (pd.Timestamp.utcnow() - pd.Timedelta(days=420)).strftime("%Y-%m-%d")
+    url = (f"https://api.tiingo.com/tiingo/daily/{ticker.lower()}/prices"
+           f"?startDate={start}&token={key}")
+    try:
+        resp = requests.get(url, timeout=timeout,
+                            headers={"Content-Type": "application/json"})
+    except Exception as e:
+        return pd.Series(dtype=float), f"tiingo: {type(e).__name__}"
+
+    if resp.status_code == 404:
+        return pd.Series(dtype=float), f"tiingo: unknown symbol {ticker}"
+    if resp.status_code in (401, 403):
+        return pd.Series(dtype=float), f"tiingo: HTTP {resp.status_code} — check the API key"
+    if resp.status_code != 200:
+        return pd.Series(dtype=float), f"tiingo: HTTP {resp.status_code}"
+
+    try:
+        rows = resp.json()
+    except Exception:
+        return pd.Series(dtype=float), f"tiingo: {_describe_body(resp.text or '')}"
+    if not isinstance(rows, list) or not rows:
+        return pd.Series(dtype=float), "tiingo: empty response"
+
+    try:
+        out = pd.Series(
+            [float(r.get("adjClose", r.get("close"))) for r in rows],
+            index=pd.to_datetime([r["date"] for r in rows]).tz_localize(None),
+            dtype=float,
+        ).dropna()
+    except Exception as e:
+        return pd.Series(dtype=float), f"tiingo: parse {type(e).__name__}"
+
+    if out.empty:
+        return pd.Series(dtype=float), "tiingo: no usable rows"
+    return out.sort_index(), "ok"
+
+
+def fetch_reference_daily(ticker: str, timeout: int = 15,
+                          key: str | None = None) -> tuple[pd.Series, str, str]:
+    """(closes, reason, source) from the reference feed.
+
+    Prefers a keyed provider when one is configured, because the keyless one
+    (Stooq) blocks the datacenter IPs this app runs on. Falls back to Stooq's
+    mirrors otherwise, so the panel still works locally with no setup.
 
     The reason string exists because the previous version collapsed every
     failure mode into an empty Series, which left the panel guessing at the
@@ -135,6 +241,15 @@ def fetch_reference_daily(ticker: str, timeout: int = 15) -> tuple[pd.Series, st
     fixes, so they are reported as four different strings.
     """
     import requests
+
+    tk = reference_key("tiingo") if key is None else key
+    if tk:
+        series, why = fetch_tiingo_daily(ticker, tk, timeout)
+        if not series.empty:
+            return series, why, "Tiingo"
+        # A configured key that fails is worth reporting rather than silently
+        # falling back — a typo'd key should not look like a Stooq problem.
+        return pd.Series(dtype=float), why, "Tiingo"
 
     sym = ticker.lower().replace("-", ".")   # BRK-B → brk.b
     reasons = []
@@ -165,10 +280,10 @@ def fetch_reference_daily(ticker: str, timeout: int = 15) -> tuple[pd.Series, st
         text = resp.text or ""
         head = text.lstrip()
         if not head.lower().startswith("date,"):
-            # Stooq answers a blocked or throttled request with a plain-text
-            # notice and a 200, so the body is the only signal there is.
-            snippet = " ".join(head.split())[:80] or "empty body"
-            reasons.append(f"{host}: {snippet}")
+            # Stooq answers a blocked or throttled request with a 200 and a
+            # body that is either a plain-text notice or an HTML page, so the
+            # body is the only signal there is.
+            reasons.append(f"{host}: {_describe_body(head)}")
             continue
 
         try:
@@ -182,11 +297,11 @@ def fetch_reference_daily(ticker: str, timeout: int = 15) -> tuple[pd.Series, st
             if out.empty:
                 reasons.append(f"{host}: CSV had no usable rows")
                 continue
-            return out.sort_index(), "ok"
+            return out.sort_index(), "ok", "Stooq"
         except Exception as e:
             reasons.append(f"{host}: parse {type(e).__name__}")
 
-    return pd.Series(dtype=float), "; ".join(reasons) or "no response"
+    return pd.Series(dtype=float), "; ".join(reasons) or "no response", "Stooq"
 
 
 # ── Self-consistency checks (no external source needed) ────────────────────────
@@ -333,13 +448,15 @@ def cross_check(ours: dict, sectors: list[tuple[str, str]],
 
     ref: dict[str, pd.Series] = {}
     reasons: dict[str, str] = {}
+    sources: set[str] = set()
     to_fetch = tickers + ([bench] if bench in ours else [])
     for i, t in enumerate(to_fetch):
         if progress_fn:
             progress_fn(i, len(to_fetch), t)
-        series, why = fetch_reference_daily(t)
+        series, why, src = fetch_reference_daily(t)
         ref[t] = _norm_index(series)
         reasons[t] = why
+        sources.add(src)
         if pause:
             time.sleep(pause)
 
@@ -350,12 +467,15 @@ def cross_check(ours: dict, sectors: list[tuple[str, str]],
         # deduplicating them gives a short, actionable message instead of
         # sixteen copies of the same line.
         distinct = sorted({r for r in reasons.values() if r and r != "ok"})
+        src_name = "/".join(sorted(sources)) or "Stooq"
         return pd.DataFrame(), {
             "status": "unreachable",
             "attempted": len(to_fetch),
             "reasons": distinct,
-            "message": ("Reference feed (Stooq) returned no usable data for any of "
-                        f"{len(to_fetch)} tickers."),
+            "source": src_name,
+            "keyed": bool(reference_key("tiingo")),
+            "message": (f"Reference feed ({src_name}) returned no usable data for any "
+                        f"of {len(to_fetch)} tickers."),
         }
 
     ours_n = {t: _norm_index(s) for t, s in ours.items()}
@@ -449,9 +569,13 @@ def cross_check(ours: dict, sectors: list[tuple[str, str]],
         top_match = len(ours_top & ref_top)
 
     confirmed = int((df["Status"] == "Confirmed").sum()) if not df.empty else 0
+    src_name = "/".join(sorted(sources)) or "Stooq"
     summary = {
         "status":       "ok",
-        "source":       "Stooq (independent daily OHLC)",
+        "source":       src_name,
+        # Tiingo's adjClose is dividend-adjusted like ours; Stooq's close is
+        # not. The panel words its caveat from this rather than assuming.
+        "div_adjusted": src_name == "Tiingo",
         "checked":      int(len(df)),
         "confirmed":    confirmed,
         "mismatched":   int(len(df)) - confirmed,
