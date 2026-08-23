@@ -1,8 +1,413 @@
 {
-  "updated": "2026-08-21",
+  "updated": "2026-08-22",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-22",
+      "url": "https://www.youtube.com/shorts/sS6bxlDiS6g",
+      "title": "$XRP SUI DOGE GIVING MASSIVE BUY/HOLD SIGNALS! 📈 AUGUST 22",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "DOGE",
+          "bias": "Bullish",
+          "notes": "DOGE generated a monthly buy signal in August for a long-term swing trade, similar to a 2023 signal that resulted in an 800% move from $0.07 to $0.50.",
+          "price": null
+        },
+        {
+          "ticker": "SUI",
+          "bias": "Bullish",
+          "notes": "SUI briefly triggered a buy signal on the chart, and although it temporarily disappeared, the host expects the signal to pop back up.",
+          "price": 121.66
+        },
+        {
+          "ticker": "XRP",
+          "bias": "Bullish",
+          "notes": "XRP flashed a major bottoming buy signal in August with the bottom looking in at $1.00, signaling a potential multi-month swing trade.",
+          "price": 15.34
+        }
+      ]
+    },
+    {
+      "date": "2026-08-22",
+      "url": "https://www.youtube.com/shorts/Di0o2Aprev0",
+      "title": "How I’d Invest $10,000 vs. $100,000 right now in late 2026",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "For investors starting with $10,000, using funds to increase income potential or start a business generates greater long-term impact than relying solely on stock market returns.",
+          "price": null
+        },
+        {
+          "ticker": "QQQM",
+          "bias": "Bullish",
+          "notes": "Recommended as a core growth ETF allocation across beginner and multi-fund portfolio strategies.",
+          "price": 293.76
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "Highlighted as an essential core dividend ETF for multi-fund portfolio diversification and market crash protection.",
+          "price": 35.11
+        },
+        {
+          "ticker": "SPMO",
+          "bias": "Bullish",
+          "notes": "Recommended as part of a balanced four-fund core portfolio strategy.",
+          "price": 148.73
+        },
+        {
+          "ticker": "SMH",
+          "bias": "Bullish",
+          "notes": "Suggested as a specialty satellite ETF allocation for semiconductor exposure in larger portfolios.",
+          "price": 560.42
+        },
+        {
+          "ticker": "VGT",
+          "bias": "Bullish",
+          "notes": "Recommended as a specialty satellite ETF for broad technology sector exposure.",
+          "price": 118.42
+        },
+        {
+          "ticker": "WQTM",
+          "bias": "Bullish",
+          "notes": "Suggested as a specialty satellite ETF choice for focused exposure to quantum computing.",
+          "price": 33.65
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Recommended reading for investors includes 'The Simple Path to Wealth' for simple strategies, 'Mastering the Market Cycle' for understanding market swings, and 'Trillions' for index fund data.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Financially, investing excess capital in the stock market typically yields higher returns than paying off a low-interest mortgage under 5%, though paying off debt offers psychological peace.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Dollar-cost averaging cash into the market over several months is recommended over lump-sum investing to reduce emotional stress during sudden downturns.",
+          "price": null
+        },
+        {
+          "ticker": "VTV",
+          "bias": "Bullish",
+          "notes": "Recommended as a defensive value ETF to hold in preparation for potential stock market crashes.",
+          "price": 226.4
+        },
+        {
+          "ticker": "VYM",
+          "bias": "Bullish",
+          "notes": "Recommended as a defensive dividend ETF to help protect a portfolio against market downturns.",
+          "price": 164.97
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To prepare for market downturns, maintain emergency cash buffers of 3 to 6 months for stable workers, 1 year for breadwinners with families, and 3 years for retirees.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When speculative stock investments gain 100% quickly, consider selling half to recoup principal and run the remainder on house money.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Keeping portfolios simple with a few broad-based ETFs reduces stress and anxiety compared to tracking dozens of individual stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should max out a Roth IRA while also funding a taxable brokerage account to maintain flexible capital access if retiring before age 59.5.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-09",
+      "url": "https://www.youtube.com/shorts/UuNTz0_IDPA",
+      "title": "This Stock will go to $500‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "The host predicts Honest Company stock will reach $5.00 or higher before the end of the year.",
+          "price": 3.96
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "The host considers American Express a buy at $346, projecting the stock to reach $783 to $923 by 2030 based on 8% revenue growth and 12% net income growth.",
+          "price": 346.72
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bearish",
+          "notes": "The host plans to sell off 1,555 shares starting at $625 as part of an exit plan, warning of a potential industry-wide semiconductor ordering slowdown in 2029–2030.",
+          "price": 546.72
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "The host projects ELF to reach $100 to $140 by year-end and $500+ long-term as it continues acquiring brands to become a top five global beauty company.",
+          "price": 75.76
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "The host expects Estée Lauder to be a major runner over the next three years, pushing its market cap over $50 billion.",
+          "price": 81.99
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To scale a portfolio rapidly, maintain a high income-to-expense ratio, build a diversified GVD (growth, value, dividend) portfolio of 7–20 stocks, avoid margin or leveraged ETFs, and base buying/selling strictly on fundamental numerical projections.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-31",
+      "url": "https://www.youtube.com/shorts/we4_uFY5PfQ",
+      "title": "How the Fastest Growing Hedge Fund in the World Just Lost Everything (Leopold Aschenbrenner)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Holding multiple heavily correlated stocks does not provide true portfolio diversification, as an industry downturn will cause all positions to drop simultaneously.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Trading with high leverage creates extreme margin call risk, which can force involuntary liquidations at market bottoms during sharp sector pullbacks.",
+          "price": null
+        },
+        {
+          "ticker": "SMH",
+          "bias": "Bullish",
+          "notes": "The host views the VanEck Semiconductor ETF as a strong opportunity following a deep market pullback and a sharp relief rally.",
+          "price": 540.53
+        },
+        {
+          "ticker": "NBIS",
+          "bias": "Bullish",
+          "notes": "The host holds Nebius as an AI cloud infrastructure play, though he noted trimming his position at $208 per share.",
+          "price": 190.41
+        },
+        {
+          "ticker": "IREN",
+          "bias": "Bullish",
+          "notes": "The host personally holds IREN as part of his AI portfolio, highlighting its sharp 25% rebound alongside the broader sector recovery.",
+          "price": 36.8
+        }
+      ]
+    },
+    {
+      "date": "2026-07-24",
+      "url": "https://www.youtube.com/shorts/nFWk-wa2Ndk",
+      "title": "How to Invest Your First $1,000 in The Stock Market",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "VOO",
+          "bias": "Bullish",
+          "notes": "The host recommends VOO for beginners with $1,000 to invest, citing broad market exposure to 500 major US companies and a low 0.03% expense ratio.",
+          "price": 679.14
+        },
+        {
+          "ticker": "SPY",
+          "bias": "Neutral",
+          "notes": "The host considers SPY equivalent to VOO for tracking the S&P 500, though he prefers VOO due to its lower expense ratio.",
+          "price": 738.93
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "True diversification requires holding assets that react to different market drivers, rather than simply owning several large-cap companies that share similar risks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Starting an investment journey with smaller amounts like $1,000 allows beginners to make mistakes with lower financial stakes while building consistent long-term habits.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-31",
+      "url": "https://www.youtube.com/shorts/_Q7LM0RRZj0",
+      "title": "The Money Habits That Are Keeping You Broke",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Avoid 'net-zero thinking' where all earned income is spent. Apply the Rule of Five for non-essential purchases: if you cannot afford to buy five of an item, you cannot afford one.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Distinguish between being able to afford an item upfront and merely being able to make the monthly payments. Relying on 0% APR financing leads to overspending on non-essential liabilities.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Federal Reserve money printing dilutes the purchasing power of the dollar, creating inflation that acts as a hidden tax on cash savers while driving up the value of tangible assets.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Build long-term wealth by setting up automated, consistent investments into broad-market index funds like S&P 500 ETFs with every paycheck, regardless of market conditions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Wealth creation follows the formula Income minus Expenses equals Investments plus Savings; long-term financial success requires expanding overall earning power rather than just pinching pennies.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "President Trump has proposed utilizing increased tariffs on foreign goods to generate revenue as a potential alternative to federal income taxes and the IRS.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-20",
+      "url": "https://www.youtube.com/shorts/eRZ39NF8SRo",
+      "title": "If you missed SMH, this ETF could be MUCH BIGGER 👀📈",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "DRAM",
+          "bias": "Bullish",
+          "notes": "Up 68% year-to-date, the Roundhill Memory ETF offers a concentrated play on the picks and shovels of the AI boom by targeting DRAM and NAND storage producers required for AI servers and data centers.",
+          "price": 53.06
+        }
+      ]
+    },
+    {
+      "date": "2026-07-07",
+      "url": "https://www.youtube.com/shorts/9EZzyjAZ-Zc",
+      "title": "INVESTORS are about to LOSE THEIR MIND‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should avoid letting short-term market volatility turn them into traders chasing price action. Focus on company fundamentals like revenue growth and PE projections to stay the course.",
+          "price": null
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Host remains bullish with a base-case target of $900-$1,000 over the next few years and sees potential to hit $1,000 within 6 to 9 months, though he plans to sell most shares if it reaches that level this year due to cyclical risks.",
+          "price": 516.11
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Host warns against buying newly public companies right after their IPO, noting roughly two-thirds underperform the market over 1 to 3 years and 90% eventually trade below their initial closing price.",
+          "price": null
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Host sees significant upside momentum ahead for Celsius, viewing the recent Texas AG marketing investigation as a temporary rite of passage similar to regulatory challenges Monster Beverage successfully navigated.",
+          "price": 31.7
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Host expects ELF's strong momentum to persist, predicting the stock will reach $100+ and potentially $120-$140 before 2026 ends as dips continue to get bought up.",
+          "price": 75.34
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Host sees SoFi ready for a major upward move back into the $20s as oil prices cool down and broader market fears over inflation and interest rates subside.",
+          "price": 17.75
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Host projects Meta reaching $1,000 to $2,000 over the long term, making current prices a long-term buy, though massive AI capex spending may keep the stock rangebound between $550 and $750 in the short term.",
+          "price": 615.58
+        }
+      ]
+    },
+    {
+      "date": "2026-07-28",
+      "url": "https://www.youtube.com/shorts/y8TNsyXp3n4",
+      "title": "Here's How to Invest Your Money like the Top 1% Traders",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A recommended $50,000 options allocation model splits capital into 50% Wheel strategy, 20% LEAPS, 15% cash-secured puts, 10% credit spreads, and 5% Poor Man's Covered Calls.",
+          "price": null
+        },
+        {
+          "ticker": "WMT",
+          "bias": "Bullish",
+          "notes": "Walmart serves as a core defensive blue-chip stock for running the wheel strategy, selling ~30-delta puts 30 days out for stable income and downside cushion.",
+          "price": 113.1
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi is highlighted as a high implied volatility stock ideal for smaller accounts to run the wheel strategy and collect higher relative option premiums.",
+          "price": 16.74
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Nvidia is targeted for deep in-the-money long-dated LEAPS call options to gain growth exposure while locking up significantly less capital than buying 100 shares outright.",
+          "price": 197.01
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "The host utilizes selling puts on Palantir during elevated implied volatility to generate income and capture an entry point to hold shares long-term without capping upside.",
+          "price": 123.53
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Meta is used to demonstrate a defined-risk put credit spread strategy below technical support to collect regular income with capped maximum loss.",
+          "price": 593.41
+        }
+      ]
+    },
     {
       "date": "2026-08-21",
       "url": "https://www.youtube.com/shorts/EV0IechRFyE",
