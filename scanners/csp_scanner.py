@@ -9,6 +9,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import *
 from utils import *
+from scanners import iv_history
+from scanners.option_premium import RV_WINDOW, premium_rank, realized_vol
 from data_loader import (
     get_price_history, get_options_chain, get_options_error,
     find_best_expiry, pick_strike,
@@ -38,6 +40,8 @@ def scan_csp(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
              batch_size: int = BATCH_SIZE, batch_pause: int = BATCH_PAUSE_S):
 
     diag = ScanDiagnostics()
+    # One read for the whole scan: the store is a small JSON per session.
+    _iv_snaps = iv_history.load_snapshots()
     cfg = OPTIONS_STRIKE_RANGES["CSP"]
     st.session_state.pop("_rl_hit", None)   # clear stale rate-limit flag
 
@@ -110,7 +114,16 @@ def scan_csp(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
                 diag.skipped(ticker, "premium too low"); continue
 
             iv = float(row.get("impliedVolatility", 0.30) or 0.30)
-            iv_rank = approx_iv_rank(iv)
+            # Real richness for THIS ticker, not a universal IV scale. Uses
+            # stored IV history once deep enough, else IV vs realised vol.
+            _rv = realized_vol(close, RV_WINDOW)
+            _pr0 = premium_rank(iv, _rv)          # ratio first, for the lookup
+            _stored = iv_history.best_rank(ticker, iv, _pr0["iv_rv"],
+                                           snapshots=_iv_snaps)["rank"]
+            _pr = premium_rank(iv, _rv, _stored)
+            if _pr["rank"] is None:
+                diag.skipped(ticker, "cannot measure premium richness"); continue
+            iv_rank = _pr["rank"]
             if iv_rank < iv_rank_min:
                 diag.skipped(ticker, "IV rank too low"); continue
 
@@ -140,6 +153,8 @@ def scan_csp(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
                 "Delta":        round(delta_abs, 3),
                 "IV":           f"{iv*100:.1f}%",
                 "IV Rank":      round(iv_rank, 1),
+                "IV/RV":        _pr["iv_rv"],
+                "Rank From":    _pr["source"],
                 "DTE":          dte,
                 "Ann. Return%": round(ann_ret, 2),
                 "Breakeven":    round(breakeven, 2),

@@ -106,7 +106,7 @@ def scan_3x_premium(tickers, dte_min=21, dte_max=45, min_iv_rv=1.10,
 
             # A real IV rank once enough sessions are stored; None until
             # then, so assess() stays silent rather than inventing one.
-            rk = iv_history.rank_for(ticker, iv, snapshots=snaps)
+            rk = iv_history.best_rank(ticker, iv, ratio, snapshots=snaps)
             verdict = assess(iv, rv, drop_atr, rk["rank"], snap["spread_pct"],
                              sma50_pct, rsi)
 

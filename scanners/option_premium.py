@@ -218,6 +218,56 @@ def pick_expiry(expiries: list[str], dte_min: int = 21, dte_max: int = 45,
     return best
 
 
+# Anchors mapping IV/RV onto the 0-100 scale the existing scanners already
+# speak, so premium_rank() is a drop-in for approx_iv_rank. Options normally
+# carry a small premium over realised vol even in calm markets, which is why
+# 1.00x maps to 30 rather than 50: fairly priced is not "unusually high".
+_RATIO_ANCHORS = [0.80, 1.00, IV_RV_FAIR, IV_RV_RICH, 1.60]
+_RANK_ANCHORS = [0.0, 30.0, 45.0, 70.0, 100.0]
+
+
+def premium_rank(iv: float, rv: float, stored_rank: float | None = None) -> dict:
+    """A real 0-100 answer to "how expensive is this option FOR THIS TICKER".
+
+    Drop-in for utils.approx_iv_rank, which every options scanner used and
+    which is not a rank at all — a fixed 10-80% IV scale identical for every
+    ticker. Its practical effect was to turn the scanners' "IV Rank" sliders
+    into hard IV floors and ceilings: a Min IV Rank of 25 means "IV >= 27.5%",
+    which permanently excludes AAPL, SPY, KO and JNJ from the CSP scan however
+    expensive their options become, while a Max IV Rank of 35 means
+    "IV <= 34.5%" and permanently excludes NVDA, TSLA and the semis from the
+    LEAPS scan however cheap theirs become.
+
+    Two sources, best first:
+      "history"  the ticker's own stored IV range (see scanners/iv_history)
+                 — the real thing, once enough sessions exist;
+      "realised" IV against realised volatility, mapped onto the same 0-100
+                 scale — available immediately, and still a comparison against
+                 the ticker's own behaviour rather than a universal constant.
+
+    Known limit of the "realised" source: IV/RV still carries a per-asset
+    baseline, just a far smaller one than raw IV. Index options run a
+    persistent variance risk premium — SPY sits around 1.2-1.4x even in calm
+    markets — while single stocks run lower, so a fixed cross-ticker threshold
+    is generous to indices and harsh on stocks. That is why the daily snapshot
+    records iv_rv as well as iv_atm: once history matures,
+    iv_history.best_rank() ranks the RATIO against its own past and the
+    baseline cancels out entirely. Until then, compare like with like —
+    indices against indices, stocks against stocks.
+
+    Returns {rank, source, iv_rv}. rank is None only when neither is
+    computable, so callers can skip rather than assume.
+    """
+    ratio = iv_rv_ratio(iv, rv)
+    if stored_rank is not None:
+        return {"rank": float(stored_rank), "source": "history", "iv_rv": ratio}
+    if ratio is None:
+        return {"rank": None, "source": "none", "iv_rv": None}
+    rank = float(np.interp(ratio, _RATIO_ANCHORS, _RANK_ANCHORS))
+    return {"rank": round(max(0.0, min(100.0, rank)), 1),
+            "source": "realised", "iv_rv": ratio}
+
+
 def assess(iv: float, rv: float, drop_atr: float, iv_rank: float | None,
            spread_pct: float | None, sma50_pct: float | None,
            rsi: float | None = None) -> dict:

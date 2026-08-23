@@ -116,7 +116,7 @@ def iv_series(ticker: str, field: str = "iv_atm",
 
 
 def rank_for(ticker: str, iv_now: float, window: int = RANK_WINDOW,
-             snapshots: list[dict] | None = None) -> dict:
+             snapshots: list[dict] | None = None, field: str = "iv_atm") -> dict:
     """Where today's IV sits within this ticker's own stored history.
 
     Returns {rank, percentile, sessions, ready, low, high}. `rank` and
@@ -128,7 +128,7 @@ def rank_for(ticker: str, iv_now: float, window: int = RANK_WINDOW,
     percentile the share of stored sessions that were BELOW today. More
                robust than rank, which one freak spike can distort for a year.
     """
-    s = iv_series(ticker, snapshots=snapshots)
+    s = iv_series(ticker, field=field, snapshots=snapshots)
     if window and len(s) > window:
         s = s.iloc[-window:]
 
@@ -151,6 +151,32 @@ def rank_for(ticker: str, iv_now: float, window: int = RANK_WINDOW,
         out["rank"] = 50.0
     out["percentile"] = round(float((s < float(iv_now)).sum()) / n * 100, 1)
     return out
+
+
+def best_rank(ticker: str, iv_now: float, iv_rv_now: float | None,
+              snapshots: list[dict] | None = None) -> dict:
+    """The most trustworthy stored rank available, and which one it is.
+
+    Prefers ranking the IV/RV RATIO against its own history over ranking raw
+    IV, because the ratio still carries a per-asset baseline that a
+    cross-ticker threshold cannot see: index options run a persistent variance
+    risk premium (SPY sits at 1.2-1.4x even in calm markets) while single
+    stocks run lower. Comparing today's ratio against that ticker's OWN past
+    ratios cancels the baseline out entirely — which is the whole point, and
+    the reason the daily snapshot records iv_rv alongside iv_atm.
+
+    Falls back to raw-IV history, then to nothing. `basis` says which, so the
+    page never presents a weaker measure as the stronger one.
+    """
+    snaps = load_snapshots() if snapshots is None else snapshots
+    if iv_rv_now is not None:
+        r = rank_for(ticker, iv_rv_now, snapshots=snaps, field="iv_rv")
+        if r["rank"] is not None:
+            r["basis"] = "iv_rv"
+            return r
+    r = rank_for(ticker, iv_now, snapshots=snaps, field="iv_atm")
+    r["basis"] = "iv" if r["rank"] is not None else "none"
+    return r
 
 
 def coverage() -> dict:
