@@ -1,4 +1,19 @@
-# pages/etf_3x_options_scanner.py — 3× ETF High-Premium Options
+# scanners/etf_3x_options_scanner.py — 3× ETF premium richness
+#
+# Rewritten to answer a different question. The old page picked one expiry and
+# one strike near delta 0.20 and reported that contract. Two problems: the
+# contract is not the decision (you pick that in your broker with a live
+# chain in front of you), and the "IV Rank" gating the whole thing was
+# utils.approx_iv_rank(), a fixed 10-80% scale identical for every ticker —
+# see scanners/option_premium.py for why that scored a dead-calm SOXL at 74.
+#
+# This asks: WHICH TICKER is being paid unusually well right now, versus its
+# own normal? Strikes and expiries are still read from the chain — you cannot
+# price a premium without them — but they are measurement inputs, not output.
+#
+# Long 3x only. The inverse funds (SQQQ, SOXS, TZA...) rise on the days these
+# fall, so mixing them into one "falling day + rich premium" list puts two
+# opposite setups under one heading.
 
 import streamlit as st
 import pandas as pd
@@ -9,225 +24,340 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import *
 from utils import *
 from data_loader import get_price_history, get_options_chain
+from scanners.option_premium import (
+    DROP_ATR_NOTABLE, IV_RV_FAIR, IV_RV_RICH, RV_WINDOW,
+    assess, atr_move, chain_snapshot, iv_rv_ratio, pick_expiry, realized_vol,
+)
 
-
-# Only 3× ETFs with options liquidity
-OPTIONABLE_3X = [
-    "TQQQ", "SOXL", "UPRO", "TECL", "LABU", "FAS", "TNA",
-    "SQQQ", "SOXS", "SPXS", "TECS", "FAZ", "TZA",
+# Long 3× ETFs with real options liquidity. LABU is kept despite thinner
+# chains because biotech IV behaves differently from the index funds and is
+# often the richest name on the board; the spread check will flag it when its
+# chain is too wide to be worth writing.
+LONG_3X = [
+    ("TQQQ", "Nasdaq 100 3×"),
+    ("SOXL", "Semiconductors 3×"),
+    ("UPRO", "S&P 500 3×"),
+    ("TECL", "Technology 3×"),
+    ("FAS",  "Financials 3×"),
+    ("TNA",  "Small Caps 3×"),
+    ("LABU", "Biotech 3×"),
 ]
 
 
-def scan_3x_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
-                    dte_min, dte_max):
+def scan_3x_premium(tickers, dte_min=21, dte_max=45, min_iv_rv=1.10,
+                    falling_only=False, status_fn=None):
+    """One row per ticker describing how rich its premium is right now."""
+    rows, skips = [], {}
 
-    with st.spinner("Scanning 3× ETF options for high-premium setups…"):
-        results = []
-        skips = {}      # reason → count, shown after scan for diagnostics
-        progress = st.progress(0)
-        today = datetime.now()
+    def skip(reason):
+        skips[reason] = skips.get(reason, 0) + 1
 
-        for i, ticker in enumerate(tickers):
-            progress.progress((i + 1) / len(tickers))
-            try:
-                df = get_price_history(ticker, period="3mo")
-                if df.empty or len(df) < 20:
-                    skips["no price history"] = skips.get("no price history", 0) + 1
-                    continue
-
-                close = df["Close"].squeeze()
-                volume = df["Volume"].squeeze()
-                price = float(close.iloc[-1])
-                atr_pct = calc_atr(df)
-
-                calls, puts, expiries = get_options_chain(ticker)
-                if (calls.empty and puts.empty) or not expiries:
-                    skips["no options chain"] = skips.get("no options chain", 0) + 1
-                    continue
-
-                best_exp = None
-                for exp in expiries:
-                    try:
-                        exp_dt = datetime.strptime(exp, "%Y-%m-%d")
-                        dte = (exp_dt - today).days
-                        if dte_min <= dte <= dte_max:
-                            best_exp = (exp, dte)
-                            break
-                    except Exception:
-                        continue
-
-                if best_exp is None:
-                    skips["no expiry in DTE range"] = skips.get("no expiry in DTE range", 0) + 1
-                    continue
-
-                exp_str, dte = best_exp
-                calls_ch, puts_ch, _ = get_options_chain(ticker, exp_str)
-
-                # Use puts (CSP on 3x ETF — higher premium, higher risk)
-                chain = puts_ch
-                if chain.empty:
-                    skips["empty puts chain"] = skips.get("empty puts chain", 0) + 1
-                    continue
-
-                otm = chain[chain["strike"] < price].copy()
-                if otm.empty:
-                    skips["no OTM strikes"] = skips.get("no OTM strikes", 0) + 1
-                    continue
-
-                target_delta = 0.20
-                if "delta" in otm.columns and otm["delta"].notna().any():
-                    otm["ddist"] = (otm["delta"].abs() - target_delta).abs()
-                    otm = otm.sort_values("ddist")
-                else:
-                    ref = price * 0.88
-                    otm["sdist"] = (otm["strike"] - ref).abs()
-                    otm = otm.sort_values("sdist")
-
-                row = otm.iloc[0]
-                strike = float(row["strike"])
-                bid = float(row.get("bid", 0) or 0)
-                ask = float(row.get("ask", 0) or 0)
-                mid = (bid + ask) / 2 if bid + ask > 0 else float(row.get("lastPrice", 0) or 0)
-
-                if mid <= 0:
-                    skips["no premium (bid/ask/lastPrice all 0)"] = skips.get("no premium (bid/ask/lastPrice all 0)", 0) + 1
-                    continue
-
-                spread_pct = ((ask - bid) / mid * 100) if mid > 0 else 999
-                premium_pct = (mid / strike) * 100
-                if premium_pct < premium_pct_min:
-                    skips[f"premium too low (<{premium_pct_min}%)"] = skips.get(f"premium too low (<{premium_pct_min}%)", 0) + 1
-                    continue
-
-                iv = float(row.get("impliedVolatility", 0.50) or 0.50)
-                iv_rank = approx_iv_rank(iv)
-
-                if iv_rank < iv_rank_min:
-                    skips["IV rank too low"] = skips.get("IV rank too low", 0) + 1
-                    continue
-
-                delta_abs = abs(float(row.get("delta", target_delta) or target_delta))
-
-                ann_ret = annualized_return(mid, strike, dte)
-                breakeven = strike - mid
-
-                # Risk flags for leveraged ETFs
-                risk_flags = []
-                if atr_pct > 8:     risk_flags.append("🔴 Extreme Volatility")
-                elif atr_pct > 5:   risk_flags.append("🟡 High Volatility")
-                if spread_pct > 10: risk_flags.append("⚠️ Wide Spread")
-                if iv > 0.80:       risk_flags.append("🔥 Very High IV")
-
-                risk_str = " · ".join(risk_flags) if risk_flags else "✅ Normal Risk"
-
-                # Premium vs risk ratio
-                pvr = round(premium_pct / atr_pct, 2) if atr_pct > 0 else 0
-
-                score = 0
-                if iv_rank >= 60: score += 30
-                elif iv_rank >= 40: score += 20
-                elif iv_rank >= 20: score += 10
-                if premium_pct >= 4:    score += 30
-                elif premium_pct >= 2:  score += 20
-                elif premium_pct >= 1:  score += 15
-                elif premium_pct >= 0.75: score += 8   # partial credit for borderline premium
-                if spread_pct <= 5:  score += 20
-                elif spread_pct <= 10: score += 10
-                if pvr >= 0.5: score += 20
-                score = min(score, 100)
-
-                prev = float(close.iloc[-2]) if len(close) > 1 else price
-                chg_pct = (price - prev) / prev * 100
-
-                results.append({
-                    "Ticker":       ticker,
-                    "Strategy":     "💰 CSP",
-                    "ETF Price":    round(price, 2),
-                    "Change %":     round(chg_pct, 2),
-                    "Strike":       round(strike, 2),
-                    "Premium":      round(mid, 2),
-                    "Premium %":    round(premium_pct, 2),
-                    "IV":           f"{iv*100:.1f}%",
-                    "IV Rank":      round(iv_rank, 1),
-                    "Delta":        round(delta_abs, 3),
-                    "DTE":          dte,
-                    "Ann. Return%": round(ann_ret, 2),
-                    "Breakeven":    round(breakeven, 2),
-                    "ATR %":        round(atr_pct, 2),
-                    "Prem/Risk":    pvr,
-                    "Risk Flags":   risk_str,
-                    "Expiry":       exp_str,
-                    "Score":        score,
-                })
-            except Exception:
+    for i, (ticker, name) in enumerate(tickers):
+        if status_fn:
+            status_fn(i, len(tickers), ticker)
+        try:
+            df = get_price_history(ticker, period="6mo")
+            if df is None or df.empty or len(df) < 60:
+                skip("no price history")
                 continue
 
-        progress.empty()
+            close = df["Close"].squeeze()
+            price = float(close.iloc[-1])
+            rv = realized_vol(close, RV_WINDOW)
+            if rv <= 0:
+                skip("could not measure realised volatility")
+                continue
 
-    # Show skip diagnostics so the user can see why tickers were excluded
-    if skips:
-        skip_lines = " · ".join(f"{reason}: {n}" for reason, n in sorted(skips.items(), key=lambda x: -x[1]))
-        st.markdown(
-            f'<div style="color:#888;font-size:11px;margin:4px 0 2px">'
-            f'ℹ️ Skipped: {skip_lines}</div>',
-            unsafe_allow_html=True,
-        )
+            chg_pct, drop_atr = atr_move(df)
+            if falling_only and chg_pct >= 0:
+                skip("not down today")
+                continue
 
-    df_out = pd.DataFrame(results)
-    if not df_out.empty:
-        df_out = df_out.sort_values("Score", ascending=False).reset_index(drop=True)
-    return df_out
+            sma50 = float(calc_sma(close, 50).iloc[-1])
+            sma50_pct = round((price - sma50) / sma50 * 100, 1) if sma50 > 0 else None
+            rsi = float(calc_rsi(close))
+
+            _, _, expiries = get_options_chain(ticker)
+            if not expiries:
+                skip("no options chain")
+                continue
+            exp, dte = pick_expiry(expiries, dte_min, dte_max)
+            if not exp:
+                skip("no usable expiry")
+                continue
+
+            _, puts, _ = get_options_chain(ticker, exp)
+            snap = chain_snapshot(puts, price, dte)
+            # ATM is the stable reference for richness; fall back to the OTM
+            # put reading when the ATM strike has no IV quote.
+            iv = snap["iv_atm"] or snap["iv_otm"]
+            if not iv:
+                skip("no implied volatility in chain")
+                continue
+
+            ratio = iv_rv_ratio(iv, rv)
+            if ratio is None or ratio < min_iv_rv:
+                skip(f"premium not rich enough (<{min_iv_rv:.2f}×)")
+                continue
+
+            # IV rank needs stored history, which does not exist yet — pass
+            # None so assess() stays silent rather than inventing one.
+            verdict = assess(iv, rv, drop_atr, None, snap["spread_pct"],
+                             sma50_pct, rsi)
+
+            # Selling premium and buying it are opposite trades on the same
+            # number: cheap IV is what makes a LEAP attractive.
+            if ratio >= IV_RV_RICH:
+                side = "Sell premium (CSP)"
+            elif ratio <= 0.95:
+                side = "Buy premium (LEAP)"
+            else:
+                side = "Neither is compelling"
+
+            rows.append({
+                "Ticker":    ticker,
+                "Name":      name,
+                "Price":     round(price, 2),
+                "Chg %":     chg_pct,
+                "Drop ATR":  drop_atr,
+                "IV":        round(iv * 100, 1),
+                "RV":        round(rv * 100, 1),
+                "IV/RV":     ratio,
+                "Skew":      round(snap["skew"] * 100, 1) if snap["skew"] is not None else None,
+                "Ann Prem %": snap["ann_pct"],
+                "Spread %":  snap["spread_pct"],
+                "OI":        snap["open_interest"],
+                "RSI":       round(rsi, 1),
+                "vs SMA50":  sma50_pct,
+                "Verdict":   verdict["verdict"],
+                "Score":     verdict["score"],
+                "Why":       " · ".join(verdict["reasons"]),
+                "Side":      side,
+            })
+        except Exception:
+            skip("error while scanning")
+            continue
+
+    out = pd.DataFrame(rows)
+    if not out.empty:
+        out = out.sort_values("Score", ascending=False).reset_index(drop=True)
+    return out, skips
+
+
+# ── Render ─────────────────────────────────────────────────────────────────────
+
+_VERDICT_STYLE = {
+    "Prime CSP":     (ACCENT_GREEN, "🎯"),
+    "Rich premium":  (GOLD,         "💰"),
+    "Fair":          (TEXT_MUTED,   "—"),
+    "Thin":          (TEXT_MUTED,   "·"),
+    "Illiquid":      (ACCENT_RED,   "🚧"),
+    "Avoid — knife": (ACCENT_RED,   "🔪"),
+    "No data":       (TEXT_MUTED,   "?"),
+}
 
 
 def render():
-    section_header("⚡📈", "3× ETF Options — Cash-Secured Puts",
-                   "Sells OTM puts on leveraged ETFs · Ultra-high IV premium · Premium vs risk ratio")
+    section_header("⚡📈", "3× ETF Premium Richness",
+                   "Which leveraged ETF is paying unusually well right now — "
+                   "measured against its own normal, not a fixed scale")
 
     with st.sidebar:
-        st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;margin:16px 0 8px">⚙️ 3× ETF Options Filters</div>', unsafe_allow_html=True)
-        # 3× ETFs carry 3× the volatility of their underlying index.
-        # IV is structurally higher → require more IV rank & more premium.
-        iv_rank_min = st.slider("Min IV Rank", 0, 100, 20)           # 3× ETFs structurally have high IV
-        delta_min, delta_max = st.slider("Delta Range (abs)", 0.05, 0.50, (0.15, 0.30), 0.01)
-        premium_pct_min = st.slider("Min Premium % of Strike", 0.3, 10.0, 0.75, 0.05)  # 0.75% achievable at 14-30 DTE
-        dte_min, dte_max = st.slider("DTE Range", 1, 60, (7, 30))   # extended to 30 for more time value
+        st.markdown(f'<div style="color:{GOLD};font-size:12px;font-weight:600;'
+                    f'margin:16px 0 8px">⚙️ 3× Premium Filters</div>',
+                    unsafe_allow_html=True)
+        min_iv_rv = st.slider("Min richness (IV ÷ realised vol)", 0.80, 2.00, 1.10, 0.05,
+                              help="1.00 = options priced at the recent realised move. "
+                                   "1.30+ is genuinely rich.")
+        dte_min, dte_max = st.slider("Measurement horizon (days)", 7, 90, (21, 45),
+                                     help="Which part of the curve to read the premium "
+                                          "from. Not a recommended expiry.")
+        falling_only = st.checkbox("Only tickers down today", value=False,
+                                   help="Your setup: a fall bids up put premium.")
 
-    st.info("⏱ 3× ETF options scan takes 30–90 seconds.")
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,{GOLD}10,{ACCENT_BLUE}08);'
+        f'border:1px solid {GOLD}44;border-radius:12px;padding:12px 18px;margin-bottom:12px;'
+        f'color:{TEXT_MUTED};font-size:11px;line-height:1.75">'
+        f'<b style="color:{GOLD}">No strikes, no expiries.</b> This ranks '
+        f'<b style="color:{TEXT_PRIMARY}">tickers</b> by how far their option premium sits '
+        f'above what the ETF has actually been doing — the part you cannot see in a broker '
+        f'chain. Pick the contract there, once you know which name is worth writing.'
+        f'<div style="margin-top:6px">The key number is '
+        f'<b style="color:{TEXT_PRIMARY}">IV/RV</b>: implied volatility divided by realised. '
+        f'{IV_RV_FAIR:.2f}× is mildly above fair, <b>{IV_RV_RICH:.2f}×+ is rich</b>. It is '
+        f'comparable across tickers, which a raw IV number never is — 60% IV is cheap for '
+        f'SOXL and extraordinary for SPY.</div></div>',
+        unsafe_allow_html=True,
+    )
 
-    col1, col2 = st.columns([1, 5])
-    with col1:
-        run = st.button("▶ Run Scan", use_container_width=True)
+    st.info("⏱ Reads a live option chain per ticker — 30–90 seconds.")
+
+    c1, _ = st.columns([1, 5])
+    with c1:
+        run = st.button("▶ Run Scan", use_container_width=True, key="x3_run")
 
     if run:
-        df = scan_3x_options(OPTIONABLE_3X, iv_rank_min, delta_min, delta_max,
-                             premium_pct_min, dte_min, dte_max)
-        st.session_state["_3xopt_r"] = df
+        prog = st.progress(0, text="Reading chains…")
 
-    _3xopt_r = st.session_state.get("_3xopt_r")
-    if _3xopt_r is not None:
-        df = _3xopt_r
-        if df.empty:
-            empty_state("No 3× ETF option setups. Lower premium % or IV rank threshold.")
-        else:
-            col1, col2, col3, col4 = st.columns(4)
-            with col1: metric_card("Setups Found", str(len(df)), color=GOLD)
-            with col2: metric_card("Avg Premium %", f"{df['Premium %'].mean():.2f}%", color=ACCENT_GREEN)
-            with col3: metric_card("Avg Ann. Return", f"{df['Ann. Return%'].mean():.1f}%", color=ACCENT_BLUE)
-            with col4: metric_card("Avg IV Rank", f"{df['IV Rank'].mean():.0f}", color=GOLD)
+        def _status(i, n, tk):
+            prog.progress((i + 1) / n, text=f"{tk} ({i+1}/{n})")
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            render_results_table(df, strategy="3x ETF Options", source="3x ETF Options")
+        df, skips = scan_3x_premium(LONG_3X, dte_min, dte_max, min_iv_rv,
+                                    falling_only, status_fn=_status)
+        prog.empty()
+        st.session_state["_3x_prem"] = df
+        st.session_state["_3x_skips"] = skips
 
-            st.markdown(f"""
-            <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-left:3px solid {ACCENT_RED};border-radius:6px;padding:12px 16px;margin-top:16px;color:{TEXT_MUTED};font-size:12px">
-                ⚠️ <b>Extreme Risk Warning:</b> 3× leveraged ETF options carry outsized risk due to volatility decay compounding.
-                These instruments can lose value rapidly even when the underlying moves in your favor.
-                <b>Position sizing must be very small.</b> The "Prem/Risk" ratio (Premium % ÷ ATR %) helps gauge if premium compensates for volatility risk.
-            </div>""", unsafe_allow_html=True)
-    else:
+    df = st.session_state.get("_3x_prem")
+    skips = st.session_state.get("_3x_skips") or {}
+
+    if df is None:
+        st.markdown(
+            f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
+            f'border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">'
+            f'<div style="font-size:36px;margin-bottom:12px">⚡</div>'
+            f'<div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:8px">'
+            f'3× ETF Premium Richness</div>'
+            f'<div style="font-size:13px">Press <b style="color:{GOLD}">▶ Run Scan</b>. '
+            f'Long 3× funds only — the inverse ones rise on the days these fall.</div>'
+            f'</div>', unsafe_allow_html=True)
+        return
+
+    if skips:
+        st.markdown(
+            f'<div style="color:{TEXT_MUTED};font-size:11px;margin:4px 0">'
+            f'ℹ️ Skipped: ' + " · ".join(f"{r}: {n}" for r, n in
+                                          sorted(skips.items(), key=lambda x: -x[1]))
+            + '</div>', unsafe_allow_html=True)
+
+    if df.empty:
+        empty_state("Nothing rich enough right now. Lower the richness filter, "
+                    "or wait for a down day — that is when put premium gets bid up.")
+        return
+
+    prime = df[df["Verdict"] == "Prime CSP"]
+    rich = df[df["Verdict"].isin(["Prime CSP", "Rich premium"])]
+    c1, c2, c3, c4 = st.columns(4)
+    with c1: metric_card("Scanned", str(len(df)), color=GOLD)
+    with c2: metric_card("Rich premium", str(len(rich)), color=ACCENT_GREEN)
+    with c3: metric_card("Prime setups", str(len(prime)), color=ACCENT_GREEN)
+    with c4: metric_card("Best IV/RV", f'{df["IV/RV"].max():.2f}×', color=ACCENT_BLUE)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    _TH = (f'background:{BG_PANEL};color:{TEXT_MUTED};font-size:9px;font-weight:700;'
+           f'text-transform:uppercase;letter-spacing:0.7px;padding:8px 10px;'
+           f'border-bottom:2px solid {GOLD}44;white-space:nowrap;text-align:left')
+    cols = ["Ticker", "Verdict", "IV/RV", "Today", "IV", "Realised",
+            "Skew", "Ann Prem", "Spread", "RSI", "vs SMA50"]
+    head = "".join(f'<th style="{_TH}">{c}</th>' for c in cols)
+
+    def _fmt(v, suf="", dp=1):
+        return "—" if v is None or (isinstance(v, float) and pd.isna(v)) else f"{v:.{dp}f}{suf}"
+
+    body = ""
+    for i, r in df.iterrows():
+        bg = BG_CARD if i % 2 == 0 else BG_PANEL
+        td = f'background:{bg};padding:8px 10px;font-size:11px'
+        vcol, vicon = _VERDICT_STYLE.get(r["Verdict"], (TEXT_MUTED, "—"))
+        rr = r["IV/RV"]
+        r_col = ACCENT_GREEN if rr >= IV_RV_RICH else (GOLD if rr >= IV_RV_FAIR else TEXT_MUTED)
+        d_col = ACCENT_RED if r["Chg %"] < 0 else ACCENT_GREEN
+        sp = r["Spread %"]
+        sp_col = ACCENT_GREEN if (sp is not None and sp <= 5) else (
+            ACCENT_RED if (sp is not None and sp > 15) else TEXT_MUTED)
+        s50 = r["vs SMA50"]
+        s50_col = ACCENT_GREEN if (s50 is not None and s50 >= 0) else ACCENT_RED
+        body += (
+            f'<tr>'
+            f'<td style="{td};white-space:nowrap">'
+            f'<b style="color:{GOLD};font-family:\'DM Mono\',monospace">{r["Ticker"]}</b>'
+            f'<span style="color:{TEXT_MUTED};font-size:10px"> {r["Name"]}</span></td>'
+            f'<td style="{td};color:{vcol};font-weight:700;font-size:10px;white-space:nowrap">'
+            f'{vicon} {r["Verdict"]}</td>'
+            f'<td style="{td};color:{r_col};font-weight:700">{rr:.2f}×</td>'
+            f'<td style="{td};color:{d_col};white-space:nowrap">{r["Chg %"]:+.1f}% '
+            f'<span style="color:{TEXT_MUTED};font-size:10px">'
+            f'({r["Drop ATR"]:+.1f} ATR)</span></td>'
+            f'<td style="{td};color:{TEXT_PRIMARY}">{_fmt(r["IV"], "%")}</td>'
+            f'<td style="{td};color:{TEXT_MUTED}">{_fmt(r["RV"], "%")}</td>'
+            f'<td style="{td};color:{TEXT_MUTED}">{_fmt(r["Skew"], " pts")}</td>'
+            f'<td style="{td};color:{ACCENT_GREEN}">{_fmt(r["Ann Prem %"], "%")}</td>'
+            f'<td style="{td};color:{sp_col}">{_fmt(sp, "%")}</td>'
+            f'<td style="{td};color:{TEXT_MUTED}">{_fmt(r["RSI"])}</td>'
+            f'<td style="{td};color:{s50_col}">{_fmt(s50, "%")}</td>'
+            f'</tr>'
+        )
+
+    st.markdown(
+        f'<div style="overflow-x:auto;border:1px solid {GOLD}33;border-radius:8px">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:Inter,sans-serif">'
+        f'<thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
+
+    # Reasoning per ticker, so no verdict appears without its justification.
+    st.markdown(
+        f'<div style="color:{GOLD};font-size:11px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:0.8px;margin:16px 0 6px">Why each verdict</div>',
+        unsafe_allow_html=True)
+    for _, r in df.iterrows():
+        vcol, vicon = _VERDICT_STYLE.get(r["Verdict"], (TEXT_MUTED, "—"))
+        st.markdown(
+            f'<div style="background:{BG_PANEL};border-left:3px solid {vcol};'
+            f'padding:7px 12px;margin-bottom:5px;border-radius:0 6px 6px 0;font-size:11px">'
+            f'<b style="color:{GOLD};font-family:\'DM Mono\',monospace">{r["Ticker"]}</b> '
+            f'<span style="color:{vcol};font-weight:700">{vicon} {r["Verdict"]}</span> '
+            f'<span style="color:{TEXT_MUTED}">— {r["Why"]}</span><br>'
+            f'<span style="color:{TEXT_PRIMARY};font-size:10px">{r["Side"]}</span></div>',
+            unsafe_allow_html=True)
+
+    with st.expander("📖 How to read this — and what it will not tell you"):
         st.markdown(f"""
-        <div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:8px;padding:30px;text-align:center;color:{TEXT_MUTED}">
-            <div style="font-size:36px;margin-bottom:12px">⚡</div>
-            <div style="font-size:16px;color:{TEXT_PRIMARY};margin-bottom:8px">3× ETF Options — High Premium Setups</div>
-            <div style="font-size:13px">Elevated IV creates outsized premiums — but risk matches the reward.<br>Criteria: IV Rank ≥ {iv_rank_min} · Premium ≥ {premium_pct_min}% · DTE {dte_min}–{dte_max}</div>
-        </div>""", unsafe_allow_html=True)
+**IV/RV** — implied volatility ÷ what the ETF has actually delivered over the last
+{RV_WINDOW} sessions. `1.00×` means options are priced at the recent move.
+**`{IV_RV_RICH:.2f}×`+ means the market is charging well over recent damage** — that is
+the condition worth selling into. Unlike a raw IV figure it is comparable across
+tickers: 60% IV is cheap for SOXL and extraordinary for SPY.
+
+**Today (± ATR)** — the fall in the ETF's own average daily range. `-2.0 ATR` is an
+unusual day for anything; `-3%` means nothing on its own.
+
+**Skew** — how much more the downside put costs than the at-the-money one, in IV
+points. It widens when people pay up for protection, which is when a put seller is
+paid best.
+
+**Verdicts**
+
+| | |
+|---|---|
+| 🎯 **Prime CSP** | Rich premium **and** a real drop **and** not below its 50-day |
+| 💰 **Rich premium** | Premium is rich, but today was quiet — no urgency |
+| 🔪 **Avoid — knife** | Rich premium *because* it is collapsing. Hard veto, whatever it pays |
+| 🚧 **Illiquid** | Spread over 15% — the exit costs more than the edge |
+| — **Fair / Thin** | Options priced at or below the recent move. Nothing to sell |
+
+---
+
+**What this does not tell you**
+
+- **No IV Rank yet.** The strictly better measure is IV against *its own* past IV.
+  Nothing was storing that, so it starts accumulating from the daily snapshot job —
+  meaningful in about three months. Until then IV/RV carries the judgement alone.
+- **Not a contract recommendation.** No strike, no expiry, by design. It reads a
+  ~{dte_min}–{dte_max} day put to measure richness; pick your actual contract in your
+  broker against a live chain.
+- **Rich is not safe.** Premium is richest exactly when something is going wrong.
+  The knife veto catches the obvious cases, not all of them.
+        """)
+
+    st.markdown(
+        f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
+        f'border-left:3px solid {ACCENT_RED};border-radius:6px;padding:12px 16px;'
+        f'margin-top:16px;color:{TEXT_MUTED};font-size:12px">'
+        f'⚠️ <b>3× leveraged ETFs decay.</b> Volatility drag means they lose value over '
+        f'time even when the index goes your way, so a cash-secured put here is a '
+        f'premium-collection trade with an exit plan — not a position you want to be '
+        f'assigned and hold. <b>Size very small.</b></div>',
+        unsafe_allow_html=True)

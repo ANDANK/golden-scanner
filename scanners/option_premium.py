@@ -57,6 +57,12 @@ IV_RV_FAIR = 1.10
 DROP_ATR_NOTABLE = 1.0
 DROP_ATR_SHARP = 1.75
 
+# How far below its 50-day average counts as an established downtrend rather
+# than ordinary chop. Sitting a fraction under the line is normal and vetoing
+# it would throw away most sane candidates; sitting well under it is a
+# different animal, and no premium compensates for writing puts into one.
+KNIFE_SMA_PCT = -5.0
+
 
 def realized_vol(close: pd.Series, days: int = RV_WINDOW) -> float:
     """Annualised realised volatility from daily closes, as a decimal (0.42).
@@ -213,7 +219,7 @@ def pick_expiry(expiries: list[str], dte_min: int = 21, dte_max: int = 45,
 
 
 def assess(iv: float, rv: float, drop_atr: float, iv_rank: float | None,
-           spread_pct: float | None, above_sma50: bool | None,
+           spread_pct: float | None, sma50_pct: float | None,
            rsi: float | None = None) -> dict:
     """Turn the measurements into a verdict with its reasons attached.
 
@@ -265,20 +271,30 @@ def assess(iv: float, rv: float, drop_atr: float, iv_rank: float | None,
         elif spread_pct > 15:
             reasons.append(f"wide spread ({spread_pct:.0f}%) eats the edge")
 
-    if above_sma50 is True:
+    below = sma50_pct is not None and sma50_pct < 0
+    deep_below = sma50_pct is not None and sma50_pct <= KNIFE_SMA_PCT
+    if sma50_pct is None:
+        pass
+    elif deep_below:
+        reasons.append(f"{abs(sma50_pct):.0f}% below its 50-day — established downtrend")
+    elif below:
+        reasons.append(f"{abs(sma50_pct):.1f}% under its 50-day")
+    else:
         reasons.append("still above its 50-day average")
-    elif above_sma50 is False:
-        reasons.append("below its 50-day average — falling knife risk")
 
     score = max(0, min(score, 100))
 
     # Verdict. Structure over arithmetic: these are veto conditions, not
     # penalties to be outweighed by a big enough premium.
-    if above_sma50 is False and drop_atr <= -DROP_ATR_SHARP:
+    # Two ways to be a knife, and requiring both was the bug: a ticker 11%
+    # under its 50-day and grinding lower is a knife whether or not TODAY was
+    # dramatic. The trend is the risk; the single bad bar is just the day you
+    # happened to look.
+    if below and (drop_atr <= -DROP_ATR_SHARP or deep_below):
         verdict = "Avoid — knife"
     elif spread_pct is not None and spread_pct > 15:
         verdict = "Illiquid"
-    elif ratio >= IV_RV_RICH and drop_atr <= -DROP_ATR_NOTABLE and above_sma50 is not False:
+    elif ratio >= IV_RV_RICH and drop_atr <= -DROP_ATR_NOTABLE and not below:
         verdict = "Prime CSP"
     elif ratio >= IV_RV_RICH:
         verdict = "Rich premium"
