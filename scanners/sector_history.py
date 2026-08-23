@@ -56,6 +56,7 @@ _FIELD_MAP = {
     "3M Ret %":    "ret_3m",
     "RS vs SPY":   "rs",
     "RS 21d":      "rs_21",
+    "RS 10d":      "rs_10",
     "Quadrant":    "quadrant",
     "RS Trend":    "rs_trend",
     "RSI":         "rsi",

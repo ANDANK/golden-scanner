@@ -128,26 +128,69 @@ def build_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None =
         if len(g) < FAST_WINDOW + 2:
             continue
 
-        rs = g["RS vs SPY"].astype(float).to_numpy()
+        rs = g["RS vs SPY"].astype(float).to_numpy()          # 63-day RS level
         ranks = g["Rank"].astype(float).to_numpy()
 
         w = min(MOM_WINDOW, len(rs) - 1)
         f = min(FAST_WINDOW, len(rs) - 1)
 
-        rs_now, rs_then = rs[-1], rs[-(w + 1)]
-        rs_mom = (rs_now / rs_then - 1) * 100 if rs_then else 0.0
+        # Momentum is the SHORT-window relative return, read as a level --
+        # "how far ahead of SPY has this sector been over the last 21
+        # sessions". It is emphatically NOT the change in the 63-day RS
+        # ratio, which is what this used to compute and which is not a
+        # momentum measure at all:
+        #
+        #   RS63(t)/RS63(t-20) = (relative return over the last 20 sessions)
+        #                        ÷ (relative return over days t-83..t-63)
+        #
+        # The second term is the window falling out the back, so the number
+        # moves when old history EXPIRES rather than when money moves now. A
+        # sector flat against SPY for twenty straight sessions, having fallen
+        # 10% three months earlier, scored +11% "momentum" on that formula
+        # while doing nothing whatsoever; a sector that led in the spring and
+        # is merely average today scored -11% and was filed under "money
+        # moving out" while it was actually beating the market. Those false
+        # readings are what made this card contradict the ranking card below
+        # it, which had the clean measure all along.
+        #
+        # RS 21d is P(t)/P(t-21) ÷ SPY(t)/SPY(t-21): one window, no overlap,
+        # nothing expiring. 1.03 means 3% ahead of the market over the month.
+        if "RS 21d" in g.columns:
+            rs21 = g["RS 21d"].astype(float).to_numpy()
+        else:
+            rs21 = np.ones_like(rs)
+        rs_mom = (float(rs21[-1]) - 1) * 100
+
+        # Same clean construction over 10 sessions. Needed because momentum
+        # measured over 21 days straddles a turn: a leader that rolled over a
+        # fortnight ago can still read positive on the month, and waiting for
+        # the 21-day figure to go negative is exactly the lateness this card
+        # exists to avoid. Two clean windows disagreeing IS the early signal.
+        if "RS 10d" in g.columns:
+            mom_fast = (float(g["RS 10d"].astype(float).to_numpy()[-1]) - 1) * 100
+        else:
+            mom_fast = rs_mom
 
         rank_now = int(ranks[-1])
         rank_d20 = int(ranks[-(w + 1)] - rank_now)      # + = climbed
         rank_d10 = int(ranks[-(f + 1)] - rank_now)
 
-        window = rs[-(w + 1):]
+        # Slope and consistency both read the SHORT-window series for the
+        # same reason -- on the 63-day series each daily change carries the
+        # single expiring day with it.
+        window = rs21[-(w + 1):]
         slope = _slope_pct_per_week(window)
         up_days = int((np.diff(window) > 0).sum())
 
         # Position within its own trailing range: a sector at the bottom of
         # its own range with positive momentum is early; one at the top of
         # its range is late, however good the rank looks.
+        # Deliberately the 63-day LEVEL, not the short-window momentum: this
+        # column answers "how far through this move are we", which is a
+        # question about where strength has got to, not how fast it is
+        # changing. No expiring-window problem here — it compares a level
+        # against its own past levels rather than differencing them.
+        rs_now = float(rs[-1])
         lo, hi = float(np.min(rs)), float(np.max(rs))
         pctile = ((rs_now - lo) / (hi - lo) * 100) if hi > lo else 50.0
 
@@ -167,12 +210,18 @@ def build_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None =
         # versus the MARKET, rank is versus the other fourteen sectors -- and
         # a sector can genuinely gain on SPY while peers gain faster. So a
         # negative verdict now requires momentum itself to be negative.
-        if mom_up:
-            if climbing:
-                verdict = "Accelerating" if top else "Emerging"
-            else:
-                # Gaining on SPY, but not gaining on its peers: real, weaker.
-                verdict = "Improving"
+        # A leader still ahead over the month but behind over the fortnight is
+        # rolling over. Flagging it here rather than waiting for the monthly
+        # figure to turn keeps the sell side as early as the buy side.
+        rolling_over = top and mom_fast < -MOM_MIN
+
+        if mom_up and climbing and not rolling_over:
+            verdict = "Accelerating" if top else "Emerging"
+        elif rolling_over:
+            verdict = "Fading"
+        elif mom_up:
+            # Gaining on SPY, but not gaining on its peers: real, weaker.
+            verdict = "Improving"
         elif mom_dn:
             if top:
                 # A top-ranked sector with RS already rolling over is the
@@ -198,6 +247,7 @@ def build_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None =
             "Rank Δ20":   rank_d20,
             "Rank Δ10":   rank_d10,
             "RS Mom %":   round(rs_mom, 2),
+            "Fast Mom %": round(mom_fast, 2),
             "RS Slope":   round(slope, 2),
             "Up Days":    up_days,
             "Window":     w,
@@ -385,7 +435,7 @@ def render_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None 
     _TH = (f'background:{BG_PANEL};color:{TEXT_MUTED};font-size:9px;font-weight:700;'
            f'text-transform:uppercase;letter-spacing:0.7px;padding:7px 10px;'
            f'border-bottom:2px solid {GL}44;white-space:nowrap;text-align:left')
-    cols_t = ["Sector", "Trajectory", "RS Mom %", "Rank", "Δ20", "Δ10",
+    cols_t = ["Sector", "Trajectory", "vs SPY 1M", "vs SPY 2W", "Rank", "Δ20", "Δ10",
               "Steady", "RS Range", "1M Price"]
     head = "".join(f'<th style="{_TH}">{c}</th>' for c in cols_t)
 
@@ -406,6 +456,8 @@ def render_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None 
             f'<td style="{td};color:{c};font-weight:700;font-size:10px;white-space:nowrap">'
             f'{r["Icon"]} {r["Trajectory"]}</td>'
             f'<td style="{td};color:{c};font-weight:700">{r["RS Mom %"]:+.1f}%</td>'
+            f'<td style="{td};color:{G if r["Fast Mom %"] >= 0 else R}">'
+            f'{r["Fast Mom %"]:+.1f}%</td>'
             f'<td style="{td};color:{TEXT_PRIMARY}">#{r["Rank"]}</td>'
             f'<td style="{td};color:{G if d20 > 0 else (R if d20 < 0 else TEXT_MUTED)}">{f20}</td>'
             f'<td style="{td};color:{G if d10 > 0 else (R if d10 < 0 else TEXT_MUTED)}">{f10}</td>'
@@ -433,10 +485,15 @@ def render_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None 
         f'<summary style="color:{GL};font-size:11px;font-weight:700;cursor:pointer;'
         f'text-transform:uppercase;letter-spacing:0.7px">📖 What these columns mean</summary>'
         f'<div style="color:{TEXT_MUTED};font-size:11px;line-height:1.75;margin-top:10px">'
-        f'· <b style="color:{TEXT_PRIMARY}">RS Mom %</b> — how much relative strength vs '
-        f'SPY changed over the last {MOM_WINDOW} sessions. <b>This is the forward-looking '
-        f'number.</b> Positive = gaining ground on the market right now, whatever the rank '
-        f'says.<br>'
+        f'· <b style="color:{TEXT_PRIMARY}">vs SPY 1M</b> — how far ahead of (or behind) '
+        f'the market this sector has been over the last month. <b>This is the '
+        f'forward-looking number.</b> +3% means it beat SPY by 3% over the month, '
+        f'whatever the rank says.<br>'
+        f'· <b style="color:{TEXT_PRIMARY}">vs SPY 2W</b> — the same over the last two '
+        f'weeks. When 1M is positive but 2W has turned negative the sector is rolling '
+        f'over: still ahead on the month, already behind on the fortnight. On a top-5 '
+        f'sector that is what triggers ⚠️ Fading, and it is the earliest honest exit '
+        f'signal on the page.<br>'
         f'· <b style="color:{TEXT_PRIMARY}">Rank / Δ20 / Δ10</b> — current place, and '
         f'places gained (▲) or lost (▼) over 20 and 10 sessions. A low rank with a big ▲ '
         f'is the early-entry case; Δ10 turning negative while Δ20 is positive is the first '

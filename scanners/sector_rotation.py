@@ -148,6 +148,7 @@ def compute_row(ticker: str, name: str, close, volume, spy_close) -> dict | None
     # Relative strength vs SPY, over both horizons.
     rs_val = _rs(close, spy_close) if spy_close is not None else 1.0
     rs_21  = _rs(close, spy_close, 21) if spy_close is not None else 1.0
+    rs_10  = _rs(close, spy_close, 10) if spy_close is not None else 1.0
     rs_dir = _rs_trend(close, spy_close) if spy_close is not None else "—"
 
     # RRG quadrant, same rule as home.py's _sector_flows() so the Market
@@ -181,6 +182,7 @@ def compute_row(ticker: str, name: str, close, volume, spy_close) -> dict | None
         "3M Ret %":    ret_3m,
         "RS vs SPY":   rs_val,
         "RS 21d":      rs_21,
+        "RS 10d":      rs_10,
         "Quadrant":    quadrant,
         "RS Trend":    rs_dir,
         "RSI":         round(rsi, 1),
