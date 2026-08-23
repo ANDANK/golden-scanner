@@ -2061,6 +2061,14 @@ def _plain_signal(quad: str, m_arrow: str) -> str:
 
 
 def _render_sectors():
+    # Forward-looking card FIRST. The ranking below it answers "where has
+    # money been" -- a 63-day verdict, structurally late -- and that is the
+    # question a reader asks second, not first.
+    try:
+        _render_sector_outlook()
+    except Exception as e:
+        st.caption(f"Sector outlook unavailable: {e}")
+
     rows = _sector_flows()
     if not rows:
         st.markdown(_card("Sector Rotation", "🔄", MINT,
@@ -2241,6 +2249,29 @@ def _render_sectors():
     # movement arrive in jumps rather than smoothly). Say which of the two is
     # happening, then offer the history that tells signal from noise.
     _render_sector_tracking(ranked)
+
+
+def _render_sector_outlook():
+    """Momentum-of-relative-strength view, rendered above the ranking card.
+
+    Shares _sector_history_cached with the tracking panels below, so the two
+    are computed from one series and cannot disagree.
+    """
+    from scanners.sector_outlook import render_outlook
+    from scanners.sector_rotation import SECTORS, _sector_history_cached
+
+    try:
+        spy = get_price_history("SPY", period="1y")
+        if spy is None or spy.empty:
+            return
+        as_of = pd.Timestamp(spy["Close"].squeeze().index[-1]).strftime("%Y-%m-%d")
+    except Exception:
+        return
+
+    hist = _sector_history_cached(as_of=as_of)
+    if hist is None or hist.empty:
+        return
+    render_outlook(hist, SECTORS)
 
 
 def _render_sector_tracking(ranked: list[dict]):
