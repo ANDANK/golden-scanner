@@ -217,8 +217,23 @@ def annualized_return(premium: float, strike: float, dte: int) -> float:
 # ── IV Rank Approximation ──────────────────────────────────────
 
 def approx_iv_rank(iv_current: float) -> float:
-    """Very rough IV rank approximation (0-100)."""
-    # Typical IV range ~15-80%; rank within that
+    """DEPRECATED — not an IV rank. Use scanners.option_premium.premium_rank.
+
+    This maps IV onto a fixed 10-80% scale that is IDENTICAL for every
+    ticker, so it has no idea what normal looks like for the name in front of
+    it. Its practical effect was to turn every scanner's "IV Rank" slider into
+    a hard, ticker-independent IV threshold:
+
+        Min IV Rank 25  ==  IV >= 27.5%   (CSP: excluded AAPL, SPY, KO, JNJ
+                                           however expensive their options got)
+        Max IV Rank 35  ==  IV <= 34.5%   (LEAPS: excluded NVDA, TSLA, SOXL
+                                           however cheap theirs got)
+
+    Every scanner has been moved to premium_rank(), which compares IV against
+    the ticker's own stored history when available and against its realised
+    volatility otherwise. Kept only so nothing imported from here breaks; do
+    not use it for new work.
+    """
     iv_min, iv_max = 0.10, 0.80
     rank = (iv_current - iv_min) / (iv_max - iv_min) * 100
     return round(max(0, min(100, rank)), 1)

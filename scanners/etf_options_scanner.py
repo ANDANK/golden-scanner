@@ -9,6 +9,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import *
 from utils import *
 from data_loader import get_price_history, get_options_chain, get_options_error
+from scanners import iv_history
+from scanners.option_premium import RV_WINDOW, premium_rank, realized_vol
 
 
 def scan_etf_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min,
@@ -16,6 +18,8 @@ def scan_etf_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min
 
     with st.spinner("Scanning ETF options for liquid premium setups…"):
         results = []
+        # One read for the whole scan rather than per ticker.
+        _iv_snaps = iv_history.load_snapshots()
         progress = st.progress(0)
         today = datetime.now()
 
@@ -94,7 +98,18 @@ def scan_etf_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min
                     continue
 
                 iv = float(row.get("impliedVolatility", 0.20) or 0.20)
-                iv_rank = approx_iv_rank(iv)
+                # Selling puts on ETFs: rich premium is the point, so this
+                # reads like the CSP page. Real measure, not the fixed scale
+                # whose Min IV Rank 25 was really a hard "IV >= 27.5%" floor —
+                # which permanently excluded every low-volatility ETF here.
+                _rv = realized_vol(close, RV_WINDOW)
+                _pr0 = premium_rank(iv, _rv)
+                _stored = iv_history.best_rank(ticker, iv, _pr0["iv_rv"],
+                                               snapshots=_iv_snaps)["rank"]
+                _pr = premium_rank(iv, _rv, _stored)
+                if _pr["rank"] is None:
+                    continue
+                iv_rank = _pr["rank"]
 
                 if iv_rank < iv_rank_min:
                     continue
@@ -124,6 +139,8 @@ def scan_etf_options(tickers, iv_rank_min, delta_min, delta_max, premium_pct_min
                     "Premium %":     round(premium_pct, 2),
                     "Delta":         round(delta_abs, 3),
                     "IV Rank":       round(iv_rank, 1),
+                    "IV/RV":         _pr["iv_rv"],
+                    "Rank From":     _pr["source"],
                     "DTE":           dte,
                     "Ann. Return %": round(ann_ret, 2),
                     "Spread %":      round(spread_pct, 2),

@@ -9,6 +9,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import *
 from utils import *
+from scanners import iv_history
+from scanners.option_premium import RV_WINDOW, premium_rank, realized_vol
 from data_loader import (
     get_price_history, get_options_chain, get_options_error,
     find_best_expiry, pick_strike,
@@ -36,6 +38,8 @@ def scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max,
             batch_size: int = BATCH_SIZE, batch_pause: int = BATCH_PAUSE_S):
 
     diag = ScanDiagnostics()
+    # One read for the whole scan rather than per ticker.
+    _iv_snaps = iv_history.load_snapshots()
     cfg = OPTIONS_STRIKE_RANGES["CC"]
     st.session_state.pop("_rl_hit", None)
 
@@ -99,7 +103,16 @@ def scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max,
             delta_abs = abs(delta_val)
 
             iv = float(row.get("impliedVolatility", 0.30) or 0.30)
-            iv_rank = approx_iv_rank(iv)
+            # Covered calls SELL premium, so richness reads the same way it
+            # does for a CSP: high is good. Real measure, not the fixed scale.
+            _rv = realized_vol(close, RV_WINDOW)
+            _pr0 = premium_rank(iv, _rv)
+            _stored = iv_history.best_rank(ticker, iv, _pr0["iv_rv"],
+                                           snapshots=_iv_snaps)["rank"]
+            _pr = premium_rank(iv, _rv, _stored)
+            if _pr["rank"] is None:
+                diag.skipped(ticker, "cannot measure premium richness"); continue
+            iv_rank = _pr["rank"]
 
             ann_ret = annualized_return(mid, price, dte)
             upside_capped_pct = (strike - price) / price * 100
@@ -130,6 +143,8 @@ def scan_cc(tickers, delta_min, delta_max, premium_pct_min, dte_min, dte_max,
                 "Delta":          round(delta_abs, 3),
                 "IV":             f"{iv*100:.1f}%",
                 "IV Rank":        round(iv_rank, 1),
+                "IV/RV":          _pr["iv_rv"],
+                "Rank From":      _pr["source"],
                 "DTE":            dte,
                 "Upside Cap %":   round(upside_capped_pct, 2),
                 "P(Assign) %":    round(prob_assignment, 1),
