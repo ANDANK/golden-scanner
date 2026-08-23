@@ -491,6 +491,33 @@ def render_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None 
                     unsafe_allow_html=True,
                 )
 
+    # ── Nothing may silently vanish ─────────────────────────────────
+    # Cooling and Flat belong to no bucket, so a sector drifting into either
+    # disappears from all three columns above. For anyone reading only those
+    # columns that is indistinguishable from "nothing changed" -- and Cooling
+    # in particular ("losing ground, rank has not caught up") is exactly the
+    # state a holder wants to know about. Named here so the three columns plus
+    # this line always account for every sector.
+    rest = out[out["Bucket"] == "none"]
+    if not rest.empty:
+        items = " · ".join(
+            f'<b style="color:{GL}">{r["Ticker"]}</b> '
+            f'<span style="color:{COL.get(r["Colour"], TEXT_MUTED)}">'
+            f'{r["Icon"]} {r["Trajectory"]}</span> '
+            f'<span style="color:{TEXT_MUTED}">({r["HeadIcon"]} {r["Heading"]})</span>'
+            for _, r in rest.iterrows()
+        )
+        st.markdown(
+            f'<div style="background:{BG_PANEL};border-left:3px solid {TEXT_MUTED};'
+            f'padding:7px 12px;border-radius:0 6px 6px 0;margin-top:10px;'
+            f'color:{TEXT_MUTED};font-size:10px;line-height:1.7">'
+            f'<b style="color:{TEXT_PRIMARY}">In no group right now:</b> {items}'
+            f'<br>No action either way — but they have not vanished, and '
+            f'<b>🌡️ Cooling</b> on something you own is the first hint to stop '
+            f'adding. Full detail in the table below.</div>',
+            unsafe_allow_html=True,
+        )
+
     # ── The three reference tables ──────────────────────────────────
     # Put on the page rather than left in chat: this is the part that gets
     # re-read every week, and a rule you have to go looking for is a rule you
