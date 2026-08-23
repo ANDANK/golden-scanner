@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import *
 from utils import *
 from data_loader import get_price_history, get_options_chain
+from scanners import iv_history
 from scanners.option_premium import (
     DROP_ATR_NOTABLE, IV_RV_FAIR, IV_RV_RICH, RV_WINDOW,
     assess, atr_move, chain_snapshot, iv_rv_ratio, pick_expiry, realized_vol,
@@ -48,6 +49,9 @@ def scan_3x_premium(tickers, dte_min=21, dte_max=45, min_iv_rv=1.10,
                     falling_only=False, status_fn=None):
     """One row per ticker describing how rich its premium is right now."""
     rows, skips = [], {}
+    # Loaded once for the whole scan rather than per ticker: the store is one
+    # small JSON per session and re-reading it 7 times is pure waste.
+    snaps = iv_history.load_snapshots()
 
     def skip(reason):
         skips[reason] = skips.get(reason, 0) + 1
@@ -100,9 +104,10 @@ def scan_3x_premium(tickers, dte_min=21, dte_max=45, min_iv_rv=1.10,
                 skip(f"premium not rich enough (<{min_iv_rv:.2f}×)")
                 continue
 
-            # IV rank needs stored history, which does not exist yet — pass
-            # None so assess() stays silent rather than inventing one.
-            verdict = assess(iv, rv, drop_atr, None, snap["spread_pct"],
+            # A real IV rank once enough sessions are stored; None until
+            # then, so assess() stays silent rather than inventing one.
+            rk = iv_history.rank_for(ticker, iv, snapshots=snaps)
+            verdict = assess(iv, rv, drop_atr, rk["rank"], snap["spread_pct"],
                              sma50_pct, rsi)
 
             # Selling premium and buying it are opposite trades on the same
@@ -129,6 +134,9 @@ def scan_3x_premium(tickers, dte_min=21, dte_max=45, min_iv_rv=1.10,
                 "OI":        snap["open_interest"],
                 "RSI":       round(rsi, 1),
                 "vs SMA50":  sma50_pct,
+                "IV Rank":   rk["rank"],
+                "IV Pctile": rk["percentile"],
+                "IV Days":   rk["sessions"],
                 "Verdict":   verdict["verdict"],
                 "Score":     verdict["score"],
                 "Why":       " · ".join(verdict["reasons"]),
@@ -244,13 +252,42 @@ def render():
     with c3: metric_card("Prime setups", str(len(prime)), color=ACCENT_GREEN)
     with c4: metric_card("Best IV/RV", f'{df["IV/RV"].max():.2f}×', color=ACCENT_BLUE)
 
+    # Read once, before anything that branches on it: the status banner above
+    # the table and the optional IV Rank column below it must agree.
+    cov = iv_history.coverage()
+
+    if cov["ready"]:
+        st.markdown(
+            f'<div style="background:{ACCENT_GREEN}12;border-left:3px solid {ACCENT_GREEN};'
+            f'padding:7px 12px;border-radius:0 6px 6px 0;margin:10px 0;'
+            f'color:{TEXT_MUTED};font-size:11px">'
+            f'<b style="color:{ACCENT_GREEN}">IV Rank is live</b> — '
+            f'{cov["sessions"]} sessions stored ({cov["first"]} → {cov["last"]}). '
+            f'Rank is IV against this ticker\'s OWN past year, which is stricter '
+            f'than IV/RV: both must agree before a premium is genuinely unusual.</div>',
+            unsafe_allow_html=True)
+    else:
+        st.markdown(
+            f'<div style="background:{GOLD}12;border-left:3px solid {GOLD};'
+            f'padding:7px 12px;border-radius:0 6px 6px 0;margin:10px 0;'
+            f'color:{TEXT_MUTED};font-size:11px">'
+            f'<b style="color:{GOLD}">IV Rank building — {cov["sessions"]} of '
+            f'{iv_history.MIN_SESSIONS} sessions.</b> A daily job records IV after '
+            f'each close; a rank from fewer sessions is not a weak rank, it is a '
+            f'meaningless one, so no number is shown until the history is deep '
+            f'enough. <b>IV/RV above works today</b> and carries the judgement '
+            f'until then.</div>',
+            unsafe_allow_html=True)
+
     st.markdown("<br>", unsafe_allow_html=True)
 
     _TH = (f'background:{BG_PANEL};color:{TEXT_MUTED};font-size:9px;font-weight:700;'
            f'text-transform:uppercase;letter-spacing:0.7px;padding:8px 10px;'
            f'border-bottom:2px solid {GOLD}44;white-space:nowrap;text-align:left')
-    cols = ["Ticker", "Verdict", "IV/RV", "Today", "IV", "Realised",
-            "Skew", "Ann Prem", "Spread", "RSI", "vs SMA50"]
+    cols = ["Ticker", "Verdict", "IV/RV", "Today", "IV", "Realised"]
+    if cov["ready"]:
+        cols.append("IV Rank")
+    cols += ["Skew", "Ann Prem", "Spread", "RSI", "vs SMA50"]
     head = "".join(f'<th style="{_TH}">{c}</th>' for c in cols)
 
     def _fmt(v, suf="", dp=1):
@@ -282,7 +319,13 @@ def render():
             f'({r["Drop ATR"]:+.1f} ATR)</span></td>'
             f'<td style="{td};color:{TEXT_PRIMARY}">{_fmt(r["IV"], "%")}</td>'
             f'<td style="{td};color:{TEXT_MUTED}">{_fmt(r["RV"], "%")}</td>'
-            f'<td style="{td};color:{TEXT_MUTED}">{_fmt(r["Skew"], " pts")}</td>'
+            # Must mirror the header exactly: the column is present only when
+            # the history is deep enough, and a mismatch here silently shifts
+            # every value after it into the wrong column.
+            + (f'<td style="{td};color:'
+               f'{ACCENT_GREEN if (r["IV Rank"] or 0) >= 70 else TEXT_PRIMARY}">'
+               f'{_fmt(r["IV Rank"], "", 0)}</td>' if cov["ready"] else "")
+            + f'<td style="{td};color:{TEXT_MUTED}">{_fmt(r["Skew"], " pts")}</td>'
             f'<td style="{td};color:{ACCENT_GREEN}">{_fmt(r["Ann Prem %"], "%")}</td>'
             f'<td style="{td};color:{sp_col}">{_fmt(sp, "%")}</td>'
             f'<td style="{td};color:{TEXT_MUTED}">{_fmt(r["RSI"])}</td>'

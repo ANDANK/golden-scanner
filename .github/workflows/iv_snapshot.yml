@@ -1,0 +1,78 @@
+name: IV Snapshot
+
+# One implied-volatility reading per trading day, so a real IV Rank can be
+# computed later. yfinance only serves the CURRENT chain — there is no way to
+# ask what IV was three months ago — so the series only exists if we write it
+# down every day. Roughly 60 sessions are needed before a rank means anything;
+# until then the pages fall back to IV-vs-realised-volatility.
+
+on:
+  schedule:
+    # ── EDT (summer, Mar–Nov): UTC-4 ─────────────────────────────
+    # 4:30 PM ET = 20:30 UTC. Reading at a consistent time each day is what
+    # makes the series comparable to itself.
+    - cron: "30 20 * * 1-5"
+    # ── EST (winter, Nov–Mar): UTC-5 ─────────────────────────────
+    # 4:30 PM ET = 21:30 UTC  ← swap these two in November
+    # - cron: "30 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: "Comma-separated ticker override (blank = full universe)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: iv-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    name: Snapshot implied volatility
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          # Install everything from requirements.txt except streamlit (mocked in headless mode)
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+
+      - name: Write IV snapshot
+        env:
+          IV_SNAPSHOT_TICKERS: ${{ github.event.inputs.tickers }}
+        run: python scripts/headless_iv_snapshot.py
+
+      - name: Commit snapshot
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/iv_history
+          if git diff --cached --quiet; then
+            echo "Nothing to commit — market holiday, or no chain data returned."
+          else
+            git commit -m "IV snapshot $(date -u +'%Y-%m-%d %H:%M UTC')"
+
+            # Other scheduled jobs also push to main; -X ours keeps THIS run's
+            # reading if two land on the same file.
+            if git pull --rebase -X ours origin main; then
+              git push origin main
+            else
+              echo "Rebase conflict could not be auto-resolved; force-pushing snapshot."
+              git rebase --abort
+              git push --force-with-lease origin main
+            fi
+          fi
