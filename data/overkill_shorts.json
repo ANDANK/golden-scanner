@@ -4,6 +4,417 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-07-18",
+      "url": "https://www.youtube.com/shorts/4ItZFsE_-go",
+      "title": "History is About to be Made.. (Best Opportunity for Investors!)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "TSM",
+          "bias": "Bearish",
+          "notes": "Taiwan Semiconductor sold off despite reporting an outstanding quarter, showing that good results are no longer enough to support high valuations.",
+          "price": 402.3
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Nvidia declined in the chip sector pullback as investor expectations reached extreme levels and AI stock valuations came under pressure.",
+          "price": 203.28
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bearish",
+          "notes": "Micron fell alongside other AI-related chip names as the market rewarded guidance over simple earnings beats amidst valuation concerns.",
+          "price": 865.46
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bearish",
+          "notes": "Netflix dropped significantly following earnings because forward guidance was lowered, proving that simple earnings beats are insufficient in the current market environment.",
+          "price": 67.6
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Mixed inflation data supports a higher-for-longer Fed interest rate environment, which raises Treasury yields and pressures growth stocks while potentially benefiting financial stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Escalating US-Iran tensions present a major macroeconomic risk, as higher oil prices could drive inflation up, delay Fed rate cuts, and weigh on speculative growth assets.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-02",
+      "url": "https://www.youtube.com/shorts/yMxyaLwDZvg",
+      "title": "How much CASH I’m sitting on right now",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "The host has recently started buying Netflix stock, identifying it as one of his selective stock opportunities.",
+          "price": 77.65
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "The host is aggressively buying Celsius Holdings, noting its energy drink portfolio and recent acquisition of Rockstar.",
+          "price": 33.16
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "The host has been aggressively buying Salesforce over the past few months as part of a position in SaaS stocks.",
+          "price": 166.11
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "The host has been aggressively buying ServiceNow over the last few months alongside other SaaS opportunities.",
+          "price": 106.32
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host is holding roughly $1.5 million in cash earning 3% to 4% interest, maintaining a neutral stance on broader market indices like the S&P 500 and Nasdaq.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-26",
+      "url": "https://www.youtube.com/shorts/iuSMaKEbWo0",
+      "title": "How I Make $37,000 Monthly with the Wheel Strategy (Options Trading)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The wheel strategy involves selling cash-secured puts on desirable stocks to collect upfront premium; if assigned, you transition to selling covered calls above the purchase price until the shares are called away.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When selling cash-secured puts, targeting a 30 to 35 delta with shorter-dated expirations optimizes theta time decay while maintaining a reasonable safety cushion below the market price.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "If a covered call moves into the money, buy to close the existing option and sell a further-dated call at a higher strike price to capture additional share appreciation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Use 2-standard-deviation Bollinger Bands and RSI to time entries; selling puts is most favorable near the bottom Bollinger Band when RSI is low.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "For high-implied-volatility AI stocks, apply a 20/40 delta system by selling puts at a conservative 20 delta to lower assignment risk, and selling covered calls at 40 to 50 delta to capture inflated premiums.",
+          "price": null
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Host sold a September 18th $120 cash-secured put (~30 delta) on Palantir to collect $739.96 in premium, considering the stock fairly valued near its moving average with upside potential.",
+          "price": 131.53
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Host favors selling August 21st $200 puts (~33 delta) on Nvidia for a $6.50 premium, establishing a net break-even price of $193.50 near strong technical support at $195.",
+          "price": 196.51
+        },
+        {
+          "ticker": "NBIS",
+          "bias": "Bullish",
+          "notes": "Host highlights selling out-of-the-money $150 put options on Nebius due to its 142% implied volatility, allowing traders to collect high premiums at a conservative 0.19 delta.",
+          "price": 187.88
+        },
+        {
+          "ticker": "WMT",
+          "bias": "Bullish",
+          "notes": "Host uses Walmart as a portfolio stabilizer, demonstrating how to roll an in-the-money $110 covered call out to June at a $115 strike to capture share appreciation and collect a net credit.",
+          "price": 111.74
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Neutral",
+          "notes": "Host demonstrates rolling a deep in-the-money $300 covered call to a January $325 strike for a $4.30 debit to unlock $25,000 in additional equity upside.",
+          "price": 326.56
+        },
+        {
+          "ticker": "MCD",
+          "bias": "Bullish",
+          "notes": "Host favors McDonald's at 52-week lows as a defensive wheel candidate because its negative correlation with AI stocks helps lower overall portfolio volatility.",
+          "price": 270.67
+        },
+        {
+          "ticker": "AAL",
+          "bias": "Neutral",
+          "notes": "Host uses American Airlines to demonstrate technical timing for option sales, recommending put selling near the $16 level when the stock approaches the lower Bollinger Band.",
+          "price": 14.95
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "Host illustrates managing assigned Robinhood shares following a drawdown by selling covered calls below the cost basis and progressively rolling strike prices higher as the stock recovers.",
+          "price": 95.65
+        }
+      ]
+    },
+    {
+      "date": "2026-07-21",
+      "url": "https://www.youtube.com/shorts/_Iih8RG5UTo",
+      "title": "Gold Investing on The Stock Market: The Case For Buying Today",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Gold has corrected roughly 26% from its peak of $5,500/oz to around $4,000/oz, but the long-term bullish thesis remains intact. The host recommends dollar-cost averaging into gold rather than trying to time the exact bottom.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Higher energy prices and persistent inflation are expected to force the Federal Reserve to keep interest rates higher for longer, creating short-term headwinds for non-yielding assets like gold.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 30-year US Treasury yield rising to 5.11% has boosted the US dollar and reduced short-term gold demand as higher risk-free bond yields compete for investor capital.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Long-term macroeconomic tailwinds for gold persist as US national debt reaches $39.6 trillion, fiscal deficits widen, and federal interest expenses continue to increase.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Central bank diversification into gold continues at a record pace of roughly 1,000 metric tons per year, with China accumulating gold for 20 consecutive months including 15 tons in June.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-29",
+      "url": "https://www.youtube.com/shorts/ScSqPs1NFIs",
+      "title": "The TRUTH About Retirement (Your Financial Advisor Doesn't Want You To Know)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "401(k) accounts offer tax-deferred growth and potential employer matching, but feature limited investment choices, fee expenses, and a 10% penalty for withdrawals made before age 59.5.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US Social Security requires a 6.2% tax from both the employee and employer, operating on a pay-as-you-go structure where current worker taxes directly fund current retiree benefits.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Demographic shifts with fewer young workers threaten the Social Security system, risking future benefit payout value due to inflation caused by monetary expansion.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The average 401(k) balance for US baby boomers retiring around age 65 is estimated at $100,000 to $200,000, which is insufficient for a multi-decade retirement.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Under the Coast FIRE strategy, reaching $150,000 in savings by age 35 compounded at an 8% annual return in the S&P 500 can grow to $1.5 million by age 65 without requiring further contributions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Allocating 50% to 90% of an investment portfolio toward index funds and ETFs provides broad market exposure and disciplined long-term wealth building.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "President Trump has proposed using increased tariffs on foreign goods to potentially reduce or replace federal income taxes and the IRS.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-16",
+      "url": "https://www.youtube.com/shorts/lXYHnlXZI5A",
+      "title": "You’ll never retire if you don’t change this..",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Staying 100% invested in stocks up to retirement age forces individuals to sell equities during market downturns to fund withdrawals, locking in losses immediately.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Abruptly shifting a portfolio heavily into bonds right before retirement (cliff-edge de-risking) reduces sequence risk but sacrifices the equity growth needed to outlast 30 years of inflation.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-01",
+      "url": "https://www.youtube.com/shorts/4rA7rLSow8s",
+      "title": "Early Investors will change their life‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD retains a strong long-term growth runway with strong upcoming quarterly catalysts, making it a core position despite short-term pullbacks.",
+          "price": 540.88
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Meta plans to launch a cloud service to sell excess AI computing capacity, opening a major new revenue stream to monetize its massive infrastructure spend.",
+          "price": 612.91
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Nvidia faces valuation headwinds and inventory risks as major tech clients may have overordered AI chips beyond current end-customer demand.",
+          "price": 197.58
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "e.l.f. Beauty illustrates how rapidly top growth stocks can bounce back, rallying over 60% in less than a month off its recent low.",
+          "price": 78.75
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius is positioned for an explosive rally after bottoming out, with a historical pattern of doubling in price and long-term potential to break its previous $100 high before 2029.",
+          "price": 31.87
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors can hedge AI capital expenditure uncertainty by holding both major chip producers and the big tech firms spending on capex.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To protect gains after a market run, avoid margin and short-term options, maintaining a balanced core of growth, value, and dividend stocks focused on a 5-to-10-year horizon.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-25",
+      "url": "https://www.youtube.com/shorts/x4XXSVhYzww",
+      "title": "The stock market crash coming our way could wipe 50% off share prices",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "The host is down $91,000 on a sold put strategy due to recent negative cash flow from AI spending, but remains confident the stock will eventually reach $400 again.",
+          "price": 326.56
+        },
+        {
+          "ticker": "WMT",
+          "bias": "Bullish",
+          "notes": "Originally bought at $71 per share, Walmart serves as a stable core position for his portfolio with a $110 covered call currently out of the money.",
+          "price": 111.74
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "The host holds a $650,000 position in Amazon and plans to continue holding it as one of his stronger-performing options trades.",
+          "price": 231.39
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Viewing Palantir as cheap around $122-$123, the host expects the company to crush its upcoming Q2 earnings report in 9 days.",
+          "price": 131.53
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host holds 10,500 shares down $48,000 but actively offsets position losses by selling covered calls, such as the $19 strike call.",
+          "price": 16.88
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Meta makes up about 8% of his portfolio where he holds long call options at the $580 and $600 strike prices.",
+          "price": 593.87
+        },
+        {
+          "ticker": "NBIS",
+          "bias": "Bullish",
+          "notes": "The host considers $200 per share to be fair value for NBIS and sees high implied volatility as a great setup for option sellers.",
+          "price": 187.88
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should avoid overtrading and panic selling during market pullbacks, focusing instead on holding 10 to 15 high-quality stocks and buying the dip.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-04-17",
+      "url": "https://www.youtube.com/shorts/8i9-YCDBV2E",
+      "title": "im back (again fr fr i think)",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The stock market and the economy are correlated but distinct, which allows equity markets to reach all-time highs even when economic conditions look weak.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Current micro-bubbles in certain stocks mirror the dot-com bubble, making it advisable to hunker down in quality stocks and prepare to buy market dips.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-08-22",
       "url": "https://www.youtube.com/shorts/sS6bxlDiS6g",
       "title": "$XRP SUI DOGE GIVING MASSIVE BUY/HOLD SIGNALS! 📈 AUGUST 22",
