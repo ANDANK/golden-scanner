@@ -2034,30 +2034,27 @@ def _sector_leaders() -> dict:                  # slower than the live RS quadra
     return out
 
 
-# Every quadrant spells out all three momentum states explicitly. The
-# previous form only special-cased ▲ in three of the four quadrants and let
-# ▬ fall through to the ▼ wording, so a sector sitting flat was told it was
-# "Underperforming" or "Losing Steam" -- a directional claim the data
-# doesn't support. XLB at ▬ -0.0% reading "Avoid — Underperforming" was the
-# case that surfaced it. Flat now says flat.
+# Position-only vocabulary. Card 1 (this standings table) says WHERE a sector
+# stands now; the "Where is the money heading?" card above owns the trajectory
+# verb. The old text bolted a second momentum verb onto the position
+# ("Leading but Decelerating"), which fought the card above word-for-word for
+# the same sector -- the reported XLV contradiction. Backtesting that arrow
+# (2005-2017, 9 SPDR sectors) found it near-noise for forward relative return,
+# so the position label loses nothing by dropping it. One axis per card means
+# the two can never disagree on momentum, because only one of them speaks it.
 _SIGNAL_TEXT = {
-    "Leading":   {"▲": "Leading & Accelerating",  "▬": "Leading, Steady",
-                  "▼": "Leading but Decelerating"},
-    "Improving": {"▲": "Emerging — Turning Up",   "▬": "Emerging, Steady",
-                  "▼": "Emerging — Stalling"},
-    "Weakening": {"▲": "Weakening, Stabilizing",  "▬": "Weakening, Flat",
-                  "▼": "Weakening — Losing Steam"},
-    "Lagging":   {"▲": "Lagging, Stabilizing",    "▬": "Lagging, Flat",
-                  "▼": "Avoid — Underperforming"},
+    "Leading":   "Leading — money is here now",
+    "Improving": "Improving — money arriving",
+    "Weakening": "Weakening — money thinning",
+    "Lagging":   "Lagging — money elsewhere",
 }
 
 
-def _plain_signal(quad: str, m_arrow: str) -> str:
-    """Plain-English translation of quadrant + momentum-arrow, e.g. 'Leading
-    but Decelerating' -- the quadrant answers 'in or out' (Focus/Avoid), the
-    arrow answers 'gaining or losing steam', together they tell the whole
-    story in one phrase."""
-    return _SIGNAL_TEXT.get(quad, _SIGNAL_TEXT["Lagging"]).get(m_arrow, "—")
+def _plain_signal(quad: str) -> str:
+    """Position-only label for the standings card. Whether the lead is still
+    growing is answered by the trajectory card above, not here -- one axis per
+    card so the two never use competing momentum words for one sector."""
+    return _SIGNAL_TEXT.get(quad, _SIGNAL_TEXT["Lagging"])
 
 
 def _render_sectors():
@@ -2145,7 +2142,7 @@ def _render_sectors():
         else:
             flow_badge = f'<span style="color:{TEXT_MUTED};font-size:10px">{r["flow"]:.1f}x</span>'
         name = str(r["name"])[:12]
-        signal_txt = _plain_signal(r["quad"], m_arrow)
+        signal_txt = _plain_signal(r["quad"])
         signal_cell = f'<span style="color:{col};font-size:11px;font-weight:600">{signal_txt}</span>'
 
         # Three states, ranked strictly by RS either way:
@@ -2191,7 +2188,7 @@ def _render_sectors():
               f'<span>Sector</span><span>3-Mo vs SPY</span><span>RS 63d</span>'
               f'<span>Momentum</span><span>1-Mo Return</span><span>1-Mo vs SPY</span>'
               f'<span>Activity</span>'
-              f'<span>What It Means</span><span>Sector Leaders (° = extended)</span></div>')
+              f'<span>Position (now)</span><span>Sector Leaders (° = extended)</span></div>')
 
     # Leaders and emerging names are two different trades, so they get two
     # different chip rows. Previously both shared one list ranked by RS63,
@@ -2220,6 +2217,9 @@ def _render_sectors():
         f'🚪 AVOID: </span>{sell_chips}'
         f'<span style="color:{TEXT_MUTED};font-size:9px"> &nbsp;weakest relative strength</span></div></div>'
         f'<div style="color:{TEXT_MUTED};font-size:9px;margin-top:8px;line-height:1.5">'
+        f'<b style="color:{TEXT_PRIMARY}">This card is POSITION — where each sector stands now (63-day rank). '
+        f'Whether that standing is still improving is the “Where is the money heading?” card above; '
+        f'a sector can lead here yet be strengthening (or cooling) there — two lenses, not a contradiction.</b><br>'
         f'<b>3-Mo vs SPY</b> — bar diverges from the centre line (= SPY): green/blue = '
         f'leading/improving · gold/red = weakening/lagging. <b>RS 63d</b> is that same figure '
         f'as a ratio (1.10 = beat SPY by ~10% over three months). '
@@ -2239,7 +2239,7 @@ def _render_sectors():
         f'QQQ/IWM/GLD/TLT have no leaders list (not a stock sector).</div>'
     )
 
-    st.markdown(_card("Sector Rotation — follow the big money", "🔄", MINT,
+    st.markdown(_card("Sector Standings — where the money is now", "🔄", MINT,
                       header + bar_rows + summary), unsafe_allow_html=True)
 
     # ── Freshness, history and validation ─────────────────────────────────
