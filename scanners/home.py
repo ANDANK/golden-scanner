@@ -797,6 +797,27 @@ def _render_best_table(df: pd.DataFrame):
         st.info("No rows to show.")
         return None
 
+    # Quality gate — default to validated setups (Strong + Mixed), the same
+    # filter the daily email uses. Without it, a single broad scanner (mostly
+    # lone 1Mom on an up day) floods the table with dozens of "Untested combo"
+    # single-scanner hits that have no backtested edge.
+    n_untested = int((view["Verdict"] == "Untested combo").sum())
+    qual = st.radio(
+        "Quality", ["⭐ Validated only (Strong + Mixed)", "All (incl. Untested)"],
+        horizontal=True, key="home_best_qual",
+        help="Validated = combos with a backtested edge, the same set the daily email "
+             "sends. 'All' adds single-scanner Untested hits (often extended momentum names).",
+    )
+    if qual.startswith("⭐"):
+        view = view[view["Verdict"] != "Untested combo"].reset_index(drop=True)
+        if n_untested:
+            st.caption(f"Hiding {n_untested} Untested-combo single-scanner hit(s) — "
+                       f"switch to “All” to see them.")
+        if view.empty:
+            st.info("No validated (Strong/Mixed) setups right now — switch to “All” "
+                    "to see single-scanner hits.")
+            return None
+
     # Quick wins vs Long runs — a distinct split by holding horizon.
     hz_filter = st.radio(
         "Horizon", ["All", "⚡ Quick wins (≤30d)", "🐢 Long runs (>30d)"],
