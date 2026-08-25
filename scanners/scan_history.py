@@ -1,6 +1,10 @@
-# scanners/scan_history.py — shared daily-snapshot history engine used by
-# both Best Scanners and OverKill to power "New" badges, first-found dates,
+# scanners/scan_history.py — shared snapshot history engine used by Best
+# Scanners, OverKill and Fast Score to power "New" badges, first-found dates,
 # and track-record (% performance since first sighting) tables.
+#
+# Any new caller MUST add its `kind` to _CONFIG below — the three functions
+# that read _CONFIG index it directly, so an unregistered kind raises
+# KeyError on the first prune/rollup rather than silently doing nothing.
 #
 # Write-once-a-day, read-anywhere design: only the headless email scripts
 # (run once daily by GitHub Actions, which have `contents: write` on the
@@ -35,6 +39,13 @@ _CONFIG = {
     # ~12 weekly dots (and just 3 monthly ones), too thin to be meaningful.
     # 6 months (~26 weekly / ~6 monthly data points) is a better balance.
     "overkill": dict(new_window_scans=7, rollup_days=182, retention_days=195),
+    # Fast Score runs once a WEEK (Friday after the close), so a "scan" here
+    # is a week, not a day. new_window_scans=4 therefore means "new within
+    # roughly the last month" — the same intent the other two express in
+    # days. Retention is a full year because 52 snapshots a year is tiny on
+    # disk and a weekly signal needs that long a window before its track
+    # record says anything.
+    "fast_score": dict(new_window_scans=4, rollup_days=182, retention_days=400),
 }
 
 

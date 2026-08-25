@@ -12,7 +12,7 @@ The #goldenscanner tag exists to be filtered on. In Gmail:
     has:the-words "#goldenscanner"   ->  label:GoldenScanner
 
 Each report also carries its own tag (#bestscanners, #overkill, #ytshorts,
-#backtest, #fullanalysis) so the same inbox rule can split by report type
+#backtest, #fullanalysis, #fastscore) so the same inbox rule can split by report type
 without a second filter on subject text, which changes far more often.
 
 Note the tag is written as plain text, not a link and not styled as one --
@@ -29,6 +29,7 @@ TAG_OVERKILL = "#overkill"
 TAG_YT_SHORTS = "#ytshorts"
 TAG_BACKTEST = "#backtest"
 TAG_FULL_ANALYSIS = "#fullanalysis"
+TAG_FAST_SCORE = "#fastscore"
 
 
 def footer_html(report_tag: str = "") -> str:

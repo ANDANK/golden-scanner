@@ -6,13 +6,18 @@
 #   ├─ Tab 2  🔄 Sector Rotation — RRG-style flows (preserved from the old page)
 #   ├─ Tab 3  🔍 Overkill Check — WaveTrend dot + Volume Profile confluence
 #   │         scan on any user-entered ticker(s) (see scanners/overkill_check.py)
-#   ├─ Tab 4  📺 OverKill Shorts — watch-list auto-extracted from the YouTube
+#   ├─ Tab 4  ⚡ Fast Score — weekly-bar trend-pullback scan: long trend up and
+#   │         still accelerating, price back at its 50-week line on quiet
+#   │         volume, weekly MACD turning up. Ranked 0-15 by Fast Score and
+#   │         tiered Early / Fresh / Further Along (scanners/fast_score.py).
+#   │         Emailed Friday evenings by scripts/headless_fast_score_scan.py.
+#   ├─ Tab 5  📺 OverKill Shorts — watch-list auto-extracted from the YouTube
 #   │         shorts (data/overkill_shorts.json, refreshed twice daily by
 #   │         scripts/overkill_shorts_scan.py — see .github/workflows/refresh_overkill.yml)
-#   ├─ Tab 5  📊 Shorts Perf — how those auto-extracted picks actually did,
+#   ├─ Tab 6  📊 Shorts Perf — how those auto-extracted picks actually did,
 #   │         scored from the price captured on the day of each call
 #   │         (see scanners/overkill_shorts_perf.py)
-#   └─ Tab 6  🎯 Shorts Backtest — performance of a HAND-CURATED list of
+#   └─ Tab 7  🎯 Shorts Backtest — performance of a HAND-CURATED list of
 #             OverKill scanner alerts (Golden Dot / Weekly / Monthly / Daily).
 #             Despite sitting next to Shorts Perf this reads a completely
 #             different source — see scanners/overkill_performance.py. Moved
@@ -38,6 +43,7 @@ from config import *
 from utils import section_header, calc_sma
 from data_loader import get_price_history, get_market_overview, prefetch_tickers
 from scanners import overkill_check
+from scanners import fast_score
 from scanners import overkill_performance
 from scanners import overkill_shorts_perf
 from scanners import scan_history
@@ -2543,8 +2549,9 @@ def render():
     # Perf scores the picks auto-extracted from the videos, Backtest scores a
     # hand-curated list of OverKill scanner alerts (Golden Dot / Weekly /
     # Monthly / Daily) that has no connection to the Shorts feed.
-    tab1, tab3, tab4, tab2, tab6, tab5 = st.tabs(
+    tab1, tab3, tab4, tab7, tab2, tab6, tab5 = st.tabs(
         ["🎯  Best Scanners", "🔄  Sector Rotation", "🔍  OverKill",
+         "⚡  Fast Score",
          "📺  YouTube Shorts", "📊  Shorts Perf", "🎯  Shorts Backtest"]
     )
 
@@ -2566,6 +2573,12 @@ def render():
             overkill_check.render()
         except Exception as e:
             st.error(f"Overkill Check tab error: {e}")
+
+    with tab7:
+        try:
+            fast_score.render()
+        except Exception as e:
+            st.error(f"Fast Score tab error: {e}")
 
     with tab2:
         try:

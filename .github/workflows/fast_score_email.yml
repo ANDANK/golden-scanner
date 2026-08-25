@@ -1,0 +1,109 @@
+name: Fast Score Email
+
+on:
+  schedule:
+    # WEEKLY, Friday after the close -- deliberately not daily.
+    #
+    # Every input to this scanner is a WEEKLY bar (52w/26w regression slopes,
+    # weekly MACD, 200-week SMA, weeks since the 50-week-SMA touch), and the
+    # scanner drops the in-progress week before evaluating. Monday through
+    # Thursday therefore read the exact same settled bars and would email a
+    # near-identical table four times over. Friday after the close is the
+    # first moment that week's bar is final and the table can actually have
+    # changed.
+    #
+    # Staggered 15 min after best_scanners_email.yml's 5:15 PM CT slot (and
+    # 30 min after overkill_scan_email.yml's 5:00 PM slot) so the three jobs
+    # aren't hitting yfinance at the same moment.
+    # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
+    # 5:30 PM CDT Friday = 22:30 UTC Friday
+    - cron: "30 22 * * 5"
+    # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
+    # 5:30 PM CST Friday = 23:30 UTC   ← uncomment this and remove the CDT line in Nov
+    # - cron: "30 23 * * 5"
+  workflow_dispatch:          # Manual trigger from the GitHub Actions UI
+    inputs:
+      universe:
+        description: "Universe to scan"
+        required: true
+        default: "FTF"
+        type: choice
+        options: [FTF, MTPA, SP500]
+      min_score:
+        description: "Drop rows below this Fast Score (0 = keep all)"
+        required: false
+        default: "0"
+        type: string
+
+# Prevent two runs from overlapping (e.g. a manual run during the cron fire).
+concurrency:
+  group: fast-score-email
+  cancel-in-progress: false
+
+permissions:
+  contents: write          # allow the bot to commit + push the history snapshot
+
+jobs:
+  scan-and-email:
+    name: Scan Fast Score + Email
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          # Install everything from requirements.txt except streamlit (mocked in headless mode)
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+
+      - name: Run Fast Score scan + send email
+        env:
+          GMAIL_ADDRESS:        ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD:   ${{ secrets.GMAIL_APP_PASSWORD }}
+          OVERKILL_EMAIL_TO:    ${{ secrets.OVERKILL_EMAIL_TO }}
+          # Set this secret instead if Fast Score should go to a different
+          # list than OverKill — otherwise it reuses OVERKILL_EMAIL_TO above.
+          FAST_SCORE_EMAIL_TO:  ${{ secrets.FAST_SCORE_EMAIL_TO }}
+          # ── Tune without editing code ──
+          FAST_SCORE_UNIVERSE:  ${{ github.event.inputs.universe || 'FTF' }}
+          FAST_SCORE_MIN_SCORE: ${{ github.event.inputs.min_score || '0' }}
+          FAST_SCORE_MAX_ROWS:  "25"
+        run: python scripts/headless_fast_score_scan.py
+
+      - name: Commit history snapshot JSON
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # -- guards against the scan having written nothing at all
+          if ! ls data/fast_score/*.json >/dev/null 2>&1; then
+            echo "No snapshot written this run (nothing qualified) — nothing to commit."
+            exit 0
+          fi
+          git add data/fast_score/*.json
+          if git diff --cached --quiet; then
+            echo "Nothing to commit — snapshot unchanged."
+          else
+            git commit -m "Fast Score history snapshot $(date -u +'%Y-%m-%d %H:%M UTC')"
+
+            # Pull any remote commits made since checkout.
+            # -X ours: on add/add conflict with this week's own snapshot file
+            # (a manual run alongside the cron), always keep THIS run's data.
+            if git pull --rebase -X ours origin main; then
+              git push origin main
+            else
+              # Rebase left the repo in a broken state — abort cleanly then
+              # force-push our snapshot so it's never silently lost.
+              echo "Rebase conflict could not be auto-resolved; force-pushing snapshot."
+              git rebase --abort
+              git push --force-with-lease origin main
+            fi
+          fi
