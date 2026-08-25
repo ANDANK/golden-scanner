@@ -1,8 +1,413 @@
 {
-  "updated": "2026-08-22",
+  "updated": "2026-08-25",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-24",
+      "url": "https://www.youtube.com/shorts/fVi9T7Cl41A",
+      "title": "4 STOCKS TO WATCH NOW 📈 AUG 24",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "SNOW",
+          "bias": "Bearish",
+          "notes": "Recommends taking profits or selling near $323 ahead of earnings, noting the stock is up over 150% off its low and extended far above its 4-year moving average.",
+          "price": 322.78
+        },
+        {
+          "ticker": "SNAP",
+          "bias": "Bullish",
+          "notes": "Bullish on SNAP around $5, highlighting potential acquisition interest from larger tech companies and past history of bouncing off $5 up to $80.",
+          "price": 5.53
+        },
+        {
+          "ticker": "GRAB",
+          "bias": "Bullish",
+          "notes": "Bullish around $3.50 as long as it holds $3.00 support, citing steady quarter-over-quarter revenue growth and its position as Southeast Asia's primary ride-hailing app.",
+          "price": 3.52
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Views META as a buy sitting near its 4-year moving average around $520, suggesting a stop loss set at $500.",
+          "price": 559.02
+        }
+      ]
+    },
+    {
+      "date": "2026-07-15",
+      "url": "https://www.youtube.com/shorts/iAd_mcZcQyA",
+      "title": "This Market Dip Just Created the BEST Buying Opportunity of 2026 (Here's the Data)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "MSFT",
+          "bias": "Bullish",
+          "notes": "Trading around $390 and down 27% from its high, Microsoft trades at roughly 21 times forward earnings with a Morningstar fair value estimate of $600. Concerns over $190 billion in capital expenditures are offset by 40% Azure cloud growth and an AI revenue run rate reaching $37 billion.",
+          "price": 395.63
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Trading around $583 and down 26% from its high, Meta trades at 18 times forward earnings with a Morningstar fair value target of $850. Strong Q1 revenue growth of 33% and a 41% operating margin help justify its increased AI infrastructure spending.",
+          "price": 681.31
+        },
+        {
+          "ticker": "NKE",
+          "bias": "Bullish",
+          "notes": "Trading around $44 and down 73% from its 2021 peak, Nike is rated four stars by Morningstar with a fair value estimate more than double its current price. Weak China sales are offset by early turnaround signs in North America and the upcoming 2026 World Cup catalyst.",
+          "price": 42.77
+        },
+        {
+          "ticker": "LULU",
+          "bias": "Bullish",
+          "notes": "Trading around $118 and down 77% from its high, Lululemon trades at 9 to 10 times earnings with a Morningstar fair value target of $295. High gross margins of 55%, $1.5 billion in net income, and minimal debt balance recent soft Americas sales and tariff margin pressure.",
+          "price": 117.42
+        },
+        {
+          "ticker": "APLD",
+          "bias": "Bullish",
+          "notes": "Trading around $34 with an average Wall Street target of $73, Applied Digital offers AI data center capacity with over a gigawatt contracted. It carries high risk as a non-profitable business that burned $720 million in a quarter with 69% revenue tied to one customer.",
+          "price": 29.03
+        },
+        {
+          "ticker": "IREN",
+          "bias": "Bullish",
+          "notes": "Trading around $39 and down nearly 50% from its high, IREN is pivoting its power and data center infrastructure into AI cloud services backed by a $3.4 billion Nvidia contract. It remains highly speculative due to Bitcoin exposure, potential margin pressure from tech giants, and heavy volatility.",
+          "price": 38.28
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When buying market dips, build a tiered portfolio by putting most capital into quality compounders, moderate amounts into turnarounds, and small position sizes into speculative stocks while dollar-cost averaging in pieces.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "url": "https://www.youtube.com/shorts/Xe-ShzCXgtQ",
+      "title": "This Stock will make us RICH🤑AF",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "The host expects Celsius to continue its strong upward run through the end of the year, supported by recent executive management changes and long-term international expansion potential on top of its 20% U.S. market share.",
+          "price": 35.03
+        },
+        {
+          "ticker": "HIMS",
+          "bias": "Neutral",
+          "notes": "While Visa's credit card dispute penalties look scary, the host views chargebacks as a standard cost of doing business at scale, though he warns HIMS investors must have strong hands to endure persistent negative headline volatility.",
+          "price": 31.08
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "The host is looking to buy RH if the S&P 500 drops 10% or more, citing its high-end luxury business model, cash balance recovery to $54 million, positive free cash flow, and long-term market cap potential of $12 billion to $15 billion.",
+          "price": 143.34
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "The host maintains a bullish outlook on ELF Beauty, expecting the stock to exit the year between $100 on the conservative end and $140 on the high end.",
+          "price": 105.95
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Driven by recent strong earnings performance, the host projects Honest stock could exit the year closer to $5 to $10 per share.",
+          "price": 5.2
+        },
+        {
+          "ticker": "RVLV",
+          "bias": "Bullish",
+          "notes": "The host anticipates momentum for Revolve leading into the holiday season due to strong margins and solid fundamentals, targeting a year-end price of $30 or higher.",
+          "price": 23.96
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Despite current late-summer weakness, the host predicts AMD will experience an epic rally starting around mid-November and continuing into the first quarter of next year based on historical seasonal patterns.",
+          "price": 456.74
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Individual stock picking requires building the psychological stamina to tolerate 10% to 40% position drawdowns and market downturns without panic selling, an ability developed through experience across multiple market cycles.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-24",
+      "url": "https://www.youtube.com/shorts/86xTry-UI4U",
+      "title": "I Found a Better Way to Sell Options: LEAPS",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "The host highlights selling deep out-of-the-money January 2028 put options on Micron at a $500 strike price to collect around $6,000 in upfront premium, establishing an effective break-even price near $439 due to high implied volatility and strong revenue growth.",
+          "price": 910.43
+        },
+        {
+          "ticker": "SMH",
+          "bias": "Neutral",
+          "notes": "Following a major run-up and recent pullback, the VanEck Semiconductor ETF is expected to consolidate and move sideways rather than lead market rallies again.",
+          "price": 546.8
+        },
+        {
+          "ticker": "KO",
+          "bias": "Bearish",
+          "notes": "Selling LEAP options on low-volatility stocks like Coca-Cola yields very low premiums, making it unprofitable to tie up capital for a year or more.",
+          "price": 91.99
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Selling long-dated LEAP put options provides upfront income and high capital efficiency, requiring less than half the capital needed to buy 100 shares outright while establishing a deep downside buffer.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Vega and implied volatility are crucial when selling LEAPs, as selling during elevated volatility periods allows sellers to capture substantial profits as volatility mean-reverts lower over time.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-24",
+      "url": "https://www.youtube.com/shorts/B7fXmUqCANY",
+      "title": "I Bet Money The Fed WON'T Raise Interest Rates in September — Here's Why...",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve is expected to keep interest rates unchanged at its September 16 meeting. A surprise rate hike would likely trigger a sharp decline across stock, crypto, and precious metals markets.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "July headline CPI inflation dropped to 3.4% from 3.5% in June, moving closer to the Fed's 2.9% target and easing pressure to raise rates, though rising August energy prices present an upside risk.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "July labor data showed a loss of 23,000 jobs with unemployment at 4.1%, below the Fed's year-end projection of 4.3%.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-28",
+      "url": "https://www.youtube.com/shorts/ZCfjDfKW6S8",
+      "title": "The Mistake Almost Every Investor Is About To Make",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "As the world's largest oil producer, the United States has gained greater energy independence, helping shield domestic fuel prices from extreme global supply shocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "U.S. geopolitical actions around the Strait of Hormuz, Iran, and Venezuela are heavily driven by economic competition with China, aiming to disrupt China's access to cheap energy imports.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The U.S. has restricted advanced semiconductor exports to China to protect its competitive advantage in artificial intelligence and technology-driven economic growth.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Disruptions to helium production facilities in Qatar could lead to global supply shortages, directly impacting semiconductor manufacturing and AI hardware supply chains.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Attempting to trade based on breaking news often leads to losses due to market volatility, making consistent dollar-cost averaging into quality investments a more reliable long-term strategy.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Recent increases in global tariffs are being positioned as a potential policy mechanism to replace federal income tax and diminish the role of the IRS.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-11",
+      "url": "https://www.youtube.com/shorts/bVfmqJXFG0A",
+      "title": "BREAKING: 2026 Market Outlook (Expect Major Change in July)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Meta surged as its AI buildout costs tracked around $22 billion per gigawatt versus the $45 billion Wall Street feared, complemented by positive momentum from its cloud compute arm plans and the Muse Spark 1.1 model rollout.",
+          "price": 656.73
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Market breadth is broadening beyond AI tech stocks into banks, industrials, healthcare, utilities, and small caps, signaling a healthier foundation for a potential multi-year bull market.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The June inflation report releases on July 14th following a hot 4.2% May reading, with markets now pricing in a 77% chance of a Fed rate hike by year-end under new Fed Chair Kevin Warsh.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Big tech AI capital expenditures are projected to reach $750 billion this year and exceed $1 trillion next year, making AI return-on-investment the primary volatility driver for tech hardware.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Escalating Middle East tensions around the Strait of Hormuz threaten global oil supplies, where spikes in crude prices could fuel inflation and force additional Fed rate hikes.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-06-30",
+      "url": "https://www.youtube.com/shorts/G2u_yXppyfI",
+      "title": "This stock is ready to EXPLODE‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "If the current AI spending boom mirrors the internet age tech bubble, the market cycle could still have several years of growth left to run.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "China's M2 money supply has experienced unprecedented growth, reaching a record 240% of GDP, which is the highest among any major global economy.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With the supply of existing homes at its highest level in many years, buyers looking to purchase a home in the next 6 to 12 months will have a significant negotiation advantage.",
+          "price": null
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "The stock has established a crystal clear bottom and is expected to head back to its 12-month highs of $120 to $140 over the next 6 to 12 months, with a long-term target of $200+.",
+          "price": 74.0
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Micron is positioned to generate massive fortunes and record margins over the next two years, though its rapid success risks attracting long-term scrutiny from big tech buyers and governments.",
+          "price": 1154.29
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD is experiencing rapid growth with earnings per share expected to grow 163% this year and 70% next year, which justifies its high forward P/E ratio as earnings catch up quickly.",
+          "price": 580.91
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "American Express is an attractive stock due to its high-quality, stable business model and excellent customer retention, presenting a projected 9% compound annual growth rate even in a bare-case scenario.",
+          "price": 338.25
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Michigan consumer sentiment index has bottomed and is expected to trend upward over the next 12 to 24 months, which will act as a major tailwind for beaten-down consumer and travel stocks.",
+          "price": null
+        },
+        {
+          "ticker": "NKE",
+          "bias": "Bullish",
+          "notes": "Nike is a beaten-down stock that is positioned to benefit significantly over the next year or two as the broader consumer sentiment begins to recover.",
+          "price": 41.05
+        },
+        {
+          "ticker": "TGT",
+          "bias": "Bullish",
+          "notes": "Target is a highly sentiment-sensitive stock that investors historically flock back into once consumer confidence begins showing consistent upward momentum.",
+          "price": 130.61
+        }
+      ]
+    },
+    {
+      "date": "2026-07-24",
+      "url": "https://www.youtube.com/shorts/tzMb6ue9HwY",
+      "title": "How to Trade Options For Beginners (Passive Income)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host views Nvidia as a leader in AI and a high-conviction holding, allocating up to 10% of his portfolio to it and frequently selling put options to generate passive income.",
+          "price": 206.84
+        },
+        {
+          "ticker": "GOOG",
+          "bias": "Bullish",
+          "notes": "The host holds a large, high-conviction position in Google, going heavy enough on the stock to exceed his typical portfolio position sizing limits.",
+          "price": 319.09
+        },
+        {
+          "ticker": "AAL",
+          "bias": "Bullish",
+          "notes": "The host points out that American Airlines has been in an uptrend, rising 18% over the past month, making it an attractive low-priced stock at $17 per share for bullish option strategies.",
+          "price": 14.48
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Delta measures an option's price sensitivity to a $1 move in the underlying stock and also estimates the percentage probability of the option expiring in the money.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "For effective risk management, traders should limit individual positions to 3% to 5% of their total portfolio, reserving up to 10% only for high-conviction assets.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When trading options, it is crucial to select contracts with high liquidity and tight bid-ask spreads to avoid losing capital to the market maker's spread upon execution.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-07-18",
       "url": "https://www.youtube.com/shorts/4ItZFsE_-go",
