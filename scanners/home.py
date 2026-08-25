@@ -612,11 +612,13 @@ def _annotate_history(df: pd.DataFrame, tag: str) -> pd.DataFrame:
     Best Scanners email GitHub Action) and re-sorts tier -> New -> Edge
     Score. The interactive app never writes its own snapshot -- only the
     once-daily automated run does -- so "New" means the same thing here as
-    it does in the email. Uses UTC to match the email script's TODAY so the
-    two surfaces never disagree about which calendar day "today" is."""
+    it does in the email. Stamps the US/Eastern MARKET day, not UTC: the email
+    action runs in the morning (ET date == UTC date then, so the stored history
+    still lines up), whereas an evening interactive run in UTC rolls a day ahead
+    and would show tomorrow's date on today's fresh picks."""
     if df.empty:
         return df
-    today = datetime.utcnow().strftime("%Y-%m-%d")
+    today = datetime.now(pytz.timezone("US/Eastern")).strftime("%Y-%m-%d")
     today_rows = [{"ticker": t} for t in df["Ticker"]]
     history = scan_history.annotate_new_and_first_found("best_scanners", tag, today, today_rows)
     df = df.copy()
@@ -1027,7 +1029,7 @@ def _render_track_record_table(df: pd.DataFrame, tag: str):
         st.caption("No qualifying tickers to build a track record from yet.")
         return
 
-    today = datetime.utcnow().strftime("%Y-%m-%d")
+    today = datetime.now(pytz.timezone("US/Eastern")).strftime("%Y-%m-%d")
     today_rows = [
         {"ticker": r["Ticker"], "price": r["Price"], "verdict": r["_verdict"], "scanners": r.get("Scanners")}
         for _, r in df.iterrows() if pd.notna(r["Price"])
