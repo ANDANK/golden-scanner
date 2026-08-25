@@ -199,7 +199,7 @@ def _render_regime_bar():
 # in-memory, then each ticker is tested against all six scanners at the latest
 # bar. Logic mirrors the app's own engines (validated against them).
 
-_LABELS = ["1Mom", "2TC", "3MF", "4TS", "5RB", "6Prime", "7Square", "8Cross"]
+_LABELS = ["1Mom", "2TC", "3MF", "4TS", "5RB", "6Prime", "7Square", "8Cross", "9TA"]
 
 _SCANNER_NOTES = [
     ("1Mom",   "MACD Momentum (MTPA Table 4)", "Weekly + Daily",
@@ -218,6 +218,8 @@ _SCANNER_NOTES = [
      "Fresh MACD cross above signal while the MACD line is near zero (|MACD| ≤0.5% of price), price > SMA200. Early/aggressive — weak on its own in testing, treat as a watch, not a signal."),
     ("8Cross", "EMA20 × EMA50 cross", "Daily · ·W = weekly too",
      "EMA20 crossed above EMA50 in the last ~6 bars, or is within 1% and closing in (price > SMA200). A ·W suffix means the WEEKLY EMA20/50 is also crossing or about to — higher-timeframe confirmation."),
+    ("9TA", "Trend Alignment (folded in from Golden Scan)", "Daily + Weekly",
+     "Fresh daily MACD cross (last 3 bars) · daily RSI 55–78 · daily ADX >18 · breaks the 8-week resistance on ≥1.2× weekly volume · above a rising 30-week SMA · liquid (>200k avg vol). Quick swing, hold 10–30d."),
 ]
 
 # Star rating — flags rare, high-conviction label combos. A combo matches if the
@@ -438,6 +440,22 @@ def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
         rsi_rise3 = rsi_d > float(rsi.iloc[-4])
         gy = (50 <= rsi_d <= 70 and rsi_rise3) or (40 <= rsi_d < 50 and rsi_rise3)
 
+        # ── ADX(14) + daily MACD fresh cross + liquidity (for 9TA Trend Align) ──
+        _up = h.diff(); _dn = -l.diff()
+        _plus_dm = _up.where((_up > _dn) & (_up > 0), 0.0)
+        _minus_dm = _dn.where((_dn > _up) & (_dn > 0), 0.0)
+        _pdi = 100 * (_plus_dm.rolling(14).mean() / atr)
+        _mdi = 100 * (_minus_dm.rolling(14).mean() / atr)
+        _dx = 100 * (_pdi - _mdi).abs() / (_pdi + _mdi).replace(0, np.nan)
+        _adx = float(_dx.rolling(14).mean().iloc[-1])
+        adx_v = _adx if pd.notna(_adx) else 0.0
+        fresh_cross3 = (
+            (float(hist.iloc[-2]) <= 0 and hist_v > 0)
+            or (float(hist.iloc[-3]) <= 0 and float(hist.iloc[-2]) > 0)
+            or (float(hist.iloc[-4]) <= 0 and float(hist.iloc[-3]) > 0)
+        )
+        avg_dvol = float(v.iloc[-21:-1].mean()) if len(v) > 21 else float(v.mean())
+
         # ── the 6 scanners ──
         labels = []
         if macdmom_w and macd_v > 0 and hist_v > 0:
@@ -479,6 +497,14 @@ def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
         if (crossedD or aboutD) and px > c_sma200:
             labels.append("8Cross")
 
+        # 9TA — Trend Alignment, folded in from Golden Scan. Fresh daily MACD cross
+        # + daily RSI 55-78 + daily ADX>18 + 8-week resistance break on ≥1.2× weekly
+        # volume + above a rising 30-week SMA + liquidity.
+        if (fresh_cross3 and 55 <= rsi_d <= 78 and adx_v > 18
+                and res8 and wvolr >= 1.2 and wpx > w30 and w30_rise
+                and avg_dvol > 200_000):
+            labels.append("9TA")
+
         if not labels:
             return None
 
@@ -502,6 +528,7 @@ def _evaluate(df: pd.DataFrame, spy_close: pd.Series) -> dict | None:
                 ">SMA9": px > c_sma9, ">SMA20": px > c_sma20,
                 "Vol Ratio": round(volr, 2), "RS vs SPY": round(rs, 3),
                 "Flags": flags, "x8_weekly": bool(x8_weekly),
+                "atr_val": round(float(atr.iloc[-1]), 4),
             },
         }
     except Exception:
@@ -554,6 +581,12 @@ def _run_best_scanners(universe: list) -> pd.DataFrame:
                 snap["_edge_n"] = edge["n"]
                 snap["_hold_range"] = edge["hold_range"]
                 snap["_combo"] = edge["combo"]
+                # Holding horizon (Quick vs Long) + ATR risk plan, scaled by horizon.
+                hz, hlo, hhi = _horizon_of(res["labels"], edge["hold_range"])
+                snap["_horizon"] = hz
+                snap["_hold_lo"] = hlo
+                snap["_hold_hi"] = hhi
+                snap["_plan"] = _risk_plan(snap["Price"], snap.get("atr_val"), hz)
                 rows.append(snap)
         except Exception:
             continue
@@ -630,9 +663,69 @@ def _fmt_found_date(date_str) -> str:
         return date_str or "—"
 
 
-_ROW_COL_RATIOS = [0.35, 0.85, 0.55, 0.55, 0.55, 0.5, 0.55, 0.5, 1.4, 0.7, 0.9, 0.6, 0.8, 1.1]
-_ROW_HEADERS = ["", "Verdict", "Hold", "Date", "Ticker", "Price", "Chg %", "Scanners", "RSI W/D",
-                "MACD", ">SMA 9/20", "Vol× / RS", "Flags"]
+# ── Holding-horizon (Quick wins vs Long runs) + ATR risk framing ─────────────
+# Per-scanner nominal hold windows (trading days), used when no backtested combo
+# hold applies (Untested combos) so every pick still gets a horizon. Values match
+# the per-scanner notes above and combined_scanner's SCANNER_META.
+_SCANNER_HOLD = {
+    "1Mom": (10, 30), "2TC": (20, 60), "3MF": (10, 30), "4TS": (20, 60),
+    "5RB": (10, 30), "6Prime": (20, 60), "7Square": (10, 30), "8Cross": (10, 30),
+    "9TA": (10, 30),
+}
+_QUICK_MAX_DAYS = 30   # effective max hold <= this = quick-win swing; longer = long run
+
+
+def _effective_hold(labels, hold_range):
+    """Backtested combo hold wins; otherwise span the firing scanners' windows."""
+    if hold_range and not (isinstance(hold_range, float) and pd.isna(hold_range)):
+        return int(hold_range[0]), int(hold_range[1])
+    los = [_SCANNER_HOLD[x][0] for x in labels if x in _SCANNER_HOLD]
+    his = [_SCANNER_HOLD[x][1] for x in labels if x in _SCANNER_HOLD]
+    return (min(los), max(his)) if his else (10, 30)
+
+
+def _horizon_of(labels, hold_range):
+    """('Quick'|'Long', lo, hi) — Quick when the effective max hold is <= 30d."""
+    lo, hi = _effective_hold(labels, hold_range)
+    return ("Quick" if hi <= _QUICK_MAX_DAYS else "Long"), lo, hi
+
+
+# ATR stop/target multiples scaled by horizon. Reward:risk is a fixed 2:1 either
+# way; long runs simply get wider absolute stops/targets to fit their bigger move.
+_RISK_MULT = {"Quick": (1.5, 3.0), "Long": (2.5, 5.0)}
+
+
+def _risk_plan(px, atr, horizon):
+    """Entry/stop/target/RR/risk% from ATR, or None if inputs are unusable."""
+    try:
+        px = float(px); atr = float(atr)
+    except (TypeError, ValueError):
+        return None
+    if not (px > 0 and atr > 0):
+        return None
+    ks, kt = _RISK_MULT.get(horizon, (2.0, 4.0))
+    stop = px - ks * atr
+    if stop <= 0:
+        return None
+    return {"entry": round(px, 2), "stop": round(stop, 2), "target": round(px + kt * atr, 2),
+            "rr": round(kt / ks, 1), "risk_pct": round((px - stop) / px * 100, 1)}
+
+
+def _horizon_badge(horizon, lo, hi):
+    return f'{"⚡" if horizon == "Quick" else "🐢"} {lo}-{hi}d'
+
+
+def _plan_text(plan):
+    if not isinstance(plan, dict):
+        return "—"
+    return (f'<span style="color:{ACCENT_RED}">⛔${plan["stop"]:,.2f}</span> '
+            f'<span style="color:{ACCENT_GREEN}">🎯${plan["target"]:,.2f}</span> '
+            f'<span style="color:{TEXT_MUTED};font-size:10px">R{plan["rr"]:.0f}·−{plan["risk_pct"]:.1f}%</span>')
+
+
+_ROW_COL_RATIOS = [0.35, 0.85, 0.6, 0.55, 0.55, 0.5, 0.55, 0.5, 1.4, 0.7, 0.9, 0.6, 0.8, 1.15]
+_ROW_HEADERS = ["", "Verdict", "Horizon", "Date", "Ticker", "Price", "Chg %", "Scanners", "RSI W/D",
+                "MACD", ">SMA 9/20", "Vol× / RS", "Flags", "Stop→Tgt"]
 
 
 def _select_ticker_cb(ticker: str, all_tickers: list):
@@ -669,7 +762,13 @@ def _render_best_table(df: pd.DataFrame):
     view = pd.DataFrame({
         "Verdict": df["_verdict"].astype(str),
         "_verdict_rank_n": df["_verdict"].map(_VERDICT_RANK).fillna(0),
-        "Hold": df["_hold_range"].apply(_hold_range_text),
+        "Horizon": df.apply(lambda r: _horizon_badge(r.get("_horizon", "Long"),
+                            r.get("_hold_lo", 10), r.get("_hold_hi", 30)), axis=1)
+                   if "_horizon" in df.columns else pd.Series(["—"] * len(df)),
+        "_horizon": df["_horizon"].astype(str) if "_horizon" in df.columns
+                    else pd.Series(["Long"] * len(df)),
+        "Trade": df["_plan"].apply(_plan_text) if "_plan" in df.columns
+                 else pd.Series(["—"] * len(df)),
         "Date": df["_first_found"].apply(_fmt_found_date) if "_first_found" in df.columns
                 else pd.Series(["—"] * len(df)),
         "_is_new": df["_is_new"].fillna(False).astype(bool) if "_is_new" in df.columns
@@ -694,6 +793,21 @@ def _render_best_table(df: pd.DataFrame):
     view = view.dropna(subset=["Price"]).reset_index(drop=True)
     if view.empty:
         st.info("No rows to show.")
+        return None
+
+    # Quick wins vs Long runs — a distinct split by holding horizon.
+    hz_filter = st.radio(
+        "Horizon", ["All", "⚡ Quick wins (≤30d)", "🐢 Long runs (>30d)"],
+        horizontal=True, key="home_best_hz",
+        help="Quick = swing setups that historically played out in ≤30 trading days; "
+             "Long = trend/position setups that need 30d+ to work.",
+    )
+    if hz_filter.startswith("⚡"):
+        view = view[view["_horizon"] == "Quick"].reset_index(drop=True)
+    elif hz_filter.startswith("🐢"):
+        view = view[view["_horizon"] == "Long"].reset_index(drop=True)
+    if view.empty:
+        st.info("No picks in that horizon right now.")
         return None
 
     c1, c2 = st.columns([1.3, 0.7])
@@ -738,7 +852,7 @@ def _render_best_table(df: pd.DataFrame):
             v_color = _VERDICT_COLOR.get(r["Verdict"], TEXT_MUTED)
             cols[1].markdown(f'<span style="color:{v_color};font-weight:600;font-size:11.5px">{r["Verdict"]}</span>',
                              unsafe_allow_html=True)
-            cols[2].markdown(f'<span style="color:{TEXT_MUTED};font-size:11.5px">{r["Hold"]}</span>',
+            cols[2].markdown(f'<span style="font-size:11.5px">{r["Horizon"]}</span>',
                              unsafe_allow_html=True)
             cols[3].markdown(f'<span style="color:{TEXT_MUTED};font-size:11px">{r["Date"]}</span>',
                              unsafe_allow_html=True)
@@ -751,6 +865,8 @@ def _render_best_table(df: pd.DataFrame):
             cols[10].markdown(f'{_b(r[">SMA9"])} / {_b(r[">SMA20"])}')
             cols[11].markdown(f'{r["Vol×"]:.2f}x / {r["RS·SPY"]:.2f}')
             cols[12].markdown(f'<span style="color:{TEXT_MUTED};font-size:11px">{r["Flags"] or "—"}</span>',
+                              unsafe_allow_html=True)
+            cols[13].markdown(f'<span style="font-size:10.5px">{r["Trade"]}</span>',
                               unsafe_allow_html=True)
 
     return st.session_state.get("home_best_selected_ticker", selected)
@@ -1046,13 +1162,49 @@ def _upload_best_to_sheet(df: pd.DataFrame):
     (st.success if ok else st.error)(msg)
 
 
+def _apply_growth_overlay(df: pd.DataFrame) -> pd.DataFrame:
+    """Optional fundamentals overlay (folded in from Golden Scan's Growth scanner):
+    tag firing tickers whose YoY revenue growth >=10% AND EPS growth >=8% with a
+    '💹 Growth' flag. Runs only on the already-flagged rows (dozens of get_info
+    calls, not the whole universe) and fails soft — a blocked/missing fundamentals
+    lookup just means no flag, never an error. It does not change the ranking or
+    horizon; growth is a confirmation, not a timing signal."""
+    from data_loader import get_info
+    if df.empty:
+        return df
+    new_flags = []
+    prog = st.progress(0.0, text="Growth overlay (fundamentals)…")
+    n = len(df)
+    for i, (_, r) in enumerate(df.iterrows()):
+        prog.progress((i + 1) / n)
+        ok = False
+        try:
+            info = get_info(r["Ticker"]) or {}
+            rev = (info.get("revenueGrowth") or 0) * 100
+            eps = (info.get("earningsGrowth") or 0) * 100
+            ok = rev >= 10 and eps >= 8
+        except Exception:
+            ok = False
+        fl = r.get("Flags")
+        fl = list(fl) if isinstance(fl, list) else ([] if not fl else [str(fl)])
+        if ok and "💹 Growth" not in fl:
+            fl = fl + ["💹 Growth"]
+        new_flags.append(fl)
+    prog.empty()
+    df = df.copy()
+    df["Flags"] = new_flags
+    return df
+
+
 def _render_best_scan_mode():
     st.markdown(
         f'<div style="color:{TEXT_MUTED};font-size:12px;line-height:1.7;margin-bottom:10px">'
-        f'The six keeper scanners plus two early-signal add-ons (<b>7Square</b> · <b>8Cross</b>) '
-        f'run over one universe and merge into a single table. The <b>Scanners</b> column lists '
-        f'every scanner that flagged the ticker — <b style="color:{ACCENT_GREEN}">2+ = confluence</b> '
-        f'(sorted first). <b>8Cross·W</b> = the EMA20/50 cross also shows on the weekly.</div>',
+        f'The six keeper scanners plus three add-ons (<b>7Square</b> · <b>8Cross</b> · '
+        f'<b>9TA</b> Trend Align) run over one universe and merge into a single table. The '
+        f'<b>Scanners</b> column lists every scanner that flagged the ticker — '
+        f'<b style="color:{ACCENT_GREEN}">2+ = confluence</b> (sorted first). '
+        f'<b>Horizon</b> splits <b>⚡ quick swings</b> from <b>🐢 long runs</b>; '
+        f'<b>Stop→Tgt</b> is an ATR-based plan scaled to that horizon (2:1 reward:risk).</div>',
         unsafe_allow_html=True,
     )
     c1, c2, c3 = st.columns([2.4, 1, 1])
@@ -1064,6 +1216,11 @@ def _render_best_scan_mode():
     with c3:
         st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
         clear = st.button("🔄 Clear", use_container_width=True, key="home_best_clear")
+    inc_growth = st.checkbox(
+        "➕ Growth overlay — also require strong fundamentals (rev ≥10% & EPS ≥8% YoY); adds a 💹 flag",
+        value=False, key="home_best_growth",
+        help="Folded in from Golden Scan. Slower — fetches fundamentals for flagged tickers only.",
+    )
 
     if clear:
         st.session_state.pop("home_best_df", None)
@@ -1072,9 +1229,11 @@ def _render_best_scan_mode():
 
     if run:
         universe = _resolve_universe(_UNIVERSE_CHOICES[uni_label])
-        st.info(f"Scanning {len(universe)} tickers across 6 scanners — this takes a few minutes.")
+        st.info(f"Scanning {len(universe)} tickers across 9 scanners — this takes a few minutes.")
         df = _run_best_scanners(universe)
         df = _annotate_history(df, _UNIVERSE_CHOICES[uni_label])
+        if inc_growth:
+            df = _apply_growth_overlay(df)
         st.session_state["home_best_df"] = df
         st.session_state["home_best_uni_tag"] = _UNIVERSE_CHOICES[uni_label]
         st.session_state["home_best_ts"] = datetime.now().strftime("%b %d %Y · %I:%M %p")
@@ -1109,7 +1268,9 @@ def _render_best_scan_mode():
         if st.button("📤 Upload to Google Sheet", use_container_width=True, key="home_best_upload"):
             _upload_best_to_sheet(df)
     with dl_col:
-        exp = df.drop(columns=["_count", "x8_weekly"], errors="ignore").copy()
+        exp = df.drop(columns=["_count", "x8_weekly", "_labels", "_plan",
+                               "_horizon", "_hold_lo", "_hold_hi", "atr_val"],
+                      errors="ignore").copy()
         exp["Flags"] = exp["Flags"].apply(lambda x: "; ".join(x) if isinstance(x, list) else x)
         st.download_button("⬇ CSV", exp.to_csv(index=False), "best_scanners.csv",
                            "text/csv", use_container_width=True, key="home_best_csv")
