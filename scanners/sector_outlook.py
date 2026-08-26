@@ -86,6 +86,9 @@ WHY = {
     "Leading":      "HOLD — already ahead and staying there",
     "Improving":    "WATCH — gaining on the market, peers gaining faster",
     "Cooling":      "WAIT — slipping vs the market, rank has not caught up",
+    # Two different conditions both produce "Fading" and they are not the same
+    # animal, so the action line is chosen per row by _why() rather than read
+    # from here — this entry covers the rolling-over case only.
     "Fading":       "TRIM — leadership is rolling over while the price is still good",
     "Falling":      "AVOID — weak and getting weaker",
     "Flat":         "IGNORE — no edge either way",
@@ -95,11 +98,53 @@ WHY = {
 # the whole answer to "it says HOLD, but is it on its way up or down?" -- a
 # bucket label alone cannot say, and the middle bucket is where that matters
 # most because it contains both a leader coasting and one quietly rolling over.
+# Deliberately DIRECTIONAL ONLY — no "become a buy"/"become a sell". These
+# sit directly above the verdict's own action line, and a drift can point the
+# opposite way to the verdict it is annotating: XLF printed "⚠️ Fading /
+# TRIM" above "on track to become a buy" because its month was -2.1% while
+# its fortnight was +1.5%. Both readings were correct; stating two opposite
+# ACTIONS in one row was not. The tension itself is the useful signal, so it
+# is spelled out by _conflict_note() rather than left for the reader to spot.
 DRIFTS = {
-    "Strengthening": ("↗", "green", "getting stronger — on track to become a buy"),
+    "Strengthening": ("↗", "green", "the last 2 weeks are running hotter than the month"),
     "Steady":        ("→", "muted", "holding its pace — no change expected"),
-    "Weakening":     ("↘", "red",   "losing steam — on track to become a sell"),
+    "Weakening":     ("↘", "red",   "the last 2 weeks are running cooler than the month"),
 }
+
+# Which drift direction contradicts which bucket. "out" says sell while
+# Strengthening says the recent stretch turned up; "in" says buy while
+# Weakening says it is cooling.
+_CONFLICT = {("out", "Strengthening"), ("in", "Weakening")}
+
+
+def _conflict_note(bucket: str, drift: str) -> str:
+    """One clause naming the disagreement, when the two axes disagree.
+
+    They are measured over different windows on purpose — the verdict reads
+    the month, the drift reads the fortnight — so they CAN disagree, and when
+    they do that is a real early warning rather than an inconsistency to hide.
+    """
+    if (bucket, drift) not in _CONFLICT:
+        return ""
+    if drift == "Strengthening":
+        return ("the monthly picture still says trim, but the fortnight has turned up — "
+                "the case for selling is weakening, not confirmed")
+    return ("the monthly picture still says buy, but the fortnight has cooled — "
+            "wait for the recent stretch to turn back up")
+
+
+def _why(verdict: str, rolling_over: bool) -> str:
+    """The action line for a row.
+
+    "Fading" is reached two ways: leadership rolling over (the fortnight has
+    turned down while still top-ranked), or a top-ranked sector simply losing
+    ground to the market over the month. Only the first is a roll-over, and
+    saying so on the second was plainly wrong — XLF showed
+    "leadership is rolling over" while its fortnight was +1.5%.
+    """
+    if verdict == "Fading" and not rolling_over:
+        return "TRIM — still top-ranked, but it has lost ground to the market this month"
+    return WHY[verdict]
 
 
 def _drift(fast_pct: float, slow_pct: float) -> str:
@@ -298,7 +343,8 @@ def build_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None =
             "RS Pctile":  round(pctile, 0),
             "1M Price %": round(ret_1m, 1),
             "Trajectory": verdict,
-            "Why":        WHY[verdict],
+            "Why":        _why(verdict, rolling_over),
+            "Conflict":   _conflict_note(bucket, drift),
             "Heading":    drift,
             "HeadIcon":   d_icon,
             "HeadColour": d_colour,
@@ -476,6 +522,13 @@ def render_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None 
                     f'{r["HeadIcon"]} {r["Heading"]} — {r["HeadNote"]}</div>'
                     f'<div style="color:{TEXT_PRIMARY};font-size:10px;margin-top:2px">'
                     f'{r["Why"]}</div>'
+                    # Only rendered when the month and the fortnight actually
+                    # disagree, so it never adds noise to a row where the two
+                    # axes point the same way.
+                    + (f'<div style="color:{GL};font-size:10px;margin-top:2px;'
+                       f'font-style:italic">⚖️ {r["Conflict"]}</div>'
+                       if r.get("Conflict") else "")
+                    + (
                     f'<div style="color:{TEXT_MUTED};font-size:10px;margin-top:3px;'
                     f'line-height:1.6">'
                     f'vs SPY <b style="color:{c}">{r["RS Mom %"]:+.1f}%</b> 1M / '
@@ -487,7 +540,7 @@ def render_outlook(history: pd.DataFrame, sectors: list[tuple[str, str]] | None 
                     f'{r["1M Price %"]:+.1f}%</b> 1M<br>'
                     f'steady: <b style="color:{cf_col}">{int(r["Up Days"])}/'
                     f'{int(r["Window"])}</b> sessions rising</div>'
-                    f'</div>',
+                    f'</div>'),
                     unsafe_allow_html=True,
                 )
 
