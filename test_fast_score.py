@@ -492,6 +492,30 @@ finally:
     shutil.rmtree(_tmp, ignore_errors=True)
 
 check("track record renderer is exported", callable(getattr(fs, "render_track_record", None)))
+check("backtest renderer is exported", callable(getattr(fs, "render_backtest", None)))
+
+# The backtest and track record read committed files, so they must not be
+# gated behind a two-minute live scan that cannot affect what they show.
+# They used to sit after render()'s early returns for "no scan yet",
+# "nothing qualified" and "filter hides everything".
+import inspect
+_src = inspect.getsource(fs.render)
+check("render() exposes the backtest section itself",
+      "render_backtest(" in _src)
+check("render() exposes the track record section itself",
+      "render_track_record(" in _src)
+# Checked against the parse tree, not the text: an earlier version of this
+# assertion matched the word "returns" inside a comment and failed on prose.
+import ast, textwrap
+_tree = ast.parse(textwrap.dedent(_src)).body[0]
+_top_returns = [n for n in _tree.body if isinstance(n, ast.Return)]
+check("render() has no top-level early return",
+      not _top_returns,
+      "an early return here would hide both sections again")
+check("the scan-result half owns its own empty states",
+      "return" in inspect.getsource(fs._render_scan_results))
+check("today's rows survive a run that produced nothing",
+      isinstance(fs._today_rows_for_tracking(), list))
 check("build stamp is set", isinstance(fs.BUILD, str) and len(fs.BUILD) > 8, fs.BUILD)
 
 print("\n── 6. Universe wiring ──────────────────────────────────────────")

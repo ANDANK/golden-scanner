@@ -1051,6 +1051,50 @@ def render():
         st.session_state[_SS_TS] = datetime.now().strftime("%b %d %Y · %I:%M %p")
         st.session_state[_SS_UNI] = len(universe)
 
+    _render_scan_results(tier_sel, min_score)
+
+    # Backtest and track record read COMMITTED files — a backtest JSON and the
+    # weekly snapshots — and have nothing to do with the live scan. They used
+    # to sit after the scan-result block's early returns, so "no scan run yet",
+    # "nothing qualified" or "filter excludes everything" all hid them behind a
+    # two-minute scan that could not affect what they show. They now render
+    # unconditionally.
+    st.divider()
+    if st.checkbox("Show backtest — what this scanner would have picked historically",
+                   value=False, key="fast_score_show_bt"):
+        render_backtest(_selected_universe_kind())
+
+    if st.checkbox("Show track record — how past picks actually did",
+                   value=False, key="fast_score_show_track"):
+        render_track_record(tag=_selected_universe_kind(),
+                            today_rows=_today_rows_for_tracking())
+
+
+def _selected_universe_kind() -> str:
+    return UNIVERSE_CHOICES.get(st.session_state.get("fast_score_uni", ""), "FTF")
+
+
+def _today_rows_for_tracking() -> list[dict]:
+    """This run's picks, if a scan has produced any.
+
+    Passed to the track record so a ticker surfacing for the first time in an
+    ad-hoc scan still appears (priced from now) instead of staying invisible
+    until the next Friday job commits a snapshot. Empty when no scan has run,
+    which is fine — the table is built from stored snapshots either way.
+    """
+    rows = st.session_state.get(_SS_ROWS) or []
+    out = []
+    for r in rows:
+        try:
+            out.append({"ticker": str(r["ticker"]), "price": float(r["close"]),
+                        "tier": str(r["tier"]), "score": int(r["score"])})
+        except (KeyError, TypeError, ValueError):
+            continue
+    return out
+
+
+def _render_scan_results(tier_sel, min_score):
+    """The live-scan half of the tab. Returns early on its own empty states."""
     rows = st.session_state.get(_SS_ROWS)
     if rows is None:
         st.markdown(
@@ -1126,25 +1170,6 @@ def render():
         file_name=f"fast_score_{datetime.now().strftime('%Y-%m-%d')}.csv",
         mime="text/csv", key="fast_score_dl",
     )
-
-    # Today's rows are passed in so a ticker surfacing for the first time in
-    # THIS ad-hoc scan still appears in the table (priced from now), rather
-    # than staying invisible until the next Friday job commits a snapshot.
-    if st.checkbox("Show backtest — what this scanner would have picked historically",
-                   value=False, key="fast_score_show_bt"):
-        render_backtest(UNIVERSE_CHOICES.get(
-            st.session_state.get("fast_score_uni", ""), "FTF"))
-
-    if st.checkbox("Show track record — how past picks actually did",
-                   value=False, key="fast_score_show_track"):
-        render_track_record(
-            tag=UNIVERSE_CHOICES.get(st.session_state.get("fast_score_uni", ""), "FTF"),
-            today_rows=[
-                {"ticker": str(r["ticker"]), "price": float(r["close"]),
-                 "tier": str(r["tier"]), "score": int(r["score"])}
-                for _, r in df.iterrows()
-            ],
-        )
 
 
 def _fmt_found(d: str) -> str:
