@@ -24,6 +24,9 @@
 #   6. volume ratio <= MAX_VOL_RATIO                pullback happened quietly
 #   7. >= MIN_WEEKLY_BARS of weekly history         200W SMA needs ~4 years
 #   8. close >= MIN_PRICE
+#   9. close within MAX_EXT_50W of the 50-week SMA  pullback entry still open
+#  10. weekly RSI(14) <= MAX_RSI                    not already overbought
+#  11. weekly MFI(14) <= MAX_MFI                    not in the take-profit zone
 #
 # WHY THE SLOPE RATIO CLUSTERS NEAR 0.50
 #   Both slopes are the total rise of a least-squares regression line across
@@ -35,7 +38,7 @@
 # FAST SCORE (0-15)
 #   Five components, 0-3 points each — see _score_row(). It ranks the
 #   survivors, it does not filter them: everything in the table already
-#   passed all eight gates above. MACD delta is SCORED as a % of price but
+#   passed all eleven gates above. MACD delta is SCORED as a % of price but
 #   DISPLAYED raw, because a $2,000 stock and a $50 stock produce MACD
 #   values two orders of magnitude apart and a raw threshold would just be
 #   a price filter wearing a momentum costume.
@@ -86,6 +89,22 @@ FRESH_CROSS_WKS   = 8      #     MACD cross this recent == "Fresh Setups"
 RATIO_BEST_LO     = 0.60
 RATIO_BEST_HI     = 2.00
 RATIO_UNSTABLE    = 5.00
+# Exhaustion gates. The scanner previously had NO concept of whether the
+# opportunity was still available: it confirmed the setup had HAPPENED
+# (trend up, line touched, MACD turned) and never asked whether the move
+# was already spent. That is how a name printing RSI 69.8 / MFI 70.8 --
+# "Overbought / Take Profit" on the very panel used to vet these -- reached
+# the top of the table. Thresholds match that panel's own bands.
+MAX_RSI           = 68.0   #     weekly RSI(14) above this = overbought
+MAX_MFI           = 70.0   #     weekly MFI(14) above this = take-profit zone
+RSI_BUY_LO        = 45.0   #     the panel's "Buy Zone" band
+RSI_BUY_HI        = 65.0
+# The setup is "price pulled back TO the 50-week line". Once price has run
+# far above it again the pullback entry is gone, however good the trend is.
+MAX_EXT_50W       = 25.0   # %   current close above the 50-week SMA
+# How far the bounce off the touch low may already have run before the
+# "room left" component stops paying out.
+BOUNCE_SPENT_PCT  = 50.0   # %
 MIN_WEEKLY_BARS   = 200    #     enough history for a 200-week SMA
 MIN_PRICE         = 5.0    # $
 
@@ -298,6 +317,39 @@ def _macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9):
     return macd_line, signal_line, macd_line - signal_line
 
 
+def _rsi(close: pd.Series, period: int = 14) -> pd.Series:
+    """Wilder's RSI on weekly closes.
+
+    Wilder smoothing (alpha = 1/period), not a simple mean — a simple mean
+    reads several points hot near turns and would defeat the whole purpose
+    of an exhaustion gate.
+    """
+    delta = close.diff()
+    gain = delta.clip(lower=0.0)
+    loss = (-delta).clip(lower=0.0)
+    avg_gain = gain.ewm(alpha=1.0 / period, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1.0 / period, adjust=False).mean()
+    rs = avg_gain / avg_loss.replace(0.0, np.nan)
+    return (100.0 - 100.0 / (1.0 + rs)).fillna(100.0)
+
+
+def _mfi(high: pd.Series, low: pd.Series, close: pd.Series,
+         volume: pd.Series, period: int = 14) -> pd.Series:
+    """Money Flow Index — RSI weighted by volume, on the typical price.
+
+    Volume-weighted is the point: it separates a rally the money is still
+    entering from one running on fumes, which a price-only oscillator
+    cannot see.
+    """
+    typical = (high + low + close) / 3.0
+    raw_flow = typical * volume
+    direction = typical.diff()
+    pos = raw_flow.where(direction > 0, 0.0).rolling(period).sum()
+    neg = raw_flow.where(direction < 0, 0.0).rolling(period).sum()
+    ratio = pos / neg.replace(0.0, np.nan)
+    return (100.0 - 100.0 / (1.0 + ratio)).fillna(50.0)
+
+
 def _weeks_since_cross_up(gap: pd.Series) -> int | None:
     """Weeks since the gap last crossed from <=0 to >0. None if never / still below."""
     g = gap.to_numpy(dtype=float)
@@ -352,6 +404,12 @@ def _score_row(r: dict) -> tuple[int, dict]:
     # 14 or 15 overall was not merely rare but arithmetically unreachable.
     a = r["accel_3w"]
     parts["accel"] = 3 if a >= 12 else 2 if a >= 5 else 1 if a >= 0 else 0
+    # ...but a three-week rip is exactly what pushes RSI toward overbought,
+    # so paying full marks for the move while charging nothing for the
+    # extension it created let the score reward its own worst entries. Once
+    # RSI leaves the buy band the acceleration is history, not opportunity.
+    if r.get("rsi") is not None and r["rsi"] > RSI_BUY_HI:
+        parts["accel"] = min(parts["accel"], 1)
 
     # Normalised by price — see the module header for why.
     m = r["macd_delta_3w"] / r["close"] * 100.0 if r["close"] else 0.0
@@ -389,6 +447,15 @@ def _score_row(r: dict) -> tuple[int, dict]:
         parts["dist200"] = 1
     else:
         parts["dist200"] = 0
+    # This component is "how much room is left", and the 200-week distance
+    # only tells half of that story. bounce_pct -- how far price has ALREADY
+    # travelled from the touch low -- was being computed, stored and shown
+    # while contributing nothing. A name up 55% off its low has spent the
+    # move this scanner exists to catch early, whatever its 200w distance
+    # says, so it can no longer claim full marks for having room.
+    b = r.get("bounce_pct")
+    if b is not None and b > BOUNCE_SPENT_PCT:
+        parts["dist200"] = min(parts["dist200"], 1)
 
     v = r["vol_ratio"]
     parts["vol"] = 3 if v <= 0.90 else 2 if v <= 1.00 else 1 if v <= 1.10 else 0
@@ -400,7 +467,7 @@ def evaluate_ticker(ticker: str, weekly: pd.DataFrame) -> dict | None:
     """Run every gate against one ticker's weekly bars. None == did not qualify."""
     if weekly is None or weekly.empty:
         return None
-    need = {"Close", "Low", "Volume"}
+    need = {"Close", "High", "Low", "Volume"}
     if not need.issubset(set(weekly.columns)):
         return None
 
@@ -416,11 +483,13 @@ def evaluate_ticker(ticker: str, weekly: pd.DataFrame) -> dict | None:
         return None
 
     close = pd.to_numeric(df["Close"], errors="coerce")
+    high = pd.to_numeric(df["High"], errors="coerce")
     low = pd.to_numeric(df["Low"], errors="coerce")
     volume = pd.to_numeric(df["Volume"], errors="coerce")
     if close.isna().any():
         close = close.ffill()
         low = low.fillna(close)
+        high = high.fillna(close)
     px = float(close.iloc[-1])
     if not np.isfinite(px) or px < MIN_PRICE:
         return None
@@ -468,6 +537,21 @@ def evaluate_ticker(ticker: str, weekly: pd.DataFrame) -> dict | None:
     if not np.isfinite(sma_200) or sma_200 <= 0:
         return None
 
+    # 7 · the pullback entry must still be on the table. Price back up 25%+
+    # above the 50-week line is a trend continuation, not a pullback.
+    ext_50w = float((px - sma_trend.iloc[-1]) / sma_trend.iloc[-1] * 100.0)
+    if ext_50w > MAX_EXT_50W:
+        return None
+
+    # 8 · exhaustion. Both are read on the same weekly bars as everything
+    # else, so they answer "is the move already spent" for this timeframe.
+    rsi = float(_rsi(close).iloc[-1])
+    mfi = float(_mfi(high, low, close, volume).iloc[-1])
+    if not np.isfinite(rsi) or rsi > MAX_RSI:
+        return None
+    if np.isfinite(mfi) and mfi > MAX_MFI:
+        return None
+
     wks_since_cross = _weeks_since_cross_up(gap)
     if macd_gap < 0:
         tier = TIER_EARLY
@@ -494,6 +578,9 @@ def evaluate_ticker(ticker: str, weekly: pd.DataFrame) -> dict | None:
         "accel_3w": float((px - prev) / prev * 100.0) if prev > 0 else 0.0,
         "dist_200w": float((px - sma_200) / sma_200 * 100.0),
         "vol_ratio": float(vol_ratio),
+        "ext_50w": ext_50w,
+        "rsi": rsi,
+        "mfi": mfi,
     }
     row["score"], row["score_parts"] = _score_row(row)
     return row
@@ -779,7 +866,7 @@ def _explainer() -> str:
         f'<b style="color:{_TIER_COLOR[TIER_FURTHER]}">Further Along</b> = crossed earlier, bounce underway.<br>'
         f'<b style="color:{TEXT_PRIMARY}">Fast Score</b> ranks the survivors 0–15 (five components, 0–3 each: '
         f'3-week acceleration, MACD improvement, slope ratio, room above the 200-week line, and how quiet the '
-        f'volume is). It does not filter — everything in the table already passed all eight gates.</div>'
+        f'volume is). It does not filter — everything in the table already passed all eleven gates.</div>'
     )
 
 
@@ -843,7 +930,7 @@ def render():
 
     if df.empty:
         st.info("Nothing qualified on the last run — every candidate failed at least one of "
-                "the eight gates. That is a normal reading in a market with no orderly "
+                "the eleven gates. That is a normal reading in a market with no orderly "
                 "pullbacks, not an error.")
         return
 
@@ -867,10 +954,12 @@ def render():
 
     with st.expander("Full detail — the gate columns behind each row"):
         detail = view[[
-            "rank", "ticker", "sector", "tier", "close", "slope_52w", "slope_26w",
-            "slope_ratio", "touch_pct", "bounce_pct", "wks_since_touch",
-            "macd_gap", "macd_delta_3w", "accel_3w", "dist_200w", "vol_ratio", "score",
+            "rank", "ticker", "sector", "tier", "close", "rsi", "mfi", "ext_50w",
+            "slope_52w", "slope_26w", "slope_ratio", "touch_pct", "bounce_pct",
+            "wks_since_touch", "macd_gap", "macd_delta_3w", "accel_3w",
+            "dist_200w", "vol_ratio", "score",
         ]].rename(columns={
+            "rsi": "RSI", "mfi": "MFI", "ext_50w": "Above 50w %",
             "rank": "#", "ticker": "Sym", "sector": "Sector", "tier": "Tier",
             "close": "Close", "slope_52w": "52wk Slope %", "slope_26w": "26wk Slope %",
             "slope_ratio": "Slope Ratio", "touch_pct": "Touch %", "bounce_pct": "Bounce %",
