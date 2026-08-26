@@ -2115,7 +2115,7 @@ def _render_overkill_tab():
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def _sector_flows() -> list[dict]:
-    from scanners.sector_rotation import SECTORS
+    from scanners.sector_rotation import SECTORS, rrg_quadrant
     try:
         spy = get_price_history("SPY", period="1y")["Close"].squeeze()
     except Exception:
@@ -2142,16 +2142,12 @@ def _sector_flows() -> list[dict]:
             # Dead-band so a sector sitting flat against SPY isn't promoted into a
             # strength quadrant on a knife-edge. Validated on 2026-08-24 close data:
             # XLK (rs21=1.000, rank #13, flat vs SPY) was reading "Improving — money
-            # arriving" purely because rs21 cleared 1.0 by +0.0%, directly
-            # contradicting the (correct) outlook card's "Flat/Weakening". Requiring
-            # a real >0.25% edge to count as "up" demotes only genuinely-flat sectors
-            # (only XLK & QQQ on that day); every sector with an actual edge
-            # (XLY +3.3%, XLC +1.0%) is unchanged.
-            _band = 0.0025
-            up63, up21 = rs63 >= 1 + _band, rs21 >= 1 + _band
-            quad = ("Leading" if up63 and up21 else
-                    "Weakening" if up63 else
-                    "Improving" if up21 else "Lagging")
+            # arriving" purely because rs21 cleared 1.0 by +0.0%.
+            # The rule now lives in ONE place — sector_rotation.rrg_quadrant —
+            # because this fix was applied here and not to the copy on the
+            # Sector Rotation page, which left the two cards labelling the same
+            # flat sector oppositely on the same day.
+            quad = rrg_quadrant(rs63, rs21)
             rows.append({"tkr": tkr, "name": name, "rs63": rs63, "rs21": rs21,
                          "flow": round(flow, 2), "quad": quad,
                          "ret1m": round((float(close.iloc[-1]) / float(close.iloc[-21]) - 1) * 100, 1)
@@ -2458,7 +2454,7 @@ def _render_sector_outlook():
     are computed from one series and cannot disagree.
     """
     from scanners.sector_outlook import render_outlook
-    from scanners.sector_rotation import SECTORS, _sector_history_cached
+    from scanners.sector_rotation import SECTORS, rrg_quadrant, _sector_history_cached
 
     try:
         spy = get_price_history("SPY", period="1y")

@@ -116,6 +116,41 @@ for rs in (-3.0, -1.0, -0.2, 0.0, 0.2, 1.0, 3.0):
                 check(f"disagreement is stated (rs={rs} fast={fast} rank={rank})", False)
 check(f"all {combos} reachable combinations coherent", True)
 
+print("\n── 6. One RRG quadrant rule across every sector card ───────────")
+# The Market Overview standings card and the Sector Rotation page both label
+# sectors Leading/Weakening/Improving/Lagging. They used to each carry their
+# own copy of the rule; only home.py got a dead-band, so a sector sitting
+# flat against SPY read "Lagging" on one card and "Leading" on the other.
+from scanners.sector_rotation import rrg_quadrant, RRG_BAND
+import inspect
+from scanners import home as _home, sector_rotation as _sr
+
+check("the rule is defined once and shared",
+      "rrg_quadrant" in inspect.getsource(_home._sector_flows)
+      and "rrg_quadrant(rs_val, rs_21)" in inspect.getsource(_sr.compute_row))
+check("no card recomputes the quadrant inline",
+      not any("rs21 >= 1 else" in inspect.getsource(f)
+              for f in (_home._sector_flows, _sr.compute_row)))
+
+# The dead-band is the whole point: flat must not read as strength.
+check("a dead-flat sector is not promoted", rrg_quadrant(1.0000, 1.0000) == "Lagging")
+check("a knife-edge +0.1% is not promoted", rrg_quadrant(1.0010, 1.0010) == "Lagging")
+check("a real edge on both legs leads", rrg_quadrant(1.0300, 1.0400) == "Leading")
+check("long leg up, short leg flat -> Weakening", rrg_quadrant(1.0500, 1.0000) == "Weakening")
+check("long leg flat, short leg up -> Improving", rrg_quadrant(0.9800, 1.0100) == "Improving")
+check("the band is a real threshold, not zero", RRG_BAND > 0)
+check("exactly at the band counts as up", rrg_quadrant(1 + RRG_BAND, 1 + RRG_BAND) == "Leading")
+check("a hair under the band does not",
+      rrg_quadrant(1 + RRG_BAND - 1e-6, 1 + RRG_BAND - 1e-6) == "Lagging")
+
+# Whatever the inputs, both cards must now agree by construction.
+disagreements = 0
+for rs_l in (0.95, 0.999, 1.0, 1.0025, 1.01, 1.08):
+    for rs_s in (0.95, 0.999, 1.0, 1.0025, 1.01, 1.08):
+        if rrg_quadrant(rs_l, rs_s) != rrg_quadrant(rs_l, rs_s):
+            disagreements += 1
+check("every input pair yields one answer for both cards", disagreements == 0)
+
 print("\n" + "=" * 60)
 print(f"RESULT: {len(FAILS)} failed")
 sys.exit(1 if FAILS else 0)

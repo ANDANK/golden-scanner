@@ -69,6 +69,38 @@ def _rs(close: pd.Series, bench: pd.Series, days: int = 63) -> float:
         return 1.0
 
 
+# ── The RRG quadrant rule — ONE definition, used by every card ────────────
+# Previously written out twice: here and in home.py's _sector_flows(). The
+# copy in home.py gained a dead-band after XLK (2026-08-24) read
+# "Improving — money arriving" on a rs21 of exactly 1.000, purely because a
+# flat sector cleared the bare >= 1 test. This copy kept the bare test while
+# its comment claimed to be "the same rule", so the two cards then labelled
+# the same flat sector oppositely on the same day — Market Overview said
+# Lagging, Sector Rotation said Leading.
+#
+# A shared function rather than a shared constant: the constant was never the
+# hard part, agreeing on the comparison was.
+RRG_BAND = 0.0025   # a sector must beat SPY by >0.25% for the leg to count as up
+
+
+def rrg_quadrant(rs_long: float, rs_short: float, band: float = RRG_BAND) -> str:
+    """Leading / Weakening / Improving / Lagging from two RS legs.
+
+    `rs_long` is the ~63-day relative-strength ratio vs SPY, `rs_short` the
+    ~21-day one. The dead-band stops a sector sitting flat against SPY from
+    being promoted into a strength quadrant on a knife-edge.
+    """
+    up_long = rs_long >= 1 + band
+    up_short = rs_short >= 1 + band
+    if up_long and up_short:
+        return "Leading"
+    if up_long:
+        return "Weakening"
+    if up_short:
+        return "Improving"
+    return "Lagging"
+
+
 def _rs_trend(close: pd.Series, bench: pd.Series) -> str:
     """Is RS improving or deteriorating vs 4 weeks ago?"""
     try:
@@ -151,13 +183,12 @@ def compute_row(ticker: str, name: str, close, volume, spy_close) -> dict | None
     rs_10  = _rs(close, spy_close, 10) if spy_close is not None else 1.0
     rs_dir = _rs_trend(close, spy_close) if spy_close is not None else "—"
 
-    # RRG quadrant, same rule as home.py's _sector_flows() so the Market
-    # Overview tab can label its history in the vocabulary already on that
-    # page (Leading/Improving/...) rather than the trade-action vocabulary
-    # this page uses. Two names for one state confuses more than it informs.
-    quadrant = ("Leading"   if rs_val >= 1 and rs_21 >= 1 else
-                "Weakening" if rs_val >= 1 else
-                "Improving" if rs_21 >= 1 else "Lagging")
+    # RRG quadrant via the shared rule, so the Market Overview tab can label
+    # its history in the vocabulary already on that page (Leading/Improving/
+    # ...) rather than the trade-action vocabulary this page uses. Two names
+    # for one state confuses more than it informs — and two RULES for one
+    # state is worse, which is what having a second copy here produced.
+    quadrant = rrg_quadrant(rs_val, rs_21)
 
     # Volume. iloc[-2] deliberately: the final bar is the one being evaluated
     # and is still forming during market hours, so its volume is a partial
