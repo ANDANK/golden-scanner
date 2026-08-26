@@ -134,7 +134,7 @@ PREFETCH_CHUNK = 120       # yfinance bulk-download batch size
 # "is the fix deployed yet?" is a fact you can read off the page instead of a
 # guess -- a redeploy can lag a push, and a browser session can hold results
 # from before one.
-BUILD = "2026-08-26.7 · 12 gates · backtest universe fallback"
+BUILD = "2026-08-26.8 · 12 gates · score×tier cross-tab, all-HTML tables"
 
 TIER_EARLY   = "Early"
 TIER_FRESH   = "Fresh"
@@ -1315,6 +1315,140 @@ def load_backtest(universe_kind: str = "FTF") -> dict | None:
     return None
 
 
+# One HTML renderer for both backtest tables. st.dataframe is avoided
+# everywhere in this tab for the reason documented on _DETAIL_COLS: a canvas
+# grid that fails to lay out shows a blank box and raises nothing.
+_BT_STAT_COLS = ["Segment", "N", "Win %", "Median %", "Mean %",
+                 "vs SPY %", "Beat SPY %", "Avg MFE %", "Avg MAE %"]
+THIN_SAMPLE_N = 30
+
+
+def _bt_stats_table_html(rows: list[dict]) -> str:
+    """Segment statistics as HTML, with thin samples visibly marked."""
+    if not rows:
+        return ""
+    head = "".join(
+        f'<th style="position:sticky;top:0;background:{BG_PANEL};color:{TEXT_MUTED};'
+        f'font-size:9px;font-weight:800;letter-spacing:.06em;padding:7px 9px;'
+        f'text-align:{"left" if i == 0 else "right"};white-space:nowrap;'
+        f'border-bottom:1px solid {BORDER_COLOR}">{c.upper()}</th>'
+        for i, c in enumerate(_BT_STAT_COLS)
+    )
+    body = []
+    for rw in rows:
+        thin = rw.get("N", 0) < THIN_SAMPLE_N
+        tds = []
+        for i, c in enumerate(_BT_STAT_COLS):
+            v = rw.get(c)
+            if v is None:
+                txt, col, w = "—", TEXT_MUTED, 600
+            elif c == "Segment":
+                # The warning triangle rides on the row it applies to, not in a
+                # footnote — a thin cell read in isolation is the whole risk.
+                txt = f"{v}{' ⚠️' if thin else ''}"
+                col, w = TEXT_PRIMARY, 600
+            elif c == "N":
+                txt, col, w = f"{int(v)}", (_C_NEG if thin else TEXT_MUTED), (800 if thin else 600)
+            elif c in ("Win %", "Beat SPY %"):
+                txt, col, w = f"{v:.0f}%", (ACCENT_GREEN if v > 50 else _C_NEG), 700
+            else:
+                txt, col, w = f"{v:+.2f}%", (ACCENT_GREEN if v > 0 else _C_NEG), \
+                    (800 if c == "vs SPY %" else 600)
+            if thin and c not in ("Segment", "N"):
+                col = _rgba_hex(col, 0.55) if col.startswith("#") else col
+            tds.append(
+                f'<td style="padding:7px 9px;color:{col};font-size:11.5px;font-weight:{w};'
+                f'white-space:nowrap;text-align:{"left" if i == 0 else "right"};'
+                f'border-bottom:1px solid rgba(255,255,255,.04)">{txt}</td>'
+            )
+        body.append(f"<tr>{''.join(tds)}</tr>")
+    return (
+        f'<div style="overflow-x:auto;background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
+        f'border-radius:10px;max-height:520px;overflow-y:auto">'
+        f'<table style="width:100%;border-collapse:collapse">'
+        f'<thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
+    )
+
+
+def _stat_row(label: str, a: dict) -> dict:
+    return {
+        "Segment": label, "N": a["n"], "Win %": round(a["win_rate"], 1),
+        "Median %": round(a["median"], 2), "Mean %": round(a["mean"], 2),
+        "vs SPY %": None if a.get("mean_excess") is None else round(a["mean_excess"], 2),
+        "Beat SPY %": None if a.get("win_rate_vs_bench") is None
+                      else round(a["win_rate_vs_bench"], 1),
+        "Avg MFE %": None if a.get("mean_mfe") is None else round(a["mean_mfe"], 2),
+        "Avg MAE %": None if a.get("mean_mae") is None else round(a["mean_mae"], 2),
+    }
+
+
+_PICK_COLS = [
+    ("date", "DATE", lambda v: str(v)),
+    ("ticker", "SYM", lambda v: str(v)),
+    ("tier", "TIER", lambda v: str(v)),
+    ("score", "SCORE", lambda v: f"{int(v)}/15"),
+    ("close", "ENTRY", lambda v: f"${v:,.2f}"),
+    ("rsi", "RSI", lambda v: f"{v:.1f}"),
+    ("mfi", "MFI", lambda v: f"{v:.1f}"),
+    ("ext_50w", "ABOVE 50W", lambda v: f"{v:+.1f}%"),
+    ("dist_200w", "200W DIST", lambda v: f"{v:+.1f}%"),
+    ("slope_ratio", "RATIO", lambda v: f"{v:.2f}"),
+    ("vol_ratio", "VOL", lambda v: f"{v:.2f}x"),
+]
+
+
+def _picks_table_html(picks: list[dict], horizons: list[int]) -> str:
+    """Every backtested pick, as HTML, with its forward outcome."""
+    if not picks:
+        return ""
+    cols = list(_PICK_COLS) + [
+        (f"ret_{h}w", f"{h}W RET", lambda v: f"{v:+.1f}%") for h in horizons
+    ] + [
+        (f"excess_{h}w", f"{h}W vs SPY", lambda v: f"{v:+.1f}%") for h in horizons
+    ]
+    head = "".join(
+        f'<th style="position:sticky;top:0;background:{BG_PANEL};color:{TEXT_MUTED};'
+        f'font-size:9px;font-weight:800;letter-spacing:.06em;padding:6px 8px;'
+        f'text-align:{"left" if i < 3 else "right"};white-space:nowrap;'
+        f'border-bottom:1px solid {BORDER_COLOR}">{h}</th>'
+        for i, (_, h, _) in enumerate(cols)
+    )
+    body = []
+    for p in picks:
+        tds = []
+        for i, (key, _h, fmt) in enumerate(cols):
+            v = p.get(key)
+            try:
+                txt = "—" if v is None else fmt(v)
+            except Exception:
+                txt = "—"
+            if key == "ticker":
+                col, w = GOLD, 800
+            elif key == "tier":
+                col, w = _TIER_COLOR.get(str(v), TEXT_MUTED), 700
+            elif key == "score":
+                col, w = (ACCENT_GREEN if isinstance(v, (int, float))
+                          and v >= SCORE_GREEN_MIN else _C_RATIO), 800
+            elif key.startswith(("ret_", "excess_")):
+                col, w = (TEXT_MUTED if not isinstance(v, (int, float))
+                          else (ACCENT_GREEN if v > 0 else _C_NEG)), \
+                    (800 if key.startswith("excess_") else 600)
+            else:
+                col, w = TEXT_PRIMARY, 600
+            tds.append(
+                f'<td style="padding:6px 8px;color:{col};font-size:11px;font-weight:{w};'
+                f'white-space:nowrap;text-align:{"left" if i < 3 else "right"};'
+                f'border-bottom:1px solid rgba(255,255,255,.04)">{txt}</td>'
+            )
+        body.append(f"<tr>{''.join(tds)}</tr>")
+    return (
+        f'<div style="overflow:auto;background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
+        f'border-radius:10px;max-height:520px">'
+        f'<table style="width:100%;border-collapse:collapse">'
+        f'<thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
+    )
+
+
 def render_backtest(universe_kind: str = "FTF"):
     """Show what the scanner WOULD have picked historically, and how it did.
 
@@ -1402,68 +1536,51 @@ def render_backtest(universe_kind: str = "FTF"):
     ):
         a = (per or {}).get(pick)
         if a:
-            rows.append({
-                "Segment": label, "N": a["n"], "Win %": round(a["win_rate"], 1),
-                "Median %": round(a["median"], 2), "Mean %": round(a["mean"], 2),
-                "vs SPY %": None if a.get("mean_excess") is None else round(a["mean_excess"], 2),
-                "Beat SPY %": None if a.get("win_rate_vs_bench") is None
-                              else round(a["win_rate_vs_bench"], 1),
-                "Avg MFE %": None if a.get("mean_mfe") is None else round(a["mean_mfe"], 2),
-                "Avg MAE %": None if a.get("mean_mae") is None else round(a["mean_mae"], 2),
-            })
+            rows.append(_stat_row(label, a))
     if rows:
-        _bt_cols = ["Segment", "N", "Win %", "Median %", "Mean %",
-                    "vs SPY %", "Beat SPY %", "Avg MFE %", "Avg MAE %"]
-        _head = "".join(
-            f'<th style="color:{TEXT_MUTED};font-size:9px;font-weight:800;letter-spacing:.06em;'
-            f'padding:7px 9px;text-align:{"left" if i == 0 else "right"};white-space:nowrap;'
-            f'border-bottom:1px solid {BORDER_COLOR}">{c.upper()}</th>'
-            for i, c in enumerate(_bt_cols)
-        )
-        _body = []
-        for rw in rows:
-            tds = []
-            for i, c in enumerate(_bt_cols):
-                v = rw.get(c)
-                if v is None:
-                    txt, col = "—", TEXT_MUTED
-                elif c == "Segment":
-                    txt, col = str(v), TEXT_PRIMARY
-                elif c == "N":
-                    txt, col = f"{int(v)}", TEXT_MUTED
-                elif c in ("Win %", "Beat SPY %"):
-                    txt, col = f"{v:.0f}%", (ACCENT_GREEN if v > 50 else _C_NEG)
-                else:
-                    txt, col = f"{v:+.2f}%", (ACCENT_GREEN if v > 0 else _C_NEG)
-                tds.append(
-                    f'<td style="padding:7px 9px;color:{col};font-size:11.5px;font-weight:'
-                    f'{800 if c in ("vs SPY %", "Win %") else 600};white-space:nowrap;'
-                    f'text-align:{"left" if i == 0 else "right"};'
-                    f'border-bottom:1px solid rgba(255,255,255,.04)">{txt}</td>'
-                )
-            _body.append(f"<tr>{''.join(tds)}</tr>")
-        st.markdown(
-            f'<div style="overflow-x:auto;background:{BG_PANEL};border:1px solid '
-            f'{BORDER_COLOR};border-radius:10px">'
-            f'<table style="width:100%;border-collapse:collapse">'
-            f'<thead><tr>{_head}</tr></thead><tbody>{"".join(_body)}</tbody></table></div>',
-            unsafe_allow_html=True,
-        )
-        _thin = [r["Segment"].lstrip("▸ ") for r in rows if r["N"] < 30]
+        st.markdown(_bt_stats_table_html(rows), unsafe_allow_html=True)
         st.caption(
             "If the score band rows do not improve as the score rises, the score is not "
-            "ranking anything — that is the single most useful thing this table can tell you."
-            + (f"  ⚠️ Thin samples (n<30): {', '.join(_thin)} — a striking number in a "
-               f"small band is the single easiest way to fool yourself here."
-               if _thin else "")
+            "ranking anything — that is the single most useful thing this table can tell you. "
+            f"Rows marked ⚠️ have fewer than {THIN_SAMPLE_N} picks."
+        )
+
+    # ── score band x tier ────────────────────────────────────────────────
+    # What you actually act on is a combination: "a 13 that just crossed" is a
+    # different proposition from "a 13 that crossed four months ago", and
+    # neither the band nor the tier alone can show that.
+    seg = sm.get("by_segment")
+    if not seg:
+        # Results committed before by_segment existed still carry every pick,
+        # so the cross-tab is recomputed rather than demanding a re-run.
+        from scanners import fast_score_backtest as _bt
+        seg = _bt.cross_tab(data["picks"], sm["horizons"])
+    seg_rows = [_stat_row(k, v[pick]) for k, v in seg.items() if pick in v]
+    if seg_rows:
+        st.markdown(
+            f'<div style="margin-top:18px;color:{TEXT_MUTED};font-size:11px;'
+            f'letter-spacing:.06em;text-transform:uppercase;font-weight:700">'
+            f'Score band × tier — {pick}</div>',
+            unsafe_allow_html=True,
+        )
+        seg_rows.sort(key=lambda r: (r["vs SPY %"] is None, -(r["vs SPY %"] or 0)))
+        st.markdown(_bt_stats_table_html(seg_rows), unsafe_allow_html=True)
+        _thin_n = sum(1 for r in seg_rows if r["N"] < THIN_SAMPLE_N)
+        st.caption(
+            f"Sorted by excess over SPY. Splitting the picks twelve ways leaves the "
+            f"interesting corners very thin — {_thin_n} of {len(seg_rows)} cells here have "
+            f"fewer than {THIN_SAMPLE_N} picks. A 100% win rate on 5 picks is 5 picks, not "
+            f"a strategy; read the N column before anything else in this table."
         )
 
     with st.expander("Every backtested pick"):
-        picks = pd.DataFrame(data["picks"])
-        if not picks.empty:
-            st.dataframe(picks.round(2), use_container_width=True, hide_index=True)
+        picks = data["picks"]
+        if picks:
+            st.markdown(
+                _picks_table_html(picks, sm["horizons"]), unsafe_allow_html=True)
             st.download_button(
-                "⬇ Download backtest picks CSV", picks.to_csv(index=False).encode(),
+                "⬇ Download backtest picks CSV",
+                pd.DataFrame(picks).to_csv(index=False).encode(),
                 file_name=f"fast_score_backtest_{data['universe']}.csv",
                 mime="text/csv", key="fast_score_bt_dl",
             )

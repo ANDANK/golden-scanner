@@ -168,31 +168,64 @@ def _attach_benchmark(records: list[dict], bench: pd.Series | None,
             r[f"excess_{h}w"] = r[f"ret_{h}w"] - bret
 
 
+SCORE_BANDS = {"12-15": (12, 15), "9-11": (9, 11), "6-8": (6, 8), "0-5": (0, 5)}
+
+
+def aggregate_rows(rows: list[dict], h: int) -> dict | None:
+    """Statistics for one group of picks at one horizon. Module-level so the
+    app can cross-tabulate stored picks without re-running the backtest."""
+    vals = [r[f"ret_{h}w"] for r in rows if f"ret_{h}w" in r]
+    if not vals:
+        return None
+    ex = [r[f"excess_{h}w"] for r in rows if f"excess_{h}w" in r]
+    mae = [r[f"mae_{h}w"] for r in rows if f"mae_{h}w" in r]
+    mfe = [r[f"mfe_{h}w"] for r in rows if f"mfe_{h}w" in r]
+    arr = np.array(vals, dtype=float)
+    return {
+        "n": len(vals),
+        "win_rate": float((arr > 0).mean() * 100.0),
+        "mean": float(arr.mean()),
+        "median": float(np.median(arr)),
+        "stdev": float(arr.std(ddof=1)) if len(arr) > 1 else 0.0,
+        "best": float(arr.max()),
+        "worst": float(arr.min()),
+        "mean_excess": float(np.mean(ex)) if ex else None,
+        "win_rate_vs_bench": float((np.array(ex) > 0).mean() * 100.0) if ex else None,
+        "mean_mfe": float(np.mean(mfe)) if mfe else None,
+        "mean_mae": float(np.mean(mae)) if mae else None,
+    }
+
+
+def cross_tab(records: list[dict], horizons=HORIZONS_WKS) -> dict:
+    """Score band x tier. The combination a trader actually acts on -- "a 13
+    that just crossed" is a different proposition from "a 13 that crossed four
+    months ago" -- and neither the band nor the tier alone can show it.
+
+    Cells go thin fast: splitting ~200 picks twelve ways leaves single digits
+    in the interesting corners, so every caller must surface n alongside the
+    number or the table invites exactly the conclusion it cannot support.
+    """
+    out: dict[str, dict] = {}
+    for band, (lo, hi) in SCORE_BANDS.items():
+        for tier in (fs.TIER_EARLY, fs.TIER_FRESH, fs.TIER_FURTHER):
+            rows = [r for r in records
+                    if lo <= r.get("score", -1) <= hi and r.get("tier") == tier]
+            if not rows:
+                continue
+            per = {}
+            for h in horizons:
+                a = aggregate_rows(rows, h)
+                if a:
+                    per[f"{h}w"] = a
+            if per:
+                out[f"{band} · {tier}"] = per
+    return out
+
+
 def summarise(records: list[dict], horizons=HORIZONS_WKS) -> dict:
     """Aggregate rows into overall / per-tier / per-score-band statistics."""
-    def _agg(rows: list[dict], h: int) -> dict | None:
-        vals = [r[f"ret_{h}w"] for r in rows if f"ret_{h}w" in r]
-        if not vals:
-            return None
-        ex = [r[f"excess_{h}w"] for r in rows if f"excess_{h}w" in r]
-        mae = [r[f"mae_{h}w"] for r in rows if f"mae_{h}w" in r]
-        mfe = [r[f"mfe_{h}w"] for r in rows if f"mfe_{h}w" in r]
-        arr = np.array(vals, dtype=float)
-        return {
-            "n": len(vals),
-            "win_rate": float((arr > 0).mean() * 100.0),
-            "mean": float(arr.mean()),
-            "median": float(np.median(arr)),
-            "stdev": float(arr.std(ddof=1)) if len(arr) > 1 else 0.0,
-            "best": float(arr.max()),
-            "worst": float(arr.min()),
-            "mean_excess": float(np.mean(ex)) if ex else None,
-            "win_rate_vs_bench": float((np.array(ex) > 0).mean() * 100.0) if ex else None,
-            "mean_mfe": float(np.mean(mfe)) if mfe else None,
-            "mean_mae": float(np.mean(mae)) if mae else None,
-        }
-
-    bands = {"12-15": (12, 15), "9-11": (9, 11), "6-8": (6, 8), "0-5": (0, 5)}
+    _agg = aggregate_rows
+    bands = SCORE_BANDS
     out = {
         "n_picks": len(records),
         "n_tickers": len({r["ticker"] for r in records}),
@@ -200,6 +233,7 @@ def summarise(records: list[dict], horizons=HORIZONS_WKS) -> dict:
         "date_max": max((r["date"] for r in records), default=None),
         "horizons": list(horizons),
         "overall": {}, "by_tier": {}, "by_score_band": {},
+        "by_segment": cross_tab(records, horizons),
     }
     for h in horizons:
         a = _agg(records, h)

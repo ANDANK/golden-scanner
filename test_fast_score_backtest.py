@@ -115,6 +115,24 @@ check("score bands split present", "12-15" in s["by_score_band"] and "6-8" in s[
 check("top band holds only its own rows", s["by_score_band"]["12-15"]["4w"]["n"] == 2)
 check("empty input does not explode", bt.summarise([], horizons=(4,))["n_picks"] == 0)
 
+print("\n── 6. Score band x tier cross-tab ──────────────────────────────")
+xt = bt.cross_tab(recs, horizons=(4,))
+check("cells are keyed band · tier", all(" · " in k for k in xt), str(list(xt))[:90])
+check("a band+tier combination is isolated correctly",
+      xt.get(f"12-15 · {fs.TIER_FRESH}", {}).get("4w", {}).get("n") == 1,
+      str(xt.get(f"12-15 · {fs.TIER_FRESH}", {}).get("4w", {}).get("n")))
+check("every pick lands in exactly one cell",
+      sum(v["4w"]["n"] for v in xt.values() if "4w" in v) == len(recs))
+check("empty input yields an empty cross-tab", bt.cross_tab([], horizons=(4,)) == {})
+check("cross_tab is stored in the summary",
+      "by_segment" in bt.summarise(recs, horizons=(4,)))
+check("aggregate_rows is reusable at module level", callable(bt.aggregate_rows))
+check("aggregate_rows agrees with the summary it feeds",
+      bt.aggregate_rows(recs, 4)["n"] == bt.summarise(recs, horizons=(4,))["overall"]["4w"]["n"])
+_mixed = [r for r in recs if r["score"] >= 12]
+check("a cell holds only rows matching BOTH its band and its tier",
+      all(12 <= r["score"] <= 15 for r in _mixed))
+
 print("\n" + "="*60)
 print(f"RESULT: {len(FAILS)} failed")
 sys.exit(1 if FAILS else 0)
