@@ -79,6 +79,13 @@ MAX_VOL_RATIO     = 1.10   # x   4w avg volume / 26w avg volume
 # genuine reading observed on a real scan (+0.16 on a $382 close = 0.042%).
 MIN_MACD_DELTA_PCT = 0.02  # %   of price
 FRESH_CROSS_WKS   = 8      #     MACD cross this recent == "Fresh Setups"
+# Slope-ratio scoring band. ~0.50 is a steady trend, so 0.60-2.00 is
+# "accelerating and still measured against a meaningful 52-week base".
+# Past RATIO_UNSTABLE the denominator is so small the ratio says more about
+# the base being flat than about the trend being strong.
+RATIO_BEST_LO     = 0.60
+RATIO_BEST_HI     = 2.00
+RATIO_UNSTABLE    = 5.00
 MIN_WEEKLY_BARS   = 200    #     enough history for a 200-week SMA
 MIN_PRICE         = 5.0    # $
 
@@ -120,12 +127,44 @@ _FUND_TICKERS = {
 }
 
 
-def universe_for(kind: str, include_funds: bool = False) -> list[str]:
-    """Resolve a universe name to a de-duplicated ticker list."""
+# ── Fast Score universe extension ─────────────────────────────────────────
+# FTF_UNIVERSE is S&P 500-shaped, and this setup's best candidates are
+# precisely the liquid large caps that sit OUTSIDE that index: the high-beta
+# names that fall hard and recover, which is what puts a stock back at its
+# 200-week line while it is ripping 15%+ in three weeks. Six such names were
+# missing outright (COIN, MSTR, MELI, ALNY, ULTA, PDD) and they were four of
+# the top seven on the reference scan -- COIN scored 15/15 there.
+#
+# Added here rather than in config.FTF_UNIVERSE on purpose: that list is
+# shared with First Things First and Best Scanners, and silently changing
+# what those scan is a side effect nobody asked for.
+#
+# Names that IPO'd too recently are self-filtering -- MIN_WEEKLY_BARS needs
+# ~4 years of history for the 200-week SMA, so they are simply skipped.
+_EXTRA_TICKERS = [
+    # the six the reference scan had and FTF does not
+    "COIN", "MSTR", "MELI", "ALNY", "ULTA", "PDD",
+    # same character: liquid, optionable, high-beta, non-S&P or recent adds
+    "SHOP", "SE", "NU", "SPOT", "TTD", "DASH", "SNAP", "PINS", "RBLX",
+    "HOOD", "SOFI", "AFRM", "U", "ZM", "TWLO", "DOCU", "OKTA", "CVNA",
+    "CHWY", "DKNG", "W", "ROKU", "BABA", "JD", "NTES", "BIDU", "RIVN",
+    "LCID", "SMCI", "IONQ", "ZETA", "TOST", "GTLB", "S", "ESTC",
+]
+
+
+def universe_for(kind: str, include_funds: bool = False,
+                 include_extras: bool = True) -> list[str]:
+    """Resolve a universe name to a de-duplicated ticker list.
+
+    include_extras appends _EXTRA_TICKERS (see above) — on by default,
+    because without them the scan cannot see the cohort this setup is
+    best at finding.
+    """
     base = {"FTF": FTF_UNIVERSE, "MTPA": MTPA_200, "SP500": SP500_SAMPLE}.get(
         (kind or "FTF").upper(), FTF_UNIVERSE
     )
-    out = list(dict.fromkeys(base))
+    out = list(base) + (list(_EXTRA_TICKERS) if include_extras else [])
+    out = list(dict.fromkeys(out))
     if not include_funds:
         out = [t for t in out if t not in _FUND_TICKERS]
     return out
@@ -139,11 +178,12 @@ _SECTOR_GROUPS = {
     "Mega Tech": [
         "AAPL","MSFT","NVDA","AMZN","GOOGL","GOOG","META","AVGO","TSLA","NFLX",
         "ORCL","CSCO","IBM","ANET","MSTR","PLTR","APP","UBER","LYFT",
+        "SHOP","SPOT","SNAP","PINS","RBLX","ROKU","U","ZM","BIDU",
     ],
     "Semis": [
         "AMD","AMAT","ADI","TXN","QCOM","MCHP","SWKS","KEYS","TER","MPWR",
         "LRCX","KLAC","MRVL","MU","ON","NXPI","STX","WDC","NTAP","TEL",
-        "APH","GLW","INTC",
+        "APH","GLW","INTC","SMCI",
     ],
     "SaaS": [
         "CRM","ADBE","INTU","NOW","PANW","CRWD","FTNT","NET","ZS","WDAY",
@@ -151,6 +191,7 @@ _SECTOR_GROUPS = {
         "CTSH","IT","PAYC","BR","EFX","SAIC","LDOS","BAH","CACI","ANSS","PTC",
         "ADP","PAYX","FIS","FI","ACN","EPAM","DXC","CDW","ZBRA","FFIV","JNPR",
         "HPE","HPQ","CSGP","VRSK","TRMB","ROP",
+        "TTD","TWLO","DOCU","GTLB","S","ESTC","ZETA","IONQ",
     ],
     "Biotech": [
         "LLY","MRK","ABBV","PFE","BMY","AMGN","GILD","REGN","VRTX","MRNA",
@@ -167,6 +208,7 @@ _SECTOR_GROUPS = {
         "SCHW","AXP","SPGI","ICE","CME","NDAQ","BK","STT","NTRS","AMP",
         "TROW","RJF","BEN","RF","WRB","CINF","FAF","FHN","IVZ","CBOE",
         "MKTX","VOYA","BLK","AON","MMC","V","MA","COIN",
+        "NU","HOOD","SOFI","AFRM",
     ],
     "Retail": [
         "WMT","COST","HD","LOW","TJX","ROST","MCD","NKE","SBUX","BKNG",
@@ -174,6 +216,7 @@ _SECTOR_GROUPS = {
         "RL","TPR","DIS","CMCSA","CHTR","RDDT","WBD","FOXA","NWSA","TMUS",
         "VZ","T","MGM","LVS","WYNN","CZR","MAT","RCL","CCL","NCLH",
         "MELI","PDD","ULTA","DG","DLTR","KR","SYY","DPZ","YUM","MNST",
+        "SE","BABA","JD","NTES","CVNA","CHWY","W","DKNG","TOST","DASH",
     ],
     "Staples": [
         "PG","KO","PEP","MDLZ","STZ","MO","PM","EL","CL","KMB","GIS",
@@ -186,6 +229,7 @@ _SECTOR_GROUPS = {
         "CMI","CARR","OTIS","PCAR","CTAS","VLTO","IEX","RRX","ALLE",
         "UNP","CSX","NSC","UPS","FDX","UAL","DAL","LUV","AAL","ODFL",
         "JBHT","EXPD","WM","RSG","CPRT","F","GM","APTV","BWA","GPC","LKQ",
+        "RIVN","LCID",
     ],
     "Energy": [
         "XOM","CVX","COP","OXY","EOG","SLB","HAL","BKR","MRO","DVN",
@@ -303,26 +347,45 @@ def _score_row(r: dict) -> tuple[int, dict]:
     """Fast Score, 0-15. Five components, 0-3 each. Returns (total, per-part)."""
     parts = {}
 
+    # 15% was too high a bar for 3 points: on a real scan only 3 of 25 rows
+    # cleared it, and NONE of those 3 were also near the 200-week line, so a
+    # 14 or 15 overall was not merely rare but arithmetically unreachable.
     a = r["accel_3w"]
-    parts["accel"] = 3 if a >= 15 else 2 if a >= 5 else 1 if a >= 0 else 0
+    parts["accel"] = 3 if a >= 12 else 2 if a >= 5 else 1 if a >= 0 else 0
 
     # Normalised by price — see the module header for why.
     m = r["macd_delta_3w"] / r["close"] * 100.0 if r["close"] else 0.0
     parts["macd"] = 3 if m >= 1.0 else 2 if m >= 0.5 else 1 if m >= 0.15 else 0
 
+    # BANDED, not "higher is better". The ratio is 26w rise / 52w rise, so a
+    # huge value means the 52-week DENOMINATOR was near zero, not that the
+    # trend is exceptional -- a name that went nowhere for six months then
+    # ripped prints 18.52 and is a noisier read than a clean 1.0, yet the old
+    # ">= 0.60 -> 3" rule handed both the same maximum. On a real 25-row scan
+    # that gave 20 of 25 rows the max, so the component ranked nothing.
     sr = r["slope_ratio"]
-    parts["ratio"] = 3 if sr >= 0.60 else 2 if sr >= 0.45 else 1 if sr >= 0.30 else 0
+    if RATIO_BEST_LO <= sr <= RATIO_BEST_HI:
+        parts["ratio"] = 3
+    elif 0.45 <= sr < RATIO_BEST_LO or RATIO_BEST_HI < sr <= 3.00:
+        parts["ratio"] = 2
+    elif 0.30 <= sr < 0.45 or 3.00 < sr <= RATIO_UNSTABLE:
+        parts["ratio"] = 1
+    else:
+        parts["ratio"] = 0
 
     # Closer to (or below) the 200-week line scores best: that is where the
     # asymmetry lives. Far above it the move is mostly already paid out.
+    # Widened alongside accel for the same reason: in a bull market a quality
+    # name sits 40-100% above its 200-week SMA, so a 25% cut-off for 3 points
+    # was scoring "has not moved in four years" rather than "has room left".
     d = r["dist_200w"]
     if d < -30:
         parts["dist200"] = 1
-    elif d <= 25:
+    elif d <= 35:
         parts["dist200"] = 3
-    elif d <= 60:
+    elif d <= 75:
         parts["dist200"] = 2
-    elif d <= 120:
+    elif d <= 140:
         parts["dist200"] = 1
     else:
         parts["dist200"] = 0
@@ -437,15 +500,36 @@ def evaluate_ticker(ticker: str, weekly: pd.DataFrame) -> dict | None:
 
 
 def _is_partial_week(ts) -> bool:
-    """True if `ts` labels the week we are currently inside (bar not settled)."""
+    """True if `ts` labels a week whose trading has not finished yet.
+
+    The naive rule ("less than 5 days old") silently broke the Friday-evening
+    email: yfinance labels a weekly bar with the Monday that starts it, so on
+    Friday the bar is 4 days old and got thrown away as unsettled -- meaning
+    the weekly email always reported the PREVIOUS week's data, a full week
+    stale, which is the one thing that schedule exists to avoid.
+
+    A week is finished once its Friday close has happened. 21:00 UTC covers
+    16:00 ET in both EST (21:00 UTC) and EDT (20:00 UTC), so the cutoff is
+    DST-safe. The bar is normalised to its own Monday first, because a
+    holiday-shortened week can be labelled with a Tuesday.
+    """
     try:
-        bar = pd.Timestamp(ts).tz_localize(None).normalize()
-    except TypeError:
-        bar = pd.Timestamp(ts).tz_convert(None).normalize()
+        bar = pd.Timestamp(ts)
+        bar = (bar.tz_convert(None) if bar.tzinfo else bar).normalize()
     except Exception:
         return False
-    now = pd.Timestamp.utcnow().tz_localize(None).normalize()
-    return (now - bar).days < 5
+    now = pd.Timestamp.utcnow()
+    now = (now.tz_convert(None) if now.tzinfo else now)
+
+    week_monday = bar - pd.Timedelta(days=int(bar.weekday()))
+    week_friday = week_monday + pd.Timedelta(days=4)
+    today = now.normalize()
+
+    if today > week_friday:
+        return False                      # weekend or later: week is over
+    if today < week_friday:
+        return True                       # Mon-Thu: still trading
+    return now.hour < 21                  # Friday: settled only after the close
 
 
 def run_fast_score_scan(universe: list[str], progress_cb=None) -> pd.DataFrame:

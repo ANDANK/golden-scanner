@@ -213,6 +213,29 @@ if multi:
           list(mdf["score"]) == sorted(mdf["score"], reverse=True))
 
 print("\n── 4. Partial-week handling ────────────────────────────────────")
+# The Friday-evening email is the whole reason this rule exists: it must
+# treat the week that just closed as SETTLED, or every weekly email reports
+# data a full week stale.
+from unittest.mock import patch
+_bar = pd.Timestamp("2026-08-24")          # Mon; week runs Aug 24-28
+def _at(when):
+    ts = pd.Timestamp(when)
+    with patch.object(pd.Timestamp, "utcnow", staticmethod(lambda: ts)):
+        return fs._is_partial_week(_bar)
+
+check("Mon of the bar's own week is partial",       _at("2026-08-24 22:30"))
+check("Thu of the bar's own week is partial",       _at("2026-08-27 22:30"))
+check("Fri BEFORE the close is still partial",      _at("2026-08-28 15:00"))
+check("Fri AFTER the close is SETTLED (the email slot)",
+      not _at("2026-08-28 22:30"), "5:30pm CT = 22:30 UTC")
+check("Sat is settled",                             not _at("2026-08-29 12:00"))
+check("the following week is settled",              not _at("2026-08-31 12:00"))
+_holiday_bar = pd.Timestamp("2026-08-25")  # Tue-labelled, holiday-shortened week
+with patch.object(pd.Timestamp, "utcnow",
+                  staticmethod(lambda: pd.Timestamp("2026-08-28 22:30"))):
+    check("a Tue-labelled holiday week is normalised to its own Monday",
+          not fs._is_partial_week(_holiday_bar))
+
 live = make_series(growth_wk=0.004, pullback_at=6, pullback_depth=-1.0, vol_ratio=0.8)
 live.index = pd.date_range(end=pd.Timestamp.utcnow().tz_localize(None).normalize(),
                            periods=len(live), freq="W-MON")
@@ -223,6 +246,19 @@ check("a bar from 3 weeks ago is NOT partial",
       not fs._is_partial_week(live.index[-4]))
 
 print("\n── 5. Scoring + rendering ──────────────────────────────────────")
+# The slope ratio is 26w rise / 52w rise, so a huge value means a near-zero
+# denominator, not a stronger trend. It must NOT score as best-in-class.
+_rp = lambda r: fs._score_row(dict(close=100.0, accel_3w=5.0, macd_delta_3w=0.5,
+                                   slope_ratio=r, dist_200w=10.0, vol_ratio=0.8))[1]["ratio"]
+check("healthy accelerating ratio (0.98) scores max", _rp(0.98) == 3)
+check("steady-ish ratio (0.62) scores max", _rp(0.62) == 3)
+check("blown-up ratio 18.52 scores ZERO, not max", _rp(18.52) == 0, f"got {_rp(18.52)}")
+check("ratio 4.70 is penalised as unstable", _rp(4.70) == 1, f"got {_rp(4.70)}")
+check("ratio 2.69 sits mid-band", _rp(2.69) == 2, f"got {_rp(2.69)}")
+check("decaying ratio 0.30 scores low", _rp(0.30) == 1, f"got {_rp(0.30)}")
+check("the ratio component actually discriminates across a real spread",
+      len({_rp(r) for r in (0.30, 0.48, 0.98, 2.69, 4.70, 18.52)}) >= 4)
+
 base = dict(close=100.0, accel_3w=20.0, macd_delta_3w=1.5, slope_ratio=0.8,
             dist_200w=10.0, vol_ratio=0.6)
 total, parts = fs._score_row(base)
@@ -261,11 +297,19 @@ check("empty frame renders empty string, not a broken shell",
 
 print("\n── 6. Universe wiring ──────────────────────────────────────────")
 u = fs.universe_for("FTF")
-check("FTF stocks-only universe is ~400-500 names", 380 <= len(u) <= 520, f"got {len(u)}")
+check("FTF stocks-only universe is ~450-500 names", 430 <= len(u) <= 540, f"got {len(u)}")
 check("leveraged ETFs excluded by default", "TQQQ" not in u and "SOXL" not in u)
 check("plain index ETFs excluded by default", "SPY" not in u and "XLK" not in u)
 check("include_funds=True brings them back", "SPY" in fs.universe_for("FTF", include_funds=True))
 check("no duplicate tickers", len(u) == len(set(u)))
+_ORIG = ["COIN","DE","FCX","MSTR","JNJ","MELI","ALNY","MRK","SPGI","VRTX","V","MA",
+         "XOM","AMGN","NFLX","MRVL","ISRG","DHI","SNPS","CDNS","NXPI","ORLY","ULTA",
+         "PDD","NVR","PTC","CME"]
+_absent = [t for t in _ORIG if t not in u]
+check("every ticker from the reference scan is in the universe",
+      not _absent, f"missing: {_absent}")
+check("extras can be turned off",
+      "COIN" not in fs.universe_for("FTF", include_extras=False))
 unmapped = [t for t in u if fs.sector_of(t) == "Other"]
 check("sector map covers >90% of the universe",
       len(unmapped) < len(u) * 0.10, f"{len(unmapped)} unmapped: {unmapped[:12]}")
