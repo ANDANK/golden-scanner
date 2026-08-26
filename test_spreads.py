@@ -181,6 +181,42 @@ finally:
 check("KeyError(None) really does stringify to 'None' (why the message was useless)",
       str(KeyError(None)) == "None")
 
+print("\n── 9. The 1:25 cap and return on risk ──────────────────────────")
+check("cap is set at 1:25", sp.MAX_RR == 25.0, str(sp.MAX_RR))
+check("nothing worse than the cap survives",
+      all(x["rr"] <= sp.MAX_RR for x in out + cout),
+      f"worst kept = 1:{max((x['rr'] for x in out + cout), default=0):.1f}")
+
+# A chain whose far strikes are nearly worthless: the wide spreads price at a
+# ratio far past the cap and must be dropped, not shown in red.
+thin = pd.DataFrame({
+    "strike":    [680.0, 690.0, 698.0, 699.0, 700.0],
+    "bid":       [0.01,  0.02,  0.45,  0.80,  1.40],
+    "ask":       [0.03,  0.04,  0.55,  0.90,  1.60],
+    "lastPrice": [0.02,  0.03,  0.50,  0.85,  1.50],
+})
+thin_out = sp.build_spreads("put", thin, anchor=700.0, spot=706.0)
+check("a thin-credit wide spread is dropped, not displayed",
+      all(x["rr"] <= sp.MAX_RR for x in thin_out),
+      f"{len(thin_out)} kept")
+
+# Return on risk is the same fact as the ratio, expressed the way it compares
+# across widths and underlyings.
+if one:
+    check("return on risk = max profit / max loss",
+          abs(one["ror_pct"] - one["max_profit"] / one["max_loss"] * 100) < 1e-9,
+          f'{one["ror_pct"]:.1f}%')
+    check("a 1:1 spread returns 100% on risk", abs(one["ror_pct"] - 100.0) < 1e-9)
+_probe = next((x for x in out if x["rr"] and abs(x["rr"] - 3.0) < 1.0), None)
+check("ror and rr agree everywhere",
+      all(abs(x["ror_pct"] - 100.0 / x["rr"]) < 1e-6 for x in out + cout if x["rr"]))
+check("the cap implies a floor on return on risk",
+      all(x["ror_pct"] >= 100.0 / sp.MAX_RR - 1e-9 for x in out + cout),
+      f"floor = {100/sp.MAX_RR:.1f}%")
+if one:
+    card = sp.spread_card_html(one, False)
+    check("the card shows return on risk", "Return on risk" in card)
+
 print("\n" + "=" * 60)
 print(f"RESULT: {len(FAILS)} failed")
 sys.exit(1 if FAILS else 0)

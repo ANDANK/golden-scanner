@@ -73,6 +73,13 @@ NOON_MIN = 12 * 60
 VALID_FROM_MIN = 11 * 60 + 45
 VALID_TO_MIN = 13 * 60 + 30
 
+# Worst risk:reward worth showing. At 1:25 you are risking $25 to make $1 —
+# a 4% return on risk, which needs a ~96% win rate merely to break even
+# before costs. The measured breach rates are good, but not good enough to
+# survive a ratio that thin, and a candidate that far out is really telling
+# you the credit does not reach the strike the study validated.
+MAX_RR = 25.0
+
 PUT_GREEN_MIN = 70.0
 PUT_AMBER_MIN = 60.0
 CALL_MAX = 50.0
@@ -275,13 +282,23 @@ def build_spreads(side: str, chain: pd.DataFrame, anchor: float, spot: float,
                 continue
             max_profit = credit * 100.0
             max_loss = (width - credit) * 100.0
+            rr = max_loss / max_profit if max_profit else None
+            # Anything worse than MAX_RR is not a trade-off, it is a bad
+            # trade wearing a high win rate.
+            if rr is None or rr > MAX_RR:
+                continue
             breakeven = short_k - credit if side == "put" else short_k + credit
             cushion = ((spot - short_k) / spot * 100.0 if side == "put"
                        else (short_k - spot) / spot * 100.0)
             out.append({
                 "side": side, "short": short_k, "long": long_k, "width": width,
                 "credit": credit, "max_profit": max_profit, "max_loss": max_loss,
-                "rr": max_loss / max_profit if max_profit else None,
+                "rr": rr,
+                # Return on risk: what you make as a % of what you put up.
+                # 1:3 is 33%, 1:25 is 4%. The ratio and this are the same
+                # fact, but this is the one that compares across widths and
+                # across underlyings.
+                "ror_pct": max_profit / max_loss * 100.0 if max_loss else None,
                 "credit_pct_width": credit / width * 100.0,
                 "breakeven": breakeven, "cushion_pct": cushion,
             })
@@ -364,6 +381,7 @@ def spread_card_html(sp: dict, best: bool) -> str:
         ("Max profit", f'${sp["max_profit"]:,.0f}', ACCENT_GREEN),
         ("Max loss", f'-${sp["max_loss"]:,.0f}', ACCENT_RED),
         ("Risk : Reward", rr_txt, rr_col),
+        ("Return on risk", "—" if sp.get("ror_pct") is None else f'{sp["ror_pct"]:.1f}%', rr_col),
         ("Credit / width", f'{sp["credit_pct_width"]:.0f}%', TEXT_MUTED),
         ("Breakeven", f'{sp["breakeven"]:,.2f}', TEXT_PRIMARY),
         ("Cushion from spot", f'{sp["cushion_pct"]:+.2f}%', ACCENT_BLUE),
@@ -454,7 +472,8 @@ def render():
         f'<b style="color:{ACCENT_GREEN}">1 time in 43</b>, while 60–70% breached '
         f'<b style="color:{GOLD}">4 in 13</b> and 50–60% <b style="color:{ACCENT_RED}">2 in 8</b>. '
         f'No target ratio is imposed — the strike is anchored to the range and the '
-        f'<b>Risk : Reward</b> is an outcome to read.</div>',
+        f'<b>Risk : Reward</b> is an outcome to read — capped at <b>1 : {MAX_RR:.0f}</b>, '
+        f'below which the credit is too thin to justify the risk whatever the win rate.</div>',
         unsafe_allow_html=True,
     )
 
@@ -536,7 +555,12 @@ def render():
         if zone == "put_block":
             continue
         if not c["spreads"]:
-            st.info("No spread with a positive credit priced on today's chain at these strikes.")
+            st.info(
+                f"Nothing to show. Either no spread priced a positive credit on today's chain "
+                f"at these strikes, or every candidate came out worse than **1 : {MAX_RR:.0f}** "
+                f"and was dropped. That is itself a read: the credit available at the level the "
+                f"study validated is too thin to be worth the risk today."
+            )
             continue
 
         st.markdown(
