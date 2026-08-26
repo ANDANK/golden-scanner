@@ -291,6 +291,57 @@ check("a bounce that already ran 80% loses its 'room left' points",
 check("bounce_pct now actually affects the total",
       fs._score_row(_spent)[0] < fs._score_row(_cool)[0])
 
+print("\n── 3c. Long-term trend + dedupe + stale-column safety ──────────")
+# A stock that collapsed and is bouncing passes every 52-week test while its
+# 200-week average is still falling. That is a rally inside a downtrend --
+# but only once price has left the base.
+def _lt(n=300, peak_at=150, fall_g=-0.010, rise_g=0.012, rise_len=40):
+    """Multi-year decline then a sharp recovery -> falling 200w SMA."""
+    idx = pd.date_range("2019-01-07", periods=n, freq="W-MON")
+    close = np.zeros(n); px = 300.0
+    for i in range(n):
+        g = 0.004 if i < peak_at else (fall_g if i < n - rise_len else rise_g)
+        px *= (1.0 + g); close[i] = px
+    close = close * (1.0 + 0.02 * np.sin(np.arange(n) * 2 * np.pi / 8))
+    low = close * 0.99
+    vol = np.full(n, 1_000_000.0); vol[-4:] = 750_000.0
+    return pd.DataFrame({"Close": close, "High": np.maximum(close, low) * 1.005,
+                         "Low": low, "Volume": vol}, index=idx)
+
+_d = _lt()
+_c = pd.to_numeric(_d["Close"]); _s200 = _c.rolling(200).mean()
+_slope = (_s200.iloc[-1] - _s200.iloc[-1 - fs.LT_SLOPE_WINDOW_WKS]) / _s200.iloc[-1 - fs.LT_SLOPE_WINDOW_WKS] * 100
+check("the crash-and-bounce fixture really does have a falling 200w SMA",
+      _slope < 0, f"200w slope = {_slope:+.2f}%")
+
+# The gate is about WHERE you buy against that falling average, not the
+# average alone: at the base is the setup, far above it is the back half.
+_near = dict(close=100.0, accel_3w=8.0, macd_delta_3w=1.0, slope_ratio=1.0,
+             dist_200w=5.0, vol_ratio=0.7, rsi=55.0, bounce_pct=10.0)
+check("a falling 200w SMA is allowed when price is still at the base",
+      not (0 > 0 and _near["dist_200w"] > fs.MAX_DIST_IF_LT_FALLING))
+check("MAX_DIST_IF_LT_FALLING sits below the reference winner's own reading",
+      fs.MAX_DIST_IF_LT_FALLING > 1.4,
+      "the reference 15/15 printed 200W DIST +1.4%, so it stays inside the gate")
+check("...and below the bounce that motivated the gate",
+      fs.MAX_DIST_IF_LT_FALLING < 42.5,
+      "the offending row printed 200W DIST +42.5%")
+
+# Dual share classes are one company, not two setups.
+_dup = pd.DataFrame([
+    dict(rank=1, ticker="GOOGL", sector="Mega Tech", tier=fs.TIER_EARLY, score=8, slope_ratio=0.33),
+    dict(rank=2, ticker="GOOG",  sector="Mega Tech", tier=fs.TIER_EARLY, score=5, slope_ratio=0.32),
+    dict(rank=3, ticker="MSFT",  sector="Mega Tech", tier=fs.TIER_FRESH, score=7, slope_ratio=0.9),
+])
+_dup["_g"] = _dup["ticker"].map(lambda t: fs._SHARE_CLASS_GROUPS.get(t, t))
+_kept = _dup.drop_duplicates(subset="_g", keep="first")
+check("GOOG/GOOGL collapse to a single row", len(_kept) == 2)
+check("the better-scoring class is the one kept",
+      "GOOGL" in set(_kept["ticker"]) and "GOOG" not in set(_kept["ticker"]))
+check("unrelated tickers are untouched by the dedupe", "MSFT" in set(_kept["ticker"]))
+check("share-class map is symmetric (every member maps into its group)",
+      all(v in fs._SHARE_CLASS_GROUPS for v in fs._SHARE_CLASS_GROUPS.values()))
+
 print("\n── 4. Partial-week handling ────────────────────────────────────")
 # The Friday-evening email is the whole reason this rule exists: it must
 # treat the week that just closed as SETTLED, or every weekly email reports

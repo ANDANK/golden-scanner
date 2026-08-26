@@ -24,9 +24,11 @@
 #   6. volume ratio <= MAX_VOL_RATIO                pullback happened quietly
 #   7. >= MIN_WEEKLY_BARS of weekly history         200W SMA needs ~4 years
 #   8. close >= MIN_PRICE
-#   9. close within MAX_EXT_50W of the 50-week SMA  pullback entry still open
-#  10. weekly RSI(14) <= MAX_RSI                    not already overbought
-#  11. weekly MFI(14) <= MAX_MFI                    not in the take-profit zone
+#   9. a FALLING 200-week SMA is only allowed within MAX_DIST_IF_LT_FALLING
+#      of it — buying the base of a recovery, not the back half of a bounce
+#  10. close within MAX_EXT_50W of the 50-week SMA  pullback entry still open
+#  11. weekly RSI(14) <= MAX_RSI                    not already overbought
+#  12. weekly MFI(14) <= MAX_MFI                    not in the take-profit zone
 #
 # WHY THE SLOPE RATIO CLUSTERS NEAR 0.50
 #   Both slopes are the total rise of a least-squares regression line across
@@ -38,7 +40,7 @@
 # FAST SCORE (0-15)
 #   Five components, 0-3 points each — see _score_row(). It ranks the
 #   survivors, it does not filter them: everything in the table already
-#   passed all eleven gates above. MACD delta is SCORED as a % of price but
+#   passed all twelve gates above. MACD delta is SCORED as a % of price but
 #   DISPLAYED raw, because a $2,000 stock and a $50 stock produce MACD
 #   values two orders of magnitude apart and a raw threshold would just be
 #   a price filter wearing a momentum costume.
@@ -102,6 +104,18 @@ RSI_BUY_HI        = 65.0
 # The setup is "price pulled back TO the 50-week line". Once price has run
 # far above it again the pullback entry is gone, however good the trend is.
 MAX_EXT_50W       = 25.0   # %   current close above the 50-week SMA
+# "Confirmed multi-year uptrend" was asserted in this file's own description
+# while nothing in the code ever looked further back than 52 weeks. A stock
+# that collapsed and is bouncing passes every 52-week test yet has a 200-week
+# average still FALLING -- that is a rally inside a long-term downtrend.
+#
+# Rejecting every falling-200w name outright would also throw out the early
+# crash-recovery setups this scanner is best at (the reference scan's 15/15
+# was one). The distinction that separates them is not the falling average,
+# it is WHERE you are buying against it: right at the base is the setup,
+# 40% above it is the back half of a dead-cat bounce.
+LT_SLOPE_WINDOW_WKS = 26   #     window for measuring the 200-week SMA's slope
+MAX_DIST_IF_LT_FALLING = 15.0  # % above a FALLING 200-week SMA still allowed
 # How far the bounce off the touch low may already have run before the
 # "room left" component stops paying out.
 BOUNCE_SPENT_PCT  = 50.0   # %
@@ -169,6 +183,19 @@ _EXTRA_TICKERS = [
     "CHWY", "DKNG", "W", "ROKU", "BABA", "JD", "NTES", "BIDU", "RIVN",
     "LCID", "SMCI", "IONQ", "ZETA", "TOST", "GTLB", "S", "ESTC",
 ]
+
+
+# Dual share classes are one company producing two near-identical rows that
+# push a genuinely different name off the table (GOOG and GOOGL landed at
+# ranks 22 and 23 of the same scan with metrics matching to two decimals).
+# Collapsed AFTER scoring rather than dropped from the universe, so whichever
+# class actually scores better is the one kept.
+_SHARE_CLASS_GROUPS = {
+    "GOOG": "GOOGL", "GOOGL": "GOOGL",
+    "FOX": "FOXA", "FOXA": "FOXA",
+    "NWS": "NWSA", "NWSA": "NWSA",
+    "UA": "UAA", "UAA": "UAA",
+}
 
 
 def universe_for(kind: str, include_funds: bool = False,
@@ -537,13 +564,24 @@ def evaluate_ticker(ticker: str, weekly: pd.DataFrame) -> dict | None:
     if not np.isfinite(sma_200) or sma_200 <= 0:
         return None
 
-    # 7 · the pullback entry must still be on the table. Price back up 25%+
+    # 7 · long-term trend direction. A falling 200-week average is only
+    # acceptable if price is still down at the base of the recovery.
+    sma_200_series = close.rolling(LONG_SMA_WKS).mean()
+    dist_200w = float((px - sma_200) / sma_200 * 100.0)
+    lt_prev = sma_200_series.iloc[-1 - LT_SLOPE_WINDOW_WKS] \
+        if len(sma_200_series) > LT_SLOPE_WINDOW_WKS else np.nan
+    lt_slope = (float((sma_200 - lt_prev) / lt_prev * 100.0)
+                if np.isfinite(lt_prev) and lt_prev > 0 else 0.0)
+    if lt_slope < 0 and dist_200w > MAX_DIST_IF_LT_FALLING:
+        return None
+
+    # 8 · the pullback entry must still be on the table. Price back up 25%+
     # above the 50-week line is a trend continuation, not a pullback.
     ext_50w = float((px - sma_trend.iloc[-1]) / sma_trend.iloc[-1] * 100.0)
     if ext_50w > MAX_EXT_50W:
         return None
 
-    # 8 · exhaustion. Both are read on the same weekly bars as everything
+    # 9 · exhaustion. Both are read on the same weekly bars as everything
     # else, so they answer "is the move already spent" for this timeframe.
     rsi = float(_rsi(close).iloc[-1])
     mfi = float(_mfi(high, low, close, volume).iloc[-1])
@@ -576,7 +614,8 @@ def evaluate_ticker(ticker: str, weekly: pd.DataFrame) -> dict | None:
         "macd_delta_3w": macd_delta_3w,
         "wks_since_cross": wks_since_cross,
         "accel_3w": float((px - prev) / prev * 100.0) if prev > 0 else 0.0,
-        "dist_200w": float((px - sma_200) / sma_200 * 100.0),
+        "dist_200w": dist_200w,
+        "lt_slope_200w": lt_slope,
         "vol_ratio": float(vol_ratio),
         "ext_50w": ext_50w,
         "rsi": rsi,
@@ -657,6 +696,12 @@ def run_fast_score_scan(universe: list[str], progress_cb=None) -> pd.DataFrame:
     df = (df.sort_values(["score", "_tier_rank", "slope_ratio"],
                          ascending=[False, True, False])
             .drop(columns="_tier_rank")
+            .reset_index(drop=True))
+    # Keep only the best-scoring class of each dual-class company. Sorting
+    # happens first so "first" is "best", not "alphabetically luckiest".
+    df["_class_group"] = df["ticker"].map(lambda t: _SHARE_CLASS_GROUPS.get(t, t))
+    df = (df.drop_duplicates(subset="_class_group", keep="first")
+            .drop(columns="_class_group")
             .reset_index(drop=True))
     df.insert(0, "rank", range(1, len(df) + 1))
     return df
@@ -866,7 +911,7 @@ def _explainer() -> str:
         f'<b style="color:{_TIER_COLOR[TIER_FURTHER]}">Further Along</b> = crossed earlier, bounce underway.<br>'
         f'<b style="color:{TEXT_PRIMARY}">Fast Score</b> ranks the survivors 0–15 (five components, 0–3 each: '
         f'3-week acceleration, MACD improvement, slope ratio, room above the 200-week line, and how quiet the '
-        f'volume is). It does not filter — everything in the table already passed all eleven gates.</div>'
+        f'volume is). It does not filter — everything in the table already passed all twelve gates.</div>'
     )
 
 
@@ -930,7 +975,7 @@ def render():
 
     if df.empty:
         st.info("Nothing qualified on the last run — every candidate failed at least one of "
-                "the eleven gates. That is a normal reading in a market with no orderly "
+                "the twelve gates. That is a normal reading in a market with no orderly "
                 "pullbacks, not an error.")
         return
 
@@ -952,14 +997,25 @@ def render():
 
     st.markdown(app_table_html(view), unsafe_allow_html=True)
 
-    with st.expander("Full detail — the gate columns behind each row"):
-        detail = view[[
+    # Results cached in session_state from a run made before a column existed
+    # would raise KeyError here and take the whole tab down with it, which is
+    # exactly what happens after a deploy adds gates. Select what is present.
+    _detail_cols = [c for c in (
             "rank", "ticker", "sector", "tier", "close", "rsi", "mfi", "ext_50w",
-            "slope_52w", "slope_26w", "slope_ratio", "touch_pct", "bounce_pct",
-            "wks_since_touch", "macd_gap", "macd_delta_3w", "accel_3w",
-            "dist_200w", "vol_ratio", "score",
-        ]].rename(columns={
+            "lt_slope_200w", "slope_52w", "slope_26w", "slope_ratio", "touch_pct",
+            "bounce_pct", "wks_since_touch", "macd_gap", "macd_delta_3w",
+            "accel_3w", "dist_200w", "vol_ratio", "score",
+        ) if c in view.columns]
+    _missing = [c for c in ("rsi", "mfi", "ext_50w") if c not in view.columns]
+    with st.expander("Full detail — the gate columns behind each row", expanded=True):
+        if _missing:
+            st.warning(
+                f"These results predate the {', '.join(_missing)} column(s) — "
+                f"press ▶ Run Scan to refresh and see every gate."
+            )
+        detail = view[_detail_cols].round(2).rename(columns={
             "rsi": "RSI", "mfi": "MFI", "ext_50w": "Above 50w %",
+            "lt_slope_200w": "200W Trend %",
             "rank": "#", "ticker": "Sym", "sector": "Sector", "tier": "Tier",
             "close": "Close", "slope_52w": "52wk Slope %", "slope_26w": "26wk Slope %",
             "slope_ratio": "Slope Ratio", "touch_pct": "Touch %", "bounce_pct": "Bounce %",
