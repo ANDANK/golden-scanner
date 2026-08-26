@@ -4,6 +4,351 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-08-25",
+      "url": "https://www.youtube.com/shorts/eVZyOS_O6sw",
+      "title": "THESE 3 STOCKS REPORT EARNINGS TOMORROW 🚨 AUG 25 $NVDA",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "OKTA",
+          "bias": "Bearish",
+          "notes": "The host advises taking profits before earnings rather than holding or buying, noting that buy signals occurred around 70-75 and the stock already topped out near 150 in July.",
+          "price": 130.61
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "The host considers Nvidia too expensive ahead of earnings and expects it to eventually pull back toward its four-year moving average around 140 before offering a fair buying opportunity.",
+          "price": 213.05
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "The host views Salesforce as an attractive discounted buy heading into earnings because it is currently trading below its long-term average.",
+          "price": 205.69
+        }
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "url": "https://www.youtube.com/shorts/zj40SLTmitM",
+      "title": "Worried About a ‘Lost Decade’? (Watch This Before You Panic)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historically, the average S&P 500 bear market lasts about 9.6 months with a 35% decline, taking roughly 2.5 years total to recover from peak back to break-even.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Reinvesting dividends significantly shortens the break-even recovery period during major market crashes and lost decades.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Consistently dollar-cost averaging through prolonged market weakness allows investors to accumulate shares at lower valuations and build substantial long-term wealth during subsequent recoveries.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Diversify your portfolio across foundational broad-market index funds, value/dividend assets, growth funds, and defensive holdings rather than over-concentrating in recent market winners.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Maintain an emergency fund and multi-year cash reserves to ensure you are never forced to sell depreciated stocks to cover living expenses during market drawdowns.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-06-26",
+      "url": "https://www.youtube.com/shorts/uHuitqm_jIQ",
+      "title": "4 Stocks EXPLODING HIGHER right now‼️ Are they great long term buys?",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "ELF Beauty is up nearly 35% over the past three weeks to $66 and has clearly bottomed. The host sees a long runway of growth with a long-term price target of $200 despite expected volatility.",
+          "price": 67.43
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Micron is up 28% over the past three weeks, driven by intense demand and strong pricing power in memory chips. While earnings are expected to grow for 2 to 3 years, the host believes the stock price will likely top out sometime this year.",
+          "price": 1132.33
+        },
+        {
+          "ticker": "RVLV",
+          "bias": "Bullish",
+          "notes": "Revolve is up 24% in three weeks, backed by a solid balance sheet, strong management, and a bottomed stock price. Upward price pressure is expected to continue as consumer confidence improves.",
+          "price": 23.76
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Cheesecake Factory is up 21% over the past three weeks and hitting new all-time highs. Growth is driven by its strong core restaurant business alongside the expansion of concepts like Flower Child and North Italia.",
+          "price": 80.38
+        }
+      ]
+    },
+    {
+      "date": "2026-07-23",
+      "url": "https://www.youtube.com/shorts/QurtmsoyVio",
+      "title": "These 5 Stocks Will Make Millionaires. 99% Will Miss Them.",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Netflix has pulled back to a forward P/E of around 21 after earnings, with quarterly revenue up 13% to $12.5 billion and ad tier revenue on track to double to nearly $3 billion. The host sees the stock as fair value now with potential to reach $100 per share by 2027 as ad revenue compounds.",
+          "price": 68.89
+        },
+        {
+          "ticker": "UBER",
+          "bias": "Bullish",
+          "notes": "Uber generated $2.3 billion in quarterly free cash flow on gross bookings of $54 billion while expanding its ad revenue past a $2 billion run rate. The host believes robotaxi fears are overblown, sees the stock as 25% undervalued, and expects Uber to serve as the primary demand layer for autonomous vehicle fleets.",
+          "price": 68.91
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "AWS reaccelerated to 28% growth while overall quarterly revenue rose 17% to $181 billion and operating margins reached 13%. The host is bullish on Amazon's unmatched ecosystem combining cloud, e-commerce, logistics, and a $17 billion quarterly advertising segment.",
+          "price": 233.66
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Palantir achieved 85% overall revenue growth and 133% US commercial growth while generating over $900 million in quarterly free cash flow. The host notes that stock-based compensation issues are improving and predicts the stock will hit $170 per share in Q1 2027.",
+          "price": 123.37
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Meta generated $56 billion in quarterly revenue up 33% with EPS rising 62%, making the host confident its market cap will expand from $1.6 trillion to over $2 trillion in Q1 2027. The host is utilizing a poor man's covered call strategy on Meta by buying $600 leap options and selling $700 call options.",
+          "price": 606.1
+        }
+      ]
+    },
+    {
+      "date": "2026-07-17",
+      "url": "https://www.youtube.com/shorts/ZwJhUONHLvk",
+      "title": "Retirement Plans: The Best Order to Invest Your Money",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Establish an initial emergency fund before investing to avoid relying on high-interest credit cards or liquidating stocks during unexpected events.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Contribute enough to your employer retirement plan to capture the full match, securing an immediate 100% return on your contributions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Pay off high-interest debts like credit cards before investing heavily, as eliminating 23% interest acts as a guaranteed high return.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Build a fully funded emergency fund covering 3 to 6 months of living expenses to avoid panic selling investments during a recession or market correction.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Max out a Health Savings Account (HSA) if eligible, taking full advantage of its triple tax benefits on contributions, growth, and qualified withdrawals.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Max out a Roth IRA (or utilize a Backdoor Roth IRA) early to allow contributions and gains to compound tax-free for retirement.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Return to fully funding workplace retirement accounts like a 401k or 403b after maxing out your IRA.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Invest in a taxable brokerage account for maximum flexibility and lack of contribution limits, focusing on long-term capital gains.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Utilize a 529 plan if funding a child's education is a goal, offering tax-free growth and potential state income tax deductions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Approach physical real estate with caution due to maintenance burdens and illiquidity, or consider REITs on the stock market for easier exposure.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Leave high-risk alternative investments and private equity for the final stage of your financial plan due to long lock-up periods and illiquidity.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "url": "https://www.youtube.com/shorts/LEwxTrh4lc4",
+      "title": "Trump's NEW Plan To Abolish the IRS",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Tariff revenues 4x'd to $264 billion in 2025 from $79 billion in 2024, but still fall far short of replacing the $2.6 trillion generated annually by the U.S. income tax.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Increasing tariffs aims to bring manufacturing jobs back to the United States, but will likely result in higher consumer prices as cheap foreign production decreases.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High demand from foreign countries buying U.S. Treasuries keeps Treasury yields lower, directly helping to keep domestic mortgage and consumer borrowing rates down.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Higher product costs from tariffs can fuel broader inflation, making it harder for the Federal Reserve to cut interest rates.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "url": "https://www.youtube.com/shorts/pr7fkl2qyfY",
+      "title": "THESE 4 STOCKS LOOK BULLISH 📈 AUG 25",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "RR",
+          "bias": "Bullish",
+          "notes": "Bought around $1.60 following an oversold signal and a share buyback announcement, expecting continuation as it breaks out above its two-month moving average.",
+          "price": 1.97
+        },
+        {
+          "ticker": "SECZ",
+          "bias": "Bullish",
+          "notes": "High-risk real-world asset tokenization stock backed by BlackRock showing a buy signal after a heavy sell-off from $14 down to $5.",
+          "price": 6.73
+        },
+        {
+          "ticker": "SMCI",
+          "bias": "Bullish",
+          "notes": "Re-entered trade around $38 after bouncing off its four-year moving average and EMA, with an upside price target of $60 to $70.",
+          "price": 38.46
+        },
+        {
+          "ticker": "NVO",
+          "bias": "Bullish",
+          "notes": "Bought at $35 following a steep decline from $150, expecting upside continuation as it builds a base around $40.",
+          "price": 48.66
+        }
+      ]
+    },
+    {
+      "date": "2026-07-22",
+      "url": "https://www.youtube.com/shorts/OHf3lUGliQU",
+      "title": "The UNTHINKABLE is About to Happen to Stocks #SOFI #HOOD #PLTR #NVDA",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi is viewed as undervalued with a price target of $25 to $30 per share by 2027, driven by strong growth in its consumer financial services segment and a strategy to expand customer lifetime value. Upcoming Q2 earnings on July 29th could serve as a catalyst to push the stock above $20 per share in the near term.",
+          "price": 17.07
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "Robinhood is seen as undervalued at around $106 per share, with a target of $140 per share by mid-2027 supported by Q1 revenue up 15% and Gold subscriptions rising 36%. The business is expanding into international markets and sports event contracts, though options strategies are recommended to manage short-term volatility ahead of July 29th earnings.",
+          "price": 104.48
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Palantir is slightly bullish with a 2027 price target of $150 to $170 per share and an expected market cap of $400 billion, up from $318 billion. Growth remains robust with Q1 revenue increasing 85% YoY, supported by high-margin software scaling and its proprietary Ontology platform.",
+          "price": 124.57
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Nvidia is highlighted as a top long-term AI play with potential to grow from a $5 trillion to a $6 trillion market cap over the next year. With a forward P/E of 31 and a strong moat in its CUDA software ecosystem, the stock is also considered well-suited for income-generating options strategies while trading sideways.",
+          "price": 212.06
+        }
+      ]
+    },
+    {
+      "date": "2026-04-16",
+      "url": "https://www.youtube.com/shorts/6fCXMuwFVCo",
+      "title": "How to Manage LEAPS - a MUST watch (previously private, making public)",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A LEAP call option's breakeven point is best evaluated as the current stock price plus extrinsic value, representing the exact amount of decay that must be offset by intrinsic value gains prior to expiration.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Deep in-the-money LEAP options with 0.75 to 0.90 Delta expiring around 1.5 years out provide stock-equivalent leverage while locking up significantly less capital and minimizing extrinsic time decay.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Buying options when historical implied volatility is low relative to its historical range allows traders to profit from mean reversion as volatility expands over time.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Instead of repeatedly rolling LEAP options down on short-term percentage dips, wait until three months before expiration to roll down in strike and out in expiration to avoid accelerating theta decay while conserving capital during prolonged bear markets.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-08-24",
       "url": "https://www.youtube.com/shorts/fVi9T7Cl41A",
       "title": "4 STOCKS TO WATCH NOW 📈 AUG 24",
