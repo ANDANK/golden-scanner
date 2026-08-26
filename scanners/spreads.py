@@ -28,6 +28,14 @@
 #   The call side has no such split -- it is uniformly safe across the whole
 #   lower half (QQQ 1/26, SPY 1/28, ~3.7%), so it takes a single zone.
 #
+# COVERAGE
+#   QQQ and SPX are the measured names and lead the table. IWM, SMH and GLD
+#   are listed too, but the zone thresholds were never measured on them —
+#   their rows are badged UNVALIDATED. IWM lists an expiry every weekday like
+#   QQQ and SPY; SMH and GLD do not, so on most days their row will report
+#   that today is not an expiry rather than showing strikes. The chain is
+#   always asked; nothing here assumes an expiry exists.
+#
 # WHAT THESE NUMBERS ARE NOT
 #   43 sessions with one breach means "under roughly 12% with 95%
 #   confidence", not zero. One quiet market regime (mean morning range 1.35%
@@ -55,15 +63,42 @@ from config import (
 
 ET = pytz.timezone("US/Eastern")
 
-# Underlyings. SPX is quoted from ^SPX where Yahoo serves it; where it does
-# not, SPY x10 stands in and the card says so rather than implying the
-# strikes came from the index chain.
+# Underlyings, in table order — QQQ first because it is the one the breach
+# study actually measured and the one traded off this tab.
+#
+# SPX is quoted from ^SPX where Yahoo serves it; where it does not, SPY x10
+# stands in and the row says so rather than implying the strikes came from
+# the index chain.
+#
+# `validated` is the honest part. The 70% gate and every breach rate on this
+# tab were measured on QQQ and SPY over 59 sessions — nothing else. IWM, SMH
+# and GLD are shown because they list short-dated expiries and the same
+# morning-range logic is *plausible* on them, but plausible is not measured:
+# their rows carry an UNVALIDATED badge and the zone thresholds are being
+# transplanted, not confirmed. GLD in particular trades a different vol
+# regime and a different overnight session from the equity index ETFs.
+#
+# `daily` records whether the underlying lists an expiry every weekday. It is
+# a hint for the reader only — never a gate. todays_chain() asks the chain
+# what expiries actually exist, so a ticker that is not 0DTE today reports
+# that as a reason rather than being quietly dropped or wrongly included.
 TICKERS = [
     {"key": "QQQ", "spot_symbol": "QQQ", "chain_symbol": "QQQ",
-     "label": "QQQ", "scale": 1.0},
+     "label": "QQQ", "scale": 1.0, "validated": True, "daily": True,
+     "desc": "Nasdaq 100 ETF"},
     {"key": "SPX", "spot_symbol": "^SPX", "chain_symbol": "^SPX",
-     "label": "SPX", "scale": 1.0,
+     "label": "SPX", "scale": 1.0, "validated": True, "daily": True,
+     "desc": "S&P 500 index · cash settled",
      "fallback": {"spot_symbol": "SPY", "chain_symbol": "SPY", "scale": 10.0}},
+    {"key": "IWM", "spot_symbol": "IWM", "chain_symbol": "IWM",
+     "label": "IWM", "scale": 1.0, "validated": False, "daily": True,
+     "desc": "Russell 2000 ETF"},
+    {"key": "SMH", "spot_symbol": "SMH", "chain_symbol": "SMH",
+     "label": "SMH", "scale": 1.0, "validated": False, "daily": False,
+     "desc": "Semiconductors ETF"},
+    {"key": "GLD", "spot_symbol": "GLD", "chain_symbol": "GLD",
+     "label": "GLD", "scale": 1.0, "validated": False, "daily": False,
+     "desc": "Gold ETF"},
 ]
 
 MORNING_START_MIN = 9 * 60 + 30
@@ -314,94 +349,219 @@ def build_spreads(side: str, chain: pd.DataFrame, anchor: float, spot: float,
 # Plain HTML throughout, like the rest of this app's tables: st.dataframe
 # paints to a canvas and, when it fails to lay out, leaves a blank box with
 # no error to explain it.
+#
+# ONE table for every underlying, not a card per name. Cards made you compare
+# ratios by scrolling; a single grid with a banner row per underlying lets the
+# eye run straight down the R:R column across all of them.
 
 def _rgba(hex_colour: str, alpha: float) -> str:
     h = hex_colour.lstrip("#")
     return f"rgba({int(h[0:2],16)},{int(h[2:4],16)},{int(h[4:6],16)},{alpha})"
 
 
-def range_bar_html(st_: dict, zone: str) -> str:
-    """The morning range as a bar, with the noon print marked on it.
-
-    The single most useful thing on this tab: the decision is "where in the
-    range did noon land", and a number between 0 and 100 is far harder to
-    feel than a marker sitting in a shaded band.
-    """
-    pos = max(0.0, min(100.0, st_["pos_pct"]))
-    # .get, not [] — a missing zone must not take the whole tab down.
-    colour = ZONES.get(zone, {}).get("colour", TEXT_MUTED)
-    # Bands drawn at the real thresholds so the gate is visible, not implied.
-    bands = (
-        f'<div style="position:absolute;left:0;width:50%;top:0;bottom:0;'
-        f'background:{_rgba(ACCENT_BLUE,0.16)}"></div>'
-        f'<div style="position:absolute;left:50%;width:10%;top:0;bottom:0;'
-        f'background:{_rgba(ACCENT_RED,0.18)}"></div>'
-        f'<div style="position:absolute;left:60%;width:10%;top:0;bottom:0;'
-        f'background:{_rgba(GOLD,0.18)}"></div>'
-        f'<div style="position:absolute;left:70%;width:30%;top:0;bottom:0;'
-        f'background:{_rgba(ACCENT_GREEN,0.18)}"></div>'
-    )
-    ticks = "".join(
-        f'<div style="position:absolute;left:{x}%;top:-3px;bottom:-3px;width:1px;'
-        f'background:{TEXT_MUTED}66"></div>' for x in (50, 60, 70)
-    )
-    marker = (
-        f'<div style="position:absolute;left:{pos:.1f}%;top:-7px;bottom:-7px;width:3px;'
-        f'background:{colour};box-shadow:0 0 6px {_rgba(colour,0.9)};border-radius:2px"></div>'
-        f'<div style="position:absolute;left:{pos:.1f}%;top:-26px;transform:translateX(-50%);'
-        f'color:{colour};font-size:11px;font-weight:800;white-space:nowrap">'
-        f'noon {st_["pos_pct"]:.0f}%</div>'
-    )
-    return (
-        f'<div style="margin:26px 0 6px 0">'
-        f'<div style="position:relative;height:22px;background:{BG_CARD};'
-        f'border:1px solid {BORDER_COLOR};border-radius:5px">{bands}{ticks}{marker}</div>'
-        f'<div style="display:flex;justify-content:space-between;margin-top:4px;'
-        f'color:{TEXT_MUTED};font-size:10px">'
-        f'<span>LOW {st_["low"]:,.2f}</span>'
-        f'<span style="color:{TEXT_MUTED}">50 · 60 · 70 gates</span>'
-        f'<span>HIGH {st_["high"]:,.2f}</span></div></div>'
-    )
+# ── The premium icon ──────────────────────────────────────────────────────
+# A money-bag rather than a bare "$", because the dollar sign is already
+# doing work in every credit and P/L cell and would not read as a rank.
+# Tiers are relative to the BEST credit on that underlying, never across
+# underlyings: SPX credits are ~10x QQQ's for arithmetic reasons that say
+# nothing about which is the richer premium.
+MONEY_TIERS = ((0.90, "\U0001F4B0\U0001F4B0\U0001F4B0"),
+               (0.75, "\U0001F4B0\U0001F4B0"),
+               (0.55, "\U0001F4B0"))
 
 
-def spread_card_html(sp: dict, best: bool) -> str:
-    """One candidate spread. Credit and risk given per contract, in dollars."""
-    side_lbl = "PUT credit" if sp["side"] == "put" else "CALL credit"
-    edge = ACCENT_GREEN if best else BORDER_COLOR
+def premium_icons(credit: float, best_credit: float) -> str:
+    """Money bags scaled to how close this credit is to the fattest one."""
+    if not best_credit or best_credit <= 0 or credit is None or credit <= 0:
+        return ""
+    frac = credit / best_credit
+    for cutoff, icons in MONEY_TIERS:
+        if frac >= cutoff:
+            return icons
+    return ""
+
+
+def _rr_colour(rr: float | None) -> str:
+    """Green to 1:3.5, gold to 1:5, red beyond — the same scale as before."""
+    if rr is None:
+        return TEXT_MUTED
+    return ACCENT_GREEN if rr <= 3.5 else GOLD if rr <= 5 else ACCENT_RED
+
+
+TABLE_COLS = [
+    ("", "left"), ("Spread", "left"), ("Width", "right"), ("Credit", "right"),
+    ("Max profit", "right"), ("Max loss", "right"), ("R : R", "right"),
+    ("Return<br>on risk", "right"), ("Credit<br>/ width", "right"),
+    ("Breakeven", "right"), ("Cushion", "right"),
+]
+
+_TD = ("padding:5px 9px;font-size:11.5px;font-family:'DM Mono',monospace;"
+       "border-bottom:1px solid rgba(255,255,255,.045)")
+
+
+def _cell(v, colour=TEXT_PRIMARY, align="right", weight=700, extra="") -> str:
+    return (f'<td style="{_TD};text-align:{align};color:{colour};'
+            f'font-weight:{weight};{extra}">{v}</td>')
+
+
+def spread_row_html(sp: dict, best_credit: float, is_best_rr: bool) -> str:
+    """One candidate spread as a table row."""
     rr = sp["rr"]
-    rr_txt = "—" if rr is None else f"1 : {rr:.1f}"
-    # A ratio worse than 1:5 means the credit is thin for the width — not
-    # wrong, but worth seeing at a glance rather than computing in your head.
-    rr_col = ACCENT_GREEN if (rr and rr <= 3.5) else GOLD if (rr and rr <= 5) else ACCENT_RED
-    rows = [
-        ("Short", f'{sp["short"]:,.2f}', TEXT_PRIMARY),
-        ("Long", f'{sp["long"]:,.2f}', TEXT_MUTED),
-        ("Width", f'{sp["width"]:,.2f}', TEXT_MUTED),
-        ("Credit", f'${sp["credit"]:,.2f}', ACCENT_GREEN),
-        ("Max profit", f'${sp["max_profit"]:,.0f}', ACCENT_GREEN),
-        ("Max loss", f'-${sp["max_loss"]:,.0f}', ACCENT_RED),
-        ("Risk : Reward", rr_txt, rr_col),
-        ("Return on risk", "—" if sp.get("ror_pct") is None else f'{sp["ror_pct"]:.1f}%', rr_col),
-        ("Credit / width", f'{sp["credit_pct_width"]:.0f}%', TEXT_MUTED),
-        ("Breakeven", f'{sp["breakeven"]:,.2f}', TEXT_PRIMARY),
-        ("Cushion from spot", f'{sp["cushion_pct"]:+.2f}%', ACCENT_BLUE),
-    ]
-    body = "".join(
-        f'<div style="display:flex;justify-content:space-between;padding:3px 0;'
-        f'border-bottom:1px solid rgba(255,255,255,.04)">'
-        f'<span style="color:{TEXT_MUTED};font-size:10.5px">{k}</span>'
-        f'<span style="color:{c};font-size:11.5px;font-weight:700;'
-        f'font-family:\'DM Mono\',monospace">{v}</span></div>'
-        for k, v, c in rows
-    )
-    tag = (f'<div style="color:{ACCENT_GREEN};font-size:9px;font-weight:800;'
-           f'letter-spacing:.08em;margin-bottom:4px">WIDEST CUSHION</div>' if best else
-           f'<div style="height:15px"></div>')
+    rr_col = _rr_colour(rr)
+    icons = premium_icons(sp["credit"], best_credit)
+    side_col = ACCENT_GREEN if sp["side"] == "put" else ACCENT_BLUE
+    side_lbl = "PUT" if sp["side"] == "put" else "CALL"
+    # The best-ratio row is the one the table is sorted to put first; mark it
+    # so it stays identifiable after the eye has moved down the page.
+    mark = (f'<span style="color:{GOLD};font-weight:900">\u2605</span>' if is_best_rr
+            else '<span style="opacity:.25">\u00b7</span>')
+    tint = f"background:{_rgba(GOLD, 0.05)};" if is_best_rr else ""
     return (
-        f'<div style="flex:1;min-width:210px;background:{BG_PANEL};border:1px solid {edge};'
-        f'border-radius:10px;padding:11px 13px">{tag}'
-        f'<div style="color:{TEXT_PRIMARY};font-size:13px;font-weight:800;margin-bottom:6px">'
-        f'{side_lbl} {sp["short"]:,.0f}/{sp["long"]:,.0f}</div>{body}</div>'
+        f'<tr style="{tint}">'
+        + _cell(f'{mark} <span style="font-size:12px">{icons}</span>',
+                TEXT_MUTED, "left", 700)
+        + _cell(f'<span style="color:{side_col};font-weight:800">{side_lbl}</span> '
+                f'{sp["short"]:,.2f} / {sp["long"]:,.2f}', TEXT_PRIMARY, "left")
+        + _cell(f'{sp["width"]:,.2f}', TEXT_MUTED)
+        + _cell(f'${sp["credit"]:,.2f}', ACCENT_GREEN)
+        + _cell(f'${sp["max_profit"]:,.0f}', ACCENT_GREEN)
+        + _cell(f'-${sp["max_loss"]:,.0f}', ACCENT_RED)
+        + _cell("\u2014" if rr is None else f'1 : {rr:.1f}', rr_col, "right", 800)
+        + _cell("\u2014" if sp.get("ror_pct") is None else f'{sp["ror_pct"]:.1f}%', rr_col)
+        + _cell(f'{sp["credit_pct_width"]:.0f}%', TEXT_MUTED)
+        + _cell(f'{sp["breakeven"]:,.2f}', TEXT_PRIMARY)
+        + _cell(f'{sp["cushion_pct"]:+.2f}%', ACCENT_BLUE)
+        + '</tr>'
+    )
+
+
+def _group_header_html(c: dict) -> str:
+    """The banner row that opens one underlying's block inside the table."""
+    ncols = len(TABLE_COLS)
+    s, zone = c.get("state"), c.get("zone")
+    z = ZONES.get(zone, {})
+    colour = z.get("colour", TEXT_MUTED)
+
+    badges = ""
+    if not c.get("validated", True):
+        badges += (f'<span style="background:{_rgba(ACCENT_RED,0.14)};color:{ACCENT_RED};'
+                   f'font-size:8.5px;font-weight:800;letter-spacing:.06em;padding:2px 6px;'
+                   f'border-radius:4px;margin-left:8px" '
+                   f'title="The 70% gate and the breach rates were measured on QQQ and SPY '
+                   f'only. On this underlying they are transplanted, not confirmed.">'
+                   f'UNVALIDATED</span>')
+    if not s:
+        return (f'<tr><td colspan="{ncols}" style="padding:14px 10px 6px 10px;'
+                f'border-top:2px solid {BORDER_COLOR}">'
+                f'<span style="color:{TEXT_PRIMARY};font-size:15px;font-weight:800">'
+                f'{c["label"]}</span>'
+                f'<span style="color:{TEXT_MUTED};font-size:10.5px;margin-left:8px">'
+                f'{c.get("desc","")}</span>{badges}</td></tr>')
+
+    prov = ("" if s["morning_complete"] else
+            f' · <b style="color:{GOLD}">provisional</b>')
+    # A compact range bar inline in the header: the noon position is the whole
+    # decision, and a number between 0 and 100 is harder to feel than a mark.
+    pos = max(0.0, min(100.0, s["pos_pct"]))
+    bar = (
+        f'<span style="display:inline-block;position:relative;width:150px;height:9px;'
+        f'background:{BG_CARD};border:1px solid {BORDER_COLOR};border-radius:3px;'
+        f'vertical-align:middle;margin:0 8px">'
+        f'<span style="position:absolute;left:0;width:50%;top:0;bottom:0;'
+        f'background:{_rgba(ACCENT_BLUE,0.20)}"></span>'
+        f'<span style="position:absolute;left:50%;width:10%;top:0;bottom:0;'
+        f'background:{_rgba(ACCENT_RED,0.22)}"></span>'
+        f'<span style="position:absolute;left:60%;width:10%;top:0;bottom:0;'
+        f'background:{_rgba(GOLD,0.22)}"></span>'
+        f'<span style="position:absolute;left:70%;width:30%;top:0;bottom:0;'
+        f'background:{_rgba(ACCENT_GREEN,0.22)}"></span>'
+        f'<span style="position:absolute;left:{pos:.1f}%;top:-3px;bottom:-3px;width:3px;'
+        f'background:{colour};border-radius:2px"></span></span>'
+    )
+    return (
+        f'<tr><td colspan="{ncols}" style="padding:15px 10px 7px 10px;'
+        f'border-top:2px solid {BORDER_COLOR}">'
+        f'<span style="color:{TEXT_PRIMARY};font-size:15px;font-weight:800">{c["label"]}</span>'
+        f'<span style="color:{TEXT_MUTED};font-size:10.5px;margin-left:8px">'
+        f'{c.get("desc","")}</span>{badges}'
+        f'<span style="background:{_rgba(colour,0.13)};color:{colour};font-size:9.5px;'
+        f'font-weight:800;letter-spacing:.05em;padding:2px 7px;border-radius:4px;'
+        f'margin-left:10px">{z.get("label","")}</span>'
+        f'<div style="color:{TEXT_MUTED};font-size:10.5px;margin-top:5px">'
+        f'spot <b style="color:{TEXT_PRIMARY}">{s["spot"]:,.2f}</b> · '
+        f'range <b style="color:{TEXT_PRIMARY}">{s["range_pct"]:.2f}%</b> '
+        f'({s["low"]:,.2f}\u2013{s["high"]:,.2f}){prov}{bar}'
+        f'noon <b style="color:{colour}">{s["pos_pct"]:.0f}%</b> · '
+        f'historically {z.get("breach","")}</div></td></tr>'
+    )
+
+
+def _message_row_html(text: str, colour=TEXT_MUTED) -> str:
+    return (f'<tr><td colspan="{len(TABLE_COLS)}" style="padding:7px 12px;'
+            f'font-size:11px;color:{colour};line-height:1.55;'
+            f'border-bottom:1px solid rgba(255,255,255,.045)">{text}</td></tr>')
+
+
+def spreads_table_html(cards: list[dict]) -> str:
+    """Every underlying in ONE table, each block sorted best-ratio-first.
+
+    Two orderings are at work and they are deliberately different:
+
+      * build_spreads() SELECTS candidates widest-cushion-first, because the
+        strike is what the breach study speaks to. That choice is unchanged.
+      * this table DISPLAYS them best-R:R-first, because once the strikes are
+        all anchored the ratio is what separates them.
+
+    So the set you see is still chosen by cushion; only the order is by ratio.
+    """
+    head = "".join(
+        f'<th style="padding:7px 9px;text-align:{a};color:{TEXT_MUTED};font-size:9.5px;'
+        f'font-weight:800;letter-spacing:.06em;text-transform:uppercase;'
+        f'border-bottom:1px solid {BORDER_COLOR};white-space:nowrap">{h}</th>'
+        for h, a in TABLE_COLS
+    )
+    body = []
+    for c in cards:
+        body.append(_group_header_html(c))
+        zone = c.get("zone")
+
+        if c.get("error") and not c.get("state"):
+            body.append(_message_row_html(c["error"]))
+            continue
+        if c.get("note"):
+            body.append(_message_row_html(f'\u26a0\ufe0f {c["note"]}', GOLD))
+        if c.get("error"):
+            z = ZONES.get(zone, {})
+            if c.get("anchor_only") is not None and zone != "put_block":
+                lvl = "morning low" if str(zone).startswith("put") else "morning high"
+                body.append(_message_row_html(
+                    f'{c["error"]}<br>The read still stands: <b style="color:'
+                    f'{z.get("colour", TEXT_MUTED)}">{z.get("label","")}</b> with the short '
+                    f'strike at or beyond the {lvl} of <b>{c["anchor_only"]:,.2f}</b>. '
+                    f'Only the strikes and premiums are missing.'))
+            else:
+                body.append(_message_row_html(c["error"]))
+            continue
+        if zone == "put_block":
+            body.append(_message_row_html(ZONES["put_block"]["note"], ACCENT_RED))
+            continue
+        if not c.get("spreads"):
+            body.append(_message_row_html(
+                f'Nothing priced. Either no spread showed a positive credit at these '
+                f'strikes, or every candidate came out worse than <b>1 : {MAX_RR:.0f}</b> '
+                f'and was dropped \u2014 itself a read: the credit at the level the study '
+                f'validated is too thin to be worth the risk today.'))
+            continue
+
+        rows = sorted(c["spreads"], key=lambda x: (x["rr"] if x["rr"] else 9e9))
+        best_credit = max(x["credit"] for x in rows)
+        body += [spread_row_html(sp, best_credit, i == 0) for i, sp in enumerate(rows)]
+
+    return (
+        f'<div style="overflow-x:auto">'
+        f'<table style="width:100%;border-collapse:collapse;background:{BG_PANEL};'
+        f'border:1px solid {BORDER_COLOR};border-radius:10px">'
+        f'<thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
     )
 
 
@@ -432,13 +592,20 @@ def _scan_one(cfg: dict) -> dict:
                     f'{cfg["chain_symbol"]} chain today. Strikes are the ETF grid scaled up, '
                     f'not real index strikes.')
 
+    # Display metadata rides along on every return shape, so a row that
+    # fails still shows its name, its description and — critically — its
+    # UNVALIDATED badge rather than silently losing the caveat.
+    meta = {"key": cfg["key"], "label": cfg["label"],
+            "desc": cfg.get("desc", ""), "validated": cfg.get("validated", True)}
+
     if state is None:
-        return {"key": cfg["key"], "label": cfg["label"],
-                "error": "No intraday bars for today yet."}
+        why = ("No intraday bars for today yet." if cfg.get("daily", True) else
+               f'No intraday bars for today yet. ({cfg["label"]} does not list an '
+               f'expiry every weekday, so it is only a 0DTE name on its expiry days.)')
+        return {**meta, "error": why}
 
     zone = zone_for(state["pos_pct"])
-    base = {"key": cfg["key"], "label": cfg["label"], "state": state,
-            "zone": zone, "note": note, "spreads": []}
+    base = {**meta, "state": state, "zone": zone, "note": note, "spreads": []}
 
     if chain is None:
         # The range, the zone and the anchor level are all still worth showing.
@@ -473,7 +640,14 @@ def render():
         f'<b style="color:{GOLD}">4 in 13</b> and 50–60% <b style="color:{ACCENT_RED}">2 in 8</b>. '
         f'No target ratio is imposed — the strike is anchored to the range and the '
         f'<b>Risk : Reward</b> is an outcome to read — capped at <b>1 : {MAX_RR:.0f}</b>, '
-        f'below which the credit is too thin to justify the risk whatever the win rate.</div>',
+        f'below which the credit is too thin to justify the risk whatever the win rate.<br>'
+        f'<b style="color:{TEXT_PRIMARY}">QQQ</b> and <b style="color:{TEXT_PRIMARY}">SPX</b> '
+        f'are the measured names and lead the table. '
+        f'<b style="color:{TEXT_PRIMARY}">IWM</b>, <b style="color:{TEXT_PRIMARY}">SMH</b> and '
+        f'<b style="color:{TEXT_PRIMARY}">GLD</b> are shown too but badged '
+        f'<b style="color:{ACCENT_RED}">UNVALIDATED</b> — the gate is transplanted to them, '
+        f'never measured on them. SMH and GLD do not list an expiry every weekday, so on most '
+        f'days their row reports that rather than showing strikes.</div>',
         unsafe_allow_html=True,
     )
 
@@ -488,7 +662,7 @@ def render():
         )
 
     if st.button("▶ Scan now", type="primary", key="spreads_run", use_container_width=True):
-        with st.spinner("Reading the morning range and today's 0DTE chains…"):
+        with st.spinner(f"Reading the morning range and today's chains for {len(TICKERS)} underlyings…"):
             try:
                 st.session_state["spreads_cards"] = [_scan_one(c) for c in TICKERS]
                 st.session_state["spreads_ts"] = now_et().strftime("%b %d · %H:%M:%S ET")
@@ -507,73 +681,20 @@ def render():
     st.caption(f"Scanned {st.session_state.get('spreads_ts','')} · premiums are Yahoo mid-quotes, "
                f"delayed ~15 min — indicative sizing, not fills")
 
-    for c in cards:
-        st.markdown(
-            f'<div style="margin-top:14px;color:{TEXT_PRIMARY};font-size:17px;font-weight:800">'
-            f'{c["label"]}</div>', unsafe_allow_html=True)
+    st.markdown(spreads_table_html(cards), unsafe_allow_html=True)
 
-        if c.get("error") and not c.get("state"):
-            st.info(c["error"])
-            continue
-
-        s, zone = c["state"], c.get("zone")
-        z = ZONES.get(zone, {})
-        head = (f'spot <b style="color:{TEXT_PRIMARY}">{s["spot"]:,.2f}</b> · '
-                f'morning range <b style="color:{TEXT_PRIMARY}">{s["range_pct"]:.2f}%</b> · '
-                f'noon <b style="color:{TEXT_PRIMARY}">{s["noon"]:,.2f}</b>')
-        if not s["morning_complete"]:
-            head += (f' · <b style="color:{GOLD}">provisional — the 12:00 bar has not printed, '
-                     f'the range can still widen</b>')
-        st.markdown(f'<div style="color:{TEXT_MUTED};font-size:11px">{head}</div>',
-                    unsafe_allow_html=True)
-        st.markdown(range_bar_html(s, zone), unsafe_allow_html=True)
-
-        st.markdown(
-            f'<div style="background:{_rgba(z.get("colour", TEXT_MUTED), 0.10)};'
-            f'border-left:3px solid {z.get("colour", TEXT_MUTED)};border-radius:0 8px 8px 0;'
-            f'padding:9px 12px;margin-bottom:8px">'
-            f'<span style="color:{z.get("colour", TEXT_MUTED)};font-size:13px;font-weight:800">'
-            f'{z.get("label","")}</span>'
-            f'<span style="color:{TEXT_MUTED};font-size:10.5px;margin-left:10px">'
-            f'historical breach {z.get("breach","")}</span>'
-            f'<div style="color:{TEXT_MUTED};font-size:11px;margin-top:3px">{z.get("note","")}</div>'
-            f'</div>', unsafe_allow_html=True)
-
-        if c.get("note"):
-            st.caption(f'⚠️ {c["note"]}')
-        if c.get("error"):
-            # The zone and the anchor level survive a missing chain, so say
-            # what the setup WOULD be rather than only what failed.
-            if c.get("anchor_only") is not None and zone != "put_block":
-                lvl = "morning low" if zone.startswith("put") else "morning high"
-                st.info(f'{c["error"]}\n\nThe read still stands: **{z.get("label","")}** with the '
-                        f'short strike at or beyond the {lvl} of **{c["anchor_only"]:,.2f}**. '
-                        f'Only the strikes and premiums are missing.')
-            else:
-                st.info(c["error"])
-            continue
-        if zone == "put_block":
-            continue
-        if not c["spreads"]:
-            st.info(
-                f"Nothing to show. Either no spread priced a positive credit on today's chain "
-                f"at these strikes, or every candidate came out worse than **1 : {MAX_RR:.0f}** "
-                f"and was dropped. That is itself a read: the credit available at the level the "
-                f"study validated is too thin to be worth the risk today."
-            )
-            continue
-
-        st.markdown(
-            '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-            + "".join(spread_card_html(sp, i == 0) for i, sp in enumerate(c["spreads"][:3]))
-            + "</div>", unsafe_allow_html=True)
-
-        if len(c["spreads"]) > 3:
-            with st.expander(f'{len(c["spreads"]) - 3} more strike/width combination(s)'):
-                st.markdown(
-                    '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-                    + "".join(spread_card_html(sp, False) for sp in c["spreads"][3:])
-                    + "</div>", unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:8px;'
+        f'color:{TEXT_MUTED};font-size:10.5px">'
+        f'<span><b style="color:{GOLD}">\u2605</b> best risk\u2009:\u2009reward in that block '
+        f'(the sort key)</span>'
+        f'<span>\U0001F4B0 richest premiums for that underlying '
+        f'\u2014 \U0001F4B0\U0001F4B0\U0001F4B0 \u2265 90% of its best credit, '
+        f'\U0001F4B0\U0001F4B0 \u2265 75%, \U0001F4B0 \u2265 55%</span>'
+        f'<span><b style="color:{ACCENT_RED}">UNVALIDATED</b> the 70% gate was measured on '
+        f'QQQ and SPY only</span>'
+        f'<span>Cushion = distance from spot to the short strike</span></div>',
+        unsafe_allow_html=True)
 
     st.markdown(
         f'<div style="background:#1a1410;border:1px solid rgba(240,112,74,0.18);'

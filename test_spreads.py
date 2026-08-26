@@ -131,19 +131,82 @@ check("valid window brackets noon",
 check("11:45 ET is inside the window", sp.VALID_FROM_MIN == 11 * 60 + 45)
 check("15:00 ET is outside", 15 * 60 > sp.VALID_TO_MIN)
 
-print("\n── 7. Range bar renders without a chart library ────────────────")
+print("\n── 7. One table, sorted best-ratio-first, money icons ──────────")
 state = {"low": 700.0, "high": 710.0, "mid": 705.0, "noon": 708.0, "spot": 708.5,
          "pos_pct": 80.0, "range_pct": 1.43, "morning_complete": True}
-bar = sp.range_bar_html(state, "put_green")
-check("bar is HTML", "<div" in bar and bar.count("<div") == bar.count("</div>"))
-check("marker sits at the noon position", "left:80.0%" in bar)
-check("gate ticks are drawn", all(f"left:{x}%" in bar for x in (50, 60, 70)))
-check("low and high are labelled", "700.00" in bar and "710.00" in bar)
-if one:
-    card = sp.spread_card_html(one, True)
-    check("spread card is balanced HTML", card.count("<div") == card.count("</div>"))
-    check("card shows R:R", "Risk : Reward" in card)
-    check("card shows max loss as a negative", "-$" in card)
+
+# The premium icon is RELATIVE to the best credit on that underlying, so an
+# SPX credit of $10 and a QQQ credit of $1 can both be the fat one.
+check("the best credit earns three bags", sp.premium_icons(2.0, 2.0) == "\U0001F4B0" * 3)
+check("90% of the best still earns three", sp.premium_icons(1.8, 2.0) == "\U0001F4B0" * 3)
+check("75% earns two", sp.premium_icons(1.5, 2.0) == "\U0001F4B0" * 2)
+check("55% earns one", sp.premium_icons(1.1, 2.0) == "\U0001F4B0")
+check("a thin credit earns none", sp.premium_icons(0.4, 2.0) == "")
+check("no divide-by-zero on an empty block", sp.premium_icons(1.0, 0.0) == "")
+
+# One table for every underlying — not one per name.
+cards = [
+    {"key": "QQQ", "label": "QQQ", "desc": "Nasdaq 100 ETF", "validated": True,
+     "state": dict(state), "zone": "put_green", "note": None, "spreads": out},
+    {"key": "SPX", "label": "SPX", "desc": "S&P 500", "validated": True,
+     "state": dict(state), "zone": "put_green", "note": None, "spreads": scaled},
+    {"key": "GLD", "label": "GLD", "desc": "Gold ETF", "validated": False,
+     "error": "GLD has no expiry dated today — nearest is 2026-08-28"},
+]
+tbl = sp.spreads_table_html(cards)
+check("exactly one <table> for every underlying", tbl.count("<table") == 1)
+check("...closed once", tbl.count("</table>") == 1)
+check("HTML is balanced", tbl.count("<tr") == tbl.count("</tr>")
+      and tbl.count("<td") == tbl.count("</td>"))
+check("every underlying appears", all(f">{k}</span>" in tbl for k in ("QQQ", "SPX", "GLD")))
+check("an unmeasured underlying is badged", "UNVALIDATED" in tbl)
+check("...and a measured one is not badged in its own header",
+      tbl.index("QQQ") < tbl.index("UNVALIDATED"))
+check("a failed underlying still shows its reason", "nearest is 2026-08-28" in tbl)
+check("the group header spans the full width",
+      f'colspan="{len(sp.TABLE_COLS)}"' in tbl)
+
+# QQQ leads because it leads TICKERS; rows inside a block lead with best R:R.
+check("QQQ block comes before SPX", tbl.index(">QQQ<") < tbl.index(">SPX<"))
+rows = sorted(out, key=lambda x: x["rr"])
+best = rows[0]
+check("the best-ratio row is starred",
+      sp.spread_row_html(best, max(x["credit"] for x in rows), True).count("\u2605") == 1)
+check("...and the others are not",
+      "\u2605" not in sp.spread_row_html(rows[-1], 1.0, False))
+check("the table stars exactly one row per block", tbl.count("\u2605") == 2)
+
+# The displayed order is the actual claim, so read it back out of the HTML.
+def _rr_order(html, block):
+    seg = html[html.index(f">{block}<"):]
+    nxt = seg.find(">SPX<", 1)
+    seg = seg[:nxt] if block == "QQQ" and nxt > 0 else seg
+    import re
+    return [float(m) for m in re.findall(r"1 : ([\d.]+)</td>", seg)]
+
+qqq_rr = _rr_order(tbl, "QQQ")
+check("rows are rendered in ascending R:R (best first)",
+      qqq_rr == sorted(qqq_rr), str(qqq_rr))
+check("selection is still widest-cushion-first inside build_spreads",
+      out[0]["cushion_pct"] == max(x["cushion_pct"] for x in out))
+
+check("QQQ leads the shipped ticker list", sp.TICKERS[0]["key"] == "QQQ")
+check("SPX is second", sp.TICKERS[1]["key"] == "SPX")
+check("the daily-expiry names are added",
+      {t["key"] for t in sp.TICKERS} == {"QQQ", "SPX", "IWM", "SMH", "GLD"})
+check("only QQQ and SPX claim to be validated",
+      {t["key"] for t in sp.TICKERS if t["validated"]} == {"QQQ", "SPX"})
+check("SMH and GLD are not claimed as every-weekday expiries",
+      not any(t["daily"] for t in sp.TICKERS if t["key"] in ("SMH", "GLD")))
+
+# A block with no state must not take the table down.
+bare = sp.spreads_table_html([{"key": "IWM", "label": "IWM", "desc": "", "validated": False,
+                               "error": "No intraday bars for today yet."}])
+check("a stateless block renders", "<table" in bare and "No intraday bars" in bare)
+check("an unknown zone does not raise",
+      "<table" in sp.spreads_table_html(
+          [{"key": "X", "label": "X", "desc": "", "validated": True,
+            "state": dict(state), "zone": None, "spreads": []}]))
 
 print("\n── 8. A missing option chain must not kill the tab ─────────────")
 # The first live run crashed here: todays_chain() returned None, _scan_one
@@ -152,10 +215,12 @@ print("\n── 8. A missing option chain must not kill the tab ─────�
 # nothing.
 _state = {"low": 705.6, "high": 709.9, "mid": 707.75, "noon": 709.44,
           "spot": 709.82, "pos_pct": 89.3, "range_pct": 0.60, "morning_complete": True}
-check("the range bar survives an unknown zone",
-      "<div" in sp.range_bar_html(_state, None))
+_probe_card = {"key": "QQQ", "label": "QQQ", "desc": "", "validated": True,
+               "state": dict(_state), "spreads": []}
+check("the group header survives an unknown zone",
+      "<td" in sp._group_header_html({**_probe_card, "zone": None}))
 check("...and one that is not in the table",
-      "<div" in sp.range_bar_html(_state, "nonsense"))
+      "<td" in sp._group_header_html({**_probe_card, "zone": "nonsense"}))
 
 _orig_state, _orig_chain = sp.morning_state, sp.todays_chain
 try:
@@ -214,8 +279,11 @@ check("the cap implies a floor on return on risk",
       all(x["ror_pct"] >= 100.0 / sp.MAX_RR - 1e-9 for x in out + cout),
       f"floor = {100/sp.MAX_RR:.1f}%")
 if one:
-    card = sp.spread_card_html(one, False)
-    check("the card shows return on risk", "Return on risk" in card)
+    row = sp.spread_row_html(one, one["credit"], False)
+    check("the row shows return on risk as a percentage",
+          f'{one["ror_pct"]:.1f}%' in row)
+    check("the row shows max loss as a negative", "-$" in row)
+    check("the row shows the ratio", f'1 : {one["rr"]:.1f}' in row)
 
 print("\n" + "=" * 60)
 print(f"RESULT: {len(FAILS)} failed")
