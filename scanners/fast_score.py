@@ -134,7 +134,7 @@ PREFETCH_CHUNK = 120       # yfinance bulk-download batch size
 # "is the fix deployed yet?" is a fact you can read off the page instead of a
 # guess -- a redeploy can lag a push, and a browser session can hold results
 # from before one.
-BUILD = "2026-08-26.5 · 12 gates · RSI/MFI/200w-trend/dedupe/track+backtest"
+BUILD = "2026-08-26.6 · 12 gates · HTML detail table (no canvas)"
 
 TIER_EARLY   = "Early"
 TIER_FRESH   = "Fresh"
@@ -835,6 +835,98 @@ def app_table_html(df: pd.DataFrame) -> str:
     )
 
 
+# Column spec for the detail table: (row key, header, formatter).
+# Rendered as plain HTML rather than st.dataframe on purpose. st.dataframe
+# paints into a canvas, so when it fails to lay out -- a hidden container at
+# mount time, an odd zoom level, a browser blocking canvas -- it leaves a
+# correctly-sized but completely blank box, with no error anywhere to explain
+# it. The main Fast Score table above is HTML and has never had that problem,
+# so the detail table now uses the same mechanism. Slightly more code here
+# buys a table that cannot silently render empty.
+_DETAIL_COLS = [
+    ("rank",            "#",      lambda v: f"{int(v)}"),
+    ("ticker",          "SYM",    lambda v: f"{v}"),
+    ("sector",          "SECTOR", lambda v: f"{v}"),
+    ("tier",            "TIER",   lambda v: f"{v}"),
+    ("close",           "CLOSE",  lambda v: f"${v:,.2f}"),
+    ("rsi",             "RSI",    lambda v: f"{v:.1f}"),
+    ("mfi",             "MFI",    lambda v: f"{v:.1f}"),
+    ("ext_50w",         "ABOVE 50W", lambda v: f"{v:+.1f}%"),
+    ("lt_slope_200w",   "200W TREND", lambda v: f"{v:+.1f}%"),
+    ("slope_52w",       "52W SLOPE", lambda v: f"{v:+.1f}%"),
+    ("slope_26w",       "26W SLOPE", lambda v: f"{v:+.1f}%"),
+    ("slope_ratio",     "RATIO",  lambda v: f"{v:.2f}"),
+    ("touch_pct",       "TOUCH",  lambda v: f"{v:+.1f}%"),
+    ("bounce_pct",      "BOUNCE", lambda v: f"{v:+.1f}%"),
+    ("wks_since_touch", "WKS SINCE TOUCH", lambda v: f"{int(v)}w"),
+    ("macd_gap",        "MACD GAP", lambda v: f"{v:+.2f}"),
+    ("macd_delta_3w",   "MACD Δ3W", lambda v: f"{v:+.2f}"),
+    ("accel_3w",        "3W ACCEL", lambda v: f"{v:+.1f}%"),
+    ("dist_200w",       "200W DIST", lambda v: f"{v:+.1f}%"),
+    ("vol_ratio",       "VOL",    lambda v: f"{v:.2f}x"),
+    ("score",           "SCORE",  lambda v: f"{int(v)}/15"),
+]
+
+
+def detail_table_html(df: pd.DataFrame) -> str:
+    """The gate columns behind each row, as scrollable HTML."""
+    if df is None or df.empty:
+        return ""
+    cols = [(k, h, f) for k, h, f in _DETAIL_COLS if k in df.columns]
+
+    head = "".join(
+        f'<th style="position:sticky;top:0;background:{BG_PANEL};color:{TEXT_MUTED};'
+        f'font-size:9px;font-weight:800;letter-spacing:.06em;padding:7px 9px;'
+        f'text-align:{"left" if i < 4 else "right"};white-space:nowrap;'
+        f'border-bottom:1px solid {BORDER_COLOR}">{h}</th>'
+        for i, (_, h, _) in enumerate(cols)
+    )
+
+    body = []
+    for _, r in df.iterrows():
+        cells = []
+        for i, (key, _h, fmt) in enumerate(cols):
+            v = r.get(key)
+            try:
+                txt = "—" if v is None or (isinstance(v, float) and not np.isfinite(v)) else fmt(v)
+            except Exception:
+                txt = "—"
+            if key == "ticker":
+                color, weight = GOLD, 800
+            elif key == "tier":
+                color, weight = _TIER_COLOR.get(str(v), TEXT_MUTED), 700
+            elif key == "rsi":
+                color, weight = (_C_NEG if isinstance(v, (int, float)) and v > MAX_RSI
+                                 else _C_RATIO if isinstance(v, (int, float)) and v > RSI_BUY_HI
+                                 else TEXT_PRIMARY), 700
+            elif key == "mfi":
+                color, weight = (_C_NEG if isinstance(v, (int, float)) and v > MAX_MFI
+                                 else TEXT_PRIMARY), 700
+            elif key in ("lt_slope_200w", "accel_3w", "macd_delta_3w", "macd_gap",
+                         "touch_pct", "bounce_pct", "slope_52w", "slope_26w"):
+                color, weight = (TEXT_PRIMARY if not isinstance(v, (int, float))
+                                 else (ACCENT_GREEN if v >= 0 else _C_NEG)), 600
+            elif key == "score":
+                color, weight = (ACCENT_GREEN if isinstance(v, (int, float))
+                                 and v >= SCORE_GREEN_MIN else _C_RATIO), 800
+            else:
+                color, weight = TEXT_PRIMARY, 600
+            cells.append(
+                f'<td style="padding:7px 9px;color:{color};font-weight:{weight};'
+                f'font-size:11.5px;white-space:nowrap;'
+                f'text-align:{"left" if i < 4 else "right"};'
+                f'border-bottom:1px solid rgba(255,255,255,.04)">{txt}</td>'
+            )
+        body.append(f"<tr>{''.join(cells)}</tr>")
+
+    return (
+        f'<div style="overflow-x:auto;background:{BG_PANEL};border:1px solid {BORDER_COLOR};'
+        f'border-radius:10px;max-height:460px;overflow-y:auto">'
+        f'<table style="width:100%;border-collapse:collapse;font-family:inherit">'
+        f'<thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
+    )
+
+
 def email_table_html(df: pd.DataFrame, max_rows: int = 25) -> str:
     """Same ranked table as real <table> markup, for the weekly email.
 
@@ -1022,17 +1114,12 @@ def render():
                 f"These results predate the {', '.join(_missing)} column(s) — "
                 f"press ▶ Run Scan to refresh and see every gate."
             )
-        detail = view[_detail_cols].round(2).rename(columns={
-            "rsi": "RSI", "mfi": "MFI", "ext_50w": "Above 50w %",
-            "lt_slope_200w": "200W Trend %",
-            "rank": "#", "ticker": "Sym", "sector": "Sector", "tier": "Tier",
-            "close": "Close", "slope_52w": "52wk Slope %", "slope_26w": "26wk Slope %",
-            "slope_ratio": "Slope Ratio", "touch_pct": "Touch %", "bounce_pct": "Bounce %",
-            "wks_since_touch": "Wks Since Touch", "macd_gap": "MACD Gap",
-            "macd_delta_3w": "MACD Δ3W", "accel_3w": "3W Accel %",
-            "dist_200w": "200W Dist %", "vol_ratio": "Vol Ratio", "score": "Score",
-        })
-        st.dataframe(detail, use_container_width=True, hide_index=True)
+        st.markdown(detail_table_html(view[_detail_cols]), unsafe_allow_html=True)
+        st.caption(
+            f"{len(view)} row(s) · scroll sideways for the rest of the gates · "
+            f"RSI above {MAX_RSI:.0f} or MFI above {MAX_MFI:.0f} would have been rejected, "
+            f"so every value here is inside its gate."
+        )
 
     st.download_button(
         "⬇ Download CSV", view.to_csv(index=False).encode(),
@@ -1301,7 +1388,43 @@ def render_backtest(universe_kind: str = "FTF"):
                 "Avg MAE %": None if a.get("mean_mae") is None else round(a["mean_mae"], 2),
             })
     if rows:
-        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        _bt_cols = ["Segment", "N", "Win %", "Median %", "Mean %",
+                    "vs SPY %", "Beat SPY %", "Avg MFE %", "Avg MAE %"]
+        _head = "".join(
+            f'<th style="color:{TEXT_MUTED};font-size:9px;font-weight:800;letter-spacing:.06em;'
+            f'padding:7px 9px;text-align:{"left" if i == 0 else "right"};white-space:nowrap;'
+            f'border-bottom:1px solid {BORDER_COLOR}">{c.upper()}</th>'
+            for i, c in enumerate(_bt_cols)
+        )
+        _body = []
+        for rw in rows:
+            tds = []
+            for i, c in enumerate(_bt_cols):
+                v = rw.get(c)
+                if v is None:
+                    txt, col = "—", TEXT_MUTED
+                elif c == "Segment":
+                    txt, col = str(v), TEXT_PRIMARY
+                elif c == "N":
+                    txt, col = f"{int(v)}", TEXT_MUTED
+                elif c in ("Win %", "Beat SPY %"):
+                    txt, col = f"{v:.0f}%", (ACCENT_GREEN if v > 50 else _C_NEG)
+                else:
+                    txt, col = f"{v:+.2f}%", (ACCENT_GREEN if v > 0 else _C_NEG)
+                tds.append(
+                    f'<td style="padding:7px 9px;color:{col};font-size:11.5px;font-weight:'
+                    f'{800 if c in ("vs SPY %", "Win %") else 600};white-space:nowrap;'
+                    f'text-align:{"left" if i == 0 else "right"};'
+                    f'border-bottom:1px solid rgba(255,255,255,.04)">{txt}</td>'
+                )
+            _body.append(f"<tr>{''.join(tds)}</tr>")
+        st.markdown(
+            f'<div style="overflow-x:auto;background:{BG_PANEL};border:1px solid '
+            f'{BORDER_COLOR};border-radius:10px">'
+            f'<table style="width:100%;border-collapse:collapse">'
+            f'<thead><tr>{_head}</tr></thead><tbody>{"".join(_body)}</tbody></table></div>',
+            unsafe_allow_html=True,
+        )
         st.caption(
             "If the score band rows do not improve as the score rises, the score is not "
             "ranking anything — that is the single most useful thing this table can tell you."

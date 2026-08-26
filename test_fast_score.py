@@ -426,6 +426,28 @@ check("below the 200W line is colored green (room, not danger)",
 check("empty frame renders empty string, not a broken shell",
       fs.app_table_html(pd.DataFrame()) == "" and fs.email_table_html(pd.DataFrame()) == "")
 
+# The detail table is HTML, not st.dataframe: a canvas grid that fails to lay
+# out leaves a correctly-sized blank box with no error to explain it.
+_dt = pd.DataFrame([dict(rank=1, ticker="ZM", sector="Mega Tech", tier=fs.TIER_FRESH,
+    close=107.43, rsi=63.16, mfi=65.06, ext_50w=21.20, lt_slope_200w=-3.1,
+    slope_52w=21.5, slope_26w=28.69, slope_ratio=1.33, touch_pct=2.43, bounce_pct=20.24,
+    wks_since_touch=3, macd_gap=1.17, macd_delta_3w=1.88, accel_3w=11.82,
+    dist_200w=42.53, vol_ratio=0.71, score=13)])
+_h = fs.detail_table_html(_dt)
+check("detail table emits real <table> markup", "<table" in _h and "<td" in _h)
+check("detail table balances its tags",
+      _h.count("<tr") == _h.count("</tr>") and _h.count("<td") == _h.count("</td>"))
+check("every gate value reaches the DOM as text",
+      all(x in _h for x in ("63.2", "65.1", "+21.2%", "-3.1%", "13/15", "ZM")))
+check("headers for the newest gates are present",
+      all(x in _h for x in ("RSI", "MFI", "ABOVE 50W", "200W TREND")))
+check("detail table survives a missing column",
+      "<table" in fs.detail_table_html(_dt.drop(columns=["rsi", "mfi"])))
+check("detail table survives NaN without printing 'nan'",
+      "nan" not in fs.detail_table_html(
+          _dt.assign(rsi=float("nan"))).lower().replace("mega tech", ""))
+check("empty detail frame renders empty string", fs.detail_table_html(pd.DataFrame()) == "")
+
 print("\n── 5b. Track record ────────────────────────────────────────────")
 import json, tempfile, shutil
 from scanners import scan_history as sh
