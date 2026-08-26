@@ -213,9 +213,12 @@ def run():
         "min_repeat_gap_wks": bt.MIN_REPEAT_GAP_WKS,
         "build": fs.BUILD, "summary": summary, "picks": records,
     }
-    # Two files: a stable name the app reads, and a dated copy so a later run
-    # never silently erases the evidence an earlier one produced.
-    for name in (f"latest_{UNI_KIND}.json", f"{TODAY}_{UNI_KIND}.json"):
+    # Two files: a stable name the app reads, and an archive copy keyed by
+    # BOTH universe and test length. Dating alone was not enough -- a 5-year
+    # run dispatched the same day as a 3-year one wrote the identical
+    # filename and destroyed the earlier evidence, which is exactly what the
+    # archive copy exists to prevent.
+    for name in (f"latest_{UNI_KIND}.json", f"{TODAY}_{UNI_KIND}_{YEARS}y.json"):
         with open(os.path.join(OUT_DIR, name), "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=1)
     log(f"Wrote results to {OUT_DIR}")

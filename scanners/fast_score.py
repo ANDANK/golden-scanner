@@ -134,7 +134,7 @@ PREFETCH_CHUNK = 120       # yfinance bulk-download batch size
 # "is the fix deployed yet?" is a fact you can read off the page instead of a
 # guess -- a redeploy can lag a push, and a browser session can hold results
 # from before one.
-BUILD = "2026-08-26.9 · 12 gates · significance intervals on backtest"
+BUILD = "2026-08-26.10 · 12 gates · min-score defaults to 9 (backtest-driven)"
 
 TIER_EARLY   = "Early"
 TIER_FRESH   = "Fresh"
@@ -1011,7 +1011,13 @@ def _explainer() -> str:
         f'<b style="color:{_TIER_COLOR[TIER_FURTHER]}">Further Along</b> = crossed earlier, bounce underway.<br>'
         f'<b style="color:{TEXT_PRIMARY}">Fast Score</b> ranks the survivors 0–15 (five components, 0–3 each: '
         f'3-week acceleration, MACD improvement, slope ratio, room above the 200-week line, and how quiet the '
-        f'volume is). It does not filter — everything in the table already passed all twelve gates.</div>'
+        f'volume is). It does not filter — everything in the table already passed all twelve gates.<br>'
+        f'<b style="color:{_C_NEG}">Backtest verdict:</b> across 1,494 picks over five years this '
+        f'scanner did <b>not</b> beat SPY — excess was −0.08% / −0.25% / −0.80% at 4/8/12 weeks, and '
+        f'the 12-week figure is significantly negative. The score does rank (its correlation with '
+        f'excess is small but significant at 4 and 8 weeks), so <b>Min score</b> defaults to 9 to drop '
+        f'the bands that measurably lose. Treat this as a screen for candidates, not as a signal that '
+        f'beats holding the index.</div>'
     )
 
 
@@ -1030,7 +1036,13 @@ def render():
             key="fast_score_tiers",
         )
     with c3:
-        min_score = st.number_input("Min score", min_value=0, max_value=15, value=0,
+        # Defaults to 9, not 0. Over 1,494 backtested picks the 6-8 and 0-5
+        # bands were negative against SPY at every horizon, and 6-8 at 12
+        # weeks significantly so (-1.54%, t=-3.20). Dropping them takes the
+        # whole scan's 12-week excess from significantly negative (-0.80%,
+        # t=-2.51) to indistinguishable from zero (-0.36%, t=-0.82). This
+        # removes measured harm; it does NOT make the scanner beat SPY.
+        min_score = st.number_input("Min score", min_value=0, max_value=15, value=9,
                                     key="fast_score_min")
 
     run = st.button("▶ Run Scan", type="primary", key="fast_score_run",
