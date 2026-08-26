@@ -4,6 +4,204 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-07-16",
+      "url": "https://www.youtube.com/shorts/wIUYaUyjwf8",
+      "title": "My #1 Strategy to Grow a Small Portfolio (The Poor Man's Covered Call)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "The host remains bullish on Palantir and sets a price target of $150 to $160 per share over the next three to six months.",
+          "price": 134.44
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host is bullish on Nvidia, seeing about $15 of upside to a target price of $210 per share over the next couple of months.",
+          "price": 207.4
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A Poor Man's Covered Call replaces 100 shares of stock with a deep in-the-money LEAP option (around 0.70 delta expiring in 9 to 12 months) to drastically reduce initial capital requirements.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To generate income on a Poor Man's Covered Call, sell short-term out-of-the-money call options (around 0.30 delta expiring in ~30 days) against the long LEAP position.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-14",
+      "url": "https://www.youtube.com/shorts/dPyrtDC9c4M",
+      "title": "Stock Market: CPI Inflation Report Sends Fed Rate Hike Odds Lower",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "June headline CPI inflation fell to 3.5% from 4.2% in May, beating the 3.8% expectation largely due to a 5.7% decline in the energy index. Core CPI also dropped from 2.9% to 2.6%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Following the lower CPI report, market-implied odds of a Federal Reserve rate hike at the July meeting dropped from 41.7% to 16.6%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Markets are pricing in an 82.2% chance that interest rates will end the year higher than current levels, with a 0% chance of rate cuts priced in.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host highlights that shifting Fed expectations toward rate cuts would require either sustained low energy prices via de-escalation in Iran or significant labor market weakness.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-24",
+      "url": "https://www.youtube.com/shorts/M11M9kMsYgQ",
+      "title": "Watch This Now If You Ever Want To Retire - The Game Has Changed",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Under the standard 4% retirement rule, investors can withdraw 4% of their total accumulated assets annually to fund living expenses.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Wealth accumulation is driven by three core variables: the amount of money invested, the time horizon for compounding, and the rate of return achieved.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Double-digit high-interest consumer debt like credit cards should be prioritized and paid off before investing, as clearing high interest delivers a guaranteed high return.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The tax code privileges investors over employees, taxing earned income at top rates while long-term stock gains face lower tax rates and real estate offers tax offsets like depreciation and 1031 exchanges.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A multi-asset portfolio allocation strategy can consist of 50% real estate, 30% stocks, 18% speculative assets such as cryptocurrency, and 2% gold for wealth preservation.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-15",
+      "url": "https://www.youtube.com/shorts/3CGi7t4lA_U",
+      "title": "I Put $1 Million Into These 2 Stocks",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Google maintains a dominant search cash machine, accelerating Cloud profitability, YouTube growth engines, and long-term Waymo upside, making heavy AI capex spending a worthwhile investment despite short-term margin pressure.",
+          "price": 370.92
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Amazon's AWS is positioned for high AI compute demand, while its fast-growing, high-margin advertising business and improving retail efficiency provide multiple drivers for long-term earnings expansion.",
+          "price": 254.96
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Corporate share buybacks reduce total shares outstanding, using financial engineering to increase stock scarcity and boost earnings per share over time.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-13",
+      "url": "https://www.youtube.com/shorts/xxKl1i7iD88",
+      "title": "The Stock Market's Midterm Election Pattern: 98 Years of Data",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Midterm election years are historically the worst-performing period in the four-year presidential cycle, generating an average S&P 500 return of 7.1%, a median return of 5%, and a 58.3% chance of a positive year.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Pre-election years are historically the best-performing in the presidential cycle, boasting an average return of 17.8%, a median return of 22.5%, and ending positive 91.7% of the time over the past 98 years.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Presidential election years historically perform well, ending positive 84% of the time with a median return of 15.9%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Over the past 98 years, the stock market finished positive in 72 years, giving any average year a 73.5% baseline probability of ending higher.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-23",
+      "url": "https://www.youtube.com/shorts/DhIQt_yBCfM",
+      "title": "The Biggest Shift For The Dollar In 50 Years Is Here (Gold, Silver, & Bitcoin Crash)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Global central banks have reduced US dollar reserve holdings from 72% to 57% over the past 25 years while significantly accelerating physical gold purchases to hedge against dollar weakness.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Federal Reserve Chairman Kevin Warsh's signals of potential rate hikes or paused cuts to defend the dollar triggered major pullbacks in debasement assets like gold, silver, and Bitcoin.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Higher interest rates increase the opportunity cost of holding non-yielding assets such as gold, silver, and Bitcoin, driving capital toward yielding cash accounts and Treasuries.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Commodity debasement trades undergo multi-year cycles, surging during dollar devaluation and inflation scares but underperforming during periods of dollar strength and high interest rates.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-08-25",
       "url": "https://www.youtube.com/shorts/eVZyOS_O6sw",
       "title": "THESE 3 STOCKS REPORT EARNINGS TOMORROW 🚨 AUG 25 $NVDA",
