@@ -134,7 +134,7 @@ PREFETCH_CHUNK = 120       # yfinance bulk-download batch size
 # "is the fix deployed yet?" is a fact you can read off the page instead of a
 # guess -- a redeploy can lag a push, and a browser session can hold results
 # from before one.
-BUILD = "2026-08-26.6 · 12 gates · HTML detail table (no canvas)"
+BUILD = "2026-08-26.7 · 12 gates · backtest universe fallback"
 
 TIER_EARLY   = "Early"
 TIER_FRESH   = "Fresh"
@@ -1286,15 +1286,33 @@ BACKTEST_DIR = os.path.join(
     "data", "fast_score_backtest")
 
 
+def available_backtests() -> list[str]:
+    """Universe kinds that have a committed backtest result."""
+    import glob
+    return sorted(
+        os.path.basename(p)[len("latest_"):-len(".json")]
+        for p in glob.glob(os.path.join(BACKTEST_DIR, "latest_*.json"))
+    )
+
+
 def load_backtest(universe_kind: str = "FTF") -> dict | None:
-    """Read the committed backtest result, if the workflow has produced one."""
+    """Read a committed backtest result.
+
+    Falls back to whatever HAS been run when the requested universe has no
+    result. The workflow's universe is chosen per run and need not match the
+    dropdown in this tab, and reporting "no backtest yet" while a perfectly
+    good one sits on disk under another name is the more confusing failure --
+    the caller shows which universe it actually got.
+    """
     import json
-    path = os.path.join(BACKTEST_DIR, f"latest_{universe_kind}.json")
-    try:
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return None
+    kinds = [universe_kind] + [k for k in available_backtests() if k != universe_kind]
+    for kind in kinds:
+        try:
+            with open(os.path.join(BACKTEST_DIR, f"latest_{kind}.json"), encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            continue
+    return None
 
 
 def render_backtest(universe_kind: str = "FTF"):
@@ -1320,6 +1338,12 @@ def render_backtest(universe_kind: str = "FTF"):
         return
 
     sm = data["summary"]
+    if data.get("universe") and data["universe"] != universe_kind:
+        st.info(
+            f"Showing the **{data['universe']}** backtest — no result has been committed "
+            f"for **{universe_kind}** yet. Re-run the workflow with universe "
+            f"`{universe_kind}` to match the dropdown above."
+        )
     if data.get("build") and data["build"] != BUILD:
         st.warning(
             f"These results were produced by build `{data['build']}`, but this app is "
@@ -1425,9 +1449,13 @@ def render_backtest(universe_kind: str = "FTF"):
             f'<thead><tr>{_head}</tr></thead><tbody>{"".join(_body)}</tbody></table></div>',
             unsafe_allow_html=True,
         )
+        _thin = [r["Segment"].lstrip("▸ ") for r in rows if r["N"] < 30]
         st.caption(
             "If the score band rows do not improve as the score rises, the score is not "
             "ranking anything — that is the single most useful thing this table can tell you."
+            + (f"  ⚠️ Thin samples (n<30): {', '.join(_thin)} — a striking number in a "
+               f"small band is the single easiest way to fool yourself here."
+               if _thin else "")
         )
 
     with st.expander("Every backtested pick"):
