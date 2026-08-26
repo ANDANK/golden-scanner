@@ -67,6 +67,8 @@ from config import (
     ACCENT_GREEN, ACCENT_RED,
 )
 from data_loader import get_price_history, prefetch_tickers
+from scanners import scan_history
+from scanners.ui_tables import sortable_table_html
 
 # ── Tunables ───────────────────────────────────────────────────────────────
 MIN_SLOPE_52W     = 5.0    # %   long-term regression must rise at least this much
@@ -127,6 +129,12 @@ LONG_SMA_WKS  = 200        # the 200-week SMA used for the stretch column
 FETCH_PERIOD  = "10y"
 FETCH_INTERVAL = "1wk"
 PREFETCH_CHUNK = 120       # yfinance bulk-download batch size
+
+# Bumped whenever a gate or a displayed column changes. The tab prints it, so
+# "is the fix deployed yet?" is a fact you can read off the page instead of a
+# guess -- a redeploy can lag a push, and a browser session can hold results
+# from before one.
+BUILD = "2026-08-26.4 · 12 gates · RSI/MFI/200w-trend/dedupe/track-record"
 
 TIER_EARLY   = "Early"
 TIER_FRESH   = "Fresh"
@@ -969,7 +977,8 @@ def render():
         f'&nbsp;&nbsp;|&nbsp;&nbsp;Universe: '
         f'<b style="color:{TEXT_PRIMARY}">{st.session_state.get(_SS_UNI, 0)} symbols</b>'
         f'&nbsp;&nbsp;|&nbsp;&nbsp;Qualified: '
-        f'<b style="color:{GOLD}">{len(df)}</b></div>',
+        f'<b style="color:{GOLD}">{len(df)}</b>'
+        f'&nbsp;&nbsp;|&nbsp;&nbsp;Build: <span style="opacity:.75">{BUILD}</span></div>',
         unsafe_allow_html=True,
     )
 
@@ -1029,6 +1038,154 @@ def render():
         "⬇ Download CSV", view.to_csv(index=False).encode(),
         file_name=f"fast_score_{datetime.now().strftime('%Y-%m-%d')}.csv",
         mime="text/csv", key="fast_score_dl",
+    )
+
+    # Today's rows are passed in so a ticker surfacing for the first time in
+    # THIS ad-hoc scan still appears in the table (priced from now), rather
+    # than staying invisible until the next Friday job commits a snapshot.
+    if st.checkbox("Show track record — how past picks actually did",
+                   value=False, key="fast_score_show_track"):
+        render_track_record(
+            tag=UNIVERSE_CHOICES.get(st.session_state.get("fast_score_uni", ""), "FTF"),
+            today_rows=[
+                {"ticker": str(r["ticker"]), "price": float(r["close"]),
+                 "tier": str(r["tier"]), "score": int(r["score"])}
+                for _, r in df.iterrows()
+            ],
+        )
+
+
+def _fmt_found(d: str) -> str:
+    try:
+        return datetime.strptime(d, "%Y-%m-%d").strftime("%b %-d")
+    except Exception:
+        return d
+
+
+def render_track_record(tag: str = "FTF", today_rows: list[dict] | None = None):
+    """How every past Fast Score pick has actually performed since it appeared.
+
+    Reads the weekly snapshots the headless job commits under data/fast_score/
+    (see CLAUDE.md — the app only ever READS these; it has no git write access
+    and would otherwise write a file per page load). So this table stays empty
+    until the Friday job has run at least once, which is the honest state to
+    show rather than inventing numbers from the current scan.
+
+    Performance is measured from the price on the run that FIRST surfaced a
+    ticker, not from its best subsequent print, so a name that appears three
+    weeks running is scored once from its earliest sighting.
+    """
+    st.markdown(
+        f'<div style="margin-top:26px;color:{TEXT_MUTED};font-size:11px;letter-spacing:.06em;'
+        f'text-transform:uppercase;font-weight:700">Track Record — every pick since the '
+        f'first stored run</div>',
+        unsafe_allow_html=True,
+    )
+
+    try:
+        today = datetime.now().strftime("%Y-%m-%d")
+        with st.spinner("Building track record — fetching current prices…"):
+            rows = scan_history.track_record("fast_score", tag, today, today_rows or [])
+    except Exception as e:
+        st.caption(f"Track record unavailable: {e}")
+        return
+
+    if not rows:
+        st.info(
+            "No history stored yet. The weekly job (Friday after the close) commits one "
+            "snapshot per run under `data/fast_score/`, and this table fills in from those. "
+            "Ad-hoc scans in this tab are deliberately not recorded — the app has no write "
+            "access, so only the scheduled run can add a data point."
+        )
+        return
+
+    scored = [r for r in rows if r.get("pct") is not None]
+    if scored:
+        wins = sum(1 for r in scored if r["pct"] > 0)
+        med = sorted(r["pct"] for r in scored)[len(scored) // 2]
+        avg = sum(r["pct"] for r in scored) / len(scored)
+        cards = [
+            ("Picks tracked", f"{len(rows)}", TEXT_PRIMARY),
+            ("Win rate", f"{wins / len(scored) * 100:.0f}%",
+             ACCENT_GREEN if wins * 2 >= len(scored) else ACCENT_RED),
+            ("Median", f"{med:+.1f}%", ACCENT_GREEN if med >= 0 else ACCENT_RED),
+            ("Average", f"{avg:+.1f}%", ACCENT_GREEN if avg >= 0 else ACCENT_RED),
+        ]
+        st.markdown(
+            '<div style="display:flex;gap:8px;margin:8px 0 12px 0;flex-wrap:wrap">'
+            + "".join(
+                f'<div style="flex:1;min-width:110px;background:{BG_CARD};border:1px solid '
+                f'{BORDER_COLOR};border-radius:10px;padding:10px 12px;text-align:center">'
+                f'<div style="color:{c};font-size:20px;font-weight:800">{v}</div>'
+                f'<div style="color:{TEXT_MUTED};font-size:9px;font-weight:800;'
+                f'letter-spacing:.08em;text-transform:uppercase;margin-top:2px">{k}</div></div>'
+                for k, v, c in cards
+            )
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+        # A tiny sample is the normal state for the first few weeks of a
+        # weekly scanner, and drawing conclusions from it is the mistake this
+        # table exists to prevent -- so say so rather than let the win-rate
+        # card imply more than it can carry.
+        if len(scored) < 20:
+            st.caption(
+                f"⚠️ Only {len(scored)} scored pick(s) so far — far too few to judge the "
+                f"scanner on. Treat these as a sanity check that the plumbing works, not "
+                f"as evidence of an edge."
+            )
+
+    columns = [
+        {"label": "Ticker", "type": "str"}, {"label": "Tier", "type": "str"},
+        {"label": "Score", "type": "num"}, {"label": "First Found", "type": "str"},
+        {"label": "First Price", "type": "num"}, {"label": "Now", "type": "num"},
+        {"label": "Perf", "type": "num"}, {"label": "High", "type": "num"},
+        {"label": "% High", "type": "num"}, {"label": "Low", "type": "num"},
+        {"label": "% Low", "type": "num"},
+    ]
+
+    def _c(v):
+        return TEXT_MUTED if v is None else (ACCENT_GREEN if v >= 0 else ACCENT_RED)
+
+    def _money(v):
+        return "—" if v is None else f"${v:,.2f}"
+
+    def _pct(v):
+        return "—" if v is None else f"{v:+.1f}%"
+
+    table_rows = []
+    for r in rows:
+        tier = r.get("tier") or "—"
+        tcol = _TIER_COLOR.get(tier, TEXT_MUTED)
+        sc = r.get("score")
+        fp = r.get("first_price")
+        table_rows.append([
+            (f'<span style="font-weight:700;color:{GOLD}">{r["ticker"]}</span>', r["ticker"]),
+            (f'<span style="color:{tcol};font-weight:600;font-size:11px">{tier}</span>', tier),
+            (f'<span style="font-weight:700">{sc}</span>' if sc is not None else "—",
+             sc if sc is not None else ""),
+            (f'<span style="color:{TEXT_MUTED};font-size:11px">{_fmt_found(r["first_found"])}</span>',
+             r["first_found"]),
+            (_money(fp), fp if fp is not None else ""),
+            (_money(r.get("current_price")),
+             r.get("current_price") if r.get("current_price") is not None else ""),
+            (f'<span style="font-weight:700;color:{_c(r.get("pct"))}">{_pct(r.get("pct"))}</span>',
+             r.get("pct") if r.get("pct") is not None else ""),
+            (_money(r.get("high")), r.get("high") if r.get("high") is not None else ""),
+            (f'<span style="color:{_c(r.get("high_pct"))}">{_pct(r.get("high_pct"))}</span>',
+             r.get("high_pct") if r.get("high_pct") is not None else ""),
+            (_money(r.get("low")), r.get("low") if r.get("low") is not None else ""),
+            (f'<span style="color:{_c(r.get("low_pct"))}">{_pct(r.get("low_pct"))}</span>',
+             r.get("low_pct") if r.get("low_pct") is not None else ""),
+        ])
+
+    # Imported lazily for the same reason as in home.py: the headless email
+    # scripts mock `streamlit` in sys.modules without a real install, and this
+    # submodule import fails against that mock. Headless never renders.
+    import streamlit.components.v1 as components
+    components.html(
+        sortable_table_html(columns, table_rows, default_sort_idx=6, default_desc=True),
+        height=min(460, 120 + 34 * len(table_rows)), scrolling=False,
     )
 
 

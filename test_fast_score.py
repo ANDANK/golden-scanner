@@ -426,6 +426,52 @@ check("below the 200W line is colored green (room, not danger)",
 check("empty frame renders empty string, not a broken shell",
       fs.app_table_html(pd.DataFrame()) == "" and fs.email_table_html(pd.DataFrame()) == "")
 
+print("\n── 5b. Track record ────────────────────────────────────────────")
+import json, tempfile, shutil
+from scanners import scan_history as sh
+
+_tmp = tempfile.mkdtemp()
+_orig_root = sh.DATA_ROOT
+sh.DATA_ROOT = _tmp
+try:
+    os.makedirs(os.path.join(_tmp, "fast_score"), exist_ok=True)
+    def _snap(date, rows):
+        with open(os.path.join(_tmp, "fast_score", f"{date}_FTF.json"), "w") as f:
+            json.dump({"date": date, "tag": "FTF", "rows": rows}, f)
+    _snap("2026-08-14", [{"ticker": "NVDA", "price": 198.40, "tier": "Fresh", "score": 11},
+                         {"ticker": "EW",   "price": 86.10,  "tier": "Fresh", "score": 11}])
+    _snap("2026-08-21", [{"ticker": "NVDA", "price": 205.10, "tier": "Fresh", "score": 11},
+                         {"ticker": "ETN",  "price": 410.00, "tier": "Fresh", "score": 10}])
+
+    roll = sh.rollup_window("fast_score", "FTF", "2026-08-26",
+                            [{"ticker": "ZM", "price": 107.43, "tier": "Fresh", "score": 13}])
+    by = {r["ticker"]: r for r in roll}
+    check("every stored ticker appears in the rollup",
+          {"NVDA", "EW", "ETN", "ZM"} <= set(by), f"got {sorted(by)}")
+    check("a ticker seen twice is credited to its EARLIEST sighting",
+          by["NVDA"]["first_found"] == "2026-08-14", by["NVDA"]["first_found"])
+    check("...and priced from that first run, not the later one",
+          abs(by["NVDA"]["first_price"] - 198.40) < 1e-6, str(by["NVDA"]["first_price"]))
+    check("a ticker new in today's ad-hoc scan is still tracked",
+          by["ZM"]["first_found"] == "2026-08-26")
+    check("tier and score survive into the track record",
+          by["ZM"]["tier"] == "Fresh" and by["ZM"]["score"] == 13)
+    check("no duplicate rows per ticker", len(roll) == len({r["ticker"] for r in roll}))
+
+    # Retention must not clip the monitoring window the user is relying on.
+    cfg = sh._CONFIG["fast_score"]
+    check("retention outlives the rollup window",
+          cfg["retention_days"] > cfg["rollup_days"],
+          f"retention={cfg['retention_days']}d rollup={cfg['rollup_days']}d")
+    check("a couple of weeks of weekly runs fits well inside the window",
+          cfg["rollup_days"] >= 28, f"rollup={cfg['rollup_days']}d")
+finally:
+    sh.DATA_ROOT = _orig_root
+    shutil.rmtree(_tmp, ignore_errors=True)
+
+check("track record renderer is exported", callable(getattr(fs, "render_track_record", None)))
+check("build stamp is set", isinstance(fs.BUILD, str) and len(fs.BUILD) > 8, fs.BUILD)
+
 print("\n── 6. Universe wiring ──────────────────────────────────────────")
 u = fs.universe_for("FTF")
 check("FTF stocks-only universe is ~450-500 names", 430 <= len(u) <= 540, f"got {len(u)}")
