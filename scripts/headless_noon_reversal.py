@@ -101,6 +101,20 @@ def sessions(df: pd.DataFrame) -> list[dict]:
         noon_px = float(morning["Close"].iloc[-1])
         close_px = float(session["Close"].iloc[-1])
         last_min = int(session.index[-1].hour * 60 + session.index[-1].minute)
+
+        # An UNFINISHED session is not a data point. Running this at 12:38 ET
+        # produced a "close" that was really the 12:35 bar, and the day
+        # slipped through only because the early-close flag happens to catch
+        # anything ending before 13:30 -- luck, not a check. A close-based
+        # study cannot use a day whose close has not happened.
+        today_et = pd.Timestamp.now(tz=ET).date()
+        is_today = day == today_et
+        unfinished = is_today and last_min < REGULAR_CLOSE[0] * 60 - 5
+        if unfinished:
+            continue
+
+        # A genuine early close (13:00 half-day) is a real, finished session,
+        # so it is kept and flagged rather than dropped.
         early = last_min <= EARLY_CLOSE[0] * 60 + 30
 
         rng = hi - lo

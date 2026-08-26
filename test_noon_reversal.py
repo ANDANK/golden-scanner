@@ -113,6 +113,20 @@ stub = day("2026-06-17", [100, 101], [101])
 stub = stub.iloc[:3]
 check("a truncated feed is skipped", nr.sessions(stub) == [])
 
+print("\n── An unfinished session must not count ─────────────────────")
+# The first real run went out at 12:38 ET and treated the 12:35 bar as that
+# day's close. It slipped through only because the early-close flag catches
+# anything ending before 13:30 — luck, not a check.
+import datetime as _dt
+_today = pd.Timestamp.now(tz="US/Eastern").date().isoformat()
+partial = day(_today, [100, 110, 90, 105], [105], close_time="12:35")
+check("today, still trading, is dropped", nr.sessions(partial) == [])
+full_today = day(_today, [100, 110, 90, 105], [105], close_time="16:00")
+check("today, once finished, is kept", len(nr.sessions(full_today)) == 1)
+_past = "2026-06-12"
+check("a PAST early close is still kept (it is a finished session)",
+      len(nr.sessions(day(_past, [100, 110, 90, 105], [105], close_time="13:00"))) == 1)
+
 print("\n" + "=" * 58)
 print(f"RESULT: {len(FAILS)} failed")
 sys.exit(1 if FAILS else 0)
