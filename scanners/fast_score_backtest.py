@@ -193,6 +193,31 @@ def aggregate_rows(rows: list[dict], h: int) -> dict | None:
         "win_rate_vs_bench": float((np.array(ex) > 0).mean() * 100.0) if ex else None,
         "mean_mfe": float(np.mean(mfe)) if mfe else None,
         "mean_mae": float(np.mean(mae)) if mae else None,
+        # Whether the excess is distinguishable from zero at all. Without
+        # this a table of point estimates invites the reader to treat any
+        # positive number as an edge -- which is precisely how a +5.88%
+        # reading on 13 picks got reported as a finding, then collapsed to
+        # +1.17% and statistical nothing once the sample grew to 65.
+        **_significance(ex),
+    }
+
+
+def _significance(ex: list[float]) -> dict:
+    """Standard error, t-statistic and 95% CI for a mean excess return."""
+    if len(ex) < 2:
+        return {"excess_se": None, "excess_t": None,
+                "excess_ci_lo": None, "excess_ci_hi": None, "excess_sig": False}
+    arr = np.array(ex, dtype=float)
+    m = float(arr.mean())
+    se = float(arr.std(ddof=1) / np.sqrt(len(arr)))
+    if se <= 0:
+        return {"excess_se": 0.0, "excess_t": None,
+                "excess_ci_lo": m, "excess_ci_hi": m, "excess_sig": False}
+    t = m / se
+    return {
+        "excess_se": se, "excess_t": float(t),
+        "excess_ci_lo": float(m - 1.96 * se), "excess_ci_hi": float(m + 1.96 * se),
+        "excess_sig": bool(abs(t) > 1.96),
     }
 
 

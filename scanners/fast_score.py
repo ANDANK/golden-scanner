@@ -134,7 +134,7 @@ PREFETCH_CHUNK = 120       # yfinance bulk-download batch size
 # "is the fix deployed yet?" is a fact you can read off the page instead of a
 # guess -- a redeploy can lag a push, and a browser session can hold results
 # from before one.
-BUILD = "2026-08-26.8 · 12 gates · score×tier cross-tab, all-HTML tables"
+BUILD = "2026-08-26.9 · 12 gates · significance intervals on backtest"
 
 TIER_EARLY   = "Early"
 TIER_FRESH   = "Fresh"
@@ -1319,7 +1319,7 @@ def load_backtest(universe_kind: str = "FTF") -> dict | None:
 # everywhere in this tab for the reason documented on _DETAIL_COLS: a canvas
 # grid that fails to lay out shows a blank box and raises nothing.
 _BT_STAT_COLS = ["Segment", "N", "Win %", "Median %", "Mean %",
-                 "vs SPY %", "Beat SPY %", "Avg MFE %", "Avg MAE %"]
+                 "vs SPY %", "95% CI vs SPY", "Beat SPY %", "Avg MFE %", "Avg MAE %"]
 THIN_SAMPLE_N = 30
 
 
@@ -1340,6 +1340,8 @@ def _bt_stats_table_html(rows: list[dict]) -> str:
         tds = []
         for i, c in enumerate(_BT_STAT_COLS):
             v = rw.get(c)
+            if c == "_sig":
+                continue
             if v is None:
                 txt, col, w = "—", TEXT_MUTED, 600
             elif c == "Segment":
@@ -1347,6 +1349,13 @@ def _bt_stats_table_html(rows: list[dict]) -> str:
                 # footnote — a thin cell read in isolation is the whole risk.
                 txt = f"{v}{' ⚠️' if thin else ''}"
                 col, w = TEXT_PRIMARY, 600
+            elif c == "95% CI vs SPY":
+                # Muted unless the interval actually excludes zero: an
+                # interval straddling zero means "no detectable effect", and
+                # it should not read as loudly as one that does not.
+                txt = str(v)
+                col, w = ((ACCENT_GREEN if (rw.get("vs SPY %") or 0) > 0 else _C_NEG)
+                          if rw.get("_sig") else TEXT_MUTED), (800 if rw.get("_sig") else 600)
             elif c == "N":
                 txt, col, w = f"{int(v)}", (_C_NEG if thin else TEXT_MUTED), (800 if thin else 600)
             elif c in ("Win %", "Beat SPY %"):
@@ -1375,6 +1384,12 @@ def _stat_row(label: str, a: dict) -> dict:
         "Segment": label, "N": a["n"], "Win %": round(a["win_rate"], 1),
         "Median %": round(a["median"], 2), "Mean %": round(a["mean"], 2),
         "vs SPY %": None if a.get("mean_excess") is None else round(a["mean_excess"], 2),
+        # The interval, not the point estimate, is what says whether there is
+        # anything here. Shown next to every excess figure so the two cannot
+        # be read apart.
+        "95% CI vs SPY": (None if a.get("excess_ci_lo") is None else
+                          f"{a['excess_ci_lo']:+.1f} … {a['excess_ci_hi']:+.1f}"),
+        "_sig": bool(a.get("excess_sig")),
         "Beat SPY %": None if a.get("win_rate_vs_bench") is None
                       else round(a["win_rate_vs_bench"], 1),
         "Avg MFE %": None if a.get("mean_mfe") is None else round(a["mean_mfe"], 2),
@@ -1542,7 +1557,9 @@ def render_backtest(universe_kind: str = "FTF"):
         st.caption(
             "If the score band rows do not improve as the score rises, the score is not "
             "ranking anything — that is the single most useful thing this table can tell you. "
-            f"Rows marked ⚠️ have fewer than {THIN_SAMPLE_N} picks."
+            f"Rows marked ⚠️ have fewer than {THIN_SAMPLE_N} picks. A 95% CI that "
+            f"spans zero means the excess is not distinguishable from noise, however "
+            f"good the point estimate looks."
         )
 
     # ── score band x tier ────────────────────────────────────────────────
