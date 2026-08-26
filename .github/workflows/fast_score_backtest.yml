@@ -1,0 +1,88 @@
+name: Fast Score Backtest
+
+# Manual only. A 456-ticker, 3-year run is ~71k live scanner evaluations
+# (4-5 min) and the answer only changes when the SCANNER changes, not when
+# the market moves -- so a schedule would burn minutes re-deriving the same
+# number. Run it after editing a gate or a threshold in fast_score.py.
+on:
+  workflow_dispatch:
+    inputs:
+      years:
+        description: "Years of history to test"
+        required: true
+        default: "3"
+        type: choice
+        options: ["1", "2", "3", "5"]
+      universe:
+        description: "Universe"
+        required: true
+        default: "FTF"
+        type: choice
+        options: [FTF, MTPA, SP500]
+      email:
+        description: "Email the summary as well as committing it"
+        required: true
+        default: "yes"
+        type: choice
+        options: ["yes", "no"]
+
+concurrency:
+  group: fast-score-backtest
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  backtest:
+    name: Walk-forward backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+
+      - name: Run backtest
+        env:
+          GMAIL_ADDRESS:       ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD:  ${{ secrets.GMAIL_APP_PASSWORD }}
+          OVERKILL_EMAIL_TO:   ${{ secrets.OVERKILL_EMAIL_TO }}
+          FAST_SCORE_EMAIL_TO: ${{ secrets.FAST_SCORE_EMAIL_TO }}
+          FAST_SCORE_BT_YEARS:    ${{ github.event.inputs.years || '3' }}
+          FAST_SCORE_BT_UNIVERSE: ${{ github.event.inputs.universe || 'FTF' }}
+          FAST_SCORE_BT_NO_EMAIL: ${{ github.event.inputs.email == 'no' && '1' || '0' }}
+        run: python scripts/headless_fast_score_backtest.py
+
+      - name: Commit backtest results
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! ls data/fast_score_backtest/*.json >/dev/null 2>&1; then
+            echo "No results written — nothing to commit."
+            exit 0
+          fi
+          git add data/fast_score_backtest/*.json
+          if git diff --cached --quiet; then
+            echo "Results unchanged — nothing to commit."
+          else
+            git commit -m "Fast Score backtest results $(date -u +'%Y-%m-%d %H:%M UTC')"
+            if git pull --rebase -X ours origin main; then
+              git push origin main
+            else
+              echo "Rebase conflict could not be auto-resolved; force-pushing results."
+              git rebase --abort
+              git push --force-with-lease origin main
+            fi
+          fi

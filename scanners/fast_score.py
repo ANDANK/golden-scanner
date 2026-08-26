@@ -134,7 +134,7 @@ PREFETCH_CHUNK = 120       # yfinance bulk-download batch size
 # "is the fix deployed yet?" is a fact you can read off the page instead of a
 # guess -- a redeploy can lag a push, and a browser session can hold results
 # from before one.
-BUILD = "2026-08-26.4 · 12 gates · RSI/MFI/200w-trend/dedupe/track-record"
+BUILD = "2026-08-26.5 · 12 gates · RSI/MFI/200w-trend/dedupe/track+backtest"
 
 TIER_EARLY   = "Early"
 TIER_FRESH   = "Fresh"
@@ -1043,6 +1043,11 @@ def render():
     # Today's rows are passed in so a ticker surfacing for the first time in
     # THIS ad-hoc scan still appears in the table (priced from now), rather
     # than staying invisible until the next Friday job commits a snapshot.
+    if st.checkbox("Show backtest — what this scanner would have picked historically",
+                   value=False, key="fast_score_show_bt"):
+        render_backtest(UNIVERSE_CHOICES.get(
+            st.session_state.get("fast_score_uni", ""), "FTF"))
+
     if st.checkbox("Show track record — how past picks actually did",
                    value=False, key="fast_score_show_track"):
         render_track_record(
@@ -1186,6 +1191,144 @@ def render_track_record(tag: str = "FTF", today_rows: list[dict] | None = None):
     components.html(
         sortable_table_html(columns, table_rows, default_sort_idx=6, default_desc=True),
         height=min(460, 120 + 34 * len(table_rows)), scrolling=False,
+    )
+
+
+BACKTEST_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "data", "fast_score_backtest")
+
+
+def load_backtest(universe_kind: str = "FTF") -> dict | None:
+    """Read the committed backtest result, if the workflow has produced one."""
+    import json
+    path = os.path.join(BACKTEST_DIR, f"latest_{universe_kind}.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def render_backtest(universe_kind: str = "FTF"):
+    """Show what the scanner WOULD have picked historically, and how it did.
+
+    Reads the committed JSON rather than recomputing: a full run is ~71k live
+    scanner evaluations and belongs in Actions, not in a page load.
+    """
+    st.markdown(
+        f'<div style="margin-top:26px;color:{TEXT_MUTED};font-size:11px;letter-spacing:.06em;'
+        f'text-transform:uppercase;font-weight:700">Backtest — what this scanner would '
+        f'have picked, and what happened next</div>',
+        unsafe_allow_html=True,
+    )
+    data = load_backtest(universe_kind)
+    if not data:
+        st.info(
+            "No backtest results committed yet. Run the **Fast Score Backtest** workflow "
+            "in GitHub Actions (Actions → Fast Score Backtest → Run workflow). It replays "
+            "the live scanner over every past week and commits the result here — roughly "
+            "4–5 minutes for 3 years."
+        )
+        return
+
+    sm = data["summary"]
+    if data.get("build") and data["build"] != BUILD:
+        st.warning(
+            f"These results were produced by build `{data['build']}`, but this app is "
+            f"running `{BUILD}`. The gates have changed since — re-run the workflow "
+            f"before trusting the numbers below."
+        )
+
+    st.caption(
+        f"{sm['n_picks']} picks across {sm['n_tickers']} tickers · "
+        f"{sm['date_min']} → {sm['date_max']} · universe {data['universe']} "
+        f"({data['universe_size']}) · benchmark {data['benchmark']} · "
+        f"repeats within {data['min_repeat_gap_wks']}w suppressed"
+    )
+
+    horizons = [f"{h}w" for h in sm["horizons"]]
+    pick = st.radio("Horizon", horizons, horizontal=True, key="fast_score_bt_h")
+
+    o = sm["overall"].get(pick)
+    if o:
+        ex = o.get("mean_excess")
+        cards = [
+            ("Picks", f"{o['n']}", TEXT_PRIMARY),
+            ("Win rate", f"{o['win_rate']:.0f}%",
+             ACCENT_GREEN if o["win_rate"] > 50 else ACCENT_RED),
+            ("Median", f"{o['median']:+.1f}%",
+             ACCENT_GREEN if o["median"] > 0 else ACCENT_RED),
+            ("Mean", f"{o['mean']:+.1f}%",
+             ACCENT_GREEN if o["mean"] > 0 else ACCENT_RED),
+            ("vs SPY", "—" if ex is None else f"{ex:+.1f}%",
+             TEXT_MUTED if ex is None else (ACCENT_GREEN if ex > 0 else ACCENT_RED)),
+            ("Avg worst dip", "—" if o.get("mean_mae") is None else f"{o['mean_mae']:+.1f}%",
+             ACCENT_RED),
+        ]
+        st.markdown(
+            '<div style="display:flex;gap:8px;margin:8px 0 6px 0;flex-wrap:wrap">'
+            + "".join(
+                f'<div style="flex:1;min-width:104px;background:{BG_CARD};border:1px solid '
+                f'{BORDER_COLOR};border-radius:10px;padding:10px 12px;text-align:center">'
+                f'<div style="color:{c};font-size:19px;font-weight:800">{v}</div>'
+                f'<div style="color:{TEXT_MUTED};font-size:9px;font-weight:800;'
+                f'letter-spacing:.08em;text-transform:uppercase;margin-top:2px">{k}</div></div>'
+                for k, v, c in cards
+            ) + "</div>",
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "**vs SPY is the number that matters.** A positive median in a rising market "
+            "says the market rose. The excess over SPY across the same window says whether "
+            "the scanner added anything."
+        )
+
+    rows = []
+    for label, per in (
+        [(f"▸ {t}", sm["by_tier"].get(t)) for t in (TIER_EARLY, TIER_FRESH, TIER_FURTHER)]
+        + [(f"▸ score {b}", sm["by_score_band"].get(b)) for b in ("12-15", "9-11", "6-8", "0-5")]
+    ):
+        a = (per or {}).get(pick)
+        if a:
+            rows.append({
+                "Segment": label, "N": a["n"], "Win %": round(a["win_rate"], 1),
+                "Median %": round(a["median"], 2), "Mean %": round(a["mean"], 2),
+                "vs SPY %": None if a.get("mean_excess") is None else round(a["mean_excess"], 2),
+                "Beat SPY %": None if a.get("win_rate_vs_bench") is None
+                              else round(a["win_rate_vs_bench"], 1),
+                "Avg MFE %": None if a.get("mean_mfe") is None else round(a["mean_mfe"], 2),
+                "Avg MAE %": None if a.get("mean_mae") is None else round(a["mean_mae"], 2),
+            })
+    if rows:
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        st.caption(
+            "If the score band rows do not improve as the score rises, the score is not "
+            "ranking anything — that is the single most useful thing this table can tell you."
+        )
+
+    with st.expander("Every backtested pick"):
+        picks = pd.DataFrame(data["picks"])
+        if not picks.empty:
+            st.dataframe(picks.round(2), use_container_width=True, hide_index=True)
+            st.download_button(
+                "⬇ Download backtest picks CSV", picks.to_csv(index=False).encode(),
+                file_name=f"fast_score_backtest_{data['universe']}.csv",
+                mime="text/csv", key="fast_score_bt_dl",
+            )
+
+    st.markdown(
+        f'<div style="background:#1a1410;border:1px solid rgba(240,112,74,0.18);'
+        f'border-radius:10px;padding:12px 14px;font-size:11.5px;color:#c9a99a;'
+        f'line-height:1.6;margin-top:12px">'
+        f'<b style="color:#f0704a">What this cannot tell you.</b> The universe is '
+        f'<i>today\'s</i> list, so companies delisted, acquired or wiped out along the way '
+        f'are simply absent — every number here is biased optimistic and no amount of care '
+        f'removes it. Entries assume the weekly close of the signal bar with no slippage, '
+        f'spread or commission. Recently-added index members are tested over years they '
+        f'were not members. Picks landing in the same week are correlated with each other '
+        f'and with the market, so the effective sample is smaller than the pick count.</div>',
+        unsafe_allow_html=True,
     )
 
 
