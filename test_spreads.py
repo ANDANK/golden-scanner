@@ -145,6 +145,42 @@ if one:
     check("card shows R:R", "Risk : Reward" in card)
     check("card shows max loss as a negative", "-$" in card)
 
+print("\n── 8. A missing option chain must not kill the tab ─────────────")
+# The first live run crashed here: todays_chain() returned None, _scan_one
+# built a card with a state but no zone, and ZONES[None] raised a KeyError
+# whose string is the word "None" — a crash reported as a message saying
+# nothing.
+_state = {"low": 705.6, "high": 709.9, "mid": 707.75, "noon": 709.44,
+          "spot": 709.82, "pos_pct": 89.3, "range_pct": 0.60, "morning_complete": True}
+check("the range bar survives an unknown zone",
+      "<div" in sp.range_bar_html(_state, None))
+check("...and one that is not in the table",
+      "<div" in sp.range_bar_html(_state, "nonsense"))
+
+_orig_state, _orig_chain = sp.morning_state, sp.todays_chain
+try:
+    sp.morning_state = lambda sym, scale=1.0: dict(_state)
+    sp.todays_chain = lambda sym: (None, "Yahoo returned no expiries at all for QQQ")
+    card = sp._scan_one({"key": "QQQ", "spot_symbol": "QQQ",
+                         "chain_symbol": "QQQ", "label": "QQQ", "scale": 1.0})
+    check("a chain failure still yields a zone", card.get("zone") == "put_green", str(card.get("zone")))
+    check("...and the anchor level to trade against", card.get("anchor_only") == 705.6)
+    check("...and an error naming the real cause",
+          "no expiries" in card.get("error", ""), card.get("error", ""))
+    check("no spreads are invented without a chain", card.get("spreads") == [])
+
+    # The reason must distinguish causes that need different fixes.
+    sp.todays_chain = lambda sym: (None, "QQQ has no expiry dated 2026-08-26 — nearest is 2026-08-28")
+    card2 = sp._scan_one({"key": "QQQ", "spot_symbol": "QQQ",
+                          "chain_symbol": "QQQ", "label": "QQQ", "scale": 1.0})
+    check("a 'today is not an expiry' cause reads differently from an empty list",
+          "nearest is" in card2["error"] and "no expiries" not in card2["error"])
+finally:
+    sp.morning_state, sp.todays_chain = _orig_state, _orig_chain
+
+check("KeyError(None) really does stringify to 'None' (why the message was useless)",
+      str(KeyError(None)) == "None")
+
 print("\n" + "=" * 60)
 print(f"RESULT: {len(FAILS)} failed")
 sys.exit(1 if FAILS else 0)

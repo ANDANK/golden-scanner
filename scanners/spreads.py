@@ -186,29 +186,39 @@ def _mid(bid, ask, last) -> float | None:
     return None
 
 
-def todays_chain(chain_symbol: str) -> tuple[pd.DataFrame, pd.DataFrame, str] | None:
-    """Today's 0DTE option chain (puts, calls, expiry). None if there isn't one."""
+def todays_chain(chain_symbol: str):
+    """Today's 0DTE chain as (puts, calls, expiry), or (None, reason).
+
+    Returns the REASON rather than a bare None. The first live run reported
+    only "No 0DTE chain available for today", which could equally have meant
+    a network failure, an empty expiry list, or today genuinely not being an
+    expiry — three problems with three different fixes and no way to tell
+    them apart.
+    """
     import yfinance as yf
 
     try:
         tk = yf.Ticker(chain_symbol)
         expiries = list(tk.options or [])
-    except Exception:
-        return None
+    except Exception as e:
+        return None, f"could not read the expiry list for {chain_symbol} ({type(e).__name__}: {e})"
     if not expiries:
-        return None
+        return None, f"Yahoo returned no expiries at all for {chain_symbol}"
 
     today = now_et().date().isoformat()
     if today not in expiries:
-        return None
+        nearest = min(expiries)
+        return None, (f"{chain_symbol} has no expiry dated {today} — nearest is {nearest}. "
+                      f"This is a 0DTE setup, so a later expiry is a different trade and is "
+                      f"deliberately not substituted.")
     try:
         ch = tk.option_chain(today)
-    except Exception:
-        return None
+    except Exception as e:
+        return None, f"expiry {today} listed but the chain would not load ({type(e).__name__}: {e})"
     puts, calls = ch.puts, ch.calls
     if puts is None or calls is None or puts.empty or calls.empty:
-        return None
-    return puts, calls, today
+        return None, f"the {today} chain for {chain_symbol} came back empty"
+    return (puts, calls, today), None
 
 
 def _leg_price(df: pd.DataFrame, strike: float) -> float | None:
@@ -301,7 +311,8 @@ def range_bar_html(st_: dict, zone: str) -> str:
     feel than a marker sitting in a shaded band.
     """
     pos = max(0.0, min(100.0, st_["pos_pct"]))
-    colour = ZONES[zone]["colour"]
+    # .get, not [] — a missing zone must not take the whole tab down.
+    colour = ZONES.get(zone, {}).get("colour", TEXT_MUTED)
     # Bands drawn at the real thresholds so the gate is visible, not implied.
     bands = (
         f'<div style="position:absolute;left:0;width:50%;top:0;bottom:0;'
@@ -377,41 +388,54 @@ def spread_card_html(sp: dict, best: bool) -> str:
 
 
 def _scan_one(cfg: dict) -> dict:
-    """Everything the card needs for one underlying, or the reason it can't."""
+    """Everything the card needs for one underlying, or the reason it can't.
+
+    The ZONE is always set whenever there is a morning range, because it is a
+    property of that range alone and owes nothing to the option chain. The
+    first live run returned a card carrying a state but no zone, and the
+    renderer then looked up ZONES[None] and died with a KeyError whose string
+    is the word "None" — a crash reported as a message that says nothing.
+    Losing the chain should cost you the strikes, not the read.
+    """
     src, note = cfg, None
     state = morning_state(cfg["spot_symbol"], cfg.get("scale", 1.0))
-    chain = todays_chain(cfg["chain_symbol"]) if state else None
+    chain, reason = (todays_chain(cfg["chain_symbol"]) if state else (None, "no morning range"))
 
     # SPX falls back to SPY x10 only when the index chain genuinely isn't
     # there — and the card says so, rather than implying index strikes.
     if (state is None or chain is None) and cfg.get("fallback"):
         fb = cfg["fallback"]
         fb_state = morning_state(fb["spot_symbol"], fb["scale"])
-        fb_chain = todays_chain(fb["chain_symbol"])
+        fb_chain, fb_reason = todays_chain(fb["chain_symbol"])
         if fb_state and fb_chain:
             src = {**cfg, **fb}
-            state, chain, note = fb_state, fb_chain, (
-                f'Quoted from {fb["chain_symbol"]} × {fb["scale"]:.0f} — Yahoo served no '
-                f'{cfg["chain_symbol"]} chain for today. Strikes are the ETF grid scaled up, '
-                f'not real index strikes.')
+            state, chain, reason = fb_state, fb_chain, None
+            note = (f'Quoted from {fb["chain_symbol"]} × {fb["scale"]:.0f} — no '
+                    f'{cfg["chain_symbol"]} chain today. Strikes are the ETF grid scaled up, '
+                    f'not real index strikes.')
 
     if state is None:
         return {"key": cfg["key"], "label": cfg["label"],
                 "error": "No intraday bars for today yet."}
+
+    zone = zone_for(state["pos_pct"])
+    base = {"key": cfg["key"], "label": cfg["label"], "state": state,
+            "zone": zone, "note": note, "spreads": []}
+
     if chain is None:
-        return {"key": cfg["key"], "label": cfg["label"], "state": state,
-                "error": "No 0DTE chain available for today."}
+        # The range, the zone and the anchor level are all still worth showing.
+        anchor = state["low"] if zone.startswith("put") else state["high"]
+        return {**base,
+                "error": f"No 0DTE chain — {reason}",
+                "anchor_only": anchor}
 
     puts, calls, expiry = chain
-    zone = zone_for(state["pos_pct"])
     spreads = []
     if zone in ("put_green", "put_amber"):
         spreads = build_spreads("put", puts, state["low"], state["spot"], src.get("scale", 1.0))
     elif zone == "call":
         spreads = build_spreads("call", calls, state["high"], state["spot"], src.get("scale", 1.0))
-
-    return {"key": cfg["key"], "label": cfg["label"], "state": state,
-            "zone": zone, "spreads": spreads, "expiry": expiry, "note": note}
+    return {**base, "spreads": spreads, "expiry": expiry}
 
 
 def render():
@@ -499,7 +523,15 @@ def render():
         if c.get("note"):
             st.caption(f'⚠️ {c["note"]}')
         if c.get("error"):
-            st.info(c["error"])
+            # The zone and the anchor level survive a missing chain, so say
+            # what the setup WOULD be rather than only what failed.
+            if c.get("anchor_only") is not None and zone != "put_block":
+                lvl = "morning low" if zone.startswith("put") else "morning high"
+                st.info(f'{c["error"]}\n\nThe read still stands: **{z.get("label","")}** with the '
+                        f'short strike at or beyond the {lvl} of **{c["anchor_only"]:,.2f}**. '
+                        f'Only the strikes and premiums are missing.')
+            else:
+                st.info(c["error"])
             continue
         if zone == "put_block":
             continue

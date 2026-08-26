@@ -2582,7 +2582,11 @@ def render():
         try:
             spreads.render()
         except Exception as e:
-            st.error(f"Spreads tab error: {e}")
+            # Type included deliberately: a bare KeyError(None) renders as the
+            # single word "None", which reports a crash as a message that says
+            # nothing at all.
+            st.error(f"Spreads tab error — {type(e).__name__}: {e}")
+            st.exception(e)
 
     with tab2:
         try:
