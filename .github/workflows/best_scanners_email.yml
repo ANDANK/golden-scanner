@@ -7,14 +7,21 @@ on:
     # before close were computing off the identical completed bar (that's
     # why they kept repeating the same tickers). One run after close gets
     # that day's genuinely fresh, final bar instead. Staggered 15 min after
-    # overkill_scan_email.yml's own 5:00 PM CT slot so both jobs aren't
-    # hitting yfinance at the exact same moment.
+    # overkill_scan_email.yml's own slot so both jobs aren't hitting yfinance
+    # at the exact same moment.
+    #
+    # WHY :52 AND NOT :15 — see the same note in overkill_scan_email.yml.
+    # GitHub's scheduler is best-effort and worst near the top of the hour.
+    # On a "15 22" cron this job never started on time either — 22:37 to
+    # 22:42, every day — and on 2026-08-26 it was dropped outright along
+    # with OverKill's. :52 keeps the 15-minute stagger behind OverKill's :37
+    # while sitting well clear of the hour boundary.
     # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
-    # 5:15 PM CDT = 22:15 UTC
-    - cron: "15 22 * * 1-5"
+    # 5:52 PM CDT = 22:52 UTC
+    - cron: "52 22 * * 1-5"
     # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
-    # 5:15 PM CST = 23:15 UTC   ← uncomment this and remove the CDT line in Nov
-    # - cron: "15 23 * * 1-5"
+    # 5:52 PM CST = 23:52 UTC   ← uncomment this and remove the CDT line in Nov
+    # - cron: "52 23 * * 1-5"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI
     inputs:
       slot:

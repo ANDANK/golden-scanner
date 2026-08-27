@@ -8,14 +8,25 @@ on:
     # second same-day run before close was pure duplicate work. OverKill's
     # weekly/monthly bars aren't gated the same way, but a single end-of-day
     # run still captures the most current data for it too. Runs 15 min
-    # before Best Scanners' own 5:15 PM CT slot to avoid both hitting
-    # yfinance at the exact same moment.
+    # before Best Scanners' own slot to avoid both hitting yfinance at the
+    # exact same moment.
+    #
+    # WHY :37 AND NOT :00 — read before "tidying" this back to the hour.
+    # GitHub's scheduler is best-effort, and the top of the hour is the most
+    # contended slot on the platform: everyone schedules there. On a "0 22"
+    # cron this job never once started on time — 22:21 to 22:26, every day
+    # for a month — so it was permanently sitting inside the delay window.
+    # On 2026-08-26 the backlog got deep enough that GitHub DROPPED the run
+    # rather than deferring it: no email that day, and no failed run to show
+    # for it. (Same day, IV Snapshot and Sector Rotation ran 3.5 hours late,
+    # which is what a backlog that size looks like.) Moving off :00 costs
+    # nothing and lands the job roughly when it was really arriving anyway.
     # ── CDT (summer, Mar–Nov): UTC-5 ─────────────────────────────
-    # 5:00 PM CDT = 22:00 UTC
-    - cron: "0 22 * * 1-5"
+    # 5:37 PM CDT = 22:37 UTC
+    - cron: "37 22 * * 1-5"
     # ── CST (winter, Nov–Mar): UTC-6 ─────────────────────────────
-    # 5:00 PM CST = 23:00 UTC   ← uncomment this and remove the CDT line in Nov
-    # - cron: "0 23 * * 1-5"
+    # 5:37 PM CST = 23:37 UTC   ← uncomment this and remove the CDT line in Nov
+    # - cron: "37 23 * * 1-5"
   workflow_dispatch:          # Manual trigger from GitHub Actions UI
     inputs:
       slot:
