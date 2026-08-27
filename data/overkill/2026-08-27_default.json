@@ -1,0 +1,96 @@
+{
+  "date": "2026-08-27",
+  "tag": "default",
+  "rows": [
+    {
+      "ticker": "UNG",
+      "color": "Green",
+      "stars": 3,
+      "price": 9.829999923706055,
+      "dot_date": "2026-08-17",
+      "event_date": "2026-08-17",
+      "bars_ago": 1
+    },
+    {
+      "ticker": "FAZ",
+      "color": "Green",
+      "stars": 3,
+      "price": 31.90999984741211,
+      "dot_date": "2026-08-17",
+      "event_date": "2026-08-17",
+      "bars_ago": 1
+    },
+    {
+      "ticker": "LKQ",
+      "color": "Green",
+      "stars": 3,
+      "price": 24.28496551513672,
+      "dot_date": "2026-08-10",
+      "event_date": "2026-08-10",
+      "bars_ago": 2
+    },
+    {
+      "ticker": "PEP",
+      "color": "Green",
+      "stars": 3,
+      "price": 139.7899932861328,
+      "dot_date": "2026-07-27",
+      "event_date": "2026-07-27",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "HPQ",
+      "color": "Red",
+      "stars": 3,
+      "price": 28.579999923706055,
+      "dot_date": "2026-08-24",
+      "event_date": "2026-08-24",
+      "bars_ago": 0
+    },
+    {
+      "ticker": "BRK-B",
+      "color": "Red",
+      "stars": 3,
+      "price": 498.2300109863281,
+      "dot_date": "2026-08-17",
+      "event_date": "2026-08-17",
+      "bars_ago": 1
+    },
+    {
+      "ticker": "EXR",
+      "color": "Red",
+      "stars": 3,
+      "price": 146.66000366210938,
+      "dot_date": "2026-08-10",
+      "event_date": "2026-08-10",
+      "bars_ago": 2
+    },
+    {
+      "ticker": "BXP",
+      "color": "Red",
+      "stars": 3,
+      "price": 70.41000366210938,
+      "dot_date": "2026-08-03",
+      "event_date": "2026-08-03",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "ES",
+      "color": "Red",
+      "stars": 3,
+      "price": 74.69000244140625,
+      "dot_date": "2026-07-27",
+      "event_date": "2026-07-27",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "KMB",
+      "color": "Red",
+      "stars": 4,
+      "price": 108.4800033569336,
+      "dot_date": "2026-07-20",
+      "event_date": "2026-07-20",
+      "bars_ago": 5
+    }
+  ]
+}
