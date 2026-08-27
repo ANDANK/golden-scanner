@@ -1,0 +1,32 @@
+{
+  "date": "2026-08-27",
+  "tag": "FTF",
+  "rows": [
+    {
+      "ticker": "PGR",
+      "price": 222.51,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross\u00b7W",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "EWZ",
+      "price": 35.72,
+      "verdict": "Strong Setup",
+      "combo": "7Square+8Cross",
+      "scanners": "7Square \u00b7 8Cross",
+      "edge_score": 0.43,
+      "n": 10416,
+      "hold_range": [
+        10,
+        30
+      ]
+    }
+  ]
+}
