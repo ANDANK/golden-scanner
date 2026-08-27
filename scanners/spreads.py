@@ -28,13 +28,19 @@
 #   The call side has no such split -- it is uniformly safe across the whole
 #   lower half (QQQ 1/26, SPY 1/28, ~3.7%), so it takes a single zone.
 #
-# COVERAGE
-#   QQQ and SPX are the measured names and lead the table. IWM, SMH and GLD
-#   are listed too, but the zone thresholds were never measured on them —
-#   their rows are badged UNVALIDATED. IWM lists an expiry every weekday like
-#   QQQ and SPY; SMH and GLD do not, so on most days their row will report
-#   that today is not an expiry rather than showing strikes. The chain is
-#   always asked; nothing here assumes an expiry exists.
+# COVERAGE — TWO TABLES
+#   Daily expiries (QQQ, SPX, IWM) list an expiry every weekday, so the setup
+#   is available every session. QQQ and SPX are the only names the breach
+#   study actually measured and they lead that table.
+#
+#   Non-daily expiries (SMH, GLD, TQQQ, SOXL, NVDA, AVGO, TSLA, META, GOOGL,
+#   MSFT) are only a 0DTE trade on their own expiry days. They are a separate
+#   table rather than a footnote because on any other day there is no trade
+#   here at all — a later expiry has an overnight session inside it, which is
+#   precisely what this setup assumes away, so it is never substituted.
+#
+#   Every name outside QQQ and SPX is badged UNVALIDATED. The chain is always
+#   asked; nothing here assumes an expiry exists.
 #
 # WHAT THESE NUMBERS ARE NOT
 #   43 sessions with one breach means "under roughly 12% with 95%
@@ -60,45 +66,65 @@ from config import (
     GOLD, BG_PANEL, BG_CARD, BORDER_COLOR, TEXT_PRIMARY, TEXT_MUTED,
     ACCENT_GREEN, ACCENT_RED, ACCENT_BLUE,
 )
+from scanners import range_history as rh
 
 ET = pytz.timezone("US/Eastern")
 
-# Underlyings, in table order — QQQ first because it is the one the breach
-# study actually measured and the one traded off this tab.
-#
-# SPX is quoted from ^SPX where Yahoo serves it; where it does not, SPY x10
-# stands in and the row says so rather than implying the strikes came from
-# the index chain.
+# Underlyings. The list, the descriptions and the validated/cadence flags
+# live in scanners/range_history.py, because the accumulator that is
+# building the evidence and the tab that trades on it must never disagree
+# about which tickers are in scope or which have been measured. This module
+# layers on only what is specific to pricing an option: the chain symbol,
+# any scaling, and the SPX fallback.
 #
 # `validated` is the honest part. The 70% gate and every breach rate on this
-# tab were measured on QQQ and SPY over 59 sessions — nothing else. IWM, SMH
-# and GLD are shown because they list short-dated expiries and the same
-# morning-range logic is *plausible* on them, but plausible is not measured:
-# their rows carry an UNVALIDATED badge and the zone thresholds are being
-# transplanted, not confirmed. GLD in particular trades a different vol
-# regime and a different overnight session from the equity index ETFs.
+# tab were measured on QQQ and SPY over 59 sessions — nothing else. Every
+# other row carries an UNVALIDATED badge: the thresholds are transplanted,
+# not confirmed.
 #
-# `daily` records whether the underlying lists an expiry every weekday. It is
-# a hint for the reader only — never a gate. todays_chain() asks the chain
+# `cadence` decides which of the two tables a ticker appears in. It is a
+# declared expectation, never a gate — todays_chain() always asks the chain
 # what expiries actually exist, so a ticker that is not 0DTE today reports
 # that as a reason rather than being quietly dropped or wrongly included.
-TICKERS = [
-    {"key": "QQQ", "spot_symbol": "QQQ", "chain_symbol": "QQQ",
-     "label": "QQQ", "scale": 1.0, "validated": True, "daily": True,
-     "desc": "Nasdaq 100 ETF"},
-    {"key": "SPX", "spot_symbol": "^SPX", "chain_symbol": "^SPX",
-     "label": "SPX", "scale": 1.0, "validated": True, "daily": True,
-     "desc": "S&P 500 index · cash settled",
-     "fallback": {"spot_symbol": "SPY", "chain_symbol": "SPY", "scale": 10.0}},
-    {"key": "IWM", "spot_symbol": "IWM", "chain_symbol": "IWM",
-     "label": "IWM", "scale": 1.0, "validated": False, "daily": True,
-     "desc": "Russell 2000 ETF"},
-    {"key": "SMH", "spot_symbol": "SMH", "chain_symbol": "SMH",
-     "label": "SMH", "scale": 1.0, "validated": False, "daily": False,
-     "desc": "Semiconductors ETF"},
-    {"key": "GLD", "spot_symbol": "GLD", "chain_symbol": "GLD",
-     "label": "GLD", "scale": 1.0, "validated": False, "daily": False,
-     "desc": "Gold ETF"},
+
+# Pricing overrides, keyed by ticker. Everything else comes from the shared
+# universe. SPX is quoted from ^SPX where Yahoo serves it; where it does
+# not, SPY x10 stands in and the row says so rather than implying the
+# strikes came from the index chain.
+_OPTION_OVERRIDES = {
+    "SPX": {"spot_symbol": "^SPX", "chain_symbol": "^SPX",
+            "fallback": {"spot_symbol": "SPY", "chain_symbol": "SPY", "scale": 10.0}},
+}
+
+
+def _build_tickers() -> list[dict]:
+    out = []
+    for t in rh.UNIVERSE:
+        cfg = {"key": t["key"], "label": t["label"], "desc": t["desc"],
+               "validated": t["validated"], "cadence": t["cadence"],
+               "hint": t["hint"], "group": t["group"],
+               "spot_symbol": t["key"], "chain_symbol": t["key"], "scale": 1.0,
+               "daily": t["cadence"] == rh.CADENCE_DAILY}
+        cfg.update(_OPTION_OVERRIDES.get(t["key"], {}))
+        out.append(cfg)
+    return out
+
+
+TICKERS = _build_tickers()
+BY_KEY_CFG = {t["key"]: t for t in TICKERS}
+
+# The two tables. Daily-expiry names are the ones this setup was built for;
+# everything else only becomes a 0DTE trade on its own expiry days, which is
+# a different enough situation to deserve its own table rather than a footnote.
+TABLES = [
+    {"cadence": rh.CADENCE_DAILY, "title": "Daily expiries",
+     "blurb": "Lists an expiry every weekday, so the setup is available every "
+              "session. QQQ and SPX are the two the breach study measured."},
+    {"cadence": rh.CADENCE_NON_DAILY, "title": "Non-daily expiries",
+     "blurb": "Only a 0DTE trade on its own expiry days. On every other day the "
+              "row says so and offers nothing — a later expiry is a different "
+              "trade, with an overnight session inside it, and is never "
+              "substituted."},
 ]
 
 MORNING_START_MIN = 9 * 60 + 30
@@ -641,13 +667,17 @@ def render():
         f'No target ratio is imposed — the strike is anchored to the range and the '
         f'<b>Risk : Reward</b> is an outcome to read — capped at <b>1 : {MAX_RR:.0f}</b>, '
         f'below which the credit is too thin to justify the risk whatever the win rate.<br>'
-        f'<b style="color:{TEXT_PRIMARY}">QQQ</b> and <b style="color:{TEXT_PRIMARY}">SPX</b> '
-        f'are the measured names and lead the table. '
-        f'<b style="color:{TEXT_PRIMARY}">IWM</b>, <b style="color:{TEXT_PRIMARY}">SMH</b> and '
-        f'<b style="color:{TEXT_PRIMARY}">GLD</b> are shown too but badged '
-        f'<b style="color:{ACCENT_RED}">UNVALIDATED</b> — the gate is transplanted to them, '
-        f'never measured on them. SMH and GLD do not list an expiry every weekday, so on most '
-        f'days their row reports that rather than showing strikes.</div>',
+        f'<b style="color:{TEXT_PRIMARY}">Two tables.</b> '
+        f'<b style="color:{TEXT_PRIMARY}">Daily expiries</b> (QQQ, SPX, IWM) list an expiry '
+        f'every weekday, so the setup is available every session. '
+        f'<b style="color:{TEXT_PRIMARY}">Non-daily expiries</b> (SMH, GLD, TQQQ, SOXL, NVDA, '
+        f'AVGO, TSLA, META, GOOGL, MSFT) are only a 0DTE trade on their own expiry days — on '
+        f'any other day the row says so and offers nothing, because a later expiry has an '
+        f'overnight session inside it and that is exactly what this setup assumes away.<br>'
+        f'Everything except QQQ and SPX is badged <b style="color:{ACCENT_RED}">UNVALIDATED</b>: '
+        f'the gate is transplanted to it, never measured on it. '
+        f'<span style="color:{GOLD}">The accumulator is now recording every session so those '
+        f'badges can eventually come off — see scanners/range_history.py.</span></div>',
         unsafe_allow_html=True,
     )
 
@@ -681,7 +711,20 @@ def render():
     st.caption(f"Scanned {st.session_state.get('spreads_ts','')} · premiums are Yahoo mid-quotes, "
                f"delayed ~15 min — indicative sizing, not fills")
 
-    st.markdown(spreads_table_html(cards), unsafe_allow_html=True)
+    by_key = {c["key"]: c for c in cards}
+    for spec in TABLES:
+        group = [by_key[t["key"]] for t in TICKERS
+                 if t["cadence"] == spec["cadence"] and t["key"] in by_key]
+        if not group:
+            continue
+        st.markdown(
+            f'<div style="margin:18px 0 6px 0">'
+            f'<span style="color:{TEXT_PRIMARY};font-size:14px;font-weight:800;'
+            f'letter-spacing:.02em">{spec["title"]}</span>'
+            f'<span style="color:{TEXT_MUTED};font-size:10.5px;margin-left:10px">'
+            f'{spec["blurb"]}</span></div>',
+            unsafe_allow_html=True)
+        st.markdown(spreads_table_html(group), unsafe_allow_html=True)
 
     st.markdown(
         f'<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:8px;'

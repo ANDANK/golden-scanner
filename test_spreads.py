@@ -192,12 +192,28 @@ check("selection is still widest-cushion-first inside build_spreads",
 
 check("QQQ leads the shipped ticker list", sp.TICKERS[0]["key"] == "QQQ")
 check("SPX is second", sp.TICKERS[1]["key"] == "SPX")
-check("the daily-expiry names are added",
-      {t["key"] for t in sp.TICKERS} == {"QQQ", "SPX", "IWM", "SMH", "GLD"})
+check("only QQQ, SPX and IWM sit in the daily table",
+      {t["key"] for t in sp.TICKERS if t["cadence"] == "daily"} == {"QQQ", "SPX", "IWM"})
 check("only QQQ and SPX claim to be validated",
       {t["key"] for t in sp.TICKERS if t["validated"]} == {"QQQ", "SPX"})
-check("SMH and GLD are not claimed as every-weekday expiries",
-      not any(t["daily"] for t in sp.TICKERS if t["key"] in ("SMH", "GLD")))
+check("the twice/thrice-weekly names are all non-daily",
+      all(t["cadence"] == "non_daily" for t in sp.TICKERS
+          if t["key"] in ("NVDA", "TSLA", "GOOGL", "META", "AVGO", "MSFT",
+                          "SOXL", "TQQQ", "SMH", "GLD")))
+check("every requested single name is present",
+      {"NVDA", "TSLA", "GOOGL", "META", "AVGO", "MSFT", "SOXL", "TQQQ"}
+      <= {t["key"] for t in sp.TICKERS})
+check("the tab and the accumulator share one universe",
+      [t["key"] for t in sp.TICKERS] == [t["key"] for t in sp.rh.UNIVERSE])
+check("there are exactly two tables", len(sp.TABLES) == 2)
+check("...one per cadence",
+      {x["cadence"] for x in sp.TABLES} == {"daily", "non_daily"})
+check("every ticker lands in exactly one table",
+      all(sum(t["cadence"] == x["cadence"] for x in sp.TABLES) == 1
+          for t in sp.TICKERS))
+check("SPX still prices off the index chain with a SPY fallback",
+      sp.BY_KEY_CFG["SPX"]["chain_symbol"] == "^SPX"
+      and sp.BY_KEY_CFG["SPX"]["fallback"]["scale"] == 10.0)
 
 # A block with no state must not take the table down.
 bare = sp.spreads_table_html([{"key": "IWM", "label": "IWM", "desc": "", "validated": False,

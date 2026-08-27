@@ -1,0 +1,86 @@
+name: Morning Range Accumulator
+
+# Runs every weekday after the close and writes down each ticker's
+# 09:30-12:00 range, noon price and closing print.
+#
+# This one genuinely has to be scheduled. Yahoo serves 5-minute bars for 60
+# calendar days on a ROLLING window — a session not captured within that
+# window cannot be recovered later at any interval fine enough to see a
+# morning range. Every skipped day is a permanently missing observation.
+#
+# 21:15 UTC = 17:15 ET during EDT, 16:15 ET during EST. Cron has no notion
+# of DST, so this drifts by an hour across the year; both times are after
+# the 16:00 close, which is all that matters. The `append` mode asks for 5
+# days of bars, so a missed run is repaired by the next one.
+
+on:
+  schedule:
+    - cron: "15 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "append = today only · backfill = re-read the full 60d window"
+        required: true
+        default: "append"
+        type: choice
+        options: ["append", "backfill"]
+      tickers:
+        description: "Comma-separated override (blank = full universe)"
+        required: false
+        default: ""
+        type: string
+      interval:
+        description: "Bar size — 5m/15m/30m read at noon, 60m only reaches 11:30"
+        required: true
+        default: "5m"
+        type: choice
+        options: ["5m", "15m", "30m"]
+
+concurrency:
+  group: range-accumulator
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  accumulate:
+    name: Record today's morning range
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+      - name: Accumulate
+        env:
+          RANGE_MODE:     ${{ github.event.inputs.mode     || 'append' }}
+          RANGE_TICKERS:  ${{ github.event.inputs.tickers  || '' }}
+          RANGE_INTERVAL: ${{ github.event.inputs.interval || '5m' }}
+        run: python scripts/headless_range_accumulator.py
+      - name: Commit records
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! ls data/range_history/*.json >/dev/null 2>&1; then
+            echo "No records written — nothing to commit."; exit 0
+          fi
+          git add data/range_history/*.json
+          if git diff --cached --quiet; then
+            echo "Records unchanged."
+          else
+            git commit -m "Morning range $(date -u +'%Y-%m-%d')"
+            # Other scheduled jobs push to main too; -X ours keeps this
+            # job's freshly written files when a stale copy collides.
+            if git pull --rebase -X ours origin main; then
+              git push origin main
+            else
+              git rebase --abort; git push --force-with-lease origin main
+            fi
+          fi

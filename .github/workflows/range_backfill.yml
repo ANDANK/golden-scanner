@@ -1,0 +1,73 @@
+name: Morning Range Backfill (hourly bars)
+
+# Manual only. Pulls ~730 days of HOURLY bars to seed the morning-range
+# store with roughly two years of history immediately, instead of waiting
+# for the daily accumulator to earn it.
+#
+# The cost is stated in the script and repeated here because it decides how
+# the output may be used: hourly bars are stamped 09:30/10:30/11:30 and the
+# 11:30 bar runs to 12:30, so the window this produces ends at 11:30, not
+# noon. It is a different measurement from the one the Spreads tab trades.
+# Run it once to seed, then read the 11:30-vs-12:00 comparison the script
+# prints before treating any of it as evidence.
+
+on:
+  workflow_dispatch:
+    inputs:
+      period:
+        description: "Lookback (Yahoo caps hourly bars near 730d)"
+        required: true
+        default: "730d"
+        type: choice
+        options: ["180d", "365d", "730d"]
+      tickers:
+        description: "Comma-separated override (blank = full universe)"
+        required: false
+        default: ""
+        type: string
+
+concurrency:
+  group: range-accumulator
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    name: Seed history from hourly bars
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+      - name: Backfill
+        env:
+          RANGE_BF_PERIOD:  ${{ github.event.inputs.period  || '730d' }}
+          RANGE_BF_TICKERS: ${{ github.event.inputs.tickers || '' }}
+        run: python scripts/headless_range_backfill.py
+      - name: Commit records
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! ls data/range_history/*.json >/dev/null 2>&1; then
+            echo "No records written — nothing to commit."; exit 0
+          fi
+          git add data/range_history/*.json
+          if git diff --cached --quiet; then
+            echo "Records unchanged."
+          else
+            git commit -m "Morning range backfill (hourly) $(date -u +'%Y-%m-%d')"
+            if git pull --rebase -X ours origin main; then
+              git push origin main
+            else
+              git rebase --abort; git push --force-with-lease origin main
+            fi
+          fi
