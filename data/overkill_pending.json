@@ -1,6 +1,15 @@
 {
-  "checked": "2026-08-26",
+  "checked": "2026-08-27",
   "pending": [
+    {
+      "video_id": "Sbx3hp0h-Ww",
+      "title": "Checkout my free trading course 📈🎓",
+      "date": "2026-08-26",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/Sbx3hp0h-Ww"
+    },
     {
       "video_id": "43GO2sHfGWY",
       "title": "THESE 3 STOCKS LOOK BULLISH 📈 AUG 26",
@@ -9,24 +18,6 @@
       "channel_name": "OverKill",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/43GO2sHfGWY"
-    },
-    {
-      "video_id": "PbDzhpZH5Xw",
-      "title": "5 Businesses To Start This Weekend (With Almost No Money)",
-      "date": "2026-07-21",
-      "channel": "@MinorityMindset",
-      "channel_name": "Minority Mindset",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/PbDzhpZH5Xw"
-    },
-    {
-      "video_id": "i_4gZxGESKU",
-      "title": "The Simple Payday Hack That Creates Millionaires (STILL WORKS)",
-      "date": "2026-07-20",
-      "channel": "@MinorityMindset",
-      "channel_name": "Minority Mindset",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/i_4gZxGESKU"
     },
     {
       "video_id": "Apd64VnBi3I",
@@ -88,26 +79,8 @@
       "date": "2026-07-09",
       "channel": "@InvestwithHenry",
       "channel_name": "Invest w/ Henry",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/e-_Sskm2dws"
-    },
-    {
-      "video_id": "UbVCuBJvTz4",
-      "title": "Jobs Report: Much Worse Than Expected",
-      "date": "2026-07-02",
-      "channel": "@ClearValueTax",
-      "channel_name": "ClearValue Tax",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/UbVCuBJvTz4"
-    },
-    {
-      "video_id": "o41v1Xcbi8o",
-      "title": "The Fed's Money Printing Machine Never Stopped",
-      "date": "2026-06-29",
-      "channel": "@ClearValueTax",
-      "channel_name": "ClearValue Tax",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/o41v1Xcbi8o"
     },
     {
       "video_id": "Jx9jpLmiDQY",

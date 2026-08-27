@@ -1,8 +1,188 @@
 {
-  "updated": "2026-08-26",
+  "updated": "2026-08-27",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-27",
+      "url": "https://www.youtube.com/shorts/zUNfSWV-Zto",
+      "title": "OVERKILL TRADING SELL STRATEGY 🔴",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "LLY",
+          "bias": "Bearish",
+          "notes": "Eli Lilly is showing a sell signal as it trades at a 34% premium above its mean average of around $700, making it an ideal time to take profits.",
+          "price": 1176.1
+        }
+      ]
+    },
+    {
+      "date": "2026-07-02",
+      "url": "https://www.youtube.com/shorts/UbVCuBJvTz4",
+      "title": "Jobs Report: Much Worse Than Expected",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The June US jobs report came in at 57,000 net jobs added versus expectations of 115,000, continuing a multi-year softening trend in the labor market.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Slower job growth has reduced expectations of a Federal Reserve rate hike at the July meeting, with CME FedWatch odds for keeping rates unchanged rising to 82.4%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US unemployment dropped slightly from 4.3% in May to 4.2% in June, primarily driven by a decline in the labor force participation rate.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "While JOLTS job openings reached a two-year high, actual hiring remains flat and quit rates are low as workers hesitate to leave current positions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Technology accounts for one-third of all US job cuts this year at 139,156 layoffs, with artificial intelligence cited as the driving reason for 23% of total year-to-date cuts.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-21",
+      "url": "https://www.youtube.com/shorts/PbDzhpZH5Xw",
+      "title": "5 Businesses To Start This Weekend (With Almost No Money)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Answer Engine Optimization (AEO) is replacing traditional SEO as consumer search shifts toward AI platforms like ChatGPT, Claude, and Gemini, creating a high-demand service opportunity to help businesses rank within AI responses.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Building an AI receptionist system for service trades, such as HVAC technicians and plumbers, captures lost phone leads and automatically logs client details into streamlined dashboards.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "AI workflow automation offers high-margin recurring business potential by using integration tools like Zapier, Make, and n8n to connect large language models with enterprise software like HubSpot and Salesforce.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Building long-term wealth in the current economy requires owning revenue-generating assets or business systems rather than relying solely on earned active income.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-27",
+      "url": "https://www.youtube.com/shorts/LVifwOR8gMc",
+      "title": "4 STOCKS TO WATCH NOW 📈 AUG 27 $CRM",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "IBM",
+          "bias": "Bullish",
+          "notes": "IBM looks attractive around $240 as it sits on its 4-year average line and triggered a buy signal, offering a solid setup for a quantum computing play.",
+          "price": 238.79
+        },
+        {
+          "ticker": "PKSY",
+          "bias": "Bullish",
+          "notes": "PKSY is trading near 17-year lows while acquiring major media and sports assets, with the host targeting $16 to $20 following an initial buy signal around $8.",
+          "price": null
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "Oracle looks very bullish above $135 after pulling back to its 4-year moving average, where a buy signal was triggered around $125.",
+          "price": 151.94
+        }
+      ]
+    },
+    {
+      "date": "2026-06-29",
+      "url": "https://www.youtube.com/shorts/o41v1Xcbi8o",
+      "title": "The Fed's Money Printing Machine Never Stopped",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve's SOMA balance sheet holdings grew by $189 billion to $6.34 trillion over six months, representing an annualized growth rate of 6.16%. Under Fed Chair Kevin Warsh, holdings increased by nearly $20 billion in his first month while the Fed adjusted its inflation target to 2.9%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With M2 money supply expanding at 7.5% YTD and Fed money printing continuing, investors should allocate capital into stocks, hard assets, and primary real estate to protect purchasing power as asset prices melt up.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-20",
+      "url": "https://www.youtube.com/shorts/i_4gZxGESKU",
+      "title": "The Simple Payday Hack That Creates Millionaires (STILL WORKS)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Allocate post-tax income into three automatic buckets: 75% for spending, 15% for investing, and 10% for savings to effectively 'tax yourself' first before spending.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Save between 3 to 12 months of living expenses as an emergency fund, then halt savings and redirect those funds entirely toward investments once the threshold is met.",
+          "price": null
+        },
+        {
+          "ticker": "SPY",
+          "bias": "Bullish",
+          "notes": "The host highlights SPY as a passive investment vehicle to gain broad exposure to the 500 largest companies in the S&P 500 and invest in the overall economy.",
+          "price": 742.09
+        },
+        {
+          "ticker": "VTI",
+          "bias": "Bullish",
+          "notes": "VTI is presented as a passive ETF choice to gain broad exposure to the total stock market, allowing investors to buy a piece of all listed companies.",
+          "price": 366.25
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Adopt a 'CPA' (Consistent, Passive, Automatic) strategy, investing automatically at regular intervals and continuing to buy during recessions to acquire quality assets at discounted prices.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To achieve financial freedom, investors should aim to let the income generated by asset investments outpace the income made from active labor.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-08-26",
       "url": "https://www.youtube.com/shorts/icM65FPixWU",
