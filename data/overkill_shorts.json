@@ -1,8 +1,275 @@
 {
-  "updated": "2026-08-25",
+  "updated": "2026-08-26",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-26",
+      "url": "https://www.youtube.com/shorts/icM65FPixWU",
+      "title": "This 1 Stock will SOAR now‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Honest continues its strong upward momentum, surging to $5.72 and adding solid daily portfolio gains.",
+          "price": 5.72
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Cheesecake Factory remains red hot, contributing over $242,000 in gains to the public portfolio alongside reliable dividend payments.",
+          "price": 115.35
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "e.l.f. Beauty continues its strong rally toward $107 as it competes to hit the $140 level this year.",
+          "price": 106.97
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "Estée Lauder has seen a powerful rebound, up $64,000 in the portfolio while racing ELF to reach $140.",
+          "price": 105.06
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bearish",
+          "notes": "Despite strong short-term momentum from Pentagon contract expansion, Palantir's extreme valuation over 100x forward P/E creates a poor long-term ROI profile unless revenue growth remains exceptionally high through 2030.",
+          "price": 177.5
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "Salesforce's strategic Cloud Force partnership with Anthropic is a major AI catalyst that alleviates growth concerns, with the host projecting the stock to hit $400+ by 2029.",
+          "price": 205.62
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "ServiceNow remains one of the best value opportunities in enterprise software, positioned to expand significantly alongside AI adoption.",
+          "price": 125.8
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Neutral",
+          "notes": "Nvidia delivered massive quarterly beats, but rising cost-of-revenue figures and compressed long-term margins indicate revenue growth could decelerate significantly by 2027.",
+          "price": 209.66
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD is positioned to steal market share from Nvidia over the next few years and is expected to deliver the strongest growth among major semiconductor stocks in 2027.",
+          "price": 480.93
+        }
+      ]
+    },
+    {
+      "date": "2026-07-12",
+      "url": "https://www.youtube.com/shorts/hg1YgzvFo-o",
+      "title": "SOFI & Robinhood Investors BEWARE— Don't Make This Mistake!",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host predicts SOFI will reach $25 to $30 per share within 6 to 12 months, driven by strong insider buying from CEO Anthony Noto, low customer acquisition costs, an effective cross-selling flywheel, and scalable long-term optionality in its Galileo tech infrastructure.",
+          "price": 18.13
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "The host projects HOOD will rise to $140+ per share in 2027, citing strong transaction revenue from crypto and options, growing recurring net interest income, international expansion, and accelerating adoption of Robinhood Gold subscriptions.",
+          "price": 109.86
+        }
+      ]
+    },
+    {
+      "date": "2026-07-08",
+      "url": "https://www.youtube.com/shorts/Fs0PlxOAxcs",
+      "title": "Fed Minutes Released: What They Really Said",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Federal Reserve internal expectations from the June meeting minutes point to potential rate cuts starting in Q2 2027, with no changes projected for the remainder of 2026.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors are becoming increasingly price-sensitive toward US Treasuries, leading yields to rise and Treasury values to drop despite geopolitical risks like war.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Credit and financing conditions remain accommodative for large businesses and municipalities, but restrictive for small businesses and household borrowers.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Policymakers view long-term productivity gains from widespread AI adoption as a primary potential solution to reduce production costs and lower inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "CME FedWatch odds show an 85.1% probability that benchmark interest rates will end the year higher than current levels.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-22",
+      "url": "https://www.youtube.com/shorts/d43N3V_NoVk",
+      "title": "The Economy Makes No Sense Right Now",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Oil prices have surged around 20% recently due to Middle East conflicts, driving gas prices above $4 per gallon and threatening to push up broader transportation and grocery costs.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A new 50% tariff on Canadian imports threatens to increase production and retail costs across key goods, with Canada expected to implement retaliatory trade measures.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US inflation stands at 3.5%, remaining well above the Federal Reserve's 2% target prior to accounting for recent spikes in oil prices and new import tariffs.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US job market added only 57,000 jobs against 115,000 expected, creating a policy challenge for the Federal Reserve ahead of its July 29th announcement as it balances weak employment growth against stubborn inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Wealth is built by consistently purchasing assets through all market conditions rather than trying to time market tops, bottoms, or economic headlines.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-26",
+      "url": "https://www.youtube.com/shorts/77cKvtKAAko",
+      "title": "3 STOCKS TO WATCH NOW 📈 AUG 26",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "BSX",
+          "bias": "Bullish",
+          "notes": "Host purchased the stock following a decline from $110 down to $48, citing strong quarterly revenue of $5.5 billion, a rare monthly buy alert, and $9 million in insider buying by the CEO.",
+          "price": 48.17
+        },
+        {
+          "ticker": "INTU",
+          "bias": "Bullish",
+          "notes": "Host remains bullish around $350 despite a 5% post-earnings pullback, treating earnings price action as short-term noise and waiting for a technical sell signal before exiting.",
+          "price": 345.88
+        },
+        {
+          "ticker": "BBAI",
+          "bias": "Bullish",
+          "notes": "Host advocates buying BBAI around $3, pointing to its government contracts as an AI defense firm and a history of strong rallies following green wave indicators.",
+          "price": 3.05
+        }
+      ]
+    },
+    {
+      "date": "2026-07-10",
+      "url": "https://www.youtube.com/shorts/doM62JAtf_0",
+      "title": "LEAP Options Changed Everything for Me",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "LEAP options allocation should be tailored to portfolio size: up to 15% for large portfolios, 35% for medium portfolios, and potentially up to 100% for small portfolios around $20,000.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "LEAP call options offer high capital efficiency, allowing modest 5% to 10% underlying stock gains to leverage and potentially outperform returns from un-leveraged high-volatility stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A poor man's covered call involves selling short-term call options against deep in-the-money LEAPs (60 to 80+ delta) to collect premium income and cushion downside volatility.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To mitigate downside risk and potential total loss if options expire out of the money, limit total LEAP exposure to 15% of portfolio value and diversify across roughly 10 distinct positions.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-06",
+      "url": "https://www.youtube.com/shorts/meesr2gDINA",
+      "title": "Why Americans Can't Get Ahead Anymore",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Since 2021, US prices have inflated by a cumulative 28% while overall wages grew only 23%, showing that wage growth has lagged behind inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Insurance costs across property, auto, and health have surged, with property insurance rising 75% from 2019 to 2024 and average car insurance premiums jumping 18% in a single year.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Housing affordability has degraded significantly as average housing expenses now exceed 40% of gross income, far above the traditional 30% affordability benchmark.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US credit card debt hit a record $1.25 trillion with an average interest rate of 21%, driving credit card delinquencies to their highest levels since 2008.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Heavy government spending and money printing have pushed inflation expectations and Treasury bond yields higher, causing mortgage, auto, and credit card interest rates to rise accordingly.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Food and grocery prices continue to rise and accelerate without returning to pre-pandemic baseline levels.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-07-16",
       "url": "https://www.youtube.com/shorts/wIUYaUyjwf8",
