@@ -5,6 +5,240 @@
   "videos": [
     {
       "date": "2026-08-28",
+      "url": "https://www.youtube.com/shorts/Cn-1I3iwYAk",
+      "title": "3 STOCKS TO WATCH NEXT WEEK 📈 AUG 28",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "CLSK",
+          "bias": "Bullish",
+          "notes": "CleanSpark is pulling back toward a historical chart buy signal where past green dot setups yielded 100% to 250% gains. The host is watching for a buy signal on this Bitcoin miner, noting it moves very nicely.",
+          "price": 11.66
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "Oracle has pulled back to its four-year moving average, which has historically served as a strong buying level when sentiment is fearful. The host considers Oracle a great buy at current price levels.",
+          "price": 150.85
+        },
+        {
+          "ticker": "IBM",
+          "bias": "Bullish",
+          "notes": "IBM has pulled back to its four-year moving average after surging to 330 following reports of Trump buying near 215. The host likes the pullback toward the mean and is watching for a buy signal heading into September.",
+          "price": 235.59
+        }
+      ]
+    },
+    {
+      "date": "2026-08-28",
+      "url": "https://www.youtube.com/shorts/KznQDg23a34",
+      "title": "Top 5 Stocks I have the Most Money Invested‼️❤️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "Salesforce is his fifth largest position at $277,000 (up $68,000), noted for turning red-hot after being ice cold a few months prior.",
+          "price": 256.0
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Cheesecake Factory is his fourth largest position at $363,000, up $230,000 excluding dividend payouts.",
+          "price": 112.07
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Amazon is his third largest position at $412,000 (up $193,000), which he considers a perpetual buy that will remain strong into the 2030s.",
+          "price": 266.43
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Meta is his second largest position at $576,000 and up $478,000, not including significant profits taken last year.",
+          "price": 578.02
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD is his top position at $1.2 million (up $919,000), and he expects the stock to go on another huge run before the end of the year.",
+          "price": 465.58
+        }
+      ]
+    },
+    {
+      "date": "2026-06-22",
+      "url": "https://www.youtube.com/shorts/fyl1_MclCOU",
+      "title": "Housing Market Update: Home Prices, Mortgage Rates & Outlook",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US median home prices are up 2.0% year-over-year nationally while supply has only increased by 0.7%, continuing to support expectations of a flat to +2% year rather than a market crash.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Roughly 24.9% of homes in the US are still selling above list price, marking an improvement compared to nearly 50% four years ago.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Domestic migration continues to see major outflows from California, New York, Illinois, and Washington, with Florida and Arizona leading as top destination states.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 30-year fixed mortgage rate sits around 6.47%, with future rate direction closely linked to geopolitical tensions, energy prices, and government bond yields.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A record 242 US cities now have starter homes priced at $1 million or more (led by CA, NY, and NJ), requiring over $200k in annual income to meet the 30% affordability rule versus the $59k median salary for young professionals.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-15",
+      "url": "https://www.youtube.com/shorts/FMOt2R3k_9w",
+      "title": "Is Bitcoin Going To 0? (What They Won't Tell You)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "BTC",
+          "bias": "Bullish",
+          "notes": "Bitcoin experiences severe drawdowns around 70% but delivers superior historical long-term returns of 100-150% annually driven by network adoption.",
+          "price": 28.72
+        },
+        {
+          "ticker": "SPY",
+          "bias": "Bullish",
+          "notes": "The S&P 500 historically yields around 10% annual returns with average bear market drawdowns of 20-25%, making it a reliable long-term compounder if investors avoid panic selling.",
+          "price": 754.81
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Nasdaq 100 compounds at roughly 18% annually due to technological adoption, offering a faster path to capital growth than the S&P 500 despite higher drawdown risk.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "For small starting capital like $1,000, investing in high-value skills or personal education yields a greater return on personal income than passive market compounding.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Automating a dollar-cost averaging strategy removes emotion from investing and lowers the average entry price during market crashes, speeding up portfolio recovery.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Building lasting wealth requires owning appreciating or cash-flowing assets rather than relying solely on earned job income.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-06-18",
+      "url": "https://www.youtube.com/shorts/CvQbW19GxWQ",
+      "title": "The Fed Quietly Abandoned the 2% Inflation Target",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve unanimously voted to maintain the federal funds rate target range at 3.75% at its June 17 meeting under new Fed Chair Kevin Warsh.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Fed's Summary of Economic Projections dot plot showed that 9 out of 18 members projected higher interest rates by year-end, while the other 9 projected rates to stay the same or decrease.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Fed Chair Kevin Warsh announced a task force on data to evaluate methodological changes and new information sources for calculating official statistics like inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "According to the CME FedWatch Tool, market expectations show a 34.2% chance of an interest rate hike and a 0% chance of a rate cut at the July 29 Fed meeting.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The speaker predicts the Fed will not raise rates in July, arguing that lower energy prices and political risks ahead of midterm elections will deter a rate hike.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-14",
+      "url": "https://www.youtube.com/shorts/H44O0imIqto",
+      "title": "Something Nobody Sees Is About To Make People Rich",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US is undergoing a major industrial onshoring boom across semiconductors, rare earth metals, and energy infrastructure driven by supply-chain vulnerabilities, tariffs, and government investment.",
+          "price": null
+        },
+        {
+          "ticker": "AIRR",
+          "bias": "Bullish",
+          "notes": "Provides broad exposure to the US onshoring build-out through small- and mid-cap domestic industrial companies and contractors.",
+          "price": 123.31
+        },
+        {
+          "ticker": "PAVE",
+          "bias": "Bullish",
+          "notes": "Offers exposure to the foundational infrastructure powering the onshoring build-out, including materials, rails, construction, and electrical equipment.",
+          "price": 56.71
+        },
+        {
+          "ticker": "GRID",
+          "bias": "Bullish",
+          "notes": "Benefits from necessary upgrades to the US power grid and energy infrastructure required to support expanding AI, data centers, and domestic manufacturing.",
+          "price": 183.71
+        },
+        {
+          "ticker": "BOTZ",
+          "bias": "Bullish",
+          "notes": "Provides exposure to the robotics and AI companies that are expected to automate and power modern domestic manufacturing facilities.",
+          "price": 35.88
+        },
+        {
+          "ticker": "XLI",
+          "bias": "Bullish",
+          "notes": "Provides broad exposure to large-cap US industrial companies positioned to benefit from long-term domestic manufacturing growth.",
+          "price": 180.45
+        }
+      ]
+    },
+    {
+      "date": "2026-08-28",
       "url": "https://www.youtube.com/shorts/TVQiwwb-fio",
       "title": "BITCOIN: DON’T LET THE BEARS FOOL YOU ‼️$BTC",
       "channel": "@overkilltrading",
