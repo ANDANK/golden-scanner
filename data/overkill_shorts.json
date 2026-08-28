@@ -1,8 +1,200 @@
 {
-  "updated": "2026-08-27",
+  "updated": "2026-08-28",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-28",
+      "url": "https://www.youtube.com/shorts/TVQiwwb-fio",
+      "title": "BITCOIN: DON’T LET THE BEARS FOOL YOU ‼️$BTC",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "BTC",
+          "bias": "Bullish",
+          "notes": "A recurring monthly chart signal that appears every 3 to 4 years has triggered on Bitcoin, which historically marked bear market bottoms and kicked off 2-year bull runs each time since 2015. The host emphasizes holding for long-term gains over the next two years rather than focusing on short-term day trading fluctuations.",
+          "price": 35.34
+        }
+      ]
+    },
+    {
+      "date": "2026-07-09",
+      "url": "https://www.youtube.com/shorts/e-_Sskm2dws",
+      "title": "The UNTHINKABLE is About to Happen to Stocks #SOFI #HOOD #PLTR #NVDA",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi is considered cheap under $20 per share, supported by 35% member growth and management's 2026 revenue guidance of $4.655 billion. The host sets a price target of $25 or higher within the next 6 to 12 months.",
+          "price": 18.62
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "Robinhood benefits from healthy retail trading activity, transaction revenue driven by market volatility, and customer retention through Robinhood Gold. The host views the recent stock pullback as an opportunity to buy a high-quality business at a discount.",
+          "price": 115.11
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Palantir is expected to reach $150 to $175 per share in the next 6 to 12 months, driven by sticky government defense contracts amid rising geopolitical tensions and expanding commercial adoption. The host emphasizes its low churn rate and high contract renewal rates.",
+          "price": 129.04
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Nvidia is expected to reach a $5 trillion market cap within 12 months, supported by $750 billion in projected AI CapEx spending from major tech giants into 2026. The host considers buying puts against Nvidia a mistake and views it as a prime candidate for long-dated LEAP options.",
+          "price": 202.78
+        }
+      ]
+    },
+    {
+      "date": "2026-06-26",
+      "url": "https://www.youtube.com/shorts/Jx9jpLmiDQY",
+      "title": "Inflation is Rising Again — Here's What the Fed Will Do",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host believes the odds of a July Federal Reserve rate hike are overblown and expects the Fed to hold rates steady, which should relieve market fears and turn into a tailwind for stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Annualized M2 money supply growth of 7.51% represents the true rate of inflation, which far outpaces official CPI/PCE metrics as well as recent wage growth rates of 3.4% to 3.8%.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-17",
+      "url": "https://www.youtube.com/shorts/Apd64VnBi3I",
+      "title": "These 30 Minutes Let You Build More Wealth Than 90% Of People",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Wealthy individuals prioritize saving and investing their income first before spending what remains, whereas average earners spend first and try to save or invest whatever is left.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Over 90% of active fund managers underperform the S&P 500 over a 20-year period after fees, making passive index investing the recommended approach for the vast majority of people.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Currency debasement caused by excessive money printing inflates asset prices faster than wage growth, reducing the purchasing power of cash holdings.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US Social Security functions as a pay-as-you-go system where current worker payroll taxes fund current retirees rather than growing in individual piggy banks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Coast FIRE strategy involves building a sufficient investment base early so compound market growth reaches full retirement targets without needing further contributions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Holding substantial wealth in low-interest traditional bank accounts results in guaranteed real loss of purchasing power due to inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Building long-term wealth requires owning appreciating or cash-flowing assets rather than relying entirely on earned job income.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-06-24",
+      "url": "https://www.youtube.com/shorts/LhCI3Uc66lI",
+      "title": "US Debt Crisis: Interest Payments Are Becoming a Major Problem",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US national debt has reached $39.3 trillion, with the fiscal year 2026 deficit projected at around $1.8 trillion, pushing total federal debt past $40 trillion.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Net interest on the national debt has become the second-largest US government expense, projected to exceed $1 trillion in fiscal year 2026 and surpassing spending on Medicare and national defense.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High levels of government borrowing increase the supply of US Treasuries, requiring higher interest rates to incentivize investor demand.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To protect wealth against inflation and currency debasement caused by rising government debt, investors should hold equities and hard assets like gold, silver, and real estate rather than cash or bonds.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-16",
+      "url": "https://www.youtube.com/shorts/9T9dOk-9AwU",
+      "title": "DON'T Buy A House In 2026 Until You Watch This",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Owning a primary residence incurs ongoing costs like property taxes, insurance, and maintenance that rise with home value, meaning a paid-off house does not provide income or guarantee retirement security.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "During the first 15 to 20 years of a 30-year mortgage, the vast majority of monthly payments go toward interest rather than building principal equity.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Anyone holding credit card debt or possessing less than $2,000 in emergency savings is in a financial danger zone and should pause discretionary spending like dining out, vacations, and TV subscriptions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 75/15/10 budgeting rule suggests spending a maximum of 75% of income, investing at least 15%, and saving at least 10% using three separate bank accounts.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "True wealth is built by acquiring cash-flowing assets rather than relying solely on high job earnings, as earned income stops when work stops.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-08-27",
       "url": "https://www.youtube.com/shorts/zUNfSWV-Zto",
