@@ -24,7 +24,14 @@ than the same trades counted twice.
 **Ranking is by consistency first, size of edge second.** 191 combinations
 tested at once is 191 chances for one to look good by luck; at a 5% threshold
 roughly 10 should print "significant" with no edge at all. A number that only
-appears in one window is not evidence, however large.
+appears in one cell is not evidence, however large.
+
+**"All four cells" is two periods x two timeframes, and only the periods are
+independent.** Daily-Recent1y and Weekly-Recent1y cover the same calendar on
+the same names — they are two views of one period, not two samples of it. So
+"Holds everywhere" means "survived both periods AND both bar sizes". That is
+a real robustness filter; it is not four independent confirmations, and it is
+not proof that what survives is real.
 
 ## Two states that are rare by construction, not by accident
 

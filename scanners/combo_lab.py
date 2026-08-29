@@ -6,7 +6,15 @@
 #   a trader would actually distinguish. Test every cross-combination of those
 #   states — and each state alone as a baseline — across ~500 names, on daily
 #   and weekly bars, over two NON-OVERLAPPING periods. Then ask which ones
-#   survive all four.
+#   survive all four cells.
+#
+#   Read "four cells" precisely: TWO disjoint periods x TWO timeframes. The
+#   periods share no trades, so agreement across them is real out-of-sample
+#   evidence. The timeframes do NOT have that property — Daily-Recent1y and
+#   Weekly-Recent1y cover the same calendar on the same names, so they are two
+#   views of one period rather than two samples of it. Agreement across
+#   timeframes says the signal is not an artefact of bar size, which is worth
+#   knowing and is weaker than agreement across periods.
 #
 # FOUR DESIGN DECISIONS, AND WHY
 #
@@ -46,7 +54,9 @@
 #   commission. And 191 combinations tested at once is 191 chances for one to
 #   look good by luck: at a 5% threshold roughly 10 should print "significant"
 #   with no edge at all. That is why the headline table ranks by CONSISTENCY
-#   across four independent windows rather than by any single number.
+#   across the four cells rather than by any single number — and why "holds
+#   everywhere" is a filter that removes the obviously fragile, not a proof
+#   that what remains is real.
 
 from __future__ import annotations
 
@@ -441,9 +451,15 @@ def consensus(tables: dict[str, pd.DataFrame],
     This is the table that answers the actual question. Four separate ranked
     tables invite reading the top of one of them, which is exactly how a
     combination that worked in a single window gets mistaken for one that
-    works. Ranking by how many INDEPENDENT windows a combination held up in —
-    and only then by size of edge — makes the fragile ones sort themselves to
-    the bottom without anyone having to cross-reference four pages.
+    works. Ranking by how many cells a combination held up in — and only then
+    by size of edge — makes the fragile ones sort themselves to the bottom
+    without anyone having to cross-reference four pages.
+
+    The cells are two disjoint PERIODS x two timeframes, and only the periods
+    are independent of each other: the daily and weekly views of one period
+    cover the same calendar on the same names. So "holds everywhere" means
+    "survived both periods AND both bar sizes", which is a real robustness
+    filter and not four independent confirmations.
     """
     if not tables:
         return pd.DataFrame()

@@ -210,10 +210,13 @@ def render() -> None:
         f'<b style="color:{TEXT_PRIMARY}">191 in all</b>, each single factor '
         f'included as its own baseline — tested on daily and weekly bars over '
         f'two <b>non-overlapping</b> periods.<br>'
-        f'Ranked by how many of the four independent windows a combination held '
-        f'up in, <i>then</i> by size of edge. A combination that only works in '
-        f'one window sorts below one that works in all four, however big its '
-        f'best number.</div>', unsafe_allow_html=True)
+        f'Ranked by how many of the four cells a combination held up in, '
+        f'<i>then</i> by size of edge — one that only works in one cell sorts '
+        f'below one that works in all four, however big its best number. '
+        f'The two <b>periods</b> share no trades, so agreement across them is '
+        f'out-of-sample; the two <b>timeframes</b> cover the same calendar, so '
+        f'agreement across those says the signal survives a change of bar size, '
+        f'which is weaker.</div>', unsafe_allow_html=True)
 
     payload = load_latest()
     if not payload:
@@ -250,7 +253,7 @@ def render() -> None:
         f'{_rgba(ACCENT_GREEN,0.30)};border-radius:8px;padding:9px 14px">'
         f'<span style="color:{ACCENT_GREEN};font-size:20px;font-weight:800">'
         f'{len(held)}</span><span style="color:{TEXT_MUTED};font-size:11px;'
-        f'margin-left:8px">hold up in all four windows</span></div>'
+        f'margin-left:8px">hold up in all four cells</span></div>'
         f'<div style="background:{_rgba(GOLD,0.10)};border:1px solid '
         f'{_rgba(GOLD,0.30)};border-radius:8px;padding:9px 14px">'
         f'<span style="color:{GOLD};font-size:20px;font-weight:800">'
@@ -267,7 +270,7 @@ def render() -> None:
             f'<div style="background:#1a1410;border:1px solid '
             f'rgba(240,112,74,0.18);border-radius:10px;padding:11px 13px;'
             f'font-size:11.5px;color:#c9a99a;line-height:1.6;margin-bottom:10px">'
-            f'<b style="color:#f0704a">Nothing held up in all four windows.</b> '
+            f'<b style="color:#f0704a">Nothing held up in all four cells.</b> '
             f'That is a result, not a failed run: no combination beat '
             f'{payload.get("benchmark")} on both timeframes in both periods with '
             f'an adequate sample. Read the "mostly holds" rows as candidates, '
@@ -331,9 +334,13 @@ def render() -> None:
         f'{len(cons)} combinations tested at once is {len(cons)} chances for one '
         f'to look good by luck — at a 5% threshold roughly '
         f'{max(1, len(cons) // 20)} should print "significant" with no edge at '
-        f'all. That is precisely why the ranking is by consistency across four '
-        f'independent windows rather than by any single number, and why a '
-        f't-stat in the per-window table is a hint rather than a verdict. '
+        f'all. That is precisely why the ranking is by consistency across the four '
+        f'cells rather than by any single number, and why a t-stat in the '
+        f'per-window table is a hint rather than a verdict. Note too that only '
+        f'the two periods are independent of each other — the daily and weekly '
+        f'views of one period share a calendar, so "holds everywhere" is a '
+        f'filter that removes the fragile, not a proof that what remains is '
+        f'real. '
         f'The universe is today\'s list, so delisted and acquired names are '
         f'absent and every result is flattered equally. No slippage or '
         f'commission is modelled.</div>', unsafe_allow_html=True)
