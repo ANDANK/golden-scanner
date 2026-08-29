@@ -14,3 +14,6 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local price cache for the Combo Lab study — regenerable, never committed.
+.cache/

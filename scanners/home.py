@@ -46,6 +46,7 @@ from utils import section_header, calc_sma
 from data_loader import get_price_history, get_market_overview, prefetch_tickers
 from scanners import overkill_check
 from scanners import fast_score  # noqa: F401 — tab hidden, module kept
+from scanners import combo_lab_tab
 from scanners import spreads
 from scanners import overkill_performance
 from scanners import overkill_shorts_perf
@@ -2553,10 +2554,11 @@ def render():
     # in front of a trading decision — but scanners/fast_score.py, its 107
     # tests and the walk-forward backtest machinery stay in the tree, because
     # that machinery is what produced the verdict and is reusable.
-    tab1, tab3, tab4, tab8, tab2, tab6, tab5 = st.tabs(
+    tab1, tab3, tab4, tab8, tab2, tab6, tab5, tab9 = st.tabs(
         ["🎯  Best Scanners", "🔄  Sector Rotation", "🔍  OverKill",
          "💵  Spreads",
-         "📺  YouTube Shorts", "📊  Shorts Perf", "🎯  Shorts Backtest"]
+         "📺  YouTube Shorts", "📊  Shorts Perf", "🎯  Shorts Backtest",
+         "🧪  Combo Lab"]
     )
 
     with tab1:
@@ -2605,6 +2607,15 @@ def render():
             overkill_performance.render()
         except Exception as e:
             st.error(f"Shorts Backtest tab error: {e}")
+
+    with tab9:
+        try:
+            combo_lab_tab.render()
+        except Exception as e:
+            # Name the exception TYPE, not just str(e): a bare KeyError
+            # stringifies to its key, which once produced a tab error reading
+            # only "None" and told nobody anything.
+            st.error(f"Combo Lab tab error: {type(e).__name__}: {e}")
 
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};'

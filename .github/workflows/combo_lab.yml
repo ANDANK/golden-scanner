@@ -1,0 +1,87 @@
+name: Combo Lab (indicator combination study)
+
+# Manual only. This fetches ~500 tickers of 5-year daily history and tests
+# 191 combinations across four cells on two timeframes — minutes of work and
+# a lot of Yahoo traffic. It is a research run, not a recurring report, and
+# nothing downstream goes stale if it is not re-run.
+#
+# Price frames are cached under .cache/combo_lab/ keyed by ticker and fetch
+# date, and that cache is restored between runs by actions/cache, so a
+# same-day re-run with different settings costs nothing at Yahoo.
+
+on:
+  workflow_dispatch:
+    inputs:
+      universe:
+        description: "Ticker universe"
+        required: true
+        default: "FTF"
+        type: choice
+        options: ["FTF", "SP500", "MTPA"]
+      limit:
+        description: "Cap the ticker count (0 = all; use ~40 for a smoke run)"
+        required: false
+        default: "0"
+        type: string
+      refresh:
+        description: "Ignore the price cache and refetch"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: combo-lab
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  study:
+    name: Test every indicator combination
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          grep -v "^streamlit" requirements.txt | pip install -r /dev/stdin
+      - name: Restore price cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/combo_lab
+          # Keyed by date: a cache entry is only valid for the day it was
+          # fetched, which is also how the script names its cache files.
+          key: combo-lab-prices-${{ github.event.inputs.universe }}-${{ github.run_id }}
+          restore-keys: |
+            combo-lab-prices-${{ github.event.inputs.universe }}-
+            combo-lab-prices-
+      - name: Run the study
+        env:
+          COMBO_UNIVERSE: ${{ github.event.inputs.universe || 'FTF' }}
+          COMBO_LIMIT: ${{ github.event.inputs.limit || '0' }}
+          COMBO_REFRESH: ${{ github.event.inputs.refresh == 'true' && '1' || '' }}
+        run: python scripts/headless_combo_lab.py
+      - name: Commit results
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! ls data/combo_lab/*.json >/dev/null 2>&1; then
+            echo "No results written — nothing to commit."; exit 0
+          fi
+          git add data/combo_lab/
+          if git diff --cached --quiet; then
+            echo "Results unchanged."
+          else
+            git commit -m "Combo Lab study $(date -u +'%Y-%m-%d %H:%M UTC')"
+            if git pull --rebase -X ours origin main; then
+              git push origin main
+            else
+              git rebase --abort; git push --force-with-lease origin main
+            fi
+          fi
