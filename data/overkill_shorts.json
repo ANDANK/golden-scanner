@@ -4,6 +4,177 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-06-16",
+      "url": "https://www.youtube.com/shorts/8tw6C0lqgTg",
+      "title": "The Book of Wealth: 10 Steps to Financial Freedom",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The fundamental formula for building wealth is to earn more than you spend, invest the surplus, protect assets from loss, and repeat the process.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Increasing your primary income is far more effective for early wealth creation than cutting expenses, as expense reduction has a natural limit.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The most effective way to boost income without increasing hours or switching careers is to stay in your field and put in the effort to become an expert.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Tracking income and expenses monthly is essential to ensure a financial surplus, whereas rigid budgeting is optional.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Long-term wealth building should rely on diversified, conservative investments like S&P 500 index funds rather than high-risk stock or crypto speculation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "All debt carries risk, but taking on debt can be justified on a case-by-case basis if the potential returns and benefits significantly outweigh interest costs and risks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Market downturns and crashes in broad equity indexes and real estate are long-term buying opportunities to purchase assets at a discount.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-13",
+      "url": "https://www.youtube.com/shorts/ql5sVQm_aPg",
+      "title": "The Next Reserve Currency Is Here (It's not what you think...)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Surging AI data center energy demands are forcing governments and major tech firms to rapidly expand nuclear power, which will likely push consumer energy prices higher until supply increases.",
+          "price": null
+        },
+        {
+          "ticker": "GRID",
+          "bias": "Bullish",
+          "notes": "GRID is an ETF providing exposure to the companies building and upgrading the U.S. clean energy power grid to meet rising electricity demand.",
+          "price": 181.4
+        },
+        {
+          "ticker": "NLR",
+          "bias": "Bullish",
+          "notes": "NLR is a VanEck ETF that offers broad exposure to the nuclear energy sector, including utilities, reactor operators, and the fuel chain.",
+          "price": 109.48
+        },
+        {
+          "ticker": "URA",
+          "bias": "Bullish",
+          "notes": "URA is an ETF targeting the fuel behind nuclear power by providing exposure to physical uranium and uranium mining companies.",
+          "price": 40.72
+        }
+      ]
+    },
+    {
+      "date": "2026-08-26",
+      "url": "https://www.youtube.com/shorts/43GO2sHfGWY",
+      "title": "THESE 3 STOCKS LOOK BULLISH 📈 AUG 26",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "SYM",
+          "bias": "Bullish",
+          "notes": "Symbotic is consolidating near its four-year moving average around $40 after pulling back from $83. The host is considering opening a position around $40, viewing it as a solid buy as long as it holds support above $37.",
+          "price": 40.61
+        },
+        {
+          "ticker": "NOC",
+          "bias": "Bullish",
+          "notes": "Northrop Grumman looks attractive on its pullback to $550, remaining above its four-year moving average after previously trading as high as $800. The host highlights the defense stock's strong $11 billion per quarter revenue.",
+          "price": 549.95
+        },
+        {
+          "ticker": "BABA",
+          "bias": "Bullish",
+          "notes": "Alibaba is sitting at its four-year moving average near $120, which the host considers fair value following an earlier buy signal at $96. He expects the stock to bounce off this historical support level.",
+          "price": 119.83
+        }
+      ]
+    },
+    {
+      "date": "2026-06-10",
+      "url": "https://www.youtube.com/shorts/hbYCGgOQFhU",
+      "title": "Inflation is Surging Again",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "May CPI inflation accelerated to 4.2%, up from 2.4% in February, driven primarily by energy supply disruptions and oil around $93 per barrel.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "CME FedWatch probabilities indicate a 96.2% chance the Fed holds interest rates unchanged in June, with a 68% chance rates end the year higher as inflation risks persist.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Despite short-term bearish headwinds from the energy crisis, the host maintains a long-term bullish market outlook and advises investors to avoid margin debt, stay diversified, and buy dips.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-07-10",
+      "url": "https://www.youtube.com/shorts/C3tTmjJyPmU",
+      "title": "The Next Great Wealth Reset Just Started",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "COPX",
+          "bias": "Bullish",
+          "notes": "COPX provides exposure to copper mining companies that stand to profit if surging demand from AI and structural supply shortages drive copper prices higher.",
+          "price": 76.54
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Copper demand is accelerating globally due to new technology use cases like AI data centers, international electric vehicle adoption, power grid modernization, and defense manufacturing.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Copper supply faces severe structural constraints as developing new mining operations typically takes 10 to 20 years, raising concerns over an imminent market shortage.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US government has implemented a 50% tariff on imported copper products and initiated Project Vault, a $12 billion stockpile program for critical metals.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-08-28",
       "url": "https://www.youtube.com/shorts/Cn-1I3iwYAk",
       "title": "3 STOCKS TO WATCH NEXT WEEK 📈 AUG 28",
