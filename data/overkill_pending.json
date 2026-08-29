@@ -1,13 +1,31 @@
 {
-  "checked": "2026-08-28",
+  "checked": "2026-08-29",
   "pending": [
+    {
+      "video_id": "hupX9AhQkgc",
+      "title": "🚨 MAJOR Market Update (for all serious investors)",
+      "date": "2026-08-29",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/hupX9AhQkgc"
+    },
+    {
+      "video_id": "Sbx3hp0h-Ww",
+      "title": "Checkout my free trading course 📈🎓",
+      "date": "2026-08-26",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/Sbx3hp0h-Ww"
+    },
     {
       "video_id": "dIS4pRHl9iI",
       "title": "The Fed May Be Forced to Raise Rates After This",
       "date": "2026-06-08",
       "channel": "@ClearValueTax",
       "channel_name": "ClearValue Tax",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/dIS4pRHl9iI"
     },
     {
@@ -18,6 +36,15 @@
       "channel_name": "In The Money",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
+    },
+    {
+      "video_id": "5OFUcJT6JvA",
+      "title": "Someone just dropped $300K into my portfolio and I replaced myself with AI.",
+      "date": "2026-03-10",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/5OFUcJT6JvA"
     },
     {
       "video_id": "AdGhjaFeIHw",
