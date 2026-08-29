@@ -80,7 +80,22 @@ BENCHMARK = "SPY"
 CROSS_WINDOW = {"daily": 5, "weekly": 3}
 
 # Holding periods, in bars of whichever timeframe is being tested.
-HOLDS = {"daily": (10, 20), "weekly": (4, 8)}
+# Deliberately SHORT. Doubling the hold was tested (daily 10->20, weekly
+# 4->8) and made things worse in three of four cells, with fewer than half
+# the combinations improving in every cell — so the edge, if any, is not
+# slow. And the longer the hold, the less of the return belongs to the
+# entry: at three months you are mostly measuring "did this stock beat SPY",
+# and the crossover that happened in week one is a vanishing fraction of the
+# outcome. Every entry signal converges to zero excess as the horizon grows,
+# which is why entry signals are tested at short horizons.
+HOLDS = {"daily": (4, 5), "weekly": (3,)}
+
+# Bars in a trading year, per timeframe. This exists because Sharpe was
+# previously annualised with a hard-coded 252 on BOTH timeframes, which
+# overstated every weekly Sharpe by about sqrt(5) — a weekly bar year is 52
+# bars, not 252. The error grows as the hold shortens, so it mattered most
+# exactly where the short-hold runs live.
+BARS_PER_YEAR = {"daily": 252.0, "weekly": 52.0}
 
 # Below this a combination is reported but never ranked. 30 trades is not a
 # lot; it is the point below which a win rate is essentially unreadable.
@@ -314,7 +329,7 @@ def _mask_for(frame: pd.DataFrame, combo: tuple[str, ...]) -> np.ndarray:
 def run_window(frames: dict[str, pd.DataFrame], bench: pd.DataFrame | None,
                start, end, hold: int,
                combos: list[tuple[str, ...]] | None = None,
-               progress_cb=None) -> pd.DataFrame:
+               progress_cb=None, bars_per_year: float = 252.0) -> pd.DataFrame:
     """Every combination over one (timeframe, period, hold) cell.
 
     Indicators are computed over the FULL history and only the signal bars
@@ -368,12 +383,14 @@ def run_window(frames: dict[str, pd.DataFrame], bench: pd.DataFrame | None,
     for combo in combos:
         lab = label(combo)
         chunks = per_combo[lab]
-        rows.append(_summarise(lab, combo, chunks, hold, n_tickers))
+        rows.append(_summarise(lab, combo, chunks, hold, n_tickers,
+                               bars_per_year))
     return pd.DataFrame(rows)
 
 
 def _summarise(lab: str, combo: tuple[str, ...], chunks: list,
-               hold: int, n_tickers: int) -> dict:
+               hold: int, n_tickers: int,
+               bars_per_year: float = 252.0) -> dict:
     base = {
         "combo": lab,
         "n_factors": len(combo),
@@ -408,7 +425,10 @@ def _summarise(lab: str, combo: tuple[str, ...], chunks: list,
     sd = float(np.std(ret, ddof=1)) if n > 1 else np.nan
     downside = ret[ret < 0]
     dsd = float(np.std(downside, ddof=1)) if len(downside) > 1 else np.nan
-    per_year = 252.0 / hold          # daily-bar convention; weekly rescaled
+    # Annualised with the caller's bars-per-year, NOT a hard-coded 252: a
+    # weekly bar year is 52 bars, and using 252 for both timeframes made
+    # every weekly Sharpe roughly sqrt(5) too large.
+    per_year = bars_per_year / hold
     scale = np.sqrt(per_year)
 
     # Equity curve of the trades in DATE order, equal weight, no compounding

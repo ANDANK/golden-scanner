@@ -193,10 +193,12 @@ def run() -> int:
     for tf, frames, bench in (("Daily", daily_frames, bench_d),
                               ("Weekly", weekly_frames, bench_w)):
         for wname, (start, end) in wins.items():
-            for hold in cl.HOLDS["daily" if tf == "Daily" else "weekly"]:
+            tf_key = "daily" if tf == "Daily" else "weekly"
+            for hold in cl.HOLDS[tf_key]:
                 key = f"{tf}-{wname}-{hold}b"
                 t1 = time.time()
-                tbl = cl.run_window(frames, bench, start, end, hold, combos)
+                tbl = cl.run_window(frames, bench, start, end, hold, combos,
+                                    bars_per_year=cl.BARS_PER_YEAR[tf_key])
                 tables[key] = tbl
                 ranked = cl.rank_table(tbl)
                 ok = ranked[~ranked["low_n"]]

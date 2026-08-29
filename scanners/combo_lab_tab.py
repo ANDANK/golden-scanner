@@ -310,7 +310,10 @@ def render() -> None:
             f'condition is true, at that bar\'s open. '
             f'<b style="color:{TEXT_PRIMARY}">Exit</b> a fixed number of bars '
             f'later, identical for every combination, so differences are '
-            f'attributable to the entry alone.<br>'
+            f'attributable to the entry alone. Holds are deliberately short — '
+            f'doubling them was tested and made results worse in three of four '
+            f'cells, and a long hold measures the stock rather than the '
+            f'signal.<br>'
             f'<b style="color:{TEXT_PRIMARY}">Crossovers</b> read "crossed '
             f'within the last {payload.get("cross_window", {}).get("daily", 5)} '
             f'bars (daily) / {payload.get("cross_window", {}).get("weekly", 3)} '
@@ -321,7 +324,7 @@ def render() -> None:
             f'is a sliver price is seldom inside. Expect it under the low-N '
             f'flag.</div>', unsafe_allow_html=True)
 
-    with st.expander("Per-window detail (all four cells, both holding periods)"):
+    with st.expander("Per-window detail (every cell and holding period)"):
         pick = st.selectbox("Window", window_names, key="combo_window")
         rows = payload["tables"].get(pick, [])
         st.markdown(window_html(rows, min_trades), unsafe_allow_html=True)

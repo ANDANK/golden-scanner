@@ -235,6 +235,29 @@ check("a combo with no signals reports zero trades, not a crash",
 check("two trades is flagged low-N", bool(row["low_n"]))
 check("MIN_TRADES is the documented 30", cl.MIN_TRADES == 30)
 
+# Sharpe must be annualised with the TIMEFRAME's bars per year. Using 252 on
+# weekly bars overstated every weekly Sharpe by about sqrt(252/52) ~ 2.2.
+_sh = pd.DataFrame({"open": [100.0, 100.0, 110.0, 110.0, 100.0, 95.0, 95.0, 95.0],
+                    "close": [100.0] * 8, "A1": [True, False, False, True] + [False] * 4,
+                    "A2": False, "B1": True, "B2": False, "B3": False,
+                    "C1": False, "C2": False, "C3": False, "D1": True, "V1": True},
+                   index=idx)
+_d = cl.run_window({"T": _sh}, None, idx[0], idx[-1], 1, combos=[("A1",)],
+                   bars_per_year=252.0).iloc[0]
+_w = cl.run_window({"T": _sh}, None, idx[0], idx[-1], 1, combos=[("A1",)],
+                   bars_per_year=52.0).iloc[0]
+check("weekly Sharpe is NOT annualised as if bars were daily",
+      abs(_d["sharpe"]) > abs(_w["sharpe"]),
+      f'daily-scaled {_d["sharpe"]:.2f} vs weekly-scaled {_w["sharpe"]:.2f}')
+check("...and the ratio is exactly sqrt(252/52)",
+      abs(_d["sharpe"] / _w["sharpe"] - (252 / 52) ** 0.5) < 1e-9,
+      f'{_d["sharpe"] / _w["sharpe"]:.4f}')
+check("bars-per-year is declared per timeframe",
+      cl.BARS_PER_YEAR == {"daily": 252.0, "weekly": 52.0})
+check("the only thing annualisation changes is Sharpe and Sortino",
+      _d["avg_return"] == _w["avg_return"] and _d["win_rate"] == _w["win_rate"]
+      and _d["max_drawdown"] == _w["max_drawdown"])
+
 # Benchmark subtraction.
 bench = pd.DataFrame({"open": [100.0, 100.0, 101.0, 101.0, 101.0,
                                101.0, 101.0, 101.0],
@@ -384,6 +407,9 @@ check("...and that holds for the five-factor case too",
       <= full[full.combo == "A1+B1+C1+D1"]["trades"].iloc[0])
 check("avg_hold reports the holding period actually used",
       (fired["avg_hold"] == 10).all())
+check("shipped holds are the short ones that were asked for",
+      cl.HOLDS["daily"] == (4, 5) and cl.HOLDS["weekly"] == (3,),
+      f'{cl.HOLDS}')
 
 print("\n" + "=" * 62)
 print(f"RESULT: {len(FAILS)} failed")
