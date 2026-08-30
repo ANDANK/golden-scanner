@@ -5,6 +5,27 @@
   "videos": [
     {
       "date": "2026-08-30",
+      "url": "https://www.youtube.com/shorts/Ego7h60MZbI",
+      "title": "How to Make $10,000/mo Running The Wheel Strategy on SoFi",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host considers SoFi a strong growth company with robust member acquisition, 10 consecutive profitable quarters, and strong technical support around $17 per share. He views the stock as undervalued trading under $20 and considers it an ideal candidate for generating option income.",
+          "price": 18.06
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Wheel Strategy is a moderately bullish option trading method where an investor repeatedly sells cash-secured put options to collect premium and buy stock at a discount, then sells covered calls on assigned shares to generate recurring income.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-30",
       "url": "https://www.youtube.com/shorts/EZ9zIPvGySU",
       "title": "HOW TO SNIPE TRADES 🎯 | The 15-Minute Gold Zone Trading Strategy",
       "channel": "@overkilltrading",
