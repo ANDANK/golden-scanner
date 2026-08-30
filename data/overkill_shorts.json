@@ -1,8 +1,107 @@
 {
-  "updated": "2026-08-28",
+  "updated": "2026-08-30",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-30",
+      "url": "https://www.youtube.com/shorts/EZ9zIPvGySU",
+      "title": "HOW TO SNIPE TRADES 🎯 | The 15-Minute Gold Zone Trading Strategy",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "notes": "Ethereum has confirmed a monthly green dot signaling a macro uptrend. The host recommends adding on daily or 4-hour pullbacks around $2,400 rather than chasing higher prices.",
+          "price": 23.26
+        },
+        {
+          "ticker": "HNT",
+          "bias": "Bullish",
+          "notes": "HNT is up 130% in August with an active macro buy signal. The host identifies a buy zone on pullbacks into the 15-minute Fibonacci golden zone between $0.20 and $0.26.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-29",
+      "url": "https://www.youtube.com/shorts/hupX9AhQkgc",
+      "title": "🚨 MAJOR Market Update (for all serious investors)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Nvidia crushed quarterly earnings with $96.2 billion in revenue and guided roughly $108 billion for next quarter, proving AI infrastructure spending is continuing to accelerate.",
+          "price": 217.55
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Host bought Meta following a dip driven by heavy AI spending concerns, citing 28% Q2 revenue growth, resolved litigation, and a price target of over $1,000 within five years.",
+          "price": 578.02
+        },
+        {
+          "ticker": "IREN",
+          "bias": "Bullish",
+          "notes": "Host accumulated IREN after a post-earnings sell-off, viewing its net loss as part of a shift into AI cloud infrastructure backed by strong contracted ARR and a Microsoft deal.",
+          "price": 35.45
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Host favors Micron due to ongoing high-bandwidth memory (HBM) shortages, noting its HBM supply is already fully allocated through calendar year 2026.",
+          "price": 932.86
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "July PCE inflation rose 3.7% YoY with core PCE at 3.3%, driving the 10-year Treasury yield toward 4.65% and creating valuation headwinds for high-growth stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Fed Chair Warsh delivered a hawkish Jackson Hole speech, prioritizing inflation control, staying open to higher interest rates, and opposing traditional dot plots and forward guidance.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Potential new U.S. tariffs on imported data center semiconductors could elevate build-out costs across the broader AI supply chain.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-06-08",
+      "url": "https://www.youtube.com/shorts/dIS4pRHl9iI",
+      "title": "The Fed May Be Forced to Raise Rates After This",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The May jobs report showed a net gain of 172,000 jobs versus 80,000 expected, while unemployment remained at 4.3%. This strong labor market data drastically reduced market expectations for Federal Reserve interest rate cuts in June and July.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Following the strong jobs data, market expectations shifted toward rate hikes, with a 72% chance that interest rates will be higher by the December Fed meeting compared to 48.7% prior to the report.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Inflation expectations for May reached 4.2%, which outpaces the average wage growth rate of 3.4% and reflects worsening financial conditions for consumers.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-06-16",
       "url": "https://www.youtube.com/shorts/8tw6C0lqgTg",
