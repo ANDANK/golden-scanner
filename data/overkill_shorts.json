@@ -1,8 +1,80 @@
 {
-  "updated": "2026-08-30",
+  "updated": "2026-08-31",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-31",
+      "url": "https://www.youtube.com/shorts/7tbI2hyy7Jc",
+      "title": "The Fed Could Raise Interest Rates. This Could Get Ugly.",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "If the Federal Reserve raises interest rates at its upcoming September 16 meeting, the host warns of severe negative impacts across the stock market, precious metals, crypto, and US fiscal budgets.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Fed official Warsh indicated at Jackson Hole that the Fed is curtailing forward guidance to avoid market distortion, relying instead on market signals across Treasuries, credit, commodities, and FX to guide interest rate decisions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "CME FedWatch odds for a September rate hike rose to 56.9% from around 40% following Warsh's speech, though the host interprets his remarks on inflation as hypothetical rather than definitive evidence of an impending rate increase.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-08-31",
+      "url": "https://www.youtube.com/shorts/fbH8KiyAu60",
+      "title": "It's Over: America Is Now Buying Its Own Debt",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US Treasury will launch a program on September 9, 2026, to buy back its own long-term debt using funds raised from short-term debt, aiming to stabilize skyrocketing interest rates.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Under a 2025 law, stablecoin companies are required to back their tokens one-to-one with US dollars, making crypto companies some of the largest buyers of short-term US government debt.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Reducing US government spending to match tax revenues would result in an estimated 6.5% drop in GDP, which would cause an economic recession significantly worse than the 2008 crash.",
+          "price": null
+        },
+        {
+          "ticker": "SGOV",
+          "bias": "Bullish",
+          "notes": "This ETF offers exposure to short-term US Treasuries, allowing investors to generate interest that is generally exempt from state and local taxes.",
+          "price": 100.69
+        },
+        {
+          "ticker": "VOO",
+          "bias": "Bullish",
+          "notes": "The host suggests investing in the S&P 500 through this ETF using a consistent, long-term dollar-cost averaging strategy to build wealth.",
+          "price": 704.38
+        },
+        {
+          "ticker": "VNQ",
+          "bias": "Bullish",
+          "notes": "This real estate ETF provides exposure to hard assets that generate cash flow and historically increase in price during inflationary periods.",
+          "price": 96.51
+        }
+      ]
+    },
     {
       "date": "2026-08-30",
       "url": "https://www.youtube.com/shorts/Ego7h60MZbI",
