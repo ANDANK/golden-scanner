@@ -1,8 +1,98 @@
 {
-  "updated": "2026-08-31",
+  "updated": "2026-09-01",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-08-31",
+      "url": "https://www.youtube.com/shorts/k9pt3-m61R4",
+      "title": "7 STOCKS READY TO SELL OFF 📉 AUG 31",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "TMO",
+          "bias": "Bearish",
+          "notes": "Thermo Fisher triggered a red dot sell signal in August after rallying from the $380-$400 buy zone up toward $600.",
+          "price": 617.1
+        },
+        {
+          "ticker": "MPC",
+          "bias": "Bearish",
+          "notes": "MPC generated a sell signal after moving from $120 to $400, becoming heavily extended above its 4-year moving average mean as oil and gas stocks look toppy.",
+          "price": 373.32
+        },
+        {
+          "ticker": "ABBV",
+          "bias": "Bearish",
+          "notes": "AbbVie flashed a sell signal after popping from $200 up to $270 due to significant price extension above its mean.",
+          "price": 256.42
+        },
+        {
+          "ticker": "TGT",
+          "bias": "Bearish",
+          "notes": "Target triggered a red dot sell signal around $160 after an 80% move from $90, indicating it is time to take profits.",
+          "price": 160.88
+        },
+        {
+          "ticker": "ABNB",
+          "bias": "Bearish",
+          "notes": "Airbnb triggered a red dot sell signal due to price extension off the mean, with an expected pullback ahead.",
+          "price": 183.22
+        },
+        {
+          "ticker": "MRVL",
+          "bias": "Bearish",
+          "notes": "Marvell Technology is showing a sell signal after a massive move up from its previous buy signal, signaling time to take profits.",
+          "price": 211.66
+        },
+        {
+          "ticker": "SCHW",
+          "bias": "Bearish",
+          "notes": "Charles Schwab generated a red dot sell signal following its recent run-up.",
+          "price": 109.82
+        }
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "url": "https://www.youtube.com/shorts/Q6G8pXFkKLk",
+      "title": "4 Stocks to Go ALL IN September 2026‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To accumulate significant wealth over 15 years, invest at least $1,000 a month into stocks, leverage side hustles or gig work to boost your income, and systematically buy undervalued individual companies and sell them when they become overvalued.",
+          "price": null
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "The host is heavily buying Celsius in the $28 to $33 price range, with a long-term target over $100. He highlights Celsius's massive margin expansion potential as they pivot from market share acquisition to profitability, supported by Pepsi's major distribution partnership.",
+          "price": 31.45
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi Technologies is highlighted as a high-conviction buy under $20, with a 5-to-10-year price target of $50 to $100. The host notes SoFi's asset-light digital model is uniquely positioned to capture the lifetime wealth of younger generations over legacy banks.",
+          "price": 17.88
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Netflix is flagged as an aggressive buy due to soaring free cash flow per share, a declining share count, and a highly scalable ad business. The host's base case projects a 19% to 25% CAGR, with a 2030 valuation target between $134 and $231.",
+          "price": 81.05
+        },
+        {
+          "ticker": "WYNN",
+          "bias": "Bullish",
+          "notes": "Wynn Resorts is a buy anywhere under $100, bolstered by its unmatched luxury moat and its upcoming Middle East resort opening in 2027. The host emphasizes that Wynn's $9.4 billion market cap fundamentally undervalues its actual physical assets and robust EBITDA.",
+          "price": 91.28
+        }
+      ]
+    },
     {
       "date": "2026-08-31",
       "url": "https://www.youtube.com/shorts/7tbI2hyy7Jc",
