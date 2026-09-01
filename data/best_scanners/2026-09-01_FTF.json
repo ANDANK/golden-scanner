@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-01",
+  "tag": "FTF",
+  "rows": [
+    {
+      "ticker": "KMI",
+      "price": 32.24,
+      "verdict": "Strong Setup",
+      "combo": "3MF+8Cross",
+      "scanners": "3MF \u00b7 7Square \u00b7 8Cross",
+      "edge_score": 0.83,
+      "n": 3867,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "WMB",
+      "price": 75.05,
+      "verdict": "Strong Setup",
+      "combo": "3MF+8Cross",
+      "scanners": "3MF \u00b7 8Cross",
+      "edge_score": 0.83,
+      "n": 3867,
+      "hold_range": [
+        10,
+        90
+      ]
+    }
+  ]
+}
