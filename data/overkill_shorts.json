@@ -4,6 +4,84 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-09-01",
+      "url": "https://www.youtube.com/shorts/GIuU-vC8olE",
+      "title": "Bloom Energy Stock Could EXPLODE — Here’s My Strategy (BE)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "BE",
+          "bias": "Bullish",
+          "notes": "Bloom Energy introduced Power Connect to reduce installation time by over 40%, complementing an expanded $25B AI infrastructure partnership with Brookfield and 166% YoY Q2 revenue growth. The host sets a 20 to 30-day price target of $240 per share while citing technical support around $194.",
+          "price": 205.52
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Option selling via the wheel strategy is most profitable on stocks with high implied volatility (above 50%), allowing traders to maximize premium collection while targeting strike prices near technical support levels.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "url": "https://www.youtube.com/shorts/SqaPm5iim1Q",
+      "title": "The IRS Is Disappearing (And The Rich Know It)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Under the 2026 tax updates, federal marginal income tax brackets were lowered across the board, reducing the top tax rate from 39.6% to 37% for income above $642,000.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The standard tax deduction in 2026 increases to $16,100 for single tax filers and $32,200 for married couples filing jointly.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Overtime pay is tax-free up to $12,500 ($25,000 married) and tips are tax-free up to $25,000, both phasing out for income above $150,000 for single filers.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Taxpayers over 65 qualify for a $6,000 per person senior deduction, and car buyers can write off up to $10,000 in car loan interest for American-assembled vehicles through 2028.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Roth IRA contribution limits for 2026 are $7,500 ($8,600 for age 50+), with income eligibility capped at $153,000 for single filers unless using a backdoor Roth IRA.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rental real estate investors can utilize annual or accelerated depreciation deductions to shelter income from taxes and defer capital gains taxes via 1031 exchanges.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Qualified small business owners can take advantage of a permanent 20% Qualified Business Income deduction alongside ordinary and necessary expense write-offs.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The U.S. Treasury announced plans to increase the size of its routine debt buybacks starting September 9th to purchase back government debt.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-08-31",
       "url": "https://www.youtube.com/shorts/k9pt3-m61R4",
       "title": "7 STOCKS READY TO SELL OFF 📉 AUG 31",
