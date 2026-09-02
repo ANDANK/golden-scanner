@@ -1,8 +1,41 @@
 {
-  "updated": "2026-09-01",
+  "updated": "2026-09-02",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-02",
+      "url": "https://www.youtube.com/shorts/Qf8QguTF9qg",
+      "title": "If You Have $10,000, Do These 3 Things Right Now",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "VOO",
+          "bias": "Bullish",
+          "notes": "The host highlights VOO as an effective ETF for gaining long-term passive exposure to the S&P 500, which has historically averaged around 10% annual returns.",
+          "price": 702.78
+        },
+        {
+          "ticker": "SPY",
+          "bias": "Bullish",
+          "notes": "Recommended alongside VOO as a core ETF for broad passive exposure to the 500 largest US companies without needing to manage individual stocks.",
+          "price": 764.57
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Before investing, individuals should save a $2,000 emergency fund and eliminate credit card debt costing 15% to 25% annually, exceeding the stock market's 10% average return.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US Treasury announced plans to increase the size of routine US government debt buybacks beginning September 9th.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-01",
       "url": "https://www.youtube.com/shorts/hg_p_AZw3qU",
