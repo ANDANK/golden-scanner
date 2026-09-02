@@ -5,6 +5,75 @@
   "videos": [
     {
       "date": "2026-09-01",
+      "url": "https://www.youtube.com/shorts/hg_p_AZw3qU",
+      "title": "3 STOCKS TO WATCH NOW 📈 SEPTEMBER 1",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "GME",
+          "bias": "Bullish",
+          "notes": "GameStop is showing a major buy signal (a green dot with a shaded area underneath) around $18.50. The last time this specific signal appeared in April 2024, the stock moved from $10 to $65 in a few weeks.",
+          "price": 18.81
+        },
+        {
+          "ticker": "TTD",
+          "bias": "Bullish",
+          "notes": "The host has re-entered TTD as it attempts to bounce off its $14 COVID-era low, representing a 6-year low. If this support level holds, there is potential for a 1,000% trade back to its all-time high of $140.",
+          "price": 13.78
+        },
+        {
+          "ticker": "QCOM",
+          "bias": "Bullish",
+          "notes": "Qualcomm is currently the host's only preferred chip stock because it is sitting right at its 4-year moving average and flashing a buy signal. A prior signal in April saw the stock rise from $120 to $260.",
+          "price": 166.61
+        }
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "url": "https://www.youtube.com/shorts/4uMVLumGEkw",
+      "title": "3 STOCKS TO WATCH IN SEPTEMBER 📈 (PART 1)",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "A rare monthly bottoming signal has appeared for Netflix, similar to a 2022 signal that led to an 800% run. The host likes the stock at the $80 level and suggests setting a stop loss at $65.",
+          "price": 80.81
+        },
+        {
+          "ticker": "SMCI",
+          "bias": "Bullish",
+          "notes": "The AI data center equipment provider is reporting record revenue, and the host believes the bottom is in at around $20. Currently trading at $36, it has the potential for a 200-300% move back to its all-time high of $120.",
+          "price": 36.71
+        },
+        {
+          "ticker": "INTU",
+          "bias": "Bullish",
+          "notes": "The tax and financial software company has pulled down significantly from $800 to $340, triggering the same buy signal that led to a major upward move in 2023.",
+          "price": 344.93
+        }
+      ]
+    },
+    {
+      "date": "2026-03-10",
+      "url": "https://www.youtube.com/shorts/5OFUcJT6JvA",
+      "title": "Someone just dropped $300K into my portfolio and I replaced myself with AI.",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host recommends using Public instead of Robinhood for autopilot trading, stating that Robinhood's platform often glitches on Monday mornings and fails to execute automated trades seamlessly.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-01",
       "url": "https://www.youtube.com/shorts/GIuU-vC8olE",
       "title": "Bloom Energy Stock Could EXPLODE — Here’s My Strategy (BE)",
       "channel": "@InvestwithHenry",
