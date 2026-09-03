@@ -4,6 +4,57 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-09-03",
+      "url": "https://www.youtube.com/shorts/QJC0Wvs78SI",
+      "title": "Buy These 5 Assets To Replace Your Paycheck (And Never Work Again)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "The host holds and highlights SCHD as a steady-growth fund holding roughly 100 quality dividend-paying US companies, noting its dividend payout has grown by around 10% annually over the last decade.",
+          "price": 35.12
+        },
+        {
+          "ticker": "VYMI",
+          "bias": "Bullish",
+          "notes": "The host is personally invested in VYMI to gain exposure to higher-yielding international dividend-growing companies, noting higher economic and geopolitical risk accompanies the higher yield.",
+          "price": 107.18
+        },
+        {
+          "ticker": "JEPI",
+          "bias": "Bearish",
+          "notes": "The host avoids options-trading income funds like JEPI because they generate yield by selling options, resulting in higher immediate income at the expense of capital appreciation.",
+          "price": 57.4
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should avoid chasing high dividend yields caused purely by declining stock prices, as these often signal underlying business distress, imminent dividend cuts, or bankruptcy.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "In today's housing market, rental deals typically require 20% to 50% down payments to remain cash-flow positive, and investors should avoid cash-flow-negative deals that rely on speculative appreciation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Real estate income can be sheltered through 27.5-year straight-line or accelerated paper depreciation, while capital gains from sales can be rolled over tax-free using 1031 exchanges.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US Treasury bonds and short-term Treasury funds provide monthly interest payments that are exempt from state and local taxes, making them advantageous for high earners in high-tax jurisdictions.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-09-02",
       "url": "https://www.youtube.com/shorts/7H0mvTzSPA0",
       "title": "3 STOCKS TO WATCH IN SEPTEMBER 📈 (PART 2)",
