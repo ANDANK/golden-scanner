@@ -1,8 +1,185 @@
 {
-  "updated": "2026-09-02",
+  "updated": "2026-09-03",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-02",
+      "url": "https://www.youtube.com/shorts/7H0mvTzSPA0",
+      "title": "3 STOCKS TO WATCH IN SEPTEMBER 📈 (PART 2)",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "UBER",
+          "bias": "Bullish",
+          "notes": "Uber is consolidating in a stealth phase and flashing a buy signal around $64 to $65 after pulling back from $100. The host highlights strong growth and an attractive P/E ratio heading into September.",
+          "price": 76.45
+        },
+        {
+          "ticker": "ULTA",
+          "bias": "Bullish",
+          "notes": "The stock flashed a weekly buy signal and bounced off its four-year moving average around $450. The host views it as a solid value play poised for a significant move to the upside in September.",
+          "price": 551.74
+        },
+        {
+          "ticker": "NVO",
+          "bias": "Bullish",
+          "notes": "NVO is on breakout watch after building a base near $45 and printing a rare monthly MACD crossover. The host considers this multi-year setup very bullish for an upcoming swing-trade rally.",
+          "price": 46.77
+        }
+      ]
+    },
+    {
+      "date": "2026-09-02",
+      "url": "https://www.youtube.com/shorts/XDDRXOUWjI0",
+      "title": "5 Experts Agree: This Is How You Get Rich in 2026",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When starting out, focusing on increasing active earned income generates higher returns than relying on passive investments alone, enabling early capital to compound significantly over time.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Paying off a low-interest mortgage early is mathematically less effective than investing in the S&P 500 compounding at 10% to 11%, though paying off the loan makes sense if interest rates exceed 7%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Long-term wealth is most reliably built by dollar-cost averaging into a simple, low-cost ETF portfolio covering foundational, value, and growth assets while avoiding heavy fee drag.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-03",
+      "url": "https://www.youtube.com/shorts/ys4-KxMcmmI",
+      "title": "This Stock is the next Nvidia‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 10-year US Treasury yield has reached its highest level since 2023, which is putting severe pressure on mortgage rates and existing home sales.",
+          "price": null
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "The semiconductor cycle is nearing its peak as hyperscalers will eventually have to moderate capex, squeezing margins and leading to flat or negative multi-year returns.",
+          "price": 224.41
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "The host expects the stock to reach $7 to $9 by year-end, highlighting improving gross margins above 40%, positive operating cash flow, over $100M in cash, and zero debt.",
+          "price": 5.72
+        },
+        {
+          "ticker": "FUBO",
+          "bias": "Bullish",
+          "notes": "The company revised 2026 adjusted EBITDA guidance up to $90M-$100M, expects positive free cash flow in 2027-2028, and is positioned to benefit from new Disney-backed leadership.",
+          "price": 11.27
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Identified as one of the host's top two favorite trillion-dollar market cap stocks to hold over a 5-year horizon based on long-term growth prospects.",
+          "price": 254.98
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Selected alongside Amazon as a top long-term trillion-dollar pick for a 5-year holding period, despite near-term capex ROI concerns.",
+          "price": 592.85
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "The stock is mirroring Nvidia's past recovery pattern, trading at an attractive forward P/E while analyst revenue growth expectations remain too low.",
+          "price": 136.72
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "Strong upside is expected into Q4 as analyst estimates of ~9-10% revenue growth are too conservative and the company should easily deliver double-digit growth.",
+          "price": 256.93
+        }
+      ]
+    },
+    {
+      "date": "2026-09-02",
+      "url": "https://www.youtube.com/shorts/dvPpKTbdcSk",
+      "title": "How I Make Consistent Weekly Income With the Wheel Strategy",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host views SoFi as heavily beaten down and trading at low levels, identifying key support around $16 and targeting wheel-strategy cash-secured puts around the $18 strike.",
+          "price": 17.84
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Considered Palantir heavily undervalued at $109 per share with fair value estimates of $140 to $150, and potentially $170 to $180 by 2026-2027.",
+          "price": 169.46
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Viewed AMD as heavily undervalued relative to Nvidia given their high correlation and strong management execution, taking a bullish long-term call position at the $200 strike.",
+          "price": 457.06
+        },
+        {
+          "ticker": "AAL",
+          "bias": "Bullish",
+          "notes": "Identifies strong floor support between $10 and $11, finding it an ideal rangebound stock to repeatedly run cash-secured puts and covered calls.",
+          "price": 13.11
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The options wheel strategy is ideal for moderately bullish or rangebound high-quality stocks to generate consistent income, but should be avoided on explosive momentum names to prevent capped upside.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-02",
+      "url": "https://www.youtube.com/shorts/fGXwa_kdOgY",
+      "title": "Expect Social Security Benefit Cuts... I Am.",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Social Security is projected to reach trust fund insolvency by 2032, which would trigger an automatic estimated 22% cut across all benefits if Congress does not enact reforms.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Based on historical precedent from 1983, Congress is expected to delay reform until the deadline, likely solving the deficit via increased payroll taxes and higher retirement ages.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Self-employed individuals paying the full 12.4% Social Security tax should consider electing an S Corporation tax status to legally reduce payroll tax liability.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-02",
       "url": "https://www.youtube.com/shorts/Qf8QguTF9qg",
