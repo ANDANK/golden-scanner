@@ -5,6 +5,60 @@
   "videos": [
     {
       "date": "2026-09-03",
+      "url": "https://www.youtube.com/shorts/J_PKfb81CCM",
+      "title": "3 STOCKS MAKING BIG MOVES 📈 SEPTEMBER 3",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "SNOW",
+          "bias": "Bearish",
+          "notes": "Following a 170% run over six months from the $145 entry, it is time to take profits off the table or set a stop loss at the $310 level.",
+          "price": 305.84
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "After entering around $70 in March and gaining 78%, the stock looks poised to continue taking off with more upside room over the next couple of months.",
+          "price": 106.99
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Crypto legislation known as the Clarity Act is expected to pass this month, which would serve as a major catalyst for USDC issuer Circle.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-03",
+      "url": "https://www.youtube.com/shorts/Mq0YGgcgezg",
+      "title": "3 STOCKS TO WATCH IN SEPTEMBER 📈 (PART 3)",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "SYM",
+          "bias": "Bullish",
+          "notes": "Symbotic is consolidating around $40 near its 4-year average of $37 following a major pullback from $86, which the host views as an accumulation phase supported by its warehouse robotics partnership with Walmart.",
+          "price": 39.87
+        },
+        {
+          "ticker": "COZ",
+          "bias": "Bullish",
+          "notes": "The host opened a position following a 50%+ pullback from highs, expecting a buy signal within 1-3 weeks and highlighting their AI/data center power partnership with AMD.",
+          "price": null
+        },
+        {
+          "ticker": "OKLO",
+          "bias": "Bullish",
+          "notes": "Highlighted as an energy play to watch that has pulled back to around $40 from highs near $200, noting their partnership with Meta.",
+          "price": 39.52
+        }
+      ]
+    },
+    {
+      "date": "2026-09-03",
       "url": "https://www.youtube.com/shorts/QJC0Wvs78SI",
       "title": "Buy These 5 Assets To Replace Your Paycheck (And Never Work Again)",
       "channel": "@MinorityMindset",
