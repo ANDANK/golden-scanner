@@ -1,8 +1,53 @@
 {
-  "updated": "2026-09-03",
+  "updated": "2026-09-04",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-04",
+      "url": "https://www.youtube.com/shorts/rtpLI3Sjco4",
+      "title": "Something Just Broke Inside The Federal Reserve",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Federal Reserve Chairman Kevin Warsh signaled that the Fed may keep interest rates higher or even raise them in 2026 due to persistent inflation from tariffs and oil prices.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Nearly one-third of the $40 trillion U.S. national debt is set to readjust at higher interest rates in 2026, significantly increasing federal interest expenses.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Debasement assets like gold, silver, and Bitcoin face downward pressure when higher interest rates strengthen the U.S. dollar.",
+          "price": null
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "SCHD provides exposure to dividend-paying U.S. value companies that can offer strong cash flow and resilience during high-rate environments.",
+          "price": 34.9
+        },
+        {
+          "ticker": "SPY",
+          "bias": "Bullish",
+          "notes": "SPY offers broad exposure to the S&P 500, serving as a reliable way for long-term investors to capture general U.S. economic growth.",
+          "price": 771.24
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The U.S. Treasury announced plans to increase buybacks of its own debt starting September 9th due to a lack of external buyers.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-03",
       "url": "https://www.youtube.com/shorts/J_PKfb81CCM",
