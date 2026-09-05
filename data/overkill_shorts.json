@@ -1,8 +1,59 @@
 {
-  "updated": "2026-09-04",
+  "updated": "2026-09-05",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-05",
+      "url": "https://www.youtube.com/shorts/-nTf3n0aB10",
+      "title": "My 24-Month Stock Market Prediction (How I'm Investing Now)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A steepening yield curve with the 30-year Treasury yield staying above 5% indicates the bond market is pricing in long-term inflation and fiscal deficit risks while short-term rates reflect slowing growth.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Massive corporate spending on AI capex presents a key risk of margin compression and reduced return on investment if monetization fails to meet expectations beyond 2027.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A modest earnings miss alongside valuation multiple compression from 21x down to 18x forward earnings could cause a 20% market drawdown even without a recession.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should structure a resilient three-fund portfolio balanced across core market index funds, dividend-paying value funds, growth funds, and a dedicated cash reserve for buying market dips.",
+          "price": null
+        },
+        {
+          "ticker": "VOO",
+          "bias": "Bullish",
+          "notes": "The host routinely allocates $300 out of every $1,000 invested per month into foundational core index ETFs like VOO for long-term capital appreciation.",
+          "price": 708.01
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "The host allocates $200 monthly into dividend value ETFs like SCHD to provide portfolio downside buffer and ongoing dividend cash flow.",
+          "price": 34.8
+        },
+        {
+          "ticker": "QQQM",
+          "bias": "Bullish",
+          "notes": "The host puts $200 monthly into growth ETFs like QQQM to capture upside performance during market bull cycles.",
+          "price": 296.07
+        }
+      ]
+    },
     {
       "date": "2026-09-04",
       "url": "https://www.youtube.com/shorts/k5cuMgr2bf4",
