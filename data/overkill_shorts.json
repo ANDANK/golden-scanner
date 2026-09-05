@@ -5,6 +5,81 @@
   "videos": [
     {
       "date": "2026-09-04",
+      "url": "https://www.youtube.com/shorts/k5cuMgr2bf4",
+      "title": "Investing $1,000,000 in this stock‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Host selected AMD as his top 1-year investment, predicting it will be the most exciting semiconductor stock in 2027 as its growth rates severely surpass Nvidia's.",
+          "price": 477.57
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Host is bullish on Celsius Holdings for a 3-year timeframe, projecting the stock to bounce back from $30 today to between $60 and $90.",
+          "price": 30.66
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Host chose Meta as his top 5-year pick, noting that while short-term capex is out of control, he remains a huge fan of the company over the long term.",
+          "price": 616.77
+        }
+      ]
+    },
+    {
+      "date": "2026-09-04",
+      "url": "https://www.youtube.com/shorts/CkyRJi-KGOM",
+      "title": "SOFI & Robinhood Investors BEWARE— Don't Make This Mistake!",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "Believes the stock is headed to $150 from around $122 due to growing customer wallet share across banking, Gold subscriptions, credit cards, and prediction markets. Notes positive analyst revisions including Morgan Stanley's $150 price target and Piper Sandler's $145 target driven by NFL and college football prediction market revenue.",
+          "price": 122.11
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Views the stock as a target of at least $25 by 2027 compared to its current ~$18 level. Highlights its strategic crypto/blockchain partnership with Kraken to launch SoFi USD and expanding fee-based ecosystem revenues beyond traditional lending.",
+          "price": 18.22
+        }
+      ]
+    },
+    {
+      "date": "2026-09-04",
+      "url": "https://www.youtube.com/shorts/kLw0TWFKxT4",
+      "title": "Jobs Report Crushes Expectations... Stock Market Hates It",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The August jobs report beat expectations with 162,000 jobs added and unemployment steady at 4.1%, increasing the market-implied odds of a Federal Reserve rate hike at the September meeting to 58.4%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Wage growth at 3.1% is failing to keep pace with the 3.4% CPI inflation rate and an estimated 7% money supply growth, resulting in a decline in living standards.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "AI search requires 20 times more electricity than traditional search, which will require significant energy infrastructure expansion and increase demand for copper amid an existing production deficit.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-04",
       "url": "https://www.youtube.com/shorts/rtpLI3Sjco4",
       "title": "Something Just Broke Inside The Federal Reserve",
       "channel": "@MinorityMindset",
