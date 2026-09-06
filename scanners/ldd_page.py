@@ -426,6 +426,102 @@ def _build_table(state: dict, white_line_k: float) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# Column spec: (display label, group key, format kind). Groups get colored,
+# spanned sub-headers so Monthly/Weekly/Daily stay scannable (spec point 5).
+_PURPLE = "#9C27B0"
+_GROUPS = {"ID": ("", TEXT_MUTED), "M": ("Monthly", ACCENT_BLUE), "W": ("Weekly", ACCENT_GREEN),
+           "D": ("Daily", _PURPLE), "T": ("Technicals", TEXT_MUTED), "V": ("Verdicts", GOLD)}
+_COLS = [
+    ("Ticker", "ID", "tk"),
+    ("Status", "M", "stat"), ("Price", "M", "raw"), ("Signal", "M", "raw"),
+    ("Status", "W", "stat"), ("Price", "W", "raw"), ("Signal", "W", "raw"),
+    ("Status", "D", "stat"), ("Price", "D", "raw"), ("Signal", "D", "raw"),
+    ("Price", "T", "usd"), ("RSI D", "T", "num"), ("RSI W", "T", "num"),
+    ("MACD D", "T", "raw"), ("MACD W", "T", "raw"), ("EMA20>50", "T", "raw"),
+    ("G/D", "T", "raw"), ("Ext%", "T", "pct"), ("Cloud", "T", "raw"),
+    ("ADX", "T", "num"), ("ADX Zone", "T", "raw"), ("StRSI %K", "T", "num"),
+    ("Rule-Based Verdict", "V", "rb"), ("Technical Verdict", "V", "tv"),
+]
+# maps each (label, group) to the source column in the built DataFrame
+_SRC = {
+    ("Ticker", "ID"): "Ticker",
+    ("Status", "M"): "🗓️M Status", ("Price", "M"): "M Price", ("Signal", "M"): "M Date",
+    ("Status", "W"): "🗓️W Status", ("Price", "W"): "W Price", ("Signal", "W"): "W Date",
+    ("Status", "D"): "🗓️D Status", ("Price", "D"): "D Price", ("Signal", "D"): "D Date",
+    ("Price", "T"): "Price", ("RSI D", "T"): "RSI D", ("RSI W", "T"): "RSI W",
+    ("MACD D", "T"): "MACD D", ("MACD W", "T"): "MACD W", ("EMA20>50", "T"): "EMA20>50",
+    ("G/D", "T"): "G/D Cross", ("Ext%", "T"): "Ext vs EMA20", ("Cloud", "T"): "EMA Cloud",
+    ("ADX", "T"): "ADX", ("ADX Zone", "T"): "ADX Zone", ("StRSI %K", "T"): "StochRSI %K",
+    ("Rule-Based Verdict", "V"): "Rule-Based Verdict", ("Technical Verdict", "V"): "Technical Verdict",
+}
+
+
+def _html_table(view: pd.DataFrame) -> str:
+    """Render the results as an HTML <table> — st.dataframe's canvas grid does
+    not paint on this app's Streamlit Cloud deployment (see home.py Best
+    Scanners), so every table here is hand-built HTML."""
+    def fmt(v, kind):
+        if v is None or v == "" or (isinstance(v, float) and pd.isna(v)):
+            return "—"
+        if kind == "usd":
+            try: return f"${float(v):,.2f}"
+            except (TypeError, ValueError): return "—"
+        if kind == "pct":
+            try: return f"{float(v):+.1f}%"
+            except (TypeError, ValueError): return "—"
+        if kind == "num":
+            try: return f"{float(v):.1f}"
+            except (TypeError, ValueError): return str(v)
+        return str(v)
+
+    def cell_color(v, kind):
+        if kind == "stat":
+            s = str(v).lower()
+            return ACCENT_GREEN if s.startswith("confirm") else GOLD if s.startswith("show") else TEXT_MUTED
+        if kind == "rb":
+            s = str(v)
+            return (ACCENT_GREEN if s.startswith("Buy") else ACCENT_RED if s.startswith("Sell")
+                    else GOLD if s.startswith("Weekly Confirm") else TEXT_MUTED)
+        if kind == "tv":
+            return {"Lean Buy": ACCENT_GREEN, "Lean Sell": ACCENT_RED, "Mixed": GOLD}.get(str(v), TEXT_MUTED)
+        return TEXT_PRIMARY
+
+    # group header row (spanned) — count columns per group in order
+    grp_hdr = ""
+    i = 0
+    while i < len(_COLS):
+        g = _COLS[i][1]
+        span = 1
+        while i + span < len(_COLS) and _COLS[i + span][1] == g:
+            span += 1
+        label, col = _GROUPS[g]
+        grp_hdr += (f'<th colspan="{span}" style="background:{col}22;color:{col};'
+                    f'border:1px solid {BORDER_COLOR};padding:3px 6px;font-size:10px;'
+                    f'font-weight:800;text-align:center">{label}</th>')
+        i += span
+
+    _TH = (f"background:{BG_CARD};color:{TEXT_MUTED};border:1px solid {BORDER_COLOR};"
+           f"padding:3px 6px;font-size:9.5px;font-weight:700;white-space:nowrap")
+    col_hdr = "".join(f'<th style="{_TH}">{lbl}</th>' for lbl, _g, _k in _COLS)
+
+    _TD = f"border:1px solid {BORDER_COLOR};padding:3px 7px;font-size:10.5px;white-space:nowrap"
+    body = ""
+    for _, r in view.iterrows():
+        tds = ""
+        for lbl, g, kind in _COLS:
+            v = r.get(_SRC[(lbl, g)])
+            txt = fmt(v, kind)
+            col = cell_color(v, kind)
+            weight = "700" if (kind in ("tk", "rb", "tv") or (kind == "stat" and txt != "—")) else "400"
+            tds += f'<td style="{_TD};color:{col};font-weight:{weight}">{txt}</td>'
+        body += f"<tr>{tds}</tr>"
+
+    return (f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:8px">'
+            f'<table style="border-collapse:collapse;font-family:Inter,sans-serif;min-width:100%">'
+            f'<thead><tr>{grp_hdr}</tr><tr>{col_hdr}</tr></thead>'
+            f'<tbody>{body}</tbody></table></div>')
+
+
 def _parse_tab(tf_label: str, tf_key: str, core_crypto: set):
     """One input tab (Monthly/Weekly/Daily)."""
     sig_date = st.date_input("Signal date", value=date.today(), key=f"ldd_date_{tf_key}",
@@ -569,14 +665,7 @@ def render():
 
     st.caption(f"{len(view)} of {len(df)} tickers · two independent verdicts — "
                "they can and will disagree, and that disagreement is signal, not noise.")
-    st.dataframe(
-        view.drop(columns=["_tnet"]),
-        use_container_width=True, hide_index=True, height=560,
-        column_config={
-            "Ext vs EMA20": st.column_config.NumberColumn(format="%.1f%%"),
-            "Price": st.column_config.NumberColumn(format="$%.2f"),
-        },
-    )
+    st.markdown(_html_table(view), unsafe_allow_html=True)
 
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:6px;'
