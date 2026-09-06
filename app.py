@@ -874,6 +874,7 @@ NAV_GROUPS = [
         "sep": "Stocks", "icon": "📊", "expanded": False,
         "items": [
             {"key": "🔀  Golden Scan"},
+            {"key": "🧭  LDD Signals"},
             {"key": "🔬  Stock Analysis"},
             {"key": "📰  Headlines & Catalysts"},
             {"key": "⚡  3× Leveraged ETFs"},
@@ -1248,6 +1249,10 @@ elif page == "💰  ML 401K":
     render()
 elif page == "🔀  Golden Scan":
     from scanners.combined_scanner import render
+    render()
+
+elif page == "🧭  LDD Signals":
+    from scanners.ldd_page import render
     render()
 elif page == "🔬  Stock Analysis":
     from scanners.deep_analysis import render
