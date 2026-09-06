@@ -1,8 +1,86 @@
 {
-  "updated": "2026-09-05",
+  "updated": "2026-09-06",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-06",
+      "url": "https://www.youtube.com/shorts/ZBoxCVqON8A",
+      "title": "This LEAPs Option Trading Strategy Will Make Millionaires (Full Guide)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Views Meta under $600 as a strong buying opportunity and expects the stock to reach $700 per share by early 2027.",
+          "price": 616.77
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Remains long-term bullish on Amazon, citing strong core business fundamentals.",
+          "price": 258.51
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Identifies Netflix as a solid long-term opportunity following a massive sell-off.",
+          "price": 78.25
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Views Nvidia as a great long-term company, but prefers waiting for a pullback below its moving average and upper Bollinger Band before buying LEAPs.",
+          "price": 230.36
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Sees a prime LEAP setup in SoFi as it trades below its 50-day moving average and lower Bollinger Band despite improving fundamentals.",
+          "price": 18.22
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Bullish on Alphabet long-term due to expanding AI and search revenues, projecting the stock could reach $400 by 2027.",
+          "price": 338.46
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Treat LEAP options as stock replacements rather than speculative plays, and manage or close 1-year positions around the 6-month mark before theta decay accelerates.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Target deep in-the-money LEAP options with roughly a 0.75 delta to achieve stock-like price sensitivity while maintaining downside cushion.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Lock in profits on LEAP trades when gains reach 30% to 50% or when the underlying stock reaches the upper boundary of its Bollinger Band.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-05",
+      "url": "https://www.youtube.com/shorts/3cN-zen9cRI",
+      "title": "Bloom Energy Just Got HUGE News — Here’s What I’m Doing (BE)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "BE",
+          "bias": "Bullish",
+          "notes": "Targeting $300 per share in the short term driven by S&P 500 inclusion on September 21 and expanding partnerships like Brookfield's $25B framework to solve AI power bottlenecks. The business is inflecting with 166% year-over-year revenue growth and gross margins expanding from 12% to 27%.",
+          "price": 252.87
+        }
+      ]
+    },
     {
       "date": "2026-09-05",
       "url": "https://www.youtube.com/shorts/-nTf3n0aB10",
