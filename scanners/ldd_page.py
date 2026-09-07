@@ -464,33 +464,36 @@ def rule_based_verdict(slot: dict, tech: dict) -> str:
     # _build_table → tech['fair_buy']) OR a pasted "crossing the blue line" alert.
     fair_buy = bool(tech.get("fair_buy")) or bool(slot.get("fair"))
 
-    # Both buy strategies aligned — the strongest confluence. Buy #2's weekly
-    # trigger is either the blue wave below the white line or price at the mean.
+    # Short, consistent labels. The *which trigger* detail (blue wave vs at the
+    # mean) is already visible in the Blue Wave (W) and vs Mean columns, so the
+    # verdict no longer repeats it — this also merges what used to be two
+    # separate "Strong Buy" strings into one bucket.
+    #
+    # Both buy strategies aligned — the strongest confluence.
     if monthly_green and weekly_green and (blue_below or fair_buy):
-        why = "blue wave below white line" if blue_below else "price at 200-wk mean"
-        return f"Strong Buy — Monthly + Weekly ({why})"
+        return "Strong Buy — Monthly + Weekly"
     # Buy Strategy #1 — Monthly confirmed (the strongest single standing signal).
     if monthly_green:
-        return "Buy — Monthly Confirm"
+        return "Buy — Monthly"
     # Buy Strategy #2 — Weekly confirmed AND (blue wave below the white line OR
     # price at the 200-week mean / fair price).
     if weekly_green:
         if blue_below:
-            return "Buy — Weekly Confirm + blue wave below white line"
+            return "Buy — Weekly (blue wave)"
         if fair_buy:
-            return "Buy — Weekly Confirm + price at 200-wk mean (fair price)"
-        return "Weekly Confirm — waiting (blue wave not below white line)"
+            return "Buy — Weekly (at mean)"
+        return "Weekly — waiting"
     # Standalone fair-price weekly alert — price at/near the 200-week mean with
     # no Monthly/Weekly confirm on record yet.
     if fair_buy:
-        return "Buy — Fair price (price at/near the 200-wk mean)"
+        return "Buy — At mean"
     # Daily green alert — buy as long as Monthly is green OR price is above the EMA ribbon.
     if daily_green:
         if monthly_green or tech.get("above_ema_ribbon"):
-            return "Buy — Daily alert (Monthly green / above EMA ribbon)"
-        return "Daily alert — waiting (needs Monthly green or price above EMA ribbon)"
+            return "Buy — Daily"
+        return "Daily — waiting"
 
-    return "No Rule Signal — Watch"
+    return "Watch — no signal"
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -682,7 +685,7 @@ def _html_table(view: pd.DataFrame) -> str:
             s = str(v)
             return (ACCENT_GREEN if (s.startswith("Buy") or s.startswith("Strong Buy"))
                     else ACCENT_RED if s.startswith("Sell")
-                    else GOLD if ("Weekly Confirm" in s or s.startswith("Daily alert"))
+                    else GOLD if "waiting" in s
                     else TEXT_MUTED)
         if kind == "tv":
             return {"Lean Buy": ACCENT_GREEN, "Lean Sell": ACCENT_RED, "Mixed": GOLD}.get(str(v), TEXT_MUTED)
@@ -725,7 +728,7 @@ def _html_table(view: pd.DataFrame) -> str:
             row_bg = f"{ACCENT_GREEN}1f"
         elif rb.startswith("Sell"):
             row_bg = f"{ACCENT_RED}1f"
-        elif "Weekly Confirm" in rb or rb.startswith("Daily alert"):
+        elif "waiting" in rb:
             row_bg = f"{GOLD}1f"
         else:
             row_bg = BG_PANEL if (j % 2) else BG_CARD
@@ -1077,30 +1080,28 @@ def render():
             "**Rule-Based Verdict** — Andy's literal LDD rules "
             "(Buy #1 = Monthly; Buy #2 = Weekly + blue wave below the white line; "
             "Daily = buy as long as Monthly is green **or** price is above the EMA ribbon):\n\n"
-            "- **Strong Buy — Monthly + Weekly (blue wave below white line)** — both buy "
-            "strategies fire at once: Monthly CONFIRMED **and** Weekly CONFIRMED with the "
-            "WaveTrend blue wave below the white (oversold) line. The highest-conviction combo.\n"
-            "- **Buy — Monthly Confirm** — Monthly chart CONFIRMED (Buy Strategy #1, the "
-            "strongest single standing signal). Look for a trade.\n"
-            "- **Buy — Weekly Confirm + blue wave below white line** — Buy Strategy #2 fully "
-            "triggered: Weekly CONFIRMED **and** the WaveTrend blue wave (WT1) is below the "
-            f"white line (≤ {_WT_OS}, the oversold zone) on the weekly.\n"
-            "- **Buy — Weekly Confirm + price at 200-wk mean (fair price)** — Weekly CONFIRMED "
-            "**and** price is at/near the 200-week fair-price line (the blue 4-yr MA) even "
-            "though the blue wave isn't below the white line — the mean is Buy #2's other "
-            "trigger.\n"
-            "- **Buy — Fair price (price at/near the 200-wk mean)** — price is at/near the "
-            "200-week mean (or freshly crossed the blue line), with no Monthly/Weekly confirm "
-            "on record yet. The standalone weekly fair-price alert.\n"
-            "- **Weekly Confirm — waiting (blue wave not below white line)** — the Weekly chart "
-            "is CONFIRMED, but neither the blue wave is below the white line **nor** is price at "
-            "the 200-week mean yet, so Buy Strategy #2 hasn't fired. A watch, not a buy.\n"
-            "- **Buy — Daily alert (Monthly green / above EMA ribbon)** — a Daily CONFIRMED "
-            "with the daily-alert context met (Monthly is green, or price is trending above "
-            "the EMA ribbon).\n"
-            "- **Daily alert — waiting (needs Monthly green or price above EMA ribbon)** — a "
-            "Daily CONFIRMED but neither context condition holds yet.\n"
-            "- **No Rule Signal — Watch** — no Monthly/Weekly/Daily confirm on record. (Sell "
+            "*(The **Blue Wave (W)** and **vs Mean** columns show which trigger fired, so the "
+            "verdict labels stay short and don't repeat it.)*\n\n"
+            "- **Strong Buy — Monthly + Weekly** — both buy strategies fire at once: Monthly "
+            "CONFIRMED **and** Weekly CONFIRMED with its trigger (blue wave below the white "
+            "line **or** price at the 200-wk mean). The highest-conviction combo.\n"
+            "- **Buy — Monthly** — Monthly chart CONFIRMED (Buy Strategy #1, the strongest "
+            "single standing signal). Look for a trade.\n"
+            "- **Buy — Weekly (blue wave)** — Buy Strategy #2: Weekly CONFIRMED **and** the "
+            f"WaveTrend blue wave (WT1) is below the white line (≤ {_WT_OS}, oversold).\n"
+            "- **Buy — Weekly (at mean)** — Buy Strategy #2's other trigger: Weekly CONFIRMED "
+            "**and** price is at/near the 200-week fair-price line (blue 4-yr MA), even though "
+            "the blue wave isn't below the white line.\n"
+            "- **Buy — At mean** — price is at/near the 200-week mean (or freshly crossed the "
+            "blue line), with no Monthly/Weekly confirm on record yet. The standalone weekly "
+            "fair-price alert.\n"
+            "- **Weekly — waiting** — Weekly CONFIRMED, but neither the blue wave is below the "
+            "white line **nor** is price at the 200-week mean yet, so Buy #2 hasn't fired. A "
+            "watch, not a buy.\n"
+            "- **Buy — Daily** — a Daily CONFIRMED with its context met (Monthly is green, or "
+            "price is trending above the EMA ribbon).\n"
+            "- **Daily — waiting** — a Daily CONFIRMED but neither context condition holds yet.\n"
+            "- **Watch — no signal** — no Monthly/Weekly/Daily confirm on record. (Sell "
             "strategies stay inert until a real daily-🔴/weekly-sell example format is pasted.)\n\n"
             "**vs Mean (Fair price)** — price against the **200-week SMA** (the blue 4-yr MA "
             "Andy calls the *fair price / mean*): **At mean** (within the Settings band — the "
