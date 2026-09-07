@@ -183,17 +183,30 @@ def _sheets_ready() -> bool:
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def load_state() -> dict:
-    """Running latest_state, read from LDD_State!A1. Cached 2 min so the table
-    doesn't re-hit Sheets on every widget interaction; cleared after a save."""
+def load_state() -> tuple[dict, str]:
+    """Running latest_state, read from LDD_State!A1. Returns (state, status) so
+    callers can tell an empty universe apart from a connection/read failure —
+    the three used to collapse to the same empty dict. status is one of:
+      'ok'            — state read and non-empty
+      'empty'         — connected, but A1 is blank (genuinely no tickers yet)
+      'not_connected' — no [gsheets] credentials configured
+      'read_error'    — Sheets threw (transient API / quota / permissions) or
+                        A1 held unparseable JSON — the saved data is NOT lost
+    Cached 2 min so the table doesn't re-hit Sheets on every widget interaction;
+    cleared after a save or via the Reload button."""
     if not _sheets_ready():
-        return {}
+        return {}, "not_connected"
     try:
         from scanners.gsheet_helper import _gs_sheet
         raw = _gs_sheet(_STATE_TAB).acell("A1").value
-        return json.loads(raw) if raw else {}
     except Exception:
-        return {}
+        return {}, "read_error"
+    if not raw:
+        return {}, "empty"
+    try:
+        return (json.loads(raw) or {}), "ok"
+    except Exception:
+        return {}, "read_error"
 
 
 def save_state(state: dict) -> tuple[bool, str]:
@@ -845,7 +858,15 @@ def _parse_tab(tf_label: str, tf_key: str, core_crypto: set):
 
     sd = sig_date.strftime("%Y-%m-%d")
     parsed_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    state = load_state()
+    state, status = load_state()
+    if status == "read_error":
+        # Never merge onto a state we failed to read — saving it would overwrite
+        # every existing ticker in the sheet with just this one batch.
+        st.error("Couldn't read the current LDD state from Google Sheets, so this "
+                 "paste was NOT saved — saving now would overwrite your existing data "
+                 "with only this batch. Retry in a moment (Reload below), then paste "
+                 "again. Your saved data is safe in the sheet.")
+        return
     state = apply_batch_to_state(state, kept, sd)
     if fair_kept:
         state = apply_fair_to_state(state, fair_kept, sd)
@@ -926,10 +947,33 @@ def render():
 
     # ── Results ───────────────────────────────────────────────────────────────
     st.markdown("#### Signals")
-    state = load_state()
-    if not state:
+    state, status = load_state()
+
+    def _reload_btn(key):
+        if st.button("🔄 Reload from Google Sheets", key=key,
+                     help="Clear the 2-minute cache and re-read LDD_State from the sheet."):
+            load_state.clear()
+            st.rerun()
+
+    if status == "not_connected":
+        st.error("Google Sheets isn't connected, so there's nothing to read. Add the "
+                 "`[gsheets]` service-account credentials in Streamlit **Secrets**. Any "
+                 "data you saved earlier is safe in the sheet and returns once the "
+                 "connection is restored.")
+        return
+    if status == "read_error":
+        st.warning("Couldn't read **LDD_State** from Google Sheets just now — a transient "
+                   "API error, a quota limit, or a change to the sheet's sharing/permissions. "
+                   "**Your saved data is not lost** — it's still in the sheet; the app just "
+                   "couldn't fetch it this moment. Reload to retry.")
+        _reload_btn("ldd_reload_err")
+        return
+    if not state:   # status == "empty" — connected, but A1 really is blank
         st.info("No tickers yet — paste a batch above. The universe is closed: only "
-                "tickers that have actually been pasted ever appear here.")
+                "tickers that have actually been pasted ever appear here. (If you've "
+                "pasted before, the sheet's `LDD_State!A1` is empty — reload in case a "
+                "read was cached empty, and re-paste if it's genuinely blank.)")
+        _reload_btn("ldd_reload_empty")
         return
 
     with st.spinner("Pulling technicals…"):
