@@ -233,6 +233,22 @@ def _macd_state(close: pd.Series):
     return zone, cross
 
 
+# WaveTrend "blue wave" (LazyBear formula, identical to scanners/overkill_check.py
+# so the LDD blue wave and the OverKill dots come from one engine). ±53 are the
+# overbought/oversold "white lines".
+_WT_OS = -53
+_WT_OB = 53
+
+
+def _wt1_series(df: pd.DataFrame) -> pd.Series:
+    """WaveTrend WT1 (the blue wave)."""
+    h3 = (df["High"] + df["Low"] + df["Close"]) / 3.0
+    esa = calc_ema(h3, 9)
+    d = calc_ema((h3 - esa).abs(), 9).replace(0, np.nan)
+    ci = (h3 - esa) / (0.015 * d)
+    return calc_ema(ci, 12)
+
+
 def _weekly(df: pd.DataFrame) -> pd.DataFrame:
     return (df.resample("W-FRI")
               .agg({"Open": "first", "High": "max", "Low": "min",
@@ -294,6 +310,22 @@ def tech_snapshot(ticker: str) -> dict:
         ext_ema20 = (px / ema20 - 1) * 100 if ema20 else 0.0
         adx_zone = ("Trending" if adx >= 25 else "Developing" if adx >= 20 else "Choppy")
 
+        # WaveTrend "blue wave" — LazyBear engine, the same one that draws the
+        # OverKill green/red dots. wt1 is the blue wave; the two horizontal white
+        # lines are the OB/OS boundaries (±53). "Blue wave below the white line" =
+        # wt1 <= WT_OS on that timeframe (the oversold buy zone). Validated against
+        # Andy's own indicator screenshots (IonQ/SEI/Centene/CDW).
+        wt1_d = float(_wt1_series(df).iloc[-1])
+        _wtw = _wt1_series(wk)
+        wt1_w = float(_wtw.iloc[-1]) if len(_wtw.dropna()) else float("nan")
+        wt_w_below = bool(wt1_w == wt1_w and wt1_w <= _WT_OS)   # weekly buy zone
+        wt_d_below = bool(wt1_d == wt1_d and wt1_d <= _WT_OS)
+        wt_w_state = ("Below white" if wt_w_below else
+                      "Above white" if (wt1_w == wt1_w and wt1_w >= _WT_OB) else
+                      "Mid" if wt1_w == wt1_w else "—")
+        # "Price trending above the EMA ribbon" — the daily-alert context condition.
+        above_ema_ribbon = bool(px > ema20 > ema50)
+
         out.update(dict(
             ok=True, price=round(px, 2),
             rsi_d=round(rsi_d, 1), rsi_d_dir=(1 if rsi_d > rsi_d_prev + 0.5
@@ -306,6 +338,9 @@ def tech_snapshot(ticker: str) -> dict:
             ext_ema20=round(ext_ema20, 1),
             adx=round(adx, 1), adx_zone=adx_zone,
             stoch_k=round(sk, 1), stoch_d=round(sd, 1),
+            wt1_w=(round(wt1_w, 1) if wt1_w == wt1_w else None),
+            wt_w_below_white=wt_w_below, wt_d_below_white=wt_d_below,
+            wt_w_state=wt_w_state, above_ema_ribbon=above_ema_ribbon,
         ))
         return out
     except Exception:
@@ -313,36 +348,41 @@ def tech_snapshot(ticker: str) -> dict:
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# RULE-BASED VERDICT  (§5 — Andy's literal rules; deterministic & inspectable)
-#   Any verdict leaning on a proprietary/approximated part of the paid
-#   indicator (StochRSI blue-wave/white-line, red/green "zones") says so INLINE
-#   in the string, never only in a tooltip.
+# RULE-BASED VERDICT  (Andy's literal LDD rules; deterministic & inspectable)
+#   Buy #1: buy on the MONTHLY (monthly green/confirmed).
+#   Buy #2: buy on the WEEKLY if the blue wave is below the white line.
+#   Daily : "buy as long as MONTHLY is green OR price is above the EMA ribbon."
+#   The "blue wave below the white line" is a real WaveTrend recreation (see
+#   _wt1_series / _WT_OS), not a rough proxy, so no proxy caveat is appended.
+#   Sells (daily red zone / weekly sell) stay inert until a real example arrives.
 # ════════════════════════════════════════════════════════════════════════════
-_PROXY = " — proxy, verify on your indicator"
-
-
-def rule_based_verdict(slot: dict, tech: dict, white_line_k: float = 20.0) -> str:
+def rule_based_verdict(slot: dict, tech: dict) -> str:
     slot = slot or {"monthly": None, "weekly": None, "daily": None}
-    m, w = slot.get("monthly"), slot.get("weekly")
+    m, w, d = slot.get("monthly"), slot.get("weekly"), slot.get("daily")
     tech = tech or {}
 
-    # Buy Strategy #1 — Monthly confirmed is the strongest standing signal.
-    if m and m.get("status") == "confirmed":
-        if tech.get("ema_cloud") == "bullish":
-            # Andy's "any other format supports → almost a buy" confluence note.
-            return "Buy — Monthly Confirm + EMA-Cloud confluence" + _PROXY
-        return "Buy Candidate — Monthly Confirm"
+    monthly_green = bool(m and m.get("status") == "confirmed")
+    weekly_green = bool(w and w.get("status") == "confirmed")
+    daily_green = bool(d and d.get("status") == "confirmed")
+    blue_below = bool(tech.get("wt_w_below_white"))   # weekly blue wave below the white line
 
-    # Buy Strategy #2 — Weekly confirmed AND StochRSI below the white line.
-    # The blue-wave/white-line is proprietary; StochRSI %K < threshold is a proxy.
-    if w and w.get("status") == "confirmed":
-        k = tech.get("stoch_k")
-        if k is not None and k < white_line_k:
-            return "Buy Candidate — Weekly Confirm + StochRSI oversold" + _PROXY
-        return "Weekly Confirm — awaiting StochRSI trigger" + _PROXY
+    # Both buy strategies aligned — the strongest confluence.
+    if monthly_green and weekly_green and blue_below:
+        return "Strong Buy — Monthly + Weekly (blue wave below white line)"
+    # Buy Strategy #1 — Monthly confirmed (the strongest single standing signal).
+    if monthly_green:
+        return "Buy — Monthly Confirm"
+    # Buy Strategy #2 — Weekly confirmed AND blue wave below the white line.
+    if weekly_green:
+        if blue_below:
+            return "Buy — Weekly Confirm + blue wave below white line"
+        return "Weekly Confirm — waiting (blue wave not below white line)"
+    # Daily green alert — buy as long as Monthly is green OR price is above the EMA ribbon.
+    if daily_green:
+        if monthly_green or tech.get("above_ema_ribbon"):
+            return "Buy — Daily alert (Monthly green / above EMA ribbon)"
+        return "Daily alert — waiting (needs Monthly green or price above EMA ribbon)"
 
-    # Sell Strategies #1/#2 depend on a daily 🔴 "red zone" / weekly sell format
-    # that has no example yet — intentionally not fired until one is seen (§5).
     return "No Rule Signal — Watch"
 
 
@@ -393,12 +433,12 @@ def _slot_txt(slot):
             slot.get("signal_date", ""))
 
 
-def _build_table(state: dict, white_line_k: float) -> pd.DataFrame:
+def _build_table(state: dict) -> pd.DataFrame:
     rows = []
     for tk in sorted(state.keys()):
         slot = state[tk]
         tech = tech_snapshot(tk)
-        rb = rule_based_verdict(slot, tech, white_line_k)
+        rb = rule_based_verdict(slot, tech)
         tv, tnet, _ = technical_verdict(tech)
         m_s, m_p, m_d = _slot_txt(slot.get("monthly"))
         w_s, w_p, w_d = _slot_txt(slot.get("weekly"))
@@ -433,7 +473,7 @@ def _build_table(state: dict, white_line_k: float) -> pd.DataFrame:
             "Ext vs EMA20": tech.get("ext_ema20"),
             "EMA Cloud": tech.get("ema_cloud", "—"),
             "ADX": tech.get("adx"), "ADX Zone": tech.get("adx_zone", "—"),
-            "StochRSI %K": tech.get("stoch_k"),
+            "Blue Wave": tech.get("wt_w_state", "—"),
             "Rule-Based Verdict": rb,
             "Technical Verdict": tv,
             "_recent": recent_date, "_tnet": tnet,
@@ -457,7 +497,7 @@ _COLS = [
     ("RSI D", "T", "num"), ("RSI W", "T", "num"),
     ("MACD D", "T", "raw"), ("MACD W", "T", "raw"), ("EMA20>50", "T", "raw"),
     ("G/D", "T", "raw"), ("Ext%", "T", "pct"), ("Cloud", "T", "raw"),
-    ("ADX", "T", "num"), ("ADX Zone", "T", "raw"), ("StRSI %K", "T", "num"),
+    ("ADX", "T", "num"), ("ADX Zone", "T", "raw"), ("Blue Wave (W)", "T", "raw"),
     ("Ticker", "ID2", "tk"),
     ("Rule-Based Verdict", "V", "rb"), ("Technical Verdict", "V", "tv"),
 ]
@@ -471,7 +511,7 @@ _SRC = {
     ("RSI D", "T"): "RSI D", ("RSI W", "T"): "RSI W",
     ("MACD D", "T"): "MACD D", ("MACD W", "T"): "MACD W", ("EMA20>50", "T"): "EMA20>50",
     ("G/D", "T"): "G/D", ("Ext%", "T"): "Ext vs EMA20", ("Cloud", "T"): "EMA Cloud",
-    ("ADX", "T"): "ADX", ("ADX Zone", "T"): "ADX Zone", ("StRSI %K", "T"): "StochRSI %K",
+    ("ADX", "T"): "ADX", ("ADX Zone", "T"): "ADX Zone", ("Blue Wave (W)", "T"): "Blue Wave",
     ("Rule-Based Verdict", "V"): "Rule-Based Verdict", ("Technical Verdict", "V"): "Technical Verdict",
 }
 
@@ -504,8 +544,10 @@ def _html_table(view: pd.DataFrame) -> str:
             return ACCENT_GREEN if g > 0 else ACCENT_RED if g < 0 else TEXT_MUTED
         if kind == "rb":
             s = str(v)
-            return (ACCENT_GREEN if s.startswith("Buy") else ACCENT_RED if s.startswith("Sell")
-                    else GOLD if s.startswith("Weekly Confirm") else TEXT_MUTED)
+            return (ACCENT_GREEN if (s.startswith("Buy") or s.startswith("Strong Buy"))
+                    else ACCENT_RED if s.startswith("Sell")
+                    else GOLD if ("Weekly Confirm" in s or s.startswith("Daily alert"))
+                    else TEXT_MUTED)
         if kind == "tv":
             return {"Lean Buy": ACCENT_GREEN, "Lean Sell": ACCENT_RED, "Mixed": GOLD}.get(str(v), TEXT_MUTED)
         return TEXT_PRIMARY
@@ -534,11 +576,11 @@ def _html_table(view: pd.DataFrame) -> str:
         # Row color: tinted by the rule-based verdict, with a subtle zebra for
         # neutral (watch / no-signal) rows so they stay separable.
         rb = str(r.get("Rule-Based Verdict", ""))
-        if rb.startswith("Buy"):
+        if rb.startswith("Buy") or rb.startswith("Strong Buy"):
             row_bg = f"{ACCENT_GREEN}1f"
         elif rb.startswith("Sell"):
             row_bg = f"{ACCENT_RED}1f"
-        elif rb.startswith("Weekly Confirm"):
+        elif "Weekly Confirm" in rb or rb.startswith("Daily alert"):
             row_bg = f"{GOLD}1f"
         else:
             row_bg = BG_PANEL if (j % 2) else BG_CARD
@@ -611,11 +653,10 @@ def render():
         cc_raw = st.text_input(
             "Core-crypto allow-list (only these crypto bases are kept)",
             value=", ".join(sorted(DEFAULT_CORE_CRYPTO)), key="ldd_core_crypto")
-        white_line_k = st.slider(
-            "StochRSI 'white line' %K threshold (Buy #2 trigger — proxy)",
-            0, 50, 20, key="ldd_white_k",
-            help="Proxy for the paid indicator's blue-wave/white-line: Weekly Confirm "
-                 "counts as a buy candidate only when StochRSI %K is below this.")
+        st.caption(f"Buy Strategy #2 uses the WaveTrend **blue wave** below the "
+                   f"**white line** (oversold ≤ {_WT_OS}) on the weekly — a recreation of the "
+                   "same WaveTrend engine as the OverKill dots. The red/green confirmation "
+                   "dots come from your pasted alerts, not from here.")
         if st.button("🔄 Refresh technicals (clear 4h cache)", key="ldd_refresh_tech"):
             tech_snapshot.clear()
             st.success("Technical cache cleared — will re-pull on next render.")
@@ -642,7 +683,7 @@ def render():
         return
 
     with st.spinner("Pulling technicals…"):
-        df = _build_table(state, white_line_k)
+        df = _build_table(state)
     if df.empty:
         st.info("No rows to show.")
         return
@@ -699,7 +740,7 @@ def render():
         view = view[view["Technical Verdict"].isin(tv_f)]
 
     def _rule_dir(s):
-        return 1 if s.startswith("Buy") else -1 if s.startswith("Sell") else 0
+        return 1 if (s.startswith("Buy") or s.startswith("Strong Buy")) else -1 if s.startswith("Sell") else 0
     if disagree:
         rd = view["Rule-Based Verdict"].map(_rule_dir)
         td = view["Technical Verdict"].map({"Lean Buy": 1, "Lean Sell": -1, "Mixed": 0, "No Data": 0})
@@ -721,9 +762,9 @@ def render():
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:6px;'
         f'padding:10px 14px;margin-top:10px;color:{TEXT_MUTED};font-size:12px">'
-        "💡 <b>Rule-Based Verdict</b> = Andy's literal rules (Monthly/Weekly confirms). "
-        "Verdicts marked <i>“— proxy, verify on your indicator”</i> lean on the paid "
-        "indicator's proprietary StochRSI/zone elements approximated from price. "
+        "💡 <b>Rule-Based Verdict</b> = Andy's literal LDD rules. <b>Buy Strategy #2</b> uses "
+        f"the WaveTrend <b>blue wave</b> below the <b>white line</b> (oversold ≤ {_WT_OS}) on the "
+        "weekly — a recreation of the same engine as the OverKill dots, so no “proxy” caveat. "
         "<b>Technical Verdict</b> is an independent indicator tally and is never adjusted "
         "to agree with the rules.</div>",
         unsafe_allow_html=True,
@@ -731,20 +772,27 @@ def render():
 
     with st.expander("ℹ️ What each verdict means"):
         st.markdown(
-            "**Rule-Based Verdict** — Andy's literal LDD rules:\n\n"
-            "- **Buy Candidate — Monthly Confirm** — the Monthly chart is CONFIRMED "
-            "(Buy Strategy #1, the strongest standing signal). Look for a trade.\n"
-            "- **Buy — Monthly Confirm + EMA-Cloud confluence** *(proxy)* — Monthly confirmed "
-            "AND the daily EMA34/50 cloud is bullish, i.e. another format supports it — Andy's "
-            "“almost a buy” confluence. *(EMA-cloud periods are approximated.)*\n"
-            "- **Buy Candidate — Weekly Confirm + StochRSI oversold** *(proxy)* — Buy Strategy #2 "
-            "fully triggered: Weekly CONFIRMED **and** the StochRSI %K is below the white-line "
-            "threshold. *(The real blue-wave/white-line is proprietary; StochRSI is the proxy.)*\n"
-            "- **Weekly Confirm — awaiting StochRSI trigger** *(proxy)* — the Weekly chart is "
-            "CONFIRMED, but StochRSI %K is **not yet** below the white line, so Buy Strategy #2's "
-            "second half hasn't fired. It's a weekly confirm *waiting* for the oversold trigger "
-            "before it becomes a buy candidate — a watch, not a buy.\n"
-            "- **No Rule Signal — Watch** — no Monthly or Weekly confirm on record. (Sell "
+            "**Rule-Based Verdict** — Andy's literal LDD rules "
+            "(Buy #1 = Monthly; Buy #2 = Weekly + blue wave below the white line; "
+            "Daily = buy as long as Monthly is green **or** price is above the EMA ribbon):\n\n"
+            "- **Strong Buy — Monthly + Weekly (blue wave below white line)** — both buy "
+            "strategies fire at once: Monthly CONFIRMED **and** Weekly CONFIRMED with the "
+            "WaveTrend blue wave below the white (oversold) line. The highest-conviction combo.\n"
+            "- **Buy — Monthly Confirm** — Monthly chart CONFIRMED (Buy Strategy #1, the "
+            "strongest single standing signal). Look for a trade.\n"
+            "- **Buy — Weekly Confirm + blue wave below white line** — Buy Strategy #2 fully "
+            "triggered: Weekly CONFIRMED **and** the WaveTrend blue wave (WT1) is below the "
+            f"white line (≤ {_WT_OS}, the oversold zone) on the weekly.\n"
+            "- **Weekly Confirm — waiting (blue wave not below white line)** — the Weekly chart "
+            "is CONFIRMED, but the blue wave is **not** below the white line yet, so Buy "
+            "Strategy #2's second condition hasn't fired. A watch, not a buy — wait for the "
+            "blue wave to drop into the oversold zone.\n"
+            "- **Buy — Daily alert (Monthly green / above EMA ribbon)** — a Daily CONFIRMED "
+            "with the daily-alert context met (Monthly is green, or price is trending above "
+            "the EMA ribbon).\n"
+            "- **Daily alert — waiting (needs Monthly green or price above EMA ribbon)** — a "
+            "Daily CONFIRMED but neither context condition holds yet.\n"
+            "- **No Rule Signal — Watch** — no Monthly/Weekly/Daily confirm on record. (Sell "
             "strategies stay inert until a real daily-🔴/weekly-sell example format is pasted.)\n\n"
             "**Technical Verdict** — an independent tally of the computed indicators (RSI "
             "direction, MACD sign & fresh cross, EMA20 vs 50, Golden/Death, EMA cloud, "
