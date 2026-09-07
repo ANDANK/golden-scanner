@@ -55,6 +55,19 @@ SIGNAL_LINE_RE = re.compile(
 TIMEFRAME_RE = re.compile(r'\b(MONTHLY|WEEKLY|DAILY)\b', re.IGNORECASE)
 PRICE_RE = re.compile(r'\bat\s+([\d.]+)', re.IGNORECASE)
 
+# Fair-price / "mean" weekly-section alert: price crossing the blue line
+# (4-year / 200-week moving average = the "fair price / mean" per the cheat
+# sheet). A line counts as a fair-price alert only when it (a) names one of
+# these phrases AND (b) has a "<TICKER> is/crossed …" anchor. Normal
+# CONFIRMED/showing lines carry no fair phrase, so the two parsers never
+# double-count a line. Wording is best-effort until a real sample alert is
+# pasted — the computed 200-week check below does not depend on it.
+FAIR_PHRASE_RE = re.compile(
+    r'(fair\s*price|4[\s-]?year\s+moving\s+average|blue\s*line|200[\s-]?week|\bmean\b)',
+    re.IGNORECASE)
+FAIR_TICKER_RE = re.compile(
+    r'\b([A-Z][A-Z0-9.]{0,14})\b(?:\s*🔵)?\s+(?:is|IS|crossed|CROSSED|crossing|CROSSING)\b')
+
 COMPOSITES = {"TOTAL", "TOTAL2", "TOTAL3", "OTHERS", "BTC.D", "ETHBTC"}
 CRYPTO_SUFFIX_RE = re.compile(r'^([A-Z]+?)(USDT|USD|BTC)$')
 DEFAULT_CORE_CRYPTO = {"BTC", "ETH", "XRP", "SOL", "DOGE"}
@@ -113,6 +126,40 @@ def apply_batch_to_state(state: dict, items: list, signal_date: str) -> dict:
         slot = state.setdefault(it["ticker"], {"monthly": None, "weekly": None, "daily": None})
         slot[it["timeframe"]] = {"status": it["status"], "price": it["price"],
                                  "signal_date": signal_date}
+    return state
+
+
+def parse_fair_batch(text: str, core_crypto: set):
+    """Best-effort parse of the weekly-section 'price crossing the blue line
+    (200-week MA / fair price / mean)' alert. Deduped by ticker within the
+    paste. Returns (kept, filtered) like parse_batch. Composites and off-list
+    crypto are filtered the same way."""
+    seen, kept, filtered = set(), [], []
+    for line in text.splitlines():
+        if not FAIR_PHRASE_RE.search(line):
+            continue
+        m = FAIR_TICKER_RE.search(line)
+        if not m:
+            continue
+        ticker = m.group(1)
+        if ticker in seen:
+            continue
+        seen.add(ticker)
+        pm = PRICE_RE.search(line)
+        price = float(pm.group(1)) if pm else None
+        cls = classify_ticker(ticker, core_crypto)
+        item = {"ticker": ticker, "price": price, "type": cls["type"]}
+        (kept if cls["include"] else filtered).append(item)
+    return kept, filtered
+
+
+def apply_fair_to_state(state: dict, items: list, signal_date: str) -> dict:
+    """Write each ticker's 'fair' slot (the 200-week / fair-price alert). Like
+    the timeframe slots, this overwrites only the fair slot and leaves
+    monthly/weekly/daily untouched."""
+    for it in items:
+        slot = state.setdefault(it["ticker"], {"monthly": None, "weekly": None, "daily": None})
+        slot["fair"] = {"price": it["price"], "signal_date": signal_date}
     return state
 
 
@@ -239,6 +286,13 @@ def _macd_state(close: pd.Series):
 _WT_OS = -53
 _WT_OB = 53
 
+# "Fair price / mean" line = the blue 4-year moving average Andy watches. On the
+# weekly it is the 200-week SMA (the classic crypto "mean / fair value" line,
+# ~3.85 yr). Price within ±_FAIR_BAND_PCT_DEFAULT % of it counts as "at the mean"
+# (the fair-value buy zone); the band is tunable from Settings.
+_FAIR_MA_WEEKS = 200
+_FAIR_BAND_PCT_DEFAULT = 5.0
+
 
 def _wt1_series(df: pd.DataFrame) -> pd.Series:
     """WaveTrend WT1 (the blue wave)."""
@@ -262,7 +316,10 @@ def tech_snapshot(ticker: str) -> dict:
     clears the cache. Returns a flat dict (never raises — errors → {'ok': False})."""
     out = {"ticker": ticker, "ok": False, "as_of": datetime.now(timezone.utc).isoformat()}
     try:
-        df = get_price_history(ticker, period="2y")
+        # 5y so the 200-week (≈3.85 yr) fair-price SMA has enough weekly bars
+        # plus a prior value for cross detection. Young tickers (< 200 weeks of
+        # history) simply get an unavailable fair price — handled below.
+        df = get_price_history(ticker, period="5y")
         if df is None or df.empty:
             return out
         if isinstance(df.columns, pd.MultiIndex):
@@ -326,6 +383,26 @@ def tech_snapshot(ticker: str) -> dict:
         # "Price trending above the EMA ribbon" — the daily-alert context condition.
         above_ema_ribbon = bool(px > ema20 > ema50)
 
+        # Fair price / mean = the 200-week SMA (the blue 4-yr MA). Needs ≥200
+        # weekly bars; younger names → fair unavailable (None). fair_cross flags
+        # a FRESH weekly cross through the line this bar (the "crossing the blue
+        # line" event); pct_vs_fair is price vs the mean. The band-based
+        # "at the mean" / buy decision is applied live in _build_table so the
+        # Settings band can change without busting this 4-h cache.
+        fair_price = float("nan"); pct_vs_fair = None; fair_cross = ""
+        if len(wc) >= _FAIR_MA_WEEKS:
+            ma_w = wc.rolling(_FAIR_MA_WEEKS).mean()
+            if pd.notna(ma_w.iloc[-1]):
+                fair_price = float(ma_w.iloc[-1])
+                pct_vs_fair = round((px / fair_price - 1) * 100, 1) if fair_price else None
+                if len(ma_w) >= _FAIR_MA_WEEKS + 1 and pd.notna(ma_w.iloc[-2]):
+                    pc, pf = float(wc.iloc[-2]), float(ma_w.iloc[-2])
+                    lc, lf = float(wc.iloc[-1]), fair_price
+                    if pc < pf and lc >= lf:
+                        fair_cross = "up"
+                    elif pc > pf and lc <= lf:
+                        fair_cross = "down"
+
         out.update(dict(
             ok=True, price=round(px, 2),
             rsi_d=round(rsi_d, 1), rsi_d_dir=(1 if rsi_d > rsi_d_prev + 0.5
@@ -341,6 +418,8 @@ def tech_snapshot(ticker: str) -> dict:
             wt1_w=(round(wt1_w, 1) if wt1_w == wt1_w else None),
             wt_w_below_white=wt_w_below, wt_d_below_white=wt_d_below,
             wt_w_state=wt_w_state, above_ema_ribbon=above_ema_ribbon,
+            fair_price=(round(fair_price, 2) if fair_price == fair_price else None),
+            pct_vs_fair=pct_vs_fair, fair_cross=fair_cross,
         ))
         return out
     except Exception:
@@ -365,18 +444,30 @@ def rule_based_verdict(slot: dict, tech: dict) -> str:
     weekly_green = bool(w and w.get("status") == "confirmed")
     daily_green = bool(d and d.get("status") == "confirmed")
     blue_below = bool(tech.get("wt_w_below_white"))   # weekly blue wave below the white line
+    # Fair-price buy: price at/near the 200-week mean (band-checked in
+    # _build_table → tech['fair_buy']) OR a pasted "crossing the blue line" alert.
+    fair_buy = bool(tech.get("fair_buy")) or bool(slot.get("fair"))
 
-    # Both buy strategies aligned — the strongest confluence.
-    if monthly_green and weekly_green and blue_below:
-        return "Strong Buy — Monthly + Weekly (blue wave below white line)"
+    # Both buy strategies aligned — the strongest confluence. Buy #2's weekly
+    # trigger is either the blue wave below the white line or price at the mean.
+    if monthly_green and weekly_green and (blue_below or fair_buy):
+        why = "blue wave below white line" if blue_below else "price at 200-wk mean"
+        return f"Strong Buy — Monthly + Weekly ({why})"
     # Buy Strategy #1 — Monthly confirmed (the strongest single standing signal).
     if monthly_green:
         return "Buy — Monthly Confirm"
-    # Buy Strategy #2 — Weekly confirmed AND blue wave below the white line.
+    # Buy Strategy #2 — Weekly confirmed AND (blue wave below the white line OR
+    # price at the 200-week mean / fair price).
     if weekly_green:
         if blue_below:
             return "Buy — Weekly Confirm + blue wave below white line"
+        if fair_buy:
+            return "Buy — Weekly Confirm + price at 200-wk mean (fair price)"
         return "Weekly Confirm — waiting (blue wave not below white line)"
+    # Standalone fair-price weekly alert — price at/near the 200-week mean with
+    # no Monthly/Weekly confirm on record yet.
+    if fair_buy:
+        return "Buy — Fair price (price at/near the 200-wk mean)"
     # Daily green alert — buy as long as Monthly is green OR price is above the EMA ribbon.
     if daily_green:
         if monthly_green or tech.get("above_ema_ribbon"):
@@ -433,11 +524,18 @@ def _slot_txt(slot):
             slot.get("signal_date", ""))
 
 
-def _build_table(state: dict) -> pd.DataFrame:
+def _build_table(state: dict, fair_band: float = _FAIR_BAND_PCT_DEFAULT) -> pd.DataFrame:
     rows = []
     for tk in sorted(state.keys()):
         slot = state[tk]
-        tech = tech_snapshot(tk)
+        tech = dict(tech_snapshot(tk))   # copy — we inject the live band decision
+        # Fair price / mean: apply the Settings band here (cheap) so it stays
+        # live without busting tech_snapshot's 4-h cache. "At the mean" = price
+        # within ±band % of the 200-week SMA; a fresh weekly cross also counts.
+        pctf = tech.get("pct_vs_fair")
+        fair_avail = tech.get("fair_price") is not None
+        at_mean = bool(fair_avail and pctf is not None and abs(pctf) <= fair_band)
+        tech["fair_buy"] = bool(at_mean or tech.get("fair_cross"))
         rb = rule_based_verdict(slot, tech)
         tv, tnet, _ = technical_verdict(tech)
         m_s, m_p, m_d = _slot_txt(slot.get("monthly"))
@@ -453,11 +551,27 @@ def _build_table(state: dict) -> pd.DataFrame:
         entry_price, entry_date = (priced[-1][1], priced[-1][0]) if priced else (None, "")
         cur = tech.get("price")
         gain = ((cur - entry_price) / entry_price * 100) if (entry_price and cur) else None
-        # Most-recent signal date across all slots — drives the "last N weeks" filter.
+        # Most-recent signal date across all slots — drives the "last N weeks"
+        # filter. Includes the fair slot so a ticker whose latest event is a
+        # fair-price alert stays inside the recency window.
         recent_date = max([s["signal_date"] for s in
-                           (slot.get("monthly"), slot.get("weekly"), slot.get("daily"))
+                           (slot.get("monthly"), slot.get("weekly"),
+                            slot.get("daily"), slot.get("fair"))
                            if s and s.get("signal_date")], default="")
         gd = tech.get("gd_cross")
+        # Fair-price display: position vs the 200-week mean + fresh-cross + a
+        # marker when a "crossing the blue line" alert was actually pasted.
+        if not fair_avail:
+            fair_val, mean_disp = None, "—"
+        else:
+            fair_val = tech.get("fair_price")
+            pos = ("At mean" if at_mean else
+                   "Below mean" if (pctf is not None and pctf < 0) else "Above mean")
+            arrow = (" ⤢↑ crossed" if tech.get("fair_cross") == "up" else
+                     " ⤢↓ crossed" if tech.get("fair_cross") == "down" else "")
+            pasted = " · alert" if slot.get("fair") else ""
+            pct_txt = f"{pctf:+.1f}%" if pctf is not None else ""
+            mean_disp = f"{pos} ({pct_txt}){arrow}{pasted}"
         rows.append({
             "Ticker": tk,
             "🗓️M Status": m_s, "M Price": m_p, "M Date": m_d,
@@ -474,6 +588,7 @@ def _build_table(state: dict) -> pd.DataFrame:
             "EMA Cloud": tech.get("ema_cloud", "—"),
             "ADX": tech.get("adx"), "ADX Zone": tech.get("adx_zone", "—"),
             "Blue Wave": tech.get("wt_w_state", "—"),
+            "Fair 200w": fair_val, "vs Mean": mean_disp, "vs Mean %": pctf,
             "Rule-Based Verdict": rb,
             "Technical Verdict": tv,
             "_recent": recent_date, "_tnet": tnet,
@@ -498,6 +613,7 @@ _COLS = [
     ("MACD D", "T", "raw"), ("MACD W", "T", "raw"), ("EMA20>50", "T", "raw"),
     ("G/D", "T", "raw"), ("Ext%", "T", "pct"), ("Cloud", "T", "raw"),
     ("ADX", "T", "num"), ("ADX Zone", "T", "raw"), ("Blue Wave (W)", "T", "raw"),
+    ("Fair 200w", "T", "usd"), ("vs Mean", "T", "fairpos"),
     ("Ticker", "ID2", "tk"),
     ("Rule-Based Verdict", "V", "rb"), ("Technical Verdict", "V", "tv"),
 ]
@@ -512,6 +628,7 @@ _SRC = {
     ("MACD D", "T"): "MACD D", ("MACD W", "T"): "MACD W", ("EMA20>50", "T"): "EMA20>50",
     ("G/D", "T"): "G/D", ("Ext%", "T"): "Ext vs EMA20", ("Cloud", "T"): "EMA Cloud",
     ("ADX", "T"): "ADX", ("ADX Zone", "T"): "ADX Zone", ("Blue Wave (W)", "T"): "Blue Wave",
+    ("Fair 200w", "T"): "Fair 200w", ("vs Mean", "T"): "vs Mean",
     ("Rule-Based Verdict", "V"): "Rule-Based Verdict", ("Technical Verdict", "V"): "Technical Verdict",
 }
 
@@ -550,6 +667,15 @@ def _html_table(view: pd.DataFrame) -> str:
                     else TEXT_MUTED)
         if kind == "tv":
             return {"Lean Buy": ACCENT_GREEN, "Lean Sell": ACCENT_RED, "Mixed": GOLD}.get(str(v), TEXT_MUTED)
+        if kind == "fairpos":
+            s = str(v)
+            if "crossed" in s:
+                return ACCENT_GREEN if "↑" in s else ACCENT_RED
+            if s.startswith("At mean"):
+                return GOLD          # the fair-value buy zone
+            if s.startswith("Below"):
+                return ACCENT_BLUE   # trading under fair value (cheap)
+            return TEXT_MUTED        # Above mean (rich) / —
         return TEXT_PRIMARY
 
     # group header row (spanned) — count columns per group in order
@@ -615,7 +741,11 @@ def _parse_tab(tf_label: str, tf_key: str, core_crypto: set):
         st.warning("Nothing pasted.")
         return
     kept, filtered = parse_batch(txt, tf_key, core_crypto)
-    if not kept and not filtered:
+    # The fair-price / "crossing the blue line" alert lives in the weekly
+    # section, so the same paste can carry both kinds. Parse it here too and
+    # write the independent 'fair' slot.
+    fair_kept, fair_filtered = parse_fair_batch(txt, core_crypto)
+    if not kept and not filtered and not fair_kept:
         st.warning("No signal lines recognized in that paste.")
         return
 
@@ -623,20 +753,31 @@ def _parse_tab(tf_label: str, tf_key: str, core_crypto: set):
     parsed_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     state = load_state()
     state = apply_batch_to_state(state, kept, sd)
+    if fair_kept:
+        state = apply_fair_to_state(state, fair_kept, sd)
     ok, msg = save_state(state)
     append_raw(kept, sd, parsed_at)
+    if fair_kept:
+        append_raw([{**it, "timeframe": "fair", "status": "crossing"} for it in fair_kept],
+                   sd, parsed_at)
     load_state.clear()   # bust the 2-min cache so the table reflects this paste
 
     if ok:
-        st.success(f"Saved {len(kept)} {tf_label} signal(s) for {sd}. "
-                   f"Only the {tf_label.lower()} slot was updated for these tickers.")
-        for it in kept:
+        parts = []
+        if kept:
+            parts.append(f"{len(kept)} {tf_label.lower()} signal(s)")
+        if fair_kept:
+            parts.append(f"{len(fair_kept)} fair-price alert(s)")
+        st.success(f"Saved {' + '.join(parts) or '0 signals'} for {sd}. "
+                   f"Only the affected slots were updated for these tickers.")
+        for it in kept + fair_kept:
             tech_snapshot(it["ticker"])   # warm technicals for newly-seen tickers
     else:
         st.error(msg)
-    if filtered:
-        with st.expander(f"Filtered out {len(filtered)} composite/off-list crypto ticker(s)"):
-            st.write(", ".join(f'{it["ticker"]} ({it["type"]})' for it in filtered))
+    all_filtered = filtered + fair_filtered
+    if all_filtered:
+        with st.expander(f"Filtered out {len(all_filtered)} composite/off-list crypto ticker(s)"):
+            st.write(", ".join(f'{it["ticker"]} ({it["type"]})' for it in all_filtered))
 
 
 def render():
@@ -653,6 +794,18 @@ def render():
         cc_raw = st.text_input(
             "Core-crypto allow-list (only these crypto bases are kept)",
             value=", ".join(sorted(DEFAULT_CORE_CRYPTO)), key="ldd_core_crypto")
+        fair_band = st.slider(
+            "“At the mean” band (± % of the 200-week fair price)",
+            1.0, 15.0, _FAIR_BAND_PCT_DEFAULT, 0.5, key="ldd_fair_band",
+            help="How close price must sit to the 200-week SMA (the blue 4-yr "
+                 "MA / “fair price / mean”) to count as “at the mean” — the "
+                 "fair-value buy zone. A fresh weekly cross of the line always "
+                 "counts regardless of this band.")
+        st.caption("**Fair price / mean** = the 200-week SMA (the blue 4-year MA). Price "
+                   "within the band above — or a fresh weekly cross of it — reads as **at the "
+                   "mean** (a fair-value buy). This feeds the Rule-Based Verdict as a weekly "
+                   "buy condition, and a pasted “crossing the blue line” alert sets it "
+                   "explicitly.")
         st.caption(f"Buy Strategy #2 uses the WaveTrend **blue wave** below the "
                    f"**white line** (oversold ≤ {_WT_OS}) on the weekly — a recreation of the "
                    "same WaveTrend engine as the OverKill dots. The red/green confirmation "
@@ -668,6 +821,9 @@ def render():
     with tM:
         _parse_tab("Monthly", "monthly", core_crypto)
     with tW:
+        st.caption("Weekly CONFIRMED/showing alerts **and** the new “price crossing the blue "
+                   "line (200-week / fair-price / mean)” alerts can go in the same paste — "
+                   "fair-price lines are routed to their own slot automatically.")
         _parse_tab("Weekly", "weekly", core_crypto)
     with tD:
         st.caption("No daily-format example exists yet — the parser is format-agnostic, "
@@ -683,7 +839,7 @@ def render():
         return
 
     with st.spinner("Pulling technicals…"):
-        df = _build_table(state)
+        df = _build_table(state, fair_band)
     if df.empty:
         st.info("No rows to show.")
         return
@@ -715,12 +871,15 @@ def render():
         disagree = st.toggle("Only where Rules & Technicals disagree", key="ldd_disagree",
                              help="Rule-Based leans buy/watch while Technical leans the "
                                   "other way — the cases worth a second look.")
+        only_fair = st.toggle("Only at/near the 200-wk mean (fair)", key="ldd_fairfilter",
+                              help="Price within the “at the mean” band of its 200-week fair "
+                                   "price, or freshly crossed the blue line this week.")
     with fc3:
         rsi_d_lo, rsi_d_hi = st.slider("RSI D range", 0, 100, (30, 70), key="ldd_rsid")
         rsi_w_lo, rsi_w_hi = st.slider("RSI W range", 0, 100, (30, 70), key="ldd_rsiw")
         adx_lo, adx_hi = st.slider("ADX range", 0, 100, (15, 100), key="ldd_adx")
         sort_col = st.selectbox("Sort by", ["Ticker", "Gain %", "RSI D", "RSI W", "ADX",
-                                            "Rule-Based Verdict", "Technical Verdict"],
+                                            "vs Mean %", "Rule-Based Verdict", "Technical Verdict"],
                                 key="ldd_sort")
         asc = st.selectbox("Order", ["Ascending", "Descending"], index=1, key="ldd_order") == "Ascending"
 
@@ -745,6 +904,9 @@ def render():
         rd = view["Rule-Based Verdict"].map(_rule_dir)
         td = view["Technical Verdict"].map({"Lean Buy": 1, "Lean Sell": -1, "Mixed": 0, "No Data": 0})
         view = view[(rd != 0) & (td != 0) & (rd != td)]
+    if only_fair:
+        vm = view["vs Mean"].astype(str)
+        view = view[vm.str.startswith("At mean") | vm.str.contains("crossed")]
 
     # Numeric range filters — a missing (un-fetched) value always passes, so a
     # failed technical pull never silently hides a ticker.
@@ -783,10 +945,16 @@ def render():
             "- **Buy — Weekly Confirm + blue wave below white line** — Buy Strategy #2 fully "
             "triggered: Weekly CONFIRMED **and** the WaveTrend blue wave (WT1) is below the "
             f"white line (≤ {_WT_OS}, the oversold zone) on the weekly.\n"
+            "- **Buy — Weekly Confirm + price at 200-wk mean (fair price)** — Weekly CONFIRMED "
+            "**and** price is at/near the 200-week fair-price line (the blue 4-yr MA) even "
+            "though the blue wave isn't below the white line — the mean is Buy #2's other "
+            "trigger.\n"
+            "- **Buy — Fair price (price at/near the 200-wk mean)** — price is at/near the "
+            "200-week mean (or freshly crossed the blue line), with no Monthly/Weekly confirm "
+            "on record yet. The standalone weekly fair-price alert.\n"
             "- **Weekly Confirm — waiting (blue wave not below white line)** — the Weekly chart "
-            "is CONFIRMED, but the blue wave is **not** below the white line yet, so Buy "
-            "Strategy #2's second condition hasn't fired. A watch, not a buy — wait for the "
-            "blue wave to drop into the oversold zone.\n"
+            "is CONFIRMED, but neither the blue wave is below the white line **nor** is price at "
+            "the 200-week mean yet, so Buy Strategy #2 hasn't fired. A watch, not a buy.\n"
             "- **Buy — Daily alert (Monthly green / above EMA ribbon)** — a Daily CONFIRMED "
             "with the daily-alert context met (Monthly is green, or price is trending above "
             "the EMA ribbon).\n"
@@ -794,6 +962,12 @@ def render():
             "Daily CONFIRMED but neither context condition holds yet.\n"
             "- **No Rule Signal — Watch** — no Monthly/Weekly/Daily confirm on record. (Sell "
             "strategies stay inert until a real daily-🔴/weekly-sell example format is pasted.)\n\n"
+            "**vs Mean (Fair price)** — price against the **200-week SMA** (the blue 4-yr MA "
+            "Andy calls the *fair price / mean*): **At mean** (within the Settings band — the "
+            "fair-value buy zone), **Below mean** (cheap), or **Above mean** (rich). "
+            "**⤢ crossed** flags a fresh weekly cross of the line, and **· alert** marks a "
+            "ticker whose “crossing the blue line” alert you actually pasted. Tickers with "
+            "under ~4 years of history show **—** (no 200-week value yet).\n\n"
             "**Technical Verdict** — an independent tally of the computed indicators (RSI "
             "direction, MACD sign & fresh cross, EMA20 vs 50, Golden/Death, EMA cloud, "
             "ADX-confirmed trend), scored +1/−1 each:\n\n"
