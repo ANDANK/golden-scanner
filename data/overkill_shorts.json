@@ -1,8 +1,41 @@
 {
-  "updated": "2026-09-06",
+  "updated": "2026-09-07",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-07",
+      "url": "https://www.youtube.com/shorts/ONpPFG_V8m0",
+      "title": "Something Just Broke In The Housing Market",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "It has become cheaper to rent than buy in most major US markets, as monthly mortgage costs have surged approximately 90% over five years against only a 13% increase in median incomes.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A 2008-style housing crash remains unlikely in the near term because only 2% of homeowners are underwater, housing supply sits near four months, and 69% of borrowers are locked into sub-5% mortgages.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Mortgage rates are unlikely to drop quickly as persistent inflation concerns keep 10-year Treasury yields elevated, with the Federal Reserve constrained from making aggressive rate cuts.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Primary residences should be treated as personal liabilities rather than wealth-building investments to prevent overspending on housing costs at the expense of investing in income-generating assets.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-06",
       "url": "https://www.youtube.com/shorts/ZBoxCVqON8A",
