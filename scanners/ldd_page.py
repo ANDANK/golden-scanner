@@ -935,20 +935,20 @@ def render():
             st.success("Technical cache cleared — will re-pull on next render.")
     core_crypto = {t.strip().upper() for t in cc_raw.split(",") if t.strip()}
 
-    # ── Input tabs ────────────────────────────────────────────────────────────
-    st.markdown("#### Paste alerts")
-    tM, tW, tD = st.tabs(["🗓️ Monthly", "🗓️ Weekly", "🗓️ Daily"])
-    with tM:
-        _parse_tab("Monthly", "monthly", core_crypto)
-    with tW:
-        st.caption("Weekly CONFIRMED/showing alerts **and** the new “price crossing the blue "
-                   "line (200-week / fair-price / mean)” alerts can go in the same paste — "
-                   "fair-price lines are routed to their own slot automatically.")
-        _parse_tab("Weekly", "weekly", core_crypto)
-    with tD:
-        st.caption("No daily-format example exists yet — the parser is format-agnostic, "
-                   "so daily pastes save into the daily slot the same way once they arrive.")
-        _parse_tab("Daily", "daily", core_crypto)
+    # ── Input tabs (collapsed by default to save space — like Settings) ─────────
+    with st.expander("📥 Paste alerts", expanded=False):
+        tM, tW, tD = st.tabs(["🗓️ Monthly", "🗓️ Weekly", "🗓️ Daily"])
+        with tM:
+            _parse_tab("Monthly", "monthly", core_crypto)
+        with tW:
+            st.caption("Weekly CONFIRMED/showing alerts **and** the new “price crossing the blue "
+                       "line (200-week / fair-price / mean)” alerts can go in the same paste — "
+                       "fair-price lines are routed to their own slot automatically.")
+            _parse_tab("Weekly", "weekly", core_crypto)
+        with tD:
+            st.caption("No daily-format example exists yet — the parser is format-agnostic, "
+                       "so daily pastes save into the daily slot the same way once they arrive.")
+            _parse_tab("Daily", "daily", core_crypto)
 
     # ── Results ───────────────────────────────────────────────────────────────
     st.markdown("#### Signals")
