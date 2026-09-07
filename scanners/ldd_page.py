@@ -33,7 +33,7 @@ clears that cache.
 """
 import re
 import json
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timedelta, timezone
 
 import numpy as np
 import pandas as pd
@@ -403,25 +403,40 @@ def _build_table(state: dict, white_line_k: float) -> pd.DataFrame:
         m_s, m_p, m_d = _slot_txt(slot.get("monthly"))
         w_s, w_p, w_d = _slot_txt(slot.get("weekly"))
         d_s, d_p, d_d = _slot_txt(slot.get("daily"))
+        # Entry = the most-recent slot that actually captured a price ("at X");
+        # Gain % = current price vs that entry.
+        priced = sorted(
+            [(s["signal_date"], s.get("price"))
+             for s in (slot.get("monthly"), slot.get("weekly"), slot.get("daily"))
+             if s and s.get("price") is not None],
+            key=lambda x: x[0])
+        entry_price, entry_date = (priced[-1][1], priced[-1][0]) if priced else (None, "")
+        cur = tech.get("price")
+        gain = ((cur - entry_price) / entry_price * 100) if (entry_price and cur) else None
+        # Most-recent signal date across all slots — drives the "last N weeks" filter.
+        recent_date = max([s["signal_date"] for s in
+                           (slot.get("monthly"), slot.get("weekly"), slot.get("daily"))
+                           if s and s.get("signal_date")], default="")
+        gd = tech.get("gd_cross")
         rows.append({
             "Ticker": tk,
             "🗓️M Status": m_s, "M Price": m_p, "M Date": m_d,
             "🗓️W Status": w_s, "W Price": w_p, "W Date": w_d,
             "🗓️D Status": d_s, "D Price": d_p, "D Date": d_d,
-            "Price": tech.get("price"),
+            "Added $": entry_price, "Added": entry_date,
+            "Now $": cur, "Gain %": (round(gain, 1) if gain is not None else None),
             "RSI D": tech.get("rsi_d"), "RSI W": tech.get("rsi_w"),
             "MACD D": f'{tech.get("macd_d_zone","")}{" ⚡"+tech["macd_d_cross"] if tech.get("macd_d_cross") else ""}',
             "MACD W": f'{tech.get("macd_w_zone","")}{" ⚡"+tech["macd_w_cross"] if tech.get("macd_w_cross") else ""}',
             "EMA20>50": "✅" if tech.get("ema20_gt_50") else "—",
-            "G/D Cross": {"golden": "🟡 Golden", "death": "🔴 Death", "above": "50>200",
-                          "below": "50<200"}.get(tech.get("gd_cross"), "—"),
+            "G/D": "Golden" if gd in ("golden", "above") else "Death" if gd in ("death", "below") else "—",
             "Ext vs EMA20": tech.get("ext_ema20"),
             "EMA Cloud": tech.get("ema_cloud", "—"),
             "ADX": tech.get("adx"), "ADX Zone": tech.get("adx_zone", "—"),
             "StochRSI %K": tech.get("stoch_k"),
             "Rule-Based Verdict": rb,
             "Technical Verdict": tv,
-            "_tnet": tnet,
+            "_recent": recent_date, "_tnet": tnet,
         })
     return pd.DataFrame(rows)
 
@@ -429,28 +444,33 @@ def _build_table(state: dict, white_line_k: float) -> pd.DataFrame:
 # Column spec: (display label, group key, format kind). Groups get colored,
 # spanned sub-headers so Monthly/Weekly/Daily stay scannable (spec point 5).
 _PURPLE = "#9C27B0"
+_TEAL = "#0EA5A5"
 _GROUPS = {"ID": ("", TEXT_MUTED), "M": ("Monthly", ACCENT_BLUE), "W": ("Weekly", ACCENT_GREEN),
-           "D": ("Daily", _PURPLE), "T": ("Technicals", TEXT_MUTED), "V": ("Verdicts", GOLD)}
+           "D": ("Daily", _PURPLE), "P": ("Performance", _TEAL), "T": ("Technicals", TEXT_MUTED),
+           "ID2": ("", TEXT_MUTED), "V": ("Verdicts", GOLD)}
 _COLS = [
     ("Ticker", "ID", "tk"),
     ("Status", "M", "stat"), ("Price", "M", "raw"), ("Signal", "M", "raw"),
     ("Status", "W", "stat"), ("Price", "W", "raw"), ("Signal", "W", "raw"),
     ("Status", "D", "stat"), ("Price", "D", "raw"), ("Signal", "D", "raw"),
-    ("Price", "T", "usd"), ("RSI D", "T", "num"), ("RSI W", "T", "num"),
+    ("Added $", "P", "usd"), ("Added", "P", "raw"), ("Now $", "P", "usd"), ("Gain %", "P", "gainpct"),
+    ("RSI D", "T", "num"), ("RSI W", "T", "num"),
     ("MACD D", "T", "raw"), ("MACD W", "T", "raw"), ("EMA20>50", "T", "raw"),
     ("G/D", "T", "raw"), ("Ext%", "T", "pct"), ("Cloud", "T", "raw"),
     ("ADX", "T", "num"), ("ADX Zone", "T", "raw"), ("StRSI %K", "T", "num"),
+    ("Ticker", "ID2", "tk"),
     ("Rule-Based Verdict", "V", "rb"), ("Technical Verdict", "V", "tv"),
 ]
 # maps each (label, group) to the source column in the built DataFrame
 _SRC = {
-    ("Ticker", "ID"): "Ticker",
+    ("Ticker", "ID"): "Ticker", ("Ticker", "ID2"): "Ticker",
     ("Status", "M"): "🗓️M Status", ("Price", "M"): "M Price", ("Signal", "M"): "M Date",
     ("Status", "W"): "🗓️W Status", ("Price", "W"): "W Price", ("Signal", "W"): "W Date",
     ("Status", "D"): "🗓️D Status", ("Price", "D"): "D Price", ("Signal", "D"): "D Date",
-    ("Price", "T"): "Price", ("RSI D", "T"): "RSI D", ("RSI W", "T"): "RSI W",
+    ("Added $", "P"): "Added $", ("Added", "P"): "Added", ("Now $", "P"): "Now $", ("Gain %", "P"): "Gain %",
+    ("RSI D", "T"): "RSI D", ("RSI W", "T"): "RSI W",
     ("MACD D", "T"): "MACD D", ("MACD W", "T"): "MACD W", ("EMA20>50", "T"): "EMA20>50",
-    ("G/D", "T"): "G/D Cross", ("Ext%", "T"): "Ext vs EMA20", ("Cloud", "T"): "EMA Cloud",
+    ("G/D", "T"): "G/D", ("Ext%", "T"): "Ext vs EMA20", ("Cloud", "T"): "EMA Cloud",
     ("ADX", "T"): "ADX", ("ADX Zone", "T"): "ADX Zone", ("StRSI %K", "T"): "StochRSI %K",
     ("Rule-Based Verdict", "V"): "Rule-Based Verdict", ("Technical Verdict", "V"): "Technical Verdict",
 }
@@ -466,7 +486,7 @@ def _html_table(view: pd.DataFrame) -> str:
         if kind == "usd":
             try: return f"${float(v):,.2f}"
             except (TypeError, ValueError): return "—"
-        if kind == "pct":
+        if kind in ("pct", "gainpct"):
             try: return f"{float(v):+.1f}%"
             except (TypeError, ValueError): return "—"
         if kind == "num":
@@ -478,6 +498,10 @@ def _html_table(view: pd.DataFrame) -> str:
         if kind == "stat":
             s = str(v).lower()
             return ACCENT_GREEN if s.startswith("confirm") else GOLD if s.startswith("show") else TEXT_MUTED
+        if kind == "gainpct":
+            try: g = float(v)
+            except (TypeError, ValueError): return TEXT_MUTED
+            return ACCENT_GREEN if g > 0 else ACCENT_RED if g < 0 else TEXT_MUTED
         if kind == "rb":
             s = str(v)
             return (ACCENT_GREEN if s.startswith("Buy") else ACCENT_RED if s.startswith("Sell")
@@ -506,15 +530,26 @@ def _html_table(view: pd.DataFrame) -> str:
 
     _TD = f"border:1px solid {BORDER_COLOR};padding:3px 7px;font-size:10.5px;white-space:nowrap"
     body = ""
-    for _, r in view.iterrows():
+    for j, (_, r) in enumerate(view.iterrows()):
+        # Row color: tinted by the rule-based verdict, with a subtle zebra for
+        # neutral (watch / no-signal) rows so they stay separable.
+        rb = str(r.get("Rule-Based Verdict", ""))
+        if rb.startswith("Buy"):
+            row_bg = f"{ACCENT_GREEN}1f"
+        elif rb.startswith("Sell"):
+            row_bg = f"{ACCENT_RED}1f"
+        elif rb.startswith("Weekly Confirm"):
+            row_bg = f"{GOLD}1f"
+        else:
+            row_bg = BG_PANEL if (j % 2) else BG_CARD
         tds = ""
         for lbl, g, kind in _COLS:
             v = r.get(_SRC[(lbl, g)])
             txt = fmt(v, kind)
             col = cell_color(v, kind)
-            weight = "700" if (kind in ("tk", "rb", "tv") or (kind == "stat" and txt != "—")) else "400"
+            weight = "700" if (kind in ("tk", "rb", "tv", "gainpct") or (kind == "stat" and txt != "—")) else "400"
             tds += f'<td style="{_TD};color:{col};font-weight:{weight}">{txt}</td>'
-        body += f"<tr>{tds}</tr>"
+        body += f'<tr style="background:{row_bg}">{tds}</tr>'
 
     return (f'<div style="overflow-x:auto;border:1px solid {BORDER_COLOR};border-radius:8px">'
             f'<table style="border-collapse:collapse;font-family:Inter,sans-serif;min-width:100%">'
@@ -612,11 +647,23 @@ def render():
         st.info("No rows to show.")
         return
 
-    # Filters
+    # Recency window — default to the last 4 weeks of signals; pull older on demand.
+    rc1, rc2, _ = st.columns([1, 1, 3])
+    with rc1:
+        weeks = st.number_input("Show last N weeks", min_value=1, max_value=520, value=4, step=1,
+                                key="ldd_weeks",
+                                help="Keeps only tickers whose most-recent signal is within this many "
+                                     "weeks. Raise it (or tick 'All history') to pull older signals.")
+    with rc2:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        show_all = st.checkbox("All history", value=False, key="ldd_all_hist")
+
+    # Filters (defaults: Monthly Confirmed · RSI 30–70 · ADX ≥15)
     fc1, fc2, fc3 = st.columns([1.2, 1.2, 1.4])
     with fc1:
         search = st.text_input("Ticker search", key="ldd_search").strip().upper()
-        m_f = st.multiselect("Monthly status", ["Confirmed", "Showing", "—"], key="ldd_mf")
+        m_f = st.multiselect("Monthly status", ["Confirmed", "Showing", "—"],
+                             default=["Confirmed"], key="ldd_mf")
         w_f = st.multiselect("Weekly status", ["Confirmed", "Showing", "—"], key="ldd_wf")
         d_f = st.multiselect("Daily status", ["Confirmed", "Showing", "—"], key="ldd_df")
     with fc2:
@@ -628,15 +675,19 @@ def render():
                              help="Rule-Based leans buy/watch while Technical leans the "
                                   "other way — the cases worth a second look.")
     with fc3:
-        rsi_d_lo, rsi_d_hi = st.slider("RSI D range", 0, 100, (0, 100), key="ldd_rsid")
-        rsi_w_lo, rsi_w_hi = st.slider("RSI W range", 0, 100, (0, 100), key="ldd_rsiw")
-        adx_lo, adx_hi = st.slider("ADX range", 0, 100, (0, 100), key="ldd_adx")
-        sort_col = st.selectbox("Sort by", ["Ticker", "RSI D", "RSI W", "ADX",
+        rsi_d_lo, rsi_d_hi = st.slider("RSI D range", 0, 100, (30, 70), key="ldd_rsid")
+        rsi_w_lo, rsi_w_hi = st.slider("RSI W range", 0, 100, (30, 70), key="ldd_rsiw")
+        adx_lo, adx_hi = st.slider("ADX range", 0, 100, (15, 100), key="ldd_adx")
+        sort_col = st.selectbox("Sort by", ["Ticker", "Gain %", "RSI D", "RSI W", "ADX",
                                             "Rule-Based Verdict", "Technical Verdict"],
                                 key="ldd_sort")
         asc = st.selectbox("Order", ["Ascending", "Descending"], index=1, key="ldd_order") == "Ascending"
 
     view = df.copy()
+    # Recency filter first (by each ticker's most-recent signal date).
+    if not show_all and "_recent" in view.columns:
+        cutoff = (date.today() - timedelta(weeks=int(weeks))).strftime("%Y-%m-%d")
+        view = view[view["_recent"].fillna("") >= cutoff]
     if search:
         view = view[view["Ticker"].str.contains(search, na=False)]
     for col, sel in [("🗓️M Status", m_f), ("🗓️W Status", w_f), ("🗓️D Status", d_f)]:
@@ -654,12 +705,12 @@ def render():
         td = view["Technical Verdict"].map({"Lean Buy": 1, "Lean Sell": -1, "Mixed": 0, "No Data": 0})
         view = view[(rd != 0) & (td != 0) & (rd != td)]
 
+    # Numeric range filters — a missing (un-fetched) value always passes, so a
+    # failed technical pull never silently hides a ticker.
     for col, lo, hi in [("RSI D", rsi_d_lo, rsi_d_hi), ("RSI W", rsi_w_lo, rsi_w_hi),
                         ("ADX", adx_lo, adx_hi)]:
         vals = pd.to_numeric(view[col], errors="coerce")
-        # keep NaNs only when the full range is selected (don't hide un-fetched rows by accident)
-        full = (lo == 0 and hi == 100)
-        view = view[(vals.between(lo, hi)) | (full & vals.isna())]
+        view = view[(vals.between(lo, hi)) | (vals.isna())]
 
     view = view.sort_values(sort_col, ascending=asc, na_position="last")
 
@@ -677,3 +728,32 @@ def render():
         "to agree with the rules.</div>",
         unsafe_allow_html=True,
     )
+
+    with st.expander("ℹ️ What each verdict means"):
+        st.markdown(
+            "**Rule-Based Verdict** — Andy's literal LDD rules:\n\n"
+            "- **Buy Candidate — Monthly Confirm** — the Monthly chart is CONFIRMED "
+            "(Buy Strategy #1, the strongest standing signal). Look for a trade.\n"
+            "- **Buy — Monthly Confirm + EMA-Cloud confluence** *(proxy)* — Monthly confirmed "
+            "AND the daily EMA34/50 cloud is bullish, i.e. another format supports it — Andy's "
+            "“almost a buy” confluence. *(EMA-cloud periods are approximated.)*\n"
+            "- **Buy Candidate — Weekly Confirm + StochRSI oversold** *(proxy)* — Buy Strategy #2 "
+            "fully triggered: Weekly CONFIRMED **and** the StochRSI %K is below the white-line "
+            "threshold. *(The real blue-wave/white-line is proprietary; StochRSI is the proxy.)*\n"
+            "- **Weekly Confirm — awaiting StochRSI trigger** *(proxy)* — the Weekly chart is "
+            "CONFIRMED, but StochRSI %K is **not yet** below the white line, so Buy Strategy #2's "
+            "second half hasn't fired. It's a weekly confirm *waiting* for the oversold trigger "
+            "before it becomes a buy candidate — a watch, not a buy.\n"
+            "- **No Rule Signal — Watch** — no Monthly or Weekly confirm on record. (Sell "
+            "strategies stay inert until a real daily-🔴/weekly-sell example format is pasted.)\n\n"
+            "**Technical Verdict** — an independent tally of the computed indicators (RSI "
+            "direction, MACD sign & fresh cross, EMA20 vs 50, Golden/Death, EMA cloud, "
+            "ADX-confirmed trend), scored +1/−1 each:\n\n"
+            "- **Lean Buy** — net score **≥ +3** (indicators broadly bullish).\n"
+            "- **Lean Sell** — net score **≤ −3** (broadly bearish).\n"
+            "- **Mixed** — net between −2 and +2, no clear lean.\n"
+            "- **No Data** — technicals couldn't be fetched for this ticker.\n\n"
+            "The two columns are **never reconciled** — when the rules say buy and the "
+            "technicals lean sell (or vice-versa), that disagreement is the signal worth a "
+            "second look (use the *“Rules & Technicals disagree”* filter)."
+        )
