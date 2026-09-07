@@ -930,6 +930,10 @@ def render():
                    f"**white line** (oversold ≤ {_WT_OS}) on the weekly — a recreation of the "
                    "same WaveTrend engine as the OverKill dots. The red/green confirmation "
                    "dots come from your pasted alerts, not from here.")
+        st.caption("**Default filters** (below the table): Monthly status = **Confirmed**, "
+                   "Technical Verdict = **Lean Buy**, RSI D **30–70**. These reflect what has "
+                   "historically worked best (Monthly-anchored + trend-confirmed); clear or "
+                   "widen any of them to see the full universe.")
         if st.button("🔄 Refresh technicals (clear 4h cache)", key="ldd_refresh_tech"):
             tech_snapshot.clear()
             st.success("Technical cache cleared — will re-pull on next render.")
