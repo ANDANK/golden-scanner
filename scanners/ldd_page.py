@@ -611,14 +611,17 @@ _COLS = [
     ("Status", "M", "stat"), ("Price", "M", "raw"),
     ("Status", "W", "stat"), ("Price", "W", "raw"),
     ("Status", "D", "stat"), ("Price", "D", "raw"),
-    ("Added $", "P", "usd"), ("Added", "P", "raw"), ("Now $", "P", "usd"), ("Gain %", "P", "gainpct"),
-    ("RSI D", "T", "num"), ("RSI W", "T", "num"),
-    ("MACD D", "T", "raw"),
-    ("Trend 20>50", "T", "raw"), ("Regime 50/200", "T", "raw"), ("Cloud 34/50", "T", "raw"),
-    ("Blue Wave (W)", "T", "raw"),
-    ("Fair 200w", "T", "usd"), ("vs Mean", "T", "fairpos"),
-    ("Ticker", "ID2", "tk"),
+    # Verdicts immediately after Daily.
     ("Rule-Based Verdict", "V", "rb"), ("Technical Verdict", "V", "tv"),
+    ("Added $", "P", "usd"), ("Added", "P", "raw"), ("Now $", "P", "usd"), ("Gain %", "P", "gainpct"),
+    # 2nd ticker re-anchors the row identity just before the wide Technicals block.
+    ("Ticker", "ID2", "tk"),
+    ("Blue Wave (W)", "T", "raw"),
+    ("vs Mean", "T", "fairpos"), ("Fair 200w", "T", "usd"),
+    ("Cloud 34/50", "T", "raw"),
+    ("Trend 20>50", "T", "raw"), ("Regime 50/200", "T", "raw"),
+    ("MACD D", "T", "raw"),
+    ("RSI D", "T", "num"), ("RSI W", "T", "num"),
 ]
 # maps each (label, group) to the source column in the built DataFrame
 _SRC = {
