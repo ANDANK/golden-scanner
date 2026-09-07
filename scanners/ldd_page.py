@@ -57,11 +57,14 @@ PRICE_RE = re.compile(r'\bat\s+([\d.]+)', re.IGNORECASE)
 
 # Fair-price / "mean" weekly-section alert: price crossing the blue line
 # (4-year / 200-week moving average = the "fair price / mean" per the cheat
-# sheet). A line counts as a fair-price alert only when it (a) names one of
-# these phrases AND (b) has a "<TICKER> is/crossed …" anchor. Normal
+# sheet). Confirmed live format (Sep 2026):
+#     "WEAT is crossing the 4 YEAR MOVING AVERAGE!"
+#     "1. CORN is crossing the 4 YEAR MOVING AVERAGE!"   (list-numbered, no price)
+# A line counts as a fair-price alert only when it (a) names one of these
+# phrases AND (b) has a "<TICKER> is/crossed/crossing …" anchor. Normal
 # CONFIRMED/showing lines carry no fair phrase, so the two parsers never
-# double-count a line. Wording is best-effort until a real sample alert is
-# pasted — the computed 200-week check below does not depend on it.
+# double-count a line. These alerts carry no "at X", so price is None and the
+# computed 200-week value is the fair reference.
 FAIR_PHRASE_RE = re.compile(
     r'(fair\s*price|4[\s-]?year\s+moving\s+average|blue\s*line|200[\s-]?week|\bmean\b)',
     re.IGNORECASE)
@@ -562,7 +565,7 @@ def _build_table(state: dict, fair_band: float = _FAIR_BAND_PCT_DEFAULT) -> pd.D
         # Fair-price display: position vs the 200-week mean + fresh-cross + a
         # marker when a "crossing the blue line" alert was actually pasted.
         if not fair_avail:
-            fair_val, mean_disp = None, "—"
+            fair_val, mean_disp, pos = None, "—", "—"
         else:
             fair_val = tech.get("fair_price")
             pos = ("At mean" if at_mean else
@@ -588,7 +591,7 @@ def _build_table(state: dict, fair_band: float = _FAIR_BAND_PCT_DEFAULT) -> pd.D
             "EMA Cloud": tech.get("ema_cloud", "—"),
             "ADX": tech.get("adx"), "ADX Zone": tech.get("adx_zone", "—"),
             "Blue Wave": tech.get("wt_w_state", "—"),
-            "Fair 200w": fair_val, "vs Mean": mean_disp, "vs Mean %": pctf,
+            "Fair 200w": fair_val, "vs Mean": mean_disp, "vs Mean %": pctf, "Mean Pos": pos,
             "Rule-Based Verdict": rb,
             "Technical Verdict": tv,
             "_recent": recent_date, "_tnet": tnet,
@@ -610,9 +613,9 @@ _COLS = [
     ("Status", "D", "stat"), ("Price", "D", "raw"), ("Signal", "D", "raw"),
     ("Added $", "P", "usd"), ("Added", "P", "raw"), ("Now $", "P", "usd"), ("Gain %", "P", "gainpct"),
     ("RSI D", "T", "num"), ("RSI W", "T", "num"),
-    ("MACD D", "T", "raw"), ("MACD W", "T", "raw"), ("EMA20>50", "T", "raw"),
-    ("G/D", "T", "raw"), ("Ext%", "T", "pct"), ("Cloud", "T", "raw"),
-    ("ADX", "T", "num"), ("ADX Zone", "T", "raw"), ("Blue Wave (W)", "T", "raw"),
+    ("MACD D", "T", "raw"), ("MACD W", "T", "raw"),
+    ("Trend 20>50", "T", "raw"), ("Regime 50/200", "T", "raw"), ("Cloud 34/50", "T", "raw"),
+    ("Blue Wave (W)", "T", "raw"),
     ("Fair 200w", "T", "usd"), ("vs Mean", "T", "fairpos"),
     ("Ticker", "ID2", "tk"),
     ("Rule-Based Verdict", "V", "rb"), ("Technical Verdict", "V", "tv"),
@@ -625,9 +628,9 @@ _SRC = {
     ("Status", "D"): "🗓️D Status", ("Price", "D"): "D Price", ("Signal", "D"): "D Date",
     ("Added $", "P"): "Added $", ("Added", "P"): "Added", ("Now $", "P"): "Now $", ("Gain %", "P"): "Gain %",
     ("RSI D", "T"): "RSI D", ("RSI W", "T"): "RSI W",
-    ("MACD D", "T"): "MACD D", ("MACD W", "T"): "MACD W", ("EMA20>50", "T"): "EMA20>50",
-    ("G/D", "T"): "G/D", ("Ext%", "T"): "Ext vs EMA20", ("Cloud", "T"): "EMA Cloud",
-    ("ADX", "T"): "ADX", ("ADX Zone", "T"): "ADX Zone", ("Blue Wave (W)", "T"): "Blue Wave",
+    ("MACD D", "T"): "MACD D", ("MACD W", "T"): "MACD W",
+    ("Trend 20>50", "T"): "EMA20>50", ("Regime 50/200", "T"): "G/D", ("Cloud 34/50", "T"): "EMA Cloud",
+    ("Blue Wave (W)", "T"): "Blue Wave",
     ("Fair 200w", "T"): "Fair 200w", ("vs Mean", "T"): "vs Mean",
     ("Rule-Based Verdict", "V"): "Rule-Based Verdict", ("Technical Verdict", "V"): "Technical Verdict",
 }
@@ -723,6 +726,94 @@ def _html_table(view: pd.DataFrame) -> str:
             f'<table style="border-collapse:collapse;font-family:Inter,sans-serif;min-width:100%">'
             f'<thead><tr>{grp_hdr}</tr><tr>{col_hdr}</tr></thead>'
             f'<tbody>{body}</tbody></table></div>')
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# PERFORMANCE  — "what's working": group return-since-signal (the Gain % already
+# in the table = current price vs the price the alert fired at) by verdict and
+# by condition, so the buckets that actually paid off are visible. It is a
+# rough scorecard, not a backtest: entries are the alert's "at X" price, exits
+# are live, samples are small, and a signal fired today shows ~0%.
+# ════════════════════════════════════════════════════════════════════════════
+def _perf_group(df: pd.DataFrame, col: str) -> list:
+    """Return [(key, n, win%, avg, median, best, worst)] for rows that have a
+    Gain %, grouped by `col`, sorted by average gain descending."""
+    sub = df[pd.to_numeric(df["Gain %"], errors="coerce").notna()].copy()
+    sub["_g"] = pd.to_numeric(sub["Gain %"], errors="coerce")
+    out = []
+    for key, g in sub.groupby(col):
+        n = len(g)
+        if not n:
+            continue
+        wins = int((g["_g"] > 0).sum())
+        out.append((str(key), n, wins / n * 100.0, g["_g"].mean(),
+                    g["_g"].median(), g["_g"].max(), g["_g"].min()))
+    out.sort(key=lambda r: r[3], reverse=True)
+    return out
+
+
+def _perf_html(title: str, rows: list) -> str:
+    if not rows:
+        return ""
+    def col_g(v):
+        return ACCENT_GREEN if v > 0 else ACCENT_RED if v < 0 else TEXT_MUTED
+    _TH = (f"background:{BG_CARD};color:{TEXT_MUTED};border:1px solid {BORDER_COLOR};"
+           f"padding:3px 8px;font-size:10px;font-weight:700;white-space:nowrap;text-align:right")
+    _TH0 = _TH.replace("text-align:right", "text-align:left")
+    hdr = (f'<th style="{_TH0}">{title}</th><th style="{_TH}">N</th>'
+           f'<th style="{_TH}">Win %</th><th style="{_TH}">Avg</th>'
+           f'<th style="{_TH}">Median</th><th style="{_TH}">Best</th><th style="{_TH}">Worst</th>')
+    _TD = f"border:1px solid {BORDER_COLOR};padding:3px 8px;font-size:10.5px;white-space:nowrap;text-align:right"
+    _TD0 = _TD.replace("text-align:right", "text-align:left")
+    body = ""
+    for key, n, winp, avg, med, best, worst in rows:
+        body += (
+            f'<tr>'
+            f'<td style="{_TD0};color:{TEXT_PRIMARY};font-weight:700">{key}</td>'
+            f'<td style="{_TD};color:{TEXT_MUTED}">{n}</td>'
+            f'<td style="{_TD};color:{col_g(winp-50)}">{winp:.0f}%</td>'
+            f'<td style="{_TD};color:{col_g(avg)};font-weight:700">{avg:+.1f}%</td>'
+            f'<td style="{_TD};color:{col_g(med)}">{med:+.1f}%</td>'
+            f'<td style="{_TD};color:{ACCENT_GREEN}">{best:+.1f}%</td>'
+            f'<td style="{_TD};color:{ACCENT_RED}">{worst:+.1f}%</td>'
+            f'</tr>')
+    return (f'<div style="overflow-x:auto;margin:6px 0 14px">'
+            f'<table style="border-collapse:collapse;font-family:Inter,sans-serif;min-width:100%">'
+            f'<thead><tr>{hdr}</tr></thead><tbody>{body}</tbody></table></div>')
+
+
+def _render_performance(df: pd.DataFrame) -> None:
+    """A scorecard of what's working, computed from ALL tickers in state (not the
+    filtered view). Uses each ticker's return since its signal fired."""
+    priced = df[pd.to_numeric(df["Gain %"], errors="coerce").notna()]
+    n_priced = len(priced)
+    with st.expander(f"📊 Performance — what's working ({n_priced} signal(s) with an entry price)",
+                     expanded=False):
+        if n_priced == 0:
+            st.info("No returns to score yet — a signal contributes here once it has both an "
+                    "entry price (the alert's “at X”) and a live current price. In this "
+                    "environment price feeds may be blocked; the live app will populate it.")
+            return
+        g = pd.to_numeric(priced["Gain %"], errors="coerce")
+        overall_win = (g > 0).mean() * 100
+        st.markdown(
+            f"<div style='font-size:12.5px;color:{TEXT_MUTED};margin-bottom:6px'>"
+            f"Across <b>{n_priced}</b> signal(s) with an entry: overall win rate "
+            f"<b style='color:{ACCENT_GREEN if overall_win>=50 else ACCENT_RED}'>{overall_win:.0f}%</b>, "
+            f"average return <b style='color:{ACCENT_GREEN if g.mean()>=0 else ACCENT_RED}'>{g.mean():+.1f}%</b> "
+            f"(median {g.median():+.1f}%). “Return” = current price vs the price the alert fired at — "
+            f"a rough scorecard, not a backtest.</div>", unsafe_allow_html=True)
+        for title, col in [("By Rule-Based Verdict", "Rule-Based Verdict"),
+                           ("By Monthly status", "🗓️M Status"),
+                           ("By Weekly status", "🗓️W Status"),
+                           ("By Blue Wave (weekly)", "Blue Wave"),
+                           ("By price vs 200-wk mean", "Mean Pos"),
+                           ("By Technical Verdict", "Technical Verdict")]:
+            html = _perf_html(title, _perf_group(df, col))
+            if html:
+                st.markdown(html, unsafe_allow_html=True)
+        st.caption("Buckets are sorted by average return. Small samples swing hard — read N "
+                   "alongside the average, and give a bucket a few names before trusting it.")
 
 
 def _parse_tab(tf_label: str, tf_key: str, core_crypto: set):
@@ -844,6 +935,10 @@ def render():
         st.info("No rows to show.")
         return
 
+    # Performance scorecard — computed from ALL history, before the display
+    # filters, so it answers "what's working" across everything pasted.
+    _render_performance(df)
+
     # Recency window — default to the last 4 weeks of signals; pull older on demand.
     rc1, rc2, _ = st.columns([1, 1, 3])
     with rc1:
@@ -855,7 +950,7 @@ def render():
         st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
         show_all = st.checkbox("All history", value=False, key="ldd_all_hist")
 
-    # Filters (defaults: Monthly Confirmed · RSI 30–70 · ADX ≥15)
+    # Filters (defaults: Monthly Confirmed · RSI 30–70)
     fc1, fc2, fc3 = st.columns([1.2, 1.2, 1.4])
     with fc1:
         search = st.text_input("Ticker search", key="ldd_search").strip().upper()
@@ -877,8 +972,7 @@ def render():
     with fc3:
         rsi_d_lo, rsi_d_hi = st.slider("RSI D range", 0, 100, (30, 70), key="ldd_rsid")
         rsi_w_lo, rsi_w_hi = st.slider("RSI W range", 0, 100, (30, 70), key="ldd_rsiw")
-        adx_lo, adx_hi = st.slider("ADX range", 0, 100, (15, 100), key="ldd_adx")
-        sort_col = st.selectbox("Sort by", ["Ticker", "Gain %", "RSI D", "RSI W", "ADX",
+        sort_col = st.selectbox("Sort by", ["Ticker", "Gain %", "RSI D", "RSI W",
                                             "vs Mean %", "Rule-Based Verdict", "Technical Verdict"],
                                 key="ldd_sort")
         asc = st.selectbox("Order", ["Ascending", "Descending"], index=1, key="ldd_order") == "Ascending"
@@ -910,8 +1004,7 @@ def render():
 
     # Numeric range filters — a missing (un-fetched) value always passes, so a
     # failed technical pull never silently hides a ticker.
-    for col, lo, hi in [("RSI D", rsi_d_lo, rsi_d_hi), ("RSI W", rsi_w_lo, rsi_w_hi),
-                        ("ADX", adx_lo, adx_hi)]:
+    for col, lo, hi in [("RSI D", rsi_d_lo, rsi_d_hi), ("RSI W", rsi_w_lo, rsi_w_hi)]:
         vals = pd.to_numeric(view[col], errors="coerce")
         view = view[(vals.between(lo, hi)) | (vals.isna())]
 
@@ -968,6 +1061,20 @@ def render():
             "**⤢ crossed** flags a fresh weekly cross of the line, and **· alert** marks a "
             "ticker whose “crossing the blue line” alert you actually pasted. Tickers with "
             "under ~4 years of history show **—** (no 200-week value yet).\n\n"
+            "**Reading the trend columns** (three different lenses, fast → slow, so they can "
+            "disagree in a pullback):\n"
+            "- **Trend 20>50** — daily **EMA20 vs EMA50** (the *fast* near-term trend, days-to-"
+            "weeks). ✅ = 20 above 50.\n"
+            "- **Cloud 34/50** — daily **EMA34/EMA50 cloud** vs price (a *medium* trend "
+            "confirmation).\n"
+            "- **Regime 50/200** — **SMA50 vs SMA200** = the *slow* long-term regime (months). "
+            "**Golden** = 50 above 200, **Death** = 50 below 200. So *Trend 20>50* can be ✅ "
+            "while *Regime* is still Death (a bounce inside a long downtrend), or vice-versa — "
+            "that spread is the point of showing both.\n"
+            "- **Blue Wave (W)** — where the weekly WaveTrend blue wave sits: **Below white** "
+            f"(WT1 ≤ {_WT_OS}, the oversold buy zone), **Above white** (WT1 ≥ {_WT_OB}, "
+            "overbought), or **Mid** (between the two white lines — neither zone, neutral for "
+            "Buy #2).\n\n"
             "**Technical Verdict** — an independent tally of the computed indicators (RSI "
             "direction, MACD sign & fresh cross, EMA20 vs 50, Golden/Death, EMA cloud, "
             "ADX-confirmed trend), scored +1/−1 each:\n\n"
