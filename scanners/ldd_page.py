@@ -464,14 +464,14 @@ def rule_based_verdict(slot: dict, tech: dict) -> str:
     # _build_table → tech['fair_buy']) OR a pasted "crossing the blue line" alert.
     fair_buy = bool(tech.get("fair_buy")) or bool(slot.get("fair"))
 
-    # Short, consistent labels. The *which trigger* detail (blue wave vs at the
-    # mean) is already visible in the Blue Wave (W) and vs Mean columns, so the
-    # verdict no longer repeats it — this also merges what used to be two
-    # separate "Strong Buy" strings into one bucket.
+    # Compact-but-descriptive labels: the trigger (Blue Wave below vs at Mean) is
+    # named in the verdict, using Month/Week shorthand to stay short.
     #
-    # Both buy strategies aligned — the strongest confluence.
+    # Both buy strategies aligned — the strongest confluence. Kept as two
+    # variants so the trigger is visible in the label.
     if monthly_green and weekly_green and (blue_below or fair_buy):
-        return "Strong Buy — Monthly + Weekly"
+        return ("Strong Buy — Month+Week+Blue Wave below" if blue_below
+                else "Strong Buy — Month+Week+at Mean")
     # Buy Strategy #1 — Monthly confirmed (the strongest single standing signal).
     if monthly_green:
         return "Buy — Monthly"
@@ -479,19 +479,19 @@ def rule_based_verdict(slot: dict, tech: dict) -> str:
     # price at the 200-week mean / fair price).
     if weekly_green:
         if blue_below:
-            return "Buy — Weekly (blue wave)"
+            return "Buy — Week+Blue Wave below"
         if fair_buy:
-            return "Buy — Weekly (at mean)"
-        return "Weekly — waiting"
+            return "Buy — Week+at Mean"
+        return "Weekly — waiting (for Blue Wave below / at Mean)"
     # Standalone fair-price weekly alert — price at/near the 200-week mean with
     # no Monthly/Weekly confirm on record yet.
     if fair_buy:
-        return "Buy — At mean"
+        return "Buy — at Mean"
     # Daily green alert — buy as long as Monthly is green OR price is above the EMA ribbon.
     if daily_green:
         if monthly_green or tech.get("above_ema_ribbon"):
-            return "Buy — Daily"
-        return "Daily — waiting"
+            return "Buy — Daily (Month green / EMA ribbon)"
+        return "Daily — waiting (for Month green / EMA ribbon)"
 
     return "Watch — no signal"
 
@@ -629,15 +629,15 @@ _COLS = [
     ("Status", "D", "stat"), ("Price", "D", "raw"),
     # Verdicts immediately after Daily.
     ("Rule-Based Verdict", "V", "rb"), ("Technical Verdict", "V", "tv"),
-    ("Added $", "P", "usd"), ("Added", "P", "raw"), ("Now $", "P", "usd"), ("Gain %", "P", "gainpct"),
-    # 2nd ticker re-anchors the row identity just before the wide Technicals block.
-    ("Ticker", "ID2", "tk"),
     ("Blue Wave (W)", "T", "raw"),
-    ("vs Mean", "T", "fairpos"), ("Fair 200w", "T", "usd"),
+    ("vs Mean", "T", "fairpos"),
     ("Cloud 34/50", "T", "raw"),
     ("Trend 20>50", "T", "raw"), ("Regime 50/200", "T", "raw"),
     ("MACD D", "T", "raw"),
     ("RSI D", "T", "num"), ("RSI W", "T", "num"),
+    # 2nd ticker re-anchors the row identity just before Performance (the end).
+    ("Ticker", "ID2", "tk"),
+    ("Added $", "P", "usd"), ("Added", "P", "raw"), ("Now $", "P", "usd"), ("Gain %", "P", "gainpct"),
 ]
 # maps each (label, group) to the source column in the built DataFrame
 _SRC = {
@@ -650,7 +650,7 @@ _SRC = {
     ("MACD D", "T"): "MACD D",
     ("Trend 20>50", "T"): "EMA20>50", ("Regime 50/200", "T"): "G/D", ("Cloud 34/50", "T"): "EMA Cloud",
     ("Blue Wave (W)", "T"): "Blue Wave",
-    ("Fair 200w", "T"): "Fair 200w", ("vs Mean", "T"): "vs Mean",
+    ("vs Mean", "T"): "vs Mean",
     ("Rule-Based Verdict", "V"): "Rule-Based Verdict", ("Technical Verdict", "V"): "Technical Verdict",
 }
 
@@ -671,6 +671,8 @@ def _html_table(view: pd.DataFrame) -> str:
         if kind == "num":
             try: return f"{float(v):.1f}"
             except (TypeError, ValueError): return str(v)
+        if kind == "stat":   # abbreviate for display; df keeps "Confirmed"/"Showing" for filters
+            return {"Confirmed": "Conf.", "Showing": "Show."}.get(str(v), str(v))
         return str(v)
 
     def cell_color(v, kind):
@@ -1000,7 +1002,7 @@ def render():
         st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
         show_all = st.checkbox("All history", value=False, key="ldd_all_hist")
 
-    # Filters (defaults: Monthly Confirmed · RSI 30–70)
+    # Filters (defaults: Monthly Confirmed · Technical Lean Buy · RSI D 30–70)
     fc1, fc2, fc3 = st.columns([1.2, 1.2, 1.4])
     with fc1:
         search = st.text_input("Ticker search", key="ldd_search").strip().upper()
@@ -1012,7 +1014,8 @@ def render():
         rb_opts = sorted(df["Rule-Based Verdict"].unique())
         tv_opts = sorted(df["Technical Verdict"].unique())
         rb_f = st.multiselect("Rule-Based Verdict", rb_opts, key="ldd_rbf")
-        tv_f = st.multiselect("Technical Verdict", tv_opts, key="ldd_tvf")
+        tv_f = st.multiselect("Technical Verdict", tv_opts, key="ldd_tvf",
+                              default=[o for o in ["Lean Buy"] if o in tv_opts])
         disagree = st.toggle("Only where Rules & Technicals disagree", key="ldd_disagree",
                              help="Rule-Based leans buy/watch while Technical leans the "
                                   "other way — the cases worth a second look.")
@@ -1021,7 +1024,6 @@ def render():
                                    "price, or freshly crossed the blue line this week.")
     with fc3:
         rsi_d_lo, rsi_d_hi = st.slider("RSI D range", 0, 100, (30, 70), key="ldd_rsid")
-        rsi_w_lo, rsi_w_hi = st.slider("RSI W range", 0, 100, (30, 70), key="ldd_rsiw")
         sort_col = st.selectbox("Sort by", ["Ticker", "Gain %", "RSI D", "RSI W",
                                             "vs Mean %", "Rule-Based Verdict", "Technical Verdict"],
                                 key="ldd_sort")
@@ -1054,7 +1056,7 @@ def render():
 
     # Numeric range filters — a missing (un-fetched) value always passes, so a
     # failed technical pull never silently hides a ticker.
-    for col, lo, hi in [("RSI D", rsi_d_lo, rsi_d_hi), ("RSI W", rsi_w_lo, rsi_w_hi)]:
+    for col, lo, hi in [("RSI D", rsi_d_lo, rsi_d_hi)]:
         vals = pd.to_numeric(view[col], errors="coerce")
         view = view[(vals.between(lo, hi)) | (vals.isna())]
 
@@ -1080,27 +1082,29 @@ def render():
             "**Rule-Based Verdict** — Andy's literal LDD rules "
             "(Buy #1 = Monthly; Buy #2 = Weekly + blue wave below the white line; "
             "Daily = buy as long as Monthly is green **or** price is above the EMA ribbon):\n\n"
-            "*(The **Blue Wave (W)** and **vs Mean** columns show which trigger fired, so the "
-            "verdict labels stay short and don't repeat it.)*\n\n"
-            "- **Strong Buy — Monthly + Weekly** — both buy strategies fire at once: Monthly "
-            "CONFIRMED **and** Weekly CONFIRMED with its trigger (blue wave below the white "
-            "line **or** price at the 200-wk mean). The highest-conviction combo.\n"
+            "*(“Month”/“Week” are Monthly/Weekly; the trigger — Blue Wave below vs at Mean — is "
+            "named in the label and also shown in the Blue Wave (W) and vs Mean columns.)*\n\n"
+            "- **Strong Buy — Month+Week+Blue Wave below** — both buy strategies fire: Monthly "
+            "CONFIRMED **and** Weekly CONFIRMED **and** the WaveTrend blue wave is below the "
+            f"white line (≤ {_WT_OS}, oversold). The highest-conviction combo.\n"
+            "- **Strong Buy — Month+Week+at Mean** — same, but the weekly trigger is price "
+            "at/near the 200-week mean (fair price) rather than the blue wave.\n"
             "- **Buy — Monthly** — Monthly chart CONFIRMED (Buy Strategy #1, the strongest "
             "single standing signal). Look for a trade.\n"
-            "- **Buy — Weekly (blue wave)** — Buy Strategy #2: Weekly CONFIRMED **and** the "
-            f"WaveTrend blue wave (WT1) is below the white line (≤ {_WT_OS}, oversold).\n"
-            "- **Buy — Weekly (at mean)** — Buy Strategy #2's other trigger: Weekly CONFIRMED "
-            "**and** price is at/near the 200-week fair-price line (blue 4-yr MA), even though "
-            "the blue wave isn't below the white line.\n"
-            "- **Buy — At mean** — price is at/near the 200-week mean (or freshly crossed the "
+            "- **Buy — Week+Blue Wave below** — Buy Strategy #2: Weekly CONFIRMED **and** the "
+            f"blue wave (WT1) is below the white line (≤ {_WT_OS}, oversold).\n"
+            "- **Buy — Week+at Mean** — Buy Strategy #2's other trigger: Weekly CONFIRMED "
+            "**and** price is at/near the 200-week fair-price line (blue 4-yr MA).\n"
+            "- **Buy — at Mean** — price is at/near the 200-week mean (or freshly crossed the "
             "blue line), with no Monthly/Weekly confirm on record yet. The standalone weekly "
             "fair-price alert.\n"
-            "- **Weekly — waiting** — Weekly CONFIRMED, but neither the blue wave is below the "
-            "white line **nor** is price at the 200-week mean yet, so Buy #2 hasn't fired. A "
-            "watch, not a buy.\n"
-            "- **Buy — Daily** — a Daily CONFIRMED with its context met (Monthly is green, or "
-            "price is trending above the EMA ribbon).\n"
-            "- **Daily — waiting** — a Daily CONFIRMED but neither context condition holds yet.\n"
+            "- **Weekly — waiting (for Blue Wave below / at Mean)** — Weekly CONFIRMED, but "
+            "neither the blue wave is below the white line **nor** is price at the 200-week mean "
+            "yet, so Buy #2 hasn't fired. A watch, not a buy.\n"
+            "- **Buy — Daily (Month green / EMA ribbon)** — a Daily CONFIRMED with its context "
+            "met (Monthly is green, or price is trending above the EMA ribbon).\n"
+            "- **Daily — waiting (for Month green / EMA ribbon)** — a Daily CONFIRMED but "
+            "neither context condition holds yet.\n"
             "- **Watch — no signal** — no Monthly/Weekly/Daily confirm on record. (Sell "
             "strategies stay inert until a real daily-🔴/weekly-sell example format is pasted.)\n\n"
             "**vs Mean (Fair price)** — price against the **200-week SMA** (the blue 4-yr MA "
