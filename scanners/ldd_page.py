@@ -607,13 +607,13 @@ _GROUPS = {"ID": ("", TEXT_MUTED), "M": ("Monthly", ACCENT_BLUE), "W": ("Weekly"
            "D": ("Daily", _PURPLE), "P": ("Performance", _TEAL), "T": ("Technicals", TEXT_MUTED),
            "ID2": ("", TEXT_MUTED), "V": ("Verdicts", GOLD)}
 _COLS = [
-    ("Ticker", "ID", "tk"),
-    ("Status", "M", "stat"), ("Price", "M", "raw"), ("Signal", "M", "raw"),
-    ("Status", "W", "stat"), ("Price", "W", "raw"), ("Signal", "W", "raw"),
-    ("Status", "D", "stat"), ("Price", "D", "raw"), ("Signal", "D", "raw"),
+    ("Ticker", "ID", "tk"), ("Signal", "ID", "raw"),
+    ("Status", "M", "stat"), ("Price", "M", "raw"),
+    ("Status", "W", "stat"), ("Price", "W", "raw"),
+    ("Status", "D", "stat"), ("Price", "D", "raw"),
     ("Added $", "P", "usd"), ("Added", "P", "raw"), ("Now $", "P", "usd"), ("Gain %", "P", "gainpct"),
     ("RSI D", "T", "num"), ("RSI W", "T", "num"),
-    ("MACD D", "T", "raw"), ("MACD W", "T", "raw"),
+    ("MACD D", "T", "raw"),
     ("Trend 20>50", "T", "raw"), ("Regime 50/200", "T", "raw"), ("Cloud 34/50", "T", "raw"),
     ("Blue Wave (W)", "T", "raw"),
     ("Fair 200w", "T", "usd"), ("vs Mean", "T", "fairpos"),
@@ -622,13 +622,13 @@ _COLS = [
 ]
 # maps each (label, group) to the source column in the built DataFrame
 _SRC = {
-    ("Ticker", "ID"): "Ticker", ("Ticker", "ID2"): "Ticker",
-    ("Status", "M"): "🗓️M Status", ("Price", "M"): "M Price", ("Signal", "M"): "M Date",
-    ("Status", "W"): "🗓️W Status", ("Price", "W"): "W Price", ("Signal", "W"): "W Date",
-    ("Status", "D"): "🗓️D Status", ("Price", "D"): "D Price", ("Signal", "D"): "D Date",
+    ("Ticker", "ID"): "Ticker", ("Ticker", "ID2"): "Ticker", ("Signal", "ID"): "_recent",
+    ("Status", "M"): "🗓️M Status", ("Price", "M"): "M Price",
+    ("Status", "W"): "🗓️W Status", ("Price", "W"): "W Price",
+    ("Status", "D"): "🗓️D Status", ("Price", "D"): "D Price",
     ("Added $", "P"): "Added $", ("Added", "P"): "Added", ("Now $", "P"): "Now $", ("Gain %", "P"): "Gain %",
     ("RSI D", "T"): "RSI D", ("RSI W", "T"): "RSI W",
-    ("MACD D", "T"): "MACD D", ("MACD W", "T"): "MACD W",
+    ("MACD D", "T"): "MACD D",
     ("Trend 20>50", "T"): "EMA20>50", ("Regime 50/200", "T"): "G/D", ("Cloud 34/50", "T"): "EMA Cloud",
     ("Blue Wave (W)", "T"): "Blue Wave",
     ("Fair 200w", "T"): "Fair 200w", ("vs Mean", "T"): "vs Mean",
