@@ -1,0 +1,45 @@
+{
+  "date": "2026-09-08",
+  "tag": "FTF",
+  "rows": [
+    {
+      "ticker": "NVDL",
+      "price": 37.69,
+      "verdict": "Strong Setup",
+      "combo": "3MF+5RB",
+      "scanners": "1Mom \u00b7 3MF \u00b7 5RB",
+      "edge_score": 0.55,
+      "n": 3613,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "GS",
+      "price": 1038.61,
+      "verdict": "Strong Setup",
+      "combo": "7Square+8Cross",
+      "scanners": "7Square \u00b7 8Cross",
+      "edge_score": 0.43,
+      "n": 10416,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "BWA",
+      "price": 67.54,
+      "verdict": "Strong Setup",
+      "combo": "7Square+8Cross",
+      "scanners": "7Square \u00b7 8Cross",
+      "edge_score": 0.43,
+      "n": 10416,
+      "hold_range": [
+        10,
+        30
+      ]
+    }
+  ]
+}
