@@ -1070,6 +1070,33 @@ def render():
                "they can and will disagree, and that disagreement is signal, not noise.")
     st.markdown(_html_table(view), unsafe_allow_html=True)
 
+    # ── Export tickers as CSV ───────────────────────────────────────────────────
+    with st.expander("📋 Export tickers as CSV"):
+        # Monthly = Confirmed, by the monthly signal date (reads raw state, so it's
+        # independent of the table's filters and its collapsed single date column).
+        m_dates = sorted({
+            (v.get("monthly") or {}).get("signal_date")
+            for v in state.values()
+            if (v.get("monthly") or {}).get("status") == "confirmed"
+            and (v.get("monthly") or {}).get("signal_date")
+        }, reverse=True)
+        st.markdown("**Monthly = Confirmed**, by signal date")
+        if m_dates:
+            pick = st.multiselect("Signal date(s)", m_dates, default=m_dates[:2],
+                                  key="ldd_csv_mdates")
+            picked = set(pick)
+            conf = sorted(tk for tk, v in state.items()
+                          if (v.get("monthly") or {}).get("status") == "confirmed"
+                          and (v.get("monthly") or {}).get("signal_date") in picked)
+            st.caption(f"{len(conf)} ticker(s) — Monthly Confirmed on "
+                       f"{', '.join(pick) if pick else '—'}")
+            st.code(", ".join(conf) if conf else "—", language=None)
+        else:
+            st.caption("No Monthly-Confirmed signals in state yet.")
+        # Everything currently in the table (after the active filters).
+        st.markdown("**Current table view** (after the filters above)")
+        st.code(", ".join(view["Ticker"].tolist()) if len(view) else "—", language=None)
+
     st.markdown(
         f'<div style="background:{BG_PANEL};border:1px solid {BORDER_COLOR};border-radius:6px;'
         f'padding:10px 14px;margin-top:10px;color:{TEXT_MUTED};font-size:12px">'
