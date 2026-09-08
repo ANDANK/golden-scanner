@@ -396,8 +396,18 @@ def tech_snapshot(ticker: str) -> dict:
         wt_w_state = ("Below white" if wt_w_below else
                       "Above white" if (wt1_w == wt1_w and wt1_w >= _WT_OB) else
                       "Mid" if wt1_w == wt1_w else "—")
-        # "Price trending above the EMA ribbon" — the daily-alert context condition.
+        # EMA ribbon (EMA20/34/50) — the daily-alert context. The daily alert says
+        # "look for a trade if price is INTO the ema ribbon", and Andy's rule adds
+        # "or above it". So the daily buy context = price is not broken below the
+        # ribbon: at/into it (a pullback entry) OR above it. ribbon_pos reports
+        # which for the verdict/legend.
         above_ema_ribbon = bool(px > ema20 > ema50)
+        _rib_lo = min(ema20, ema34, ema50)
+        _rib_hi = max(ema20, ema34, ema50)
+        in_ema_ribbon = bool(_rib_lo * 0.985 <= px <= _rib_hi * 1.015)   # sitting in/at the ribbon
+        ribbon_ok = bool(px >= _rib_lo * 0.99)                            # into OR above (not below)
+        ribbon_pos = ("Above ribbon" if px > _rib_hi * 1.015 else
+                      "Into ribbon" if in_ema_ribbon else "Below ribbon")
 
         # Fair price / mean = the 200-week SMA (the blue 4-yr MA). Needs ≥200
         # weekly bars; younger names → fair unavailable (None). fair_cross flags
@@ -434,6 +444,7 @@ def tech_snapshot(ticker: str) -> dict:
             wt1_w=(round(wt1_w, 1) if wt1_w == wt1_w else None),
             wt_w_below_white=wt_w_below, wt_d_below_white=wt_d_below,
             wt_w_state=wt_w_state, above_ema_ribbon=above_ema_ribbon,
+            in_ema_ribbon=in_ema_ribbon, ribbon_ok=ribbon_ok, ribbon_pos=ribbon_pos,
             fair_price=(round(fair_price, 2) if fair_price == fair_price else None),
             pct_vs_fair=pct_vs_fair, fair_cross=fair_cross,
         ))
@@ -458,7 +469,10 @@ def rule_based_verdict(slot: dict, tech: dict) -> str:
 
     monthly_green = bool(m and m.get("status") == "confirmed")
     weekly_green = bool(w and w.get("status") == "confirmed")
-    daily_green = bool(d and d.get("status") == "confirmed")
+    # Daily alerts arrive as "showing" (the format is "... is showing a on the
+    # DAILY CHART ... if the price is into the ema ribbon look for a trade"), so
+    # a daily *alert* is either status — not just "confirmed".
+    daily_alert = bool(d and d.get("status") in ("confirmed", "showing"))
     blue_below = bool(tech.get("wt_w_below_white"))   # weekly blue wave below the white line
     # Fair-price buy: price at/near the 200-week mean (band-checked in
     # _build_table → tech['fair_buy']) OR a pasted "crossing the blue line" alert.
@@ -487,11 +501,12 @@ def rule_based_verdict(slot: dict, tech: dict) -> str:
     # no Monthly/Weekly confirm on record yet.
     if fair_buy:
         return "Buy — at Mean"
-    # Daily green alert — buy as long as Monthly is green OR price is above the EMA ribbon.
-    if daily_green:
-        if monthly_green or tech.get("above_ema_ribbon"):
-            return "Buy — Daily (Month green / EMA ribbon)"
-        return "Daily — waiting (for Month green / EMA ribbon)"
+    # Daily alert (showing) — "look for a trade if price is into the EMA ribbon";
+    # Andy's rule buys as long as Monthly is green OR price is into/above the ribbon.
+    if daily_alert:
+        if monthly_green or tech.get("ribbon_ok"):
+            return "Buy — Daily (into/above EMA ribbon)"
+        return "Daily — waiting (price below EMA ribbon)"
 
     return "Watch — no signal"
 
@@ -950,8 +965,10 @@ def render():
                        "fair-price lines are routed to their own slot automatically.")
             _parse_tab("Weekly", "weekly", core_crypto)
         with tD:
-            st.caption("No daily-format example exists yet — the parser is format-agnostic, "
-                       "so daily pastes save into the daily slot the same way once they arrive.")
+            st.caption("Daily alerts read like *“TICKER is showing a on the DAILY CHART at "
+                       "PRICE if the price is into the ema ribbon look for a trade!”* — they "
+                       "register as **Showing** in the daily slot, and the Rule-Based Verdict "
+                       "buys when Monthly is green **or** price is into/above the EMA ribbon.")
             _parse_tab("Daily", "daily", core_crypto)
 
     # ── Results ───────────────────────────────────────────────────────────────
@@ -1132,10 +1149,13 @@ def render():
             "- **Weekly — waiting (for Blue Wave below / at Mean)** — Weekly CONFIRMED, but "
             "neither the blue wave is below the white line **nor** is price at the 200-week mean "
             "yet, so Buy #2 hasn't fired. A watch, not a buy.\n"
-            "- **Buy — Daily (Month green / EMA ribbon)** — a Daily CONFIRMED with its context "
-            "met (Monthly is green, or price is trending above the EMA ribbon).\n"
-            "- **Daily — waiting (for Month green / EMA ribbon)** — a Daily CONFIRMED but "
-            "neither context condition holds yet.\n"
+            "- **Buy — Daily (into/above EMA ribbon)** — a Daily alert (the daily format is "
+            "*“…showing… look for a trade if price is into the ema ribbon”*, so it registers as "
+            "**Showing**) with its context met: Monthly is green **or** price is into/above the "
+            "EMA20/34/50 ribbon (not broken below it).\n"
+            "- **Daily — waiting (price below EMA ribbon)** — a Daily alert, but price has "
+            "broken below the EMA ribbon and Monthly isn't green, so the daily buy context "
+            "isn't met yet.\n"
             "- **Watch — no signal** — no Monthly/Weekly/Daily confirm on record. (Sell "
             "strategies stay inert until a real daily-🔴/weekly-sell example format is pasted.)\n\n"
             "**vs Mean (Fair price)** — price against the **200-week SMA** (the blue 4-yr MA "
