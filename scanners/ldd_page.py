@@ -55,6 +55,14 @@ SIGNAL_LINE_RE = re.compile(
 TIMEFRAME_RE = re.compile(r'\b(MONTHLY|WEEKLY|DAILY)\b', re.IGNORECASE)
 PRICE_RE = re.compile(r'\bat\s+([\d.]+)', re.IGNORECASE)
 
+# A daily alert comes in two flavors with an IDENTICAL "<TICKER> is showing a …
+# the DAILY chart at PRICE" prefix — only the tail differs:
+#   GREEN/buy : "… if the price is into the ema ribbon look for a trade!"
+#   RED/sell  : "… If price is in the red zone consider taking some profits or
+#                setting a stop loss!"
+# so the buy/sell direction MUST be read from the tail, not the prefix.
+SELL_TAIL_RE = re.compile(r'red\s*zone|stop\s*loss|profit', re.IGNORECASE)
+
 # Fair-price / "mean" weekly-section alert: price crossing the blue line
 # (4-year / 200-week moving average = the "fair price / mean" per the cheat
 # sheet). Confirmed live format (Sep 2026):
@@ -88,7 +96,11 @@ def parse_signal_line(line: str):
     timeframe = tf_match.group(1).upper() if tf_match else None
     price_match = PRICE_RE.search(line)
     price = float(price_match.group(1)) if price_match else None
-    return {"ticker": ticker, "status": status, "timeframe": timeframe, "price": price}
+    # Buy vs sell comes from the tail: a red-zone / stop-loss / take-profits line
+    # is a SELL alert even though its prefix is the same "is showing … DAILY" text.
+    sell = bool(SELL_TAIL_RE.search(line))
+    return {"ticker": ticker, "status": status, "timeframe": timeframe,
+            "price": price, "sell": sell}
 
 
 def classify_ticker(ticker: str, core_crypto: set):
@@ -118,7 +130,7 @@ def parse_batch(text: str, tab_timeframe: str, core_crypto: set):
         seen.add(key)
         cls = classify_ticker(r["ticker"], core_crypto)
         item = {"ticker": r["ticker"], "status": r["status"], "timeframe": tf,
-                "price": r["price"], "type": cls["type"]}
+                "price": r["price"], "type": cls["type"], "sell": r.get("sell", False)}
         (kept if cls["include"] else filtered).append(item)
     return kept, filtered
 
@@ -128,7 +140,7 @@ def apply_batch_to_state(state: dict, items: list, signal_date: str) -> dict:
     for it in items:
         slot = state.setdefault(it["ticker"], {"monthly": None, "weekly": None, "daily": None})
         slot[it["timeframe"]] = {"status": it["status"], "price": it["price"],
-                                 "signal_date": signal_date}
+                                 "signal_date": signal_date, "sell": it.get("sell", False)}
     return state
 
 
@@ -457,10 +469,12 @@ def tech_snapshot(ticker: str) -> dict:
 # RULE-BASED VERDICT  (Andy's literal LDD rules; deterministic & inspectable)
 #   Buy #1: buy on the MONTHLY (monthly green/confirmed).
 #   Buy #2: buy on the WEEKLY if the blue wave is below the white line.
-#   Daily : "buy as long as MONTHLY is green OR price is above the EMA ribbon."
+#   Daily green: "buy as long as MONTHLY is green OR price is into/above the ribbon."
+#   Sell #1 (daily RED zone): take profits / set a stop — a daily "showing" alert
+#     whose tail names the red zone / stop-loss / profits (SELL_TAIL_RE).
 #   The "blue wave below the white line" is a real WaveTrend recreation (see
 #   _wt1_series / _WT_OS), not a rough proxy, so no proxy caveat is appended.
-#   Sells (daily red zone / weekly sell) stay inert until a real example arrives.
+#   Weekly-sell stays inert until a real example arrives.
 # ════════════════════════════════════════════════════════════════════════════
 def rule_based_verdict(slot: dict, tech: dict) -> str:
     slot = slot or {"monthly": None, "weekly": None, "daily": None}
@@ -469,14 +483,23 @@ def rule_based_verdict(slot: dict, tech: dict) -> str:
 
     monthly_green = bool(m and m.get("status") == "confirmed")
     weekly_green = bool(w and w.get("status") == "confirmed")
-    # Daily alerts arrive as "showing" (the format is "... is showing a on the
-    # DAILY CHART ... if the price is into the ema ribbon look for a trade"), so
-    # a daily *alert* is either status — not just "confirmed".
-    daily_alert = bool(d and d.get("status") in ("confirmed", "showing"))
+    # Daily alerts always arrive as "showing" (never CONFIRMED) and come in two
+    # flavors read from the tail: a GREEN buy alert ("… into the ema ribbon look
+    # for a trade") or a RED sell alert ("… red zone … take profits / stop loss").
+    daily_sell = bool(d and d.get("sell"))
+    daily_buy_alert = bool(d and not d.get("sell") and d.get("status") in ("confirmed", "showing"))
     blue_below = bool(tech.get("wt_w_below_white"))   # weekly blue wave below the white line
     # Fair-price buy: price at/near the 200-week mean (band-checked in
     # _build_table → tech['fair_buy']) OR a pasted "crossing the blue line" alert.
     fair_buy = bool(tech.get("fair_buy")) or bool(slot.get("fair"))
+
+    # Sell #1 — a daily RED-zone alert (take profits / stop loss). Surfaced first
+    # because it's the actionable-now exit signal; the label notes any standing
+    # buy thesis so a monthly/weekly holder reads it as "trim", not "flat-out sell".
+    if daily_sell:
+        if monthly_green or weekly_green:
+            return "Sell (Trim) — Daily red zone; Month/Week still confirmed"
+        return "Sell — Daily red zone (take profits / stop)"
 
     # Compact-but-descriptive labels: the trigger (Blue Wave below vs at Mean) is
     # named in the verdict, using Month/Week shorthand to stay short.
@@ -501,9 +524,9 @@ def rule_based_verdict(slot: dict, tech: dict) -> str:
     # no Monthly/Weekly confirm on record yet.
     if fair_buy:
         return "Buy — at Mean"
-    # Daily alert (showing) — "look for a trade if price is into the EMA ribbon";
-    # Andy's rule buys as long as Monthly is green OR price is into/above the ribbon.
-    if daily_alert:
+    # Daily GREEN alert (showing) — "look for a trade if price is into the EMA
+    # ribbon"; buy as long as Monthly is green OR price is into/above the ribbon.
+    if daily_buy_alert:
         if monthly_green or tech.get("ribbon_ok"):
             return "Buy — Daily (into/above EMA ribbon)"
         return "Daily — waiting (price below EMA ribbon)"
@@ -965,10 +988,14 @@ def render():
                        "fair-price lines are routed to their own slot automatically.")
             _parse_tab("Weekly", "weekly", core_crypto)
         with tD:
-            st.caption("Daily alerts read like *“TICKER is showing a on the DAILY CHART at "
-                       "PRICE if the price is into the ema ribbon look for a trade!”* — they "
-                       "register as **Showing** in the daily slot, and the Rule-Based Verdict "
-                       "buys when Monthly is green **or** price is into/above the EMA ribbon.")
+            st.caption("Daily alerts are always **Showing** (never Confirmed) and come in two "
+                       "flavors — both can go in the same paste:\n\n"
+                       "• **Green / buy** — *“…into the ema ribbon look for a trade!”* → buys "
+                       "when Monthly is green **or** price is into/above the EMA ribbon.\n\n"
+                       "• **Red / sell** — *“…red zone… take some profits or set a stop loss!”* "
+                       "→ a **Sell** (or *Trim* if a Monthly/Weekly buy still stands). Direction "
+                       "is read from the tail, since both share the same *“is showing … DAILY”* "
+                       "prefix.")
             _parse_tab("Daily", "daily", core_crypto)
 
     # ── Results ───────────────────────────────────────────────────────────────
@@ -1153,11 +1180,19 @@ def render():
             "*“…showing… look for a trade if price is into the ema ribbon”*, so it registers as "
             "**Showing**) with its context met: Monthly is green **or** price is into/above the "
             "EMA20/34/50 ribbon (not broken below it).\n"
-            "- **Daily — waiting (price below EMA ribbon)** — a Daily alert, but price has "
-            "broken below the EMA ribbon and Monthly isn't green, so the daily buy context "
+            "- **Daily — waiting (price below EMA ribbon)** — a Daily green alert, but price "
+            "has broken below the EMA ribbon and Monthly isn't green, so the daily buy context "
             "isn't met yet.\n"
-            "- **Watch — no signal** — no Monthly/Weekly/Daily confirm on record. (Sell "
-            "strategies stay inert until a real daily-🔴/weekly-sell example format is pasted.)\n\n"
+            "- **Sell — Daily red zone (take profits / stop)** — Sell #1: a daily RED-zone alert "
+            "(*“…if price is in the red zone consider taking some profits or setting a stop "
+            "loss”*) with no standing Monthly/Weekly buy. The daily red and green alerts share "
+            "the same *“is showing … DAILY … at PRICE”* prefix, so direction is read from the "
+            "tail.\n"
+            "- **Sell (Trim) — Daily red zone; Month/Week still confirmed** — the same daily "
+            "red-zone alert, but a Monthly or Weekly buy still stands — so it reads as *trim / "
+            "take some profits*, not a full exit.\n"
+            "- **Watch — no signal** — no Monthly/Weekly/Daily signal on record. (Weekly-sell "
+            "stays inert until a real weekly-sell example format is pasted.)\n\n"
             "**vs Mean (Fair price)** — price against the **200-week SMA** (the blue 4-yr MA "
             "Andy calls the *fair price / mean*): **At mean** (within the Settings band — the "
             "fair-value buy zone), **Below mean** (cheap), or **Above mean** (rich). "
