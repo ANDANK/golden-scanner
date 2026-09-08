@@ -1,8 +1,35 @@
 {
-  "updated": "2026-09-07",
+  "updated": "2026-09-08",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-08",
+      "url": "https://www.youtube.com/shorts/amxOUCoMsh8",
+      "title": "They're Lying To You About Inflation (And Buying Gold)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Cumulative inflation rose 32% from 2020 to 2026 while median wages grew only 28%, demonstrating that broad market investments like the S&P 500 (up ~150% in that span) are necessary to preserve and build wealth.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Before investing, save a few thousand dollars for emergencies and pay off high-interest debts like credit cards (15-25% APR), which provide a higher guaranteed return than the stock market's historical 10% average.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve is signaling that interest rate cuts may not be imminent and rates could even rise in 2026 due to persistent inflation from elevated oil prices, new tariffs, and heavy AI energy demand.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-07",
       "url": "https://www.youtube.com/shorts/ZvMote2D6eY",
