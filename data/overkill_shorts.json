@@ -5,6 +5,45 @@
   "videos": [
     {
       "date": "2026-09-07",
+      "url": "https://www.youtube.com/shorts/ZvMote2D6eY",
+      "title": "Once Your Portfolio Hits THIS Number, Saving More Barely Matters",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "Highlighted as a core retirement ETF offering both price appreciation and a ~3.5% dividend yield, allowing the portfolio to grow while producing sustainable cash flow.",
+          "price": 34.8
+        },
+        {
+          "ticker": "SPYI",
+          "bias": "Bullish",
+          "notes": "Recommended as an income-generating covered call ETF offering an approximate 12% dividend yield for retirement cash flow.",
+          "price": 53.86
+        },
+        {
+          "ticker": "QQQI",
+          "bias": "Bullish",
+          "notes": "Recommended as a high-income covered call ETF delivering around a 14% dividend yield to fund living expenses.",
+          "price": 54.75
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors over age 45 with $1M+ in pre-tax accounts should consider pivoting to Roth or taxable brokerage contributions to avoid massive RMD tax spikes and Medicare surcharges at age 73 or 75.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Before retiring, stress-test your plan against a 30% market drop and structure your portfolio around cash flow from yield and interest rather than relying on selling principal via the 4% rule.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-07",
       "url": "https://www.youtube.com/shorts/ONpPFG_V8m0",
       "title": "Something Just Broke In The Housing Market",
       "channel": "@MinorityMindset",
