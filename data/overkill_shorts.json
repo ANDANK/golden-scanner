@@ -1,8 +1,122 @@
 {
-  "updated": "2026-09-08",
+  "updated": "2026-09-09",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-08",
+      "url": "https://www.youtube.com/shorts/KwlCjP6C62E",
+      "title": "3 STOCK NOW 📈 SEPTEMBER 8",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "OKLO",
+          "bias": "Bullish",
+          "notes": "The stock has pulled back from $200 down to $40-$43, where it is flashing buy signals right at its 4-year moving average. The company has a partnership with Meta to build nuclear electricity units for data centers.",
+          "price": 43.31
+        },
+        {
+          "ticker": "COIN",
+          "bias": "Bullish",
+          "notes": "Coinbase is viewed as a great buy around $180, trading right at its moving average after establishing a bottom around $138-$140. A major catalyst could be the upcoming Clarity Act news.",
+          "price": 178.94
+        },
+        {
+          "ticker": "AMSC",
+          "bias": "Bullish",
+          "notes": "Trading right into its moving average around $30, the stock has printed a green dot buy signal. The host notes that previous signals at similar levels led to major 100%+ upward moves.",
+          "price": 30.44
+        }
+      ]
+    },
+    {
+      "date": "2026-09-09",
+      "url": "https://www.youtube.com/shorts/CEoHPhtpZts",
+      "title": "NEW stock I bought today‼️‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Host is accumulating shares with an average cost of $26.34 and views the stock as attractive long-term, particularly if it stays in the $27-$33 range through Q1 2027. Key near-term catalysts include new beverage data in 2-3 weeks and earnings in about two months.",
+          "price": 29.56
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Host sees potential for the stock to reach $750 before Q2, driven by projected $70 billion in 2027 data center revenue and expected triple-digit EPS growth that could outpace Nvidia.",
+          "price": 505.74
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "AAII investor sentiment shows 37.6% of investors are bearish over the next six months compared to the 31.9% historical average, continuing a multi-month trend of persistent market pessimism.",
+          "price": null
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Initiated a starter position of 420 shares at $142.43 with a 36-month target of $400 to $550. Growth drivers include flagship international locations in Paris, London, and Milan, alongside Newport Beach, moving from investment drags to cash generators.",
+          "price": 142.45
+        }
+      ]
+    },
+    {
+      "date": "2026-09-08",
+      "url": "https://www.youtube.com/shorts/5QEO5MTiphA",
+      "title": "IREN Wheel Strategy Options Explained | How I'll Make $5K In Premium This Week!",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "IREN",
+          "bias": "Bullish",
+          "notes": "The host projects IREN's market cap to grow from $17 billion to $30-$35 billion over the next 12 to 18 months, driven by its power-secured data center infrastructure. He recommends initiating the wheel strategy by selling the October $42 put for approximately $3.55 in premium.",
+          "price": 46.93
+        },
+        {
+          "ticker": "BE",
+          "bias": "Bullish",
+          "notes": "The host maintains a bullish outlook on Bloom Energy to capitalize on surging data center energy consumption and renewable power demand.",
+          "price": 277.22
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Electricity supply and grid infrastructure have replaced GPU chip availability as the primary bottleneck for AI data center expansion.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-08",
+      "url": "https://www.youtube.com/shorts/_BFNIqMLChk",
+      "title": "$CRM SILVER PLUG STOCK ANALYSIS 📈 SEPTEMBER 8",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "CRM",
+          "bias": "Bearish",
+          "notes": "The host advises trimming positions in CRM following a massive run-up, warning that price has hit key sell targets and could pull back toward $210.",
+          "price": 249.12
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host believes the major rally in silver is largely over and expects sideways movement, recommending a stop loss around $55-$62 with potential re-entry near $42 if $55 breaks.",
+          "price": null
+        },
+        {
+          "ticker": "PLUG",
+          "bias": "Bullish",
+          "notes": "The host is bullish on Plug Power as a buy target, citing clean energy demand for AI data centers and believing a bottom is in around $1.90.",
+          "price": 2.26
+        }
+      ]
+    },
     {
       "date": "2026-09-08",
       "url": "https://www.youtube.com/shorts/amxOUCoMsh8",
