@@ -1,8 +1,245 @@
 {
-  "updated": "2026-09-09",
+  "updated": "2026-09-10",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-09",
+      "url": "https://www.youtube.com/shorts/ewOsuEKqRZ4",
+      "title": "3 STOCKS TO WATCH NOW 🚨📈 SEPTEMBER 9 $GME",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "GME",
+          "bias": "Bullish",
+          "notes": "The host is holding a position bought last week following a strong buy signal, expecting further upside given historical massive moves after similar capitulation signals.",
+          "price": 19.89
+        },
+        {
+          "ticker": "MSTR",
+          "bias": "Neutral",
+          "notes": "Recommends holding rather than buying at current levels, noting the stock is tied to Bitcoin and should follow higher if Bitcoin breaks out.",
+          "price": 132.7
+        },
+        {
+          "ticker": "GRAB",
+          "bias": "Bullish",
+          "notes": "Advises buying the nearly 10% dip as the stock hits 2024 support levels, and plans to add to an existing position.",
+          "price": 3.04
+        }
+      ]
+    },
+    {
+      "date": "2026-09-10",
+      "url": "https://www.youtube.com/shorts/fcbb7g8yyNQ",
+      "title": "🚨 This Sale Won't Last.. 10 Growth Stocks to BUY NOW",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The PEG ratio compares a company's P/E ratio to its expected earnings growth rate, with a ratio under 1.0 indicating that a high-growth stock may be undervalued relative to its growth rate.",
+          "price": null
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi has a PEG ratio of roughly 0.9, reported record Q2 adjusted net revenue of $1.2B, and expects roughly 30% annual adjusted net revenue growth in 2026.",
+          "price": 17.35
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD trades at a 0.9 PEG ratio after securing a 6 gigawatt GPU deployment agreement with OpenAI that includes warrants for up to 160 million shares.",
+          "price": 505.7
+        },
+        {
+          "ticker": "HIMS",
+          "bias": "Bullish",
+          "notes": "Hims & Hers Health has a 0.8 PEG ratio with Q2 revenue up 38% year-over-year to $753M and full-year 2026 revenue guidance raised to $3.1B-$3.3B.",
+          "price": 27.61
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Nvidia trades at a PEG ratio of 0.8 following record quarterly revenue of $96.2B (up 106% YoY) and strong forward quarterly revenue guidance of $108B.",
+          "price": 218.32
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "ServiceNow carries a 0.6 PEG ratio, supported by $3.88B in Q2 subscription revenue (up 24.5% YoY) and over $1B in annual contract value for its enterprise AI solutions.",
+          "price": 131.93
+        },
+        {
+          "ticker": "AVGO",
+          "bias": "Bullish",
+          "notes": "Broadcom has a PEG ratio of 0.6, generating $10.8B in Q2 AI semiconductor revenue and projecting over $100B in AI semiconductor revenue by 2027.",
+          "price": 362.55
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "Oracle trades at a low PEG ratio of 0.5, backed by an impressive $638B in remaining performance obligations from large AI infrastructure contracts.",
+          "price": 156.12
+        },
+        {
+          "ticker": "APP",
+          "bias": "Bullish",
+          "notes": "AppLovin has a PEG ratio of 0.5 after posting Q2 revenue of $1.92B (up 53% YoY) and achieving $1.61B in adjusted EBITDA at an 84% margin.",
+          "price": 315.78
+        },
+        {
+          "ticker": "SNDK",
+          "bias": "Bullish",
+          "notes": "SanDisk sports a 0.4 PEG ratio with revenue reaching $8.97B (up 51% sequentially), heavily propelled by elevated NAND pricing and data center storage demand.",
+          "price": 1700.24
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Micron features a 0.4 PEG ratio after delivering record fiscal Q3 revenue of $41.5B (up 346% YoY) and guiding to $50B in revenue for Q4.",
+          "price": 978.6
+        }
+      ]
+    },
+    {
+      "date": "2026-09-09",
+      "url": "https://www.youtube.com/shorts/GOnvv_gF6VE",
+      "title": "How I Get Paid TWICE on the Same Stock (New Options Strategy)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "The host outlines a bullish setup on Robinhood (HOOD) at $122 per share, buying a $115 LEAP call expiring September 2027 for $3,810, selling a $185 call for $1,800, and selling a 40-day $105 put for $323.",
+          "price": 115.28
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To maximize capital efficiency over traditional covered calls, investors can combine a ~70 delta LEAP call with a short call priced above break-even, while simultaneously selling shorter-term out-of-the-money puts for recurring monthly income.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-10",
+      "url": "https://www.youtube.com/shorts/Em56VP75r2Q",
+      "title": "Here's What I'm Investing in Next",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host closed out a six-month position in copper for a 21% gain.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Gigastar operates an SEC-registered secondary market platform allowing investors to buy and sell YouTube Channel Revenue Tokens (CRTs) to receive a share of a channel's future revenue.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-10",
+      "url": "https://www.youtube.com/shorts/dJUnEVMes1Q",
+      "title": "Why The American Economy Has Not Collapsed Yet",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US national debt crossed $40 trillion in 2026 with a debt-to-GDP ratio reaching 125%, causing interest expense on the debt to surpass total military spending.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Ray Dalio predicts the US empire and dollar reserve status could face severe decline in about three years (give or take two) as unsustainable debt service crowds out economic spending.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Under the Genius Act, stablecoin issuers like Tether are legally required to back coins with short-term US Treasuries, making crypto companies the fastest-growing lenders to the US government.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Since leaving the gold standard in 1971, median US household income grew roughly 8x while consumer prices grew 13x-17x, whereas long-term S&P 500 reinvestment grew approximately 360x.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors hedging against currency debasement typically allocate into gold, silver, Bitcoin, real estate, and dividend-paying equities to preserve and grow purchasing power.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-09",
+      "url": "https://www.youtube.com/shorts/WdUQTQoT5G0",
+      "title": "ETHEREUM PRICE UPDATE 📈 SEPTEMBER 9",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "notes": "Ethereum is currently trading around its 4-year moving average of $2,500 at fair value following a bounce from $1,600. The host expects an upcoming price expansion off the mean toward premium selling levels, mirroring last year's consolidation and breakout pattern.",
+          "price": 23.5
+        }
+      ]
+    },
+    {
+      "date": "2026-09-09",
+      "url": "https://www.youtube.com/shorts/TMj9PC-BzqI",
+      "title": "Your 401k Could Pop The AI Bubble",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "S&P 500 funds and target-date retirement funds are heavily concentrated, with approximately 30% of their total allocations flowing directly into five major tech companies: Nvidia, Apple, Alphabet, Microsoft, and Amazon.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Circular financing in the AI industry, where key hardware companies invest in tech firms that in turn use those funds to buy chips, presents systemic risk if any major participant defaults.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Index funds now comprise 54% of the US stock market compared to 6% during the 2000 dot-com era, driving automatic passive inflows into mega-cap stocks without individual stock picking or valuation checks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Long-term investors holding broad index funds should view market pullbacks and AI bubble bursts as buying opportunities rather than panicking and selling out of retirement accounts.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve signaled that interest rate cuts may not arrive as soon as expected, advising market participants to prepare for potentially higher interest rates in 2026.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-08",
       "url": "https://www.youtube.com/shorts/KwlCjP6C62E",
