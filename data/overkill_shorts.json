@@ -1,8 +1,269 @@
 {
-  "updated": "2026-09-10",
+  "updated": "2026-09-17",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-10",
+      "url": "https://www.youtube.com/shorts/8NUY_tf3J7I",
+      "title": "THESE STOCKS LOOK BULLISH 📈 SEPTEMBER 9 $ORCL",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "LUMN",
+          "bias": "Bullish",
+          "notes": "LUMN is showing a green dot buy signal sitting on its 4-year moving average, with the host setting a stop loss at $5.50.",
+          "price": 6.81
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "Oracle beat on revenue and EPS and gapped up to $163, with the host expecting further upside as pullbacks to its 4-year moving average near $152 historically mark strong buying opportunities.",
+          "price": 152.94
+        },
+        {
+          "ticker": "UBER",
+          "bias": "Bullish",
+          "notes": "The host highlights Uber trading around $72 right on its 4-year moving average after the CEO purchased $10 million worth of stock at $71.",
+          "price": 72.56
+        }
+      ]
+    },
+    {
+      "date": "2026-09-17",
+      "url": "https://www.youtube.com/shorts/FxWzFhA8By4",
+      "title": "When to Close an Options Trade (My Exact Rules)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When selling options, consider taking profit to close the trade early if 50% of maximum potential premium is captured within the first 25% of the time to expiration.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "For long option trades like LEAPs, manage risk by cutting losses if the option value drops by 50% or if the fundamental thesis on the underlying stock changes.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When managing short option trades that move against you, roll the contract out in time and to a lower strike price for a net credit, limiting adjustments to a single roll.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-14",
+      "url": "https://www.youtube.com/shorts/VuXdkYZ9TXc",
+      "title": "A Major Interest Rate Decision is Coming Wednesday",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "August core CPI came in hotter than expected at 0.3% MoM, pushing market expectations for a Federal Reserve interest rate hike up to 92.3%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Upcoming inflation reports for September are expected to worsen due to recent spikes in energy prices, including gasoline and diesel.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Annualized M2 money supply growth of 6.2% year-to-date suggests true inflation is significantly higher than the reported 3.4% CPI.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A rate hike will increase the U.S. government's debt servicing costs as short-term Treasury bills mature and are refinanced at higher yields.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historically, the Fed has raised rates near midterm elections in only 4 of the last 12 cycles, and previous inflation-driven hikes occurred at much higher CPI levels than today's 3.4%.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-17",
+      "url": "https://www.youtube.com/shorts/GHyBpDr_Fek",
+      "title": "The US Just Bailed Out Its Biggest Lender",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Bank of Japan is expected to continue raising interest rates to protect the yen, threatening to further unwind the yen carry trade that historically funneled low-cost liquidity into U.S. assets.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "U.S. national debt reached $40 trillion in 2026 with a debt-to-GDP ratio around 125%, following a trajectory similar to Japan's long-term debt expansion.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A shortage of foreign buyers for U.S. Treasuries, particularly from Japan and China, has driven U.S. Treasury yields higher, leading to elevated rates for consumer mortgages and loans.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Soaring borrowing costs have rendered buying a home significantly more expensive than renting, turning real estate into a buyer's market where sellers must cut prices and provide concessions.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-15",
+      "url": "https://www.youtube.com/shorts/cbuXlvvfblA",
+      "title": "These 2 Stocks are Next to Soar‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Believes AMD will make an epic run over the next 3 to 6 months and plans to take some profits around $700. Notes that a broader semiconductor cycle slowdown starting in 2028 could eventually drag the stock down.",
+          "price": 504.2
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Views the stock as stuck between $550 and $750 in the short term due to capex spending uncertainty, but sees it as a $1,000 to $2,000 stock long term.",
+          "price": 670.24
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Considers Amazon a solid long-term hold driven by rapidly accelerating AWS growth that justifies its capital expenditures.",
+          "price": 248.42
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Plans to hold for its 3%+ dividend yield and 10-year growth runway, only considering trimming if its forward P/E reaches around 35.",
+          "price": 96.73
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "Expects major growth acceleration over the next 1-2 years as enterprises adopt AI agents, targeting $350 to $400 before taking profits.",
+          "price": 255.65
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Projects the stock will exit the year between $7 and $9 based on strengthening financial performance.",
+          "price": 5.43
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "Views American Express as a top-tier business unfairly depressed by interest rate fears, looking to build a larger long-term position.",
+          "price": 324.43
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Aggressively buying between $27 and $33 due to long-term market share potential, stating he would not sell even if the stock doubled to $56.",
+          "price": 27.63
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "Believes the stock could return to the $200-$300 price range over the next few years and refuses to sell below $100.",
+          "price": 96.25
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bullish",
+          "notes": "Sees accelerating growth ahead as Wall Street recognizes its strong positioning in AI software and data security.",
+          "price": 141.9
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Views Palantir as a core long-term AI holding with no price target that would induce selling his remaining shares.",
+          "price": 172.56
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Considers Netflix a long-term buy with significant upside ahead, stating he would only consider selling if it reached $200.",
+          "price": 77.9
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Projects a short-term year-end target of $100 to $140, with long-term potential to become a multi-hundred dollar stock.",
+          "price": 95.47
+        },
+        {
+          "ticker": "NKE",
+          "bias": "Bullish",
+          "notes": "Retains complete conviction in the brand despite significant unrealized position losses and has no intention to sell.",
+          "price": 36.22
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Sees long-term potential for a $100+ stock as it attracts younger members whose net worth will grow, provided leverage is managed safely.",
+          "price": 17.07
+        },
+        {
+          "ticker": "RVLV",
+          "bias": "Bullish",
+          "notes": "Views Revolve as a buy supported by strong management, an appealing balance sheet, and solid income statement.",
+          "price": 20.71
+        },
+        {
+          "ticker": "GOOG",
+          "bias": "Bullish",
+          "notes": "Holds remaining position tightly following a successful contrarian buy at $156, viewing AI search displacement fears as overblown.",
+          "price": 341.43
+        },
+        {
+          "ticker": "FUBO",
+          "bias": "Bullish",
+          "notes": "Expects expanding EBITDA and profitability by 2027, seeing long-term potential for a $5 billion to $20 billion market cap.",
+          "price": 10.91
+        },
+        {
+          "ticker": "WYNN",
+          "bias": "Bullish",
+          "notes": "Plans to build a large contrarian position, citing its luxury clientele, strong balance sheet, and upcoming Middle East resort opening.",
+          "price": 86.71
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Targets RH as a contrarian buy while depressed by high mortgage rates, backed by $125 million in cash and exposure to high-income consumers.",
+          "price": 124.83
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host anticipates a slowdown in the broader semiconductor cycle starting in 2028, which could weigh on chip and memory stocks.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-09",
       "url": "https://www.youtube.com/shorts/ewOsuEKqRZ4",
