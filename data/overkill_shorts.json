@@ -1,8 +1,35 @@
 {
-  "updated": "2026-09-17",
+  "updated": "2026-09-18",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-14",
+      "url": "https://www.youtube.com/shorts/J9ohf_y6Qi4",
+      "title": "I Wish I Knew This Before Trading LEAPS",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When trading LEAPs, selecting 9-month to 1-year expirations and targeting deep-in-the-money strikes around a 0.70 delta balances stock price sensitivity with minimal initial theta decay.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Plan exits early and take profits at 30% to 50% gains rather than holding to expiration, or roll the contract to a further date before entering the final month of heavy time decay.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "In a Poor Man's Covered Call strategy, a long-term LEAP call acts as a share substitute against which shorter-term call options can be sold to generate income and provide a downside cushion.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-10",
       "url": "https://www.youtube.com/shorts/8NUY_tf3J7I",
