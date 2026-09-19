@@ -1,8 +1,302 @@
 {
-  "updated": "2026-09-18",
+  "updated": "2026-09-19",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-19",
+      "url": "https://www.youtube.com/shorts/QjZSLKNwyS0",
+      "title": "🚨 Everyone Is Watching the Wrong Stock Market Warning",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Global bond yields are rising significantly with the US 10-year around 5%, creating a higher hurdle for equities and increasing capital costs for richly valued growth and AI companies.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should watch key late-September economic data releases, particularly PCE inflation and GDP on September 30th, which could trigger market volatility and signal future Fed rate decisions.",
+          "price": null
+        },
+        {
+          "ticker": "AVGO",
+          "bias": "Bullish",
+          "notes": "Broadcom offers explosive AI infrastructure growth as a key picks-and-shovels play alongside massive cash-generating non-AI tech lines, making it an attractive long-term holding while trading at a discount.",
+          "price": 357.61
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "The Schwab US Dividend ETF provides steady diversification outside tech and AI valuation risks, offering a solid long-term buying opportunity as high bond yields have pushed its price down.",
+          "price": 33.68
+        }
+      ]
+    },
+    {
+      "date": "2026-09-16",
+      "url": "https://www.youtube.com/shorts/zkqzQYjpMX8",
+      "title": "I Spent $100,000 on this 1 Stock Today‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Host considers recent weakness under $100 a buying opportunity, citing long-term growth potential in sub-brands like Flower Child and North Italia despite short-term restaurant industry traffic dips.",
+          "price": 97.02
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "U.S. gas prices reaching $4.32 per gallon and diesel hitting a record $6.26 per gallon are driving up transport and production costs across the economy.",
+          "price": null
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Despite potential $15 to $20 million cost headwinds if crude oil averages $100 per barrel, host remains bullish on ELF's value proposition with 75% of products under $10.",
+          "price": 93.41
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Host maintains a bullish long-term view on Celsius based on early international expansion and significant insider buying, including $1.5 million in recent purchases by executive leadership.",
+          "price": 28.25
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Host invested $150,000 into RH stock, betting that new single-story compound formats that are 50% more cost-effective to construct will help drive a long-term recovery to $300-$550 per share.",
+          "price": 126.52
+        }
+      ]
+    },
+    {
+      "date": "2026-09-18",
+      "url": "https://www.youtube.com/shorts/D7PYskvkRps",
+      "title": "Every Options Strategy Explained by an Ex-Wallstreet Trader (In-Depth)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Buying call options grants control over 100 shares per contract for a premium, offering high leverage and capital efficiency but risking a total loss of premium if direction or timing is wrong.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Buying put options provides the right to sell 100 shares at a specified strike price, enabling downside speculation or portfolio hedging with maximum risk capped at the premium paid.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Selling covered calls generates upfront cash income against 100 owned shares, capping upside potential at the strike price while offering minor downside protection from the collected premium.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Cash-secured puts involve selling put options on desired stocks using cash collateral, allowing traders to collect income if the stock stays above the strike or buy shares at a discounted breakeven price if assigned.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Stocks with higher implied volatility pay significantly larger option premiums when selling contracts, but carry elevated price risk compared to low-volatility stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The wheel strategy operates as a continuous income system by selling cash-secured puts until assigned, then selling covered calls on the assigned shares until called away.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Deep in-the-money LEAP options with high delta serve as a capital-efficient stock replacement strategy, tracking share price movement closely at a fraction of the capital required to buy 100 shares.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A poor man's covered call uses a long-dated deep in-the-money LEAP as a proxy for stock, enabling traders to sell shorter-term call options for passive income with minimal capital.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-18",
+      "url": "https://www.youtube.com/shorts/jldrPVUJv18",
+      "title": "The Fed Just Admitted Inflation Won’t Be Under Control Until 2029",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve unanimously voted to raise interest rates, bringing the benchmark federal funds rate to 4.0%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Fed's Summary of Economic Projections indicates that officials do not expect inflation to return to their 2% target until 2029.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Fed's projections now forecast two total interest rate increases in 2026.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising 10-year Treasury yields are being driven by economic strength, high capex demand from AI hyperscalers competing for capital, and geopolitics.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-18",
+      "url": "https://www.youtube.com/shorts/0CcYOeIJorU",
+      "title": "Kevin Warsh Just Defied Trump And Raised Interest Rates",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve voted to raise interest rates to combat persistent inflation, which strengthens the US dollar but increases national debt servicing costs and applies downward pressure on asset prices.",
+          "price": null
+        },
+        {
+          "ticker": "SGOV",
+          "bias": "Bullish",
+          "notes": "Rising interest rates make short-term treasury ETFs like SGOV more attractive, as yields increase toward 4% annually for cash-equivalent holdings.",
+          "price": 100.59
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Corporate and real estate loans originated during 2020-2021 will face significant refinancing shock in 2026 as 5-year loans readjust from 2-4% to 6-8% or higher.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Conflict in the Middle East has pushed oil prices higher, increasing transportation, fertilizer, and grocery costs across the broader economy.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A global helium supply disruption stemming from damage to a facility in Qatar is driving up memory chip production costs, which will elevate prices for consumer electronics and appliances.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-08",
+      "url": "https://www.youtube.com/shorts/BGbmb1eoDa0",
+      "title": "$MSFT CLSK SMR STOCK ANALYSIS 📈 SEPTEMBER 8",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "MSFT",
+          "bias": "Bearish",
+          "notes": "The host recommends trimming Microsoft or setting a stop loss at 475 after a weekly red dot sell signal appeared to protect capital.",
+          "price": 493.95
+        },
+        {
+          "ticker": "CLSK",
+          "bias": "Bullish",
+          "notes": "The host advises buying CLSK following a weekly buy signal, placing a stop loss at 10.80.",
+          "price": 13.48
+        },
+        {
+          "ticker": "SMR",
+          "bias": "Bullish",
+          "notes": "The host is a buyer of SMR, noting it is breaking out over the nine-period moving average after triggering a buy signal around $8.",
+          "price": 11.18
+        }
+      ]
+    },
+    {
+      "date": "2026-09-12",
+      "url": "https://www.youtube.com/shorts/1jrPlQ7Xwsw",
+      "title": "It’s Boring… But This Is How You Build REAL WEALTH",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "BRK.B",
+          "bias": "Bullish",
+          "notes": "Described as a buy-and-hold-forever stock due to its diversified high-quality businesses, disciplined capital allocation, and massive cash reserves to deploy during market crashes.",
+          "price": null
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "A permanent hold backed by immense cash flow from search and advertising, AI leadership, and valuable equity stakes in Waymo, SpaceX, Anthropic, and Isomorphic Labs.",
+          "price": 349.39
+        },
+        {
+          "ticker": "MSFT",
+          "bias": "Bullish",
+          "notes": "Highlighted as a top core holding combining enterprise software durability with massive AI infrastructure and over 400 data centers across 70 regions.",
+          "price": 505.41
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High-interest debt should be attacked aggressively for a guaranteed return, whereas low-interest debt under 5% can be paid on schedule while investing surplus cash into market funds.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A 5% to 10% allocation to gold can lower overall portfolio volatility and hedge inflation, having compounded at roughly 9% annualized since 1971.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High-income earners in high-tax states should look into tax-exempt municipal funds or Treasuries rather than chasing high-yield savings accounts due to tax-equivalent yield advantages.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-11",
+      "url": "https://www.youtube.com/shorts/0SkqIE7FOIc",
+      "title": "AMD & Celsius shareholders BIG NEWS‼️🫶🏼",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CELH",
+          "bias": "Neutral",
+          "notes": "CEO John bought 18,000 shares at an average price of $27.44, which signals confidence and indicates the stock is oversold, though the host notes it does not change his personal bullishness.",
+          "price": 27.22
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Analyst upgrades from firms like Piper Sandler and Raymond James project rapid annual revenue and earnings growth driven by server CPUs and AI infrastructure. The host believes AMD is heading above $1,000 per share.",
+          "price": 516.13
+        }
+      ]
+    },
     {
       "date": "2026-09-16",
       "url": "https://www.youtube.com/shorts/o2g8G4IyVtY",
