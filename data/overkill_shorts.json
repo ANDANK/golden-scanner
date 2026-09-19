@@ -4,6 +4,96 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-09-16",
+      "url": "https://www.youtube.com/shorts/o2g8G4IyVtY",
+      "title": "The 3 Tax Buckets You NEED in Retirement (Ideal Mix by Portfolio Size)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Tax-deferred accounts like traditional 401(k)s and IRAs force Required Minimum Distributions starting at age 73 or 75. These mandatory withdrawals can push retirees into higher tax brackets, subject up to 85% of Social Security benefits to taxation, and trigger IRMAA Medicare surcharges.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Roth IRAs and Roth 401(k)s grow tax-free and have no RMDs, allowing penalty-free income extractions that do not raise taxable income or trigger Medicare surcharges. Additionally, direct contributions can be withdrawn at any time penalty-free, and inherited Roth funds pass to heirs federal tax-free.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Taxable brokerage accounts offer penalty-free flexibility with no mandatory distributions, serving as a financial bridge for early retirement prior to age 59.5. Long-term capital gains are taxed at lower rates than ordinary income, allow tax-loss harvesting, and receive a step-up in basis upon death.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Health Savings Accounts (HSAs) feature triple-tax benefits, with 2026 contribution limits set at $4,400 for individuals and $8,750 for families, plus a $1,000 catch-up for ages 55+. After age 65, non-medical HSA withdrawals lose the 20% penalty and are treated like traditional IRA withdrawals.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Aiming for a asset ratio of roughly one-third in tax-deferred, one-third in Roth, and one-third in taxable brokerage accounts helps retirees optimize tax brackets and lower lifetime tax liabilities. Active tax diversification planning is especially critical for households with over $1.2 million in traditional retirement accounts.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-18",
+      "url": "https://www.youtube.com/shorts/97X9ww_4lUk",
+      "title": "This Stock will Change Early Investors LFE‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Growth investing requires evaluating a company's total addressable market beyond its current products, while prioritizing proven leadership and stable underlying business models over purely speculative plays.",
+          "price": null
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD is preparing a ~10% price increase that is expected to expand profit margins. The host projects the stock will achieve a $1 trillion market cap in Q4 and does not plan to consider selling until it reaches at least $700 per share.",
+          "price": 559.82
+        },
+        {
+          "ticker": "AAPL",
+          "bias": "Neutral",
+          "notes": "Apple is projected to deliver roughly 10% revenue growth and 12% net income growth, making its current valuation unappealing compared to other growth opportunities without aggressive share buybacks.",
+          "price": 336.13
+        },
+        {
+          "ticker": "AI",
+          "bias": "Bearish",
+          "notes": "C3.ai is highlighted as a cautionary speculative stock down 78% over five years to $10, demonstrating the danger of investing in companies without proven business models.",
+          "price": 10.48
+        },
+        {
+          "ticker": "WYNN",
+          "bias": "Bullish",
+          "notes": "Wynn Resorts is positioned for a strong fourth-quarter rally as oil prices and interest rates peak, with further tailwinds expected from its upcoming Middle East property opening.",
+          "price": 81.68
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "American Express is down 16% this year but is expected to gain significant upside momentum and cross $400 once interest rates and oil prices peak.",
+          "price": 311.56
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "RH is expected to undergo a sharp upward rally from $120 to $200 once oil prices and interest rates officially peak.",
+          "price": 126.54
+        }
+      ]
+    },
+    {
       "date": "2026-09-14",
       "url": "https://www.youtube.com/shorts/J9ohf_y6Qi4",
       "title": "I Wish I Knew This Before Trading LEAPS",
