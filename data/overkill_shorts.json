@@ -4,6 +4,117 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-09-16",
+      "url": "https://www.youtube.com/shorts/QQj06EwrgJY",
+      "title": "The Bond Market Is Breaking",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising 10-year US Treasury yields are driving up consumer mortgage, auto, and credit card rates while increasing debt servicing costs for businesses rolling over low pandemic-era loans.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US national debt has reached roughly $40 trillion against an estimated $32 trillion GDP (a 125% debt-to-GDP ratio), causing federal interest payments to surpass military spending for the first time.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Traditional Treasury buyers like China, Japan, and domestic banks are reducing their purchases or selling debt, leaving stablecoin issuers and the government itself to absorb Treasury supply.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "If a fiscal 'doom loop' of rising debt, higher yields, and monetary debasement continues, investors should prioritize debasement assets such as gold over cash.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High borrowing costs have made buying a home significantly more expensive than renting, pushing real estate toward a buyer's market where sellers must cut prices and offer concessions.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-19",
+      "url": "https://www.youtube.com/shorts/1WNowIoNgtg",
+      "title": "Generate $3,000 Weekly Passive Income with this Options Strategy",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Believes the company is strong but tapped out for short-term gains with a floor around $155, making selling $165 puts an attractive strategy to collect high premium or enter at an effective discount.",
+          "price": 177.64
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Remains fundamentally bullish on the stock after being assigned on $370 put contracts, planning to transition the shares into the wheel strategy by selling covered calls.",
+          "price": 349.54
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Recommends selling put options at around a 30 delta, citing it as the historical sweet spot for balancing low assignment risk with optimal risk-adjusted premium.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Identifies the 30-to-45-day expiration window as the optimal timeframe for selling options, capturing meaningful premium while benefiting from accelerating theta decay.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-15",
+      "url": "https://www.youtube.com/shorts/mkPc3DCZ-Ec",
+      "title": "The Dollar Just Lost Its Monopoly",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Global central banks are reducing US treasuries and dollar reserves in favor of physical gold due to concerns over rising US national debt and currency debasement.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Foreign nations are increasingly repatriating physical gold from US Federal Reserve vaults, while Hong Kong has launched a gold settlement system priced in Chinese yuan to reduce dollar reliance.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US national debt-to-GDP ratio has expanded to roughly 125%, with national debt exceeding $40 trillion against a $32 trillion economy.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors anticipating continued government debt growth and dollar inflation often favor hard debasement assets like gold, silver, and Bitcoin, while those expecting GDP growth to outpace debt lean toward US equities like the S&P 500.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High homeownership costs have made renting cheaper than buying, shifting housing real estate toward a buyer's market characterized by price cuts and seller concessions.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-09-19",
       "url": "https://www.youtube.com/shorts/QjZSLKNwyS0",
       "title": "🚨 Everyone Is Watching the Wrong Stock Market Warning",
