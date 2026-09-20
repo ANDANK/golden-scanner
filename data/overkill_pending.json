@@ -11,21 +11,12 @@
       "url": "https://www.youtube.com/shorts/pWnu1C8I6Xw"
     },
     {
-      "video_id": "pTtGeyQKPGI",
-      "title": "Stop Day Trading, Try Night Trading Instead",
-      "date": "2026-09-18",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/pTtGeyQKPGI"
-    },
-    {
       "video_id": "k5H-GRWQNlk",
       "title": "America's Once In A 100 Year Investment Opportunity Just Started",
       "date": "2026-09-14",
       "channel": "@MinorityMindset",
       "channel_name": "Minority Mindset",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/k5H-GRWQNlk"
     },
     {
@@ -36,15 +27,6 @@
       "channel_name": "Invest w/ Henry",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/JCcE52FrlkM"
-    },
-    {
-      "video_id": "CLLrRbpsnyM",
-      "title": "Watch This Before September 16th",
-      "date": "2026-09-13",
-      "channel": "@MinorityMindset",
-      "channel_name": "Minority Mindset",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/CLLrRbpsnyM"
     },
     {
       "video_id": "rvWx3NdeKmc",
@@ -90,6 +72,15 @@
       "channel_name": "Financial Ed",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/sb6LM5mnOzA"
+    },
+    {
+      "video_id": "LwgTWQ5L5XM",
+      "title": "CHART REQUESTS LIVE!! 📈 #overkilltrading",
+      "date": "2026-09-05",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/LwgTWQ5L5XM"
     },
     {
       "video_id": "u1fZ6eTDdFs",

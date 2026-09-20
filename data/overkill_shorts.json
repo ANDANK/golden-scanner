@@ -4,6 +4,42 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-09-18",
+      "url": "https://www.youtube.com/shorts/pTtGeyQKPGI",
+      "title": "Stop Day Trading, Try Night Trading Instead",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Academic research across global markets shows that stocks historically generate the majority of their returns overnight; buying at the market close and selling at the open captures institutional flows, whereas holding purely intraday historically underperforms.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-13",
+      "url": "https://www.youtube.com/shorts/CLLrRbpsnyM",
+      "title": "Watch This Before September 16th",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve faces a major policy dilemma: cutting interest rates lowers government debt servicing costs and stimulates growth, but risks worsening persistent inflation fueled by high oil prices.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Homeownership has become more expensive than renting, causing the real estate environment to shift toward a buyer's market where sellers are forced to cut prices and offer concessions.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-09-16",
       "url": "https://www.youtube.com/shorts/QQj06EwrgJY",
       "title": "The Bond Market Is Breaking",
