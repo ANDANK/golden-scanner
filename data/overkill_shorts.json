@@ -1,8 +1,95 @@
 {
-  "updated": "2026-09-19",
+  "updated": "2026-09-21",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-12",
+      "url": "https://www.youtube.com/shorts/rvWx3NdeKmc",
+      "title": "This Sale Won't Last. 5 Stocks You Need to Buy Before 2027",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "UBER",
+          "bias": "Bullish",
+          "notes": "Trades at an attractive 17 P/E ratio with potential to reach a half-trillion-dollar valuation (+50% upside). Growth is driven by high-margin advertising and its essential platform network for robotaxi partnerships.",
+          "price": 72.63
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Trading 35% below its 52-week high at a 26 P/E, which undervalues its steady revenue and operating income growth. Ad-tier expansion and strong free cash flow generation provide a solid long-term runway.",
+          "price": 80.32
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Targeting $500 to $600 per share by late 2026 or early 2027, with high P/E justified by 107% YoY data center revenue growth. AMD benefits as hyperscalers demand a credible secondary supplier alongside Nvidia.",
+          "price": 493.41
+        },
+        {
+          "ticker": "IREN",
+          "bias": "Bullish",
+          "notes": "A volatile, speculative data center play positioned to monetize power and land infrastructure for AI workloads. Secured key energy access and a $2.4B financing deal for Nvidia infrastructure.",
+          "price": 43.17
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "The cheapest Mag 7 stock at a 23 P/E ratio, with potential to reach a $3 trillion market cap within 12 to 24 months. Its core advertising cash cow easily funds massive $145B AI infrastructure investments.",
+          "price": 665.6
+        }
+      ]
+    },
+    {
+      "date": "2026-09-21",
+      "url": "https://www.youtube.com/shorts/HUKgUEFCTNo",
+      "title": "The Machine That Made America Rich Just Broke",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve is running record losses (termed deferred assets) because it earns roughly 2% on low-rate pandemic Treasuries while paying roughly 4% on the Federal Funds rate to depository banks, ending its historical profit remittances to the government.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With US national debt exceeding $40 trillion and debt-to-GDP at 125%, government deficits and continued money creation to fund obligations risk sustained long-term inflation unless economic productivity outpaces debt expansion.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-11",
+      "url": "https://www.youtube.com/shorts/wz6dcKFQoro",
+      "title": "Trump's Treasury Secretary Just Cancelled The Economic Recovery - What It Means For Your Paycheck",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Economic data is split on wage growth: the White House reports bottom earners outpaced top earners over the last 12 months (5.5% vs. 1.8%), while Atlanta Fed and Bank of America data show top earners slightly outpacing bottom earners.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With national debt exceeding $40 trillion, continued government deficit spending funded by Federal Reserve money printing will sustain inflation and dollar devaluation, which benefits asset-owning investors over wage earners.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should avoid attempting to time market crashes and instead practice an 'always be buying' strategy across all market cycles, stepping up purchases aggressively during downturns.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-11",
       "url": "https://www.youtube.com/shorts/sb6LM5mnOzA",

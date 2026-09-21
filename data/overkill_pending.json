@@ -1,32 +1,14 @@
 {
-  "checked": "2026-09-19",
+  "checked": "2026-09-21",
   "pending": [
-    {
-      "video_id": "rvWx3NdeKmc",
-      "title": "This Sale Won't Last. 5 Stocks You Need to Buy Before 2027",
-      "date": "2026-09-12",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/rvWx3NdeKmc"
-    },
     {
       "video_id": "LqwFkVmn9Rw",
       "title": "My New $50,000 LEAPS Challenge Starts Now",
       "date": "2026-09-11",
       "channel": "@InvestwithHenry",
       "channel_name": "Invest w/ Henry",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/LqwFkVmn9Rw"
-    },
-    {
-      "video_id": "wz6dcKFQoro",
-      "title": "Trump's Treasury Secretary Just Cancelled The Economic Recovery - What It Means For Your Paycheck",
-      "date": "2026-09-11",
-      "channel": "@MinorityMindset",
-      "channel_name": "Minority Mindset",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/wz6dcKFQoro"
     },
     {
       "video_id": "u1fZ6eTDdFs",
