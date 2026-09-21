@@ -4,6 +4,177 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-09-11",
+      "url": "https://www.youtube.com/shorts/sb6LM5mnOzA",
+      "title": "This Stock could change a life‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Average 30-year fixed mortgage rates have risen back above 7% to 7.07% for the first time in over a year, creating a dead real estate market dominated by few all-cash transactions.",
+          "price": null
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Strong brand power, expansion into hair care, and growth across Rhode and Naturium are expected to drive substantial margin expansion. The host models base-case stock price targets of $250 to $300 and a bull-case target above $400 by 2030.",
+          "price": 96.91
+        },
+        {
+          "ticker": "ADBE",
+          "bias": "Bearish",
+          "notes": "The host sold his position and expects the stock to remain trapped at low forward P/E multiples of 9 to 15 due to persistent market fears over generative AI disruption.",
+          "price": 252.23
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "The host plans to scale into a position over the next 6 to 9 months while high mortgage rates depress sentiment, expecting attractive 3- to 5-year returns as capital expenditures decrease and cash reserves build.",
+          "price": 134.07
+        }
+      ]
+    },
+    {
+      "date": "2026-09-19",
+      "url": "https://www.youtube.com/shorts/pWnu1C8I6Xw",
+      "title": "Superinvestors are buying this stock I added $10,000+ last week",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "VST",
+          "bias": "Bullish",
+          "notes": "The host bought 100 shares of Vistra following heavy insider and institutional buying, noting it trades at 10x EV/EBITDA and 16x 2026 earnings to capitalize on AI energy demand despite regulatory and weather risks.",
+          "price": 140.67
+        }
+      ]
+    },
+    {
+      "date": "2026-09-14",
+      "url": "https://www.youtube.com/shorts/k5H-GRWQNlk",
+      "title": "America's Once In A 100 Year Investment Opportunity Just Started",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "DRAM",
+          "bias": "Bullish",
+          "notes": "The Roundhill Memory ETF (DRAM) offers direct exposure to memory chip producers benefiting from the severe global memory shortage.",
+          "price": 54.8
+        },
+        {
+          "ticker": "SMH",
+          "bias": "Bullish",
+          "notes": "The VanEck Semiconductor ETF (SMH) provides exposure to the 25 largest U.S. semiconductor companies riding broader chip demand.",
+          "price": 541.5
+        },
+        {
+          "ticker": "SOXX",
+          "bias": "Bullish",
+          "notes": "The iShares Semiconductor ETF (SOXX) offers broad semiconductor exposure with less concentration in mega-cap holdings like Nvidia and TSMC.",
+          "price": 497.4
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A severe global memory chip shortage driven by AI demand, past production cuts, and helium supply shocks in the Middle East is expected to last until at least 2028.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Official CPI inflation figures may not fully reflect rising prices for electronics due to hedonic adjustments that account for enhanced device processing power.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The U.S. government is enacting tariffs, export restrictions, and critical mineral stockpiles to rebuild domestic chip supply chains and reduce reliance on South Korea and China.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Surging homeownership costs have made renting cheaper than buying, forcing sellers to offer price cuts and concessions in a developing buyer's market.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-13",
+      "url": "https://www.youtube.com/shorts/JCcE52FrlkM",
+      "title": "I Made These 13 Trades In My Last Challenge - The End Results",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host views AMD fair value at $300 and considers anything under $250 to be a value play, remaining bullish on its upside potential.",
+          "price": 493.41
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "The host considers Palantir an attractive long-term trade and plans to buy more LEAP options on the stock.",
+          "price": 173.31
+        }
+      ]
+    },
+    {
+      "date": "2026-09-12",
+      "url": "https://www.youtube.com/shorts/oexx0U-S3Gw",
+      "title": "Trump Just Promised Every American $5,000",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Proposed $5,000 stimulus checks would cost roughly $1.25 trillion, far exceeding annual tariff revenues of $200 billion. Funding this gap would require additional national debt and Federal Reserve money printing, ultimately worsening inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve is caught in a dilemma between raising interest rates to curb high inflation or cutting rates to stimulate a weakening non-AI labor market.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Cautious lenders and massive US national debt have pushed Treasury yields to their highest levels since before the 2008 financial crisis, driving up borrowing costs.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Elevated global oil and diesel prices increase shipping and fertilizer expenses, leading to higher retail food and grocery prices.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To reduce reliance on China for military and tech hardware, the US government is directly investing in domestic rare earth metals and semiconductor supply chains.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rapid growth in AI data centers is putting unprecedented demand on an outdated US power grid, contributing to rising energy and electricity prices.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High home purchase costs have made renting cheaper than buying, shifting the housing market toward buyers as sellers are forced to cut prices and offer concessions.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-09-18",
       "url": "https://www.youtube.com/shorts/pTtGeyQKPGI",
       "title": "Stop Day Trading, Try Night Trading Instead",
