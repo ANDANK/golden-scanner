@@ -4,6 +4,54 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-09-21",
+      "url": "https://www.youtube.com/shorts/ZBnrIVtf9-Y",
+      "title": "OVERKILL PORTFOLIO UPDATE 📈 SEPTEMBER 21",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "SNAP",
+          "bias": "Bullish",
+          "notes": "Snapchat is held in the host's portfolio after being accumulated over the last 1 to 6 months.",
+          "price": 5.7
+        },
+        {
+          "ticker": "CETUS",
+          "bias": "Bullish",
+          "notes": "Cedus is part of the host's portfolio of assets accumulated over the last 1 to 6 months.",
+          "price": null
+        },
+        {
+          "ticker": "XRP",
+          "bias": "Bullish",
+          "notes": "XRP gained 10% today and is being held after 1 to 6 months of accumulation.",
+          "price": 16.86
+        },
+        {
+          "ticker": "SUI",
+          "bias": "Bullish",
+          "notes": "Sui is up approximately 15% and still running, remaining a portfolio holding accumulated over the last 1 to 6 months.",
+          "price": 113.74
+        }
+      ]
+    },
+    {
+      "date": "2026-09-05",
+      "url": "https://www.youtube.com/shorts/LwgTWQ5L5XM",
+      "title": "CHART REQUESTS LIVE!! 📈 #overkilltrading",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "UNI",
+          "bias": "Bullish",
+          "notes": "Uniswap is up 8% on the day as part of a weekend pump in the crypto market.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-09-12",
       "url": "https://www.youtube.com/shorts/rvWx3NdeKmc",
       "title": "This Sale Won't Last. 5 Stocks You Need to Buy Before 2027",
