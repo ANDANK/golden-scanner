@@ -1,14 +1,32 @@
 {
-  "checked": "2026-09-21",
+  "checked": "2026-09-22",
   "pending": [
     {
-      "video_id": "LqwFkVmn9Rw",
-      "title": "My New $50,000 LEAPS Challenge Starts Now",
-      "date": "2026-09-11",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
+      "video_id": "PfJ_gHFqKkA",
+      "title": "Best 3 ETF Portfolio Buy & Hold FOREVER (BEST Simple Investing)",
+      "date": "2026-09-21",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
       "reason": "failed",
-      "url": "https://www.youtube.com/shorts/LqwFkVmn9Rw"
+      "url": "https://www.youtube.com/shorts/PfJ_gHFqKkA"
+    },
+    {
+      "video_id": "SiLfBhaGBJE",
+      "title": "OVERKILL TRADING FREE COURSE 📈 LEARN SWING TRADING!",
+      "date": "2026-09-10",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/SiLfBhaGBJE"
+    },
+    {
+      "video_id": "u1fZ6eTDdFs",
+      "title": "PUBLIC SERVICE ANNOUNCEMENT 🚨",
+      "date": "2026-09-04",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/u1fZ6eTDdFs"
     },
     {
       "video_id": "w-S6OnQ-3lA",

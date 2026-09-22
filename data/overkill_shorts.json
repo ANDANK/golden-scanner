@@ -1,8 +1,152 @@
 {
-  "updated": "2026-09-21",
+  "updated": "2026-09-22",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-22",
+      "url": "https://www.youtube.com/shorts/D8UdumwOv6Q",
+      "title": "3 STOVKS TO WATCH THIS WEEK 📈 SEPTEMBER 21 $IONQ",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "GRAB",
+          "bias": "Bullish",
+          "notes": "Grab appears undervalued around $3 macro support with revenue growing quarter-over-quarter toward $1 billion. The host is buying around $3 and plans to buy more if it drops to $2.",
+          "price": 2.91
+        },
+        {
+          "ticker": "NQ",
+          "bias": "Bullish",
+          "notes": "The quantum computing stock is in a buy zone between $30 and $40 near its four-year moving average and is currently showing a buy signal.",
+          "price": null
+        },
+        {
+          "ticker": "COZ",
+          "bias": "Bullish",
+          "notes": "Core Scientific is flashing a buy signal and appears to be forming a bottom at current price levels.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-21",
+      "url": "https://www.youtube.com/shorts/DstQJlsVTng",
+      "title": "AMD Investors GET READY‼️ The time has come…",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Stock market leadership constantly shifts over multi-year cycles, meaning the stocks that drove a portfolio to past milestones are unlikely to be the ones driving the next multi-year growth phase.",
+          "price": null
+        },
+        {
+          "ticker": "META",
+          "bias": "Neutral",
+          "notes": "Host is not actively buying Meta right now, viewing the stock as rangebound between $550 and $750 until capex is trimmed or AI monetization becomes clearer to investors.",
+          "price": 741.25
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Host expects AMD to gain market share from Nvidia and lead revenue growth among mega-cap tech stocks by 2027, noting $700 as his potential level to consider trimming shares.",
+          "price": 615.52
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Host is actively buying RH in the low $100s, viewing the heavily beaten-down stock as an attractive multi-year turnaround play.",
+          "price": 127.2
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Host expects a major multi-year upward move for Celsius from 2027 to 2030, driven by global brand expansion and improving profitability.",
+          "price": 28.02
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "Host is actively buying American Express, praising its high-quality customer base, strong business model, and long-term earnings potential.",
+          "price": 313.59
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Host considers Netflix one of his top stocks to buy, highlighting its resilient subscriber base despite being rangebound for several years.",
+          "price": 73.36
+        },
+        {
+          "ticker": "WYNN",
+          "bias": "Bullish",
+          "notes": "Host sees significant upside in Wynn Resorts following several tough years, pointing to its upcoming Middle East resort opening and strong Las Vegas and Macau footprint.",
+          "price": 83.32
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "Host is buying Estee Lauder as a stable, high-quality cosmetic business that bottomed last year.",
+          "price": 96.34
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Host accumulated elf Beauty around its $49 bottom in June and believes the stock has long-term potential to reach multi-hundred dollar levels.",
+          "price": 97.79
+        }
+      ]
+    },
+    {
+      "date": "2026-09-11",
+      "url": "https://www.youtube.com/shorts/LqwFkVmn9Rw",
+      "title": "My New $50,000 LEAPS Challenge Starts Now (CLOSED - NO SPOTS LEFT)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "LEAP options structured 9 to 15 months out using deep in-the-money strikes behave similarly to owning underlying shares, with disciplined position sizing kept to 5% to 10% per trade.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-21",
+      "url": "https://www.youtube.com/shorts/Y7BXweNM3Hk",
+      "title": "3 STOCKS SELLING OFF 📉 SEP 21",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "VLO",
+          "bias": "Bearish",
+          "notes": "The host calls a sell/trim signal on VLO after a 300% rally to $400, noting the stock is far extended above its 4-year moving average (200 EMA) at $168.",
+          "price": 393.27
+        },
+        {
+          "ticker": "OXY",
+          "bias": "Bearish",
+          "notes": "The host identifies a sell signal on OXY, indicating the stock appears to have topped out around $64 after running up from $38.",
+          "price": 57.25
+        },
+        {
+          "ticker": "COP",
+          "bias": "Bearish",
+          "notes": "The host issues a sell signal on COP as part of a broader pullback across oil and gas stocks.",
+          "price": 127.53
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Capital appears to be rotating out of energy/oil and gas stocks and moving back into risk-on assets such as cryptocurrency.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-21",
       "url": "https://www.youtube.com/shorts/ZBnrIVtf9-Y",
