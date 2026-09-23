@@ -1,8 +1,152 @@
 {
-  "updated": "2026-09-22",
+  "updated": "2026-09-23",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-22",
+      "url": "https://www.youtube.com/shorts/PfJ_gHFqKkA",
+      "title": "Best 3 ETF Portfolio Buy & Hold FOREVER (BEST Simple Investing)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "BND",
+          "bias": "Bearish",
+          "notes": "Host argues BND fails as a portfolio hedge, pointing out it fell 13% during the 2022 downturn and averaged just 1.4% annually over the last decade, well below inflation. He recommends replacing traditional bond funds with low-beta dividend funds during the wealth-building phase.",
+          "price": 71.4
+        },
+        {
+          "ticker": "VXUS",
+          "bias": "Bearish",
+          "notes": "Host advises against holding dedicated international funds, noting VXUS delivered a modest 9.7% 10-year annualized return compared to over 15% for the S&P 500. He explains that major US companies already generate roughly 40% of their revenue internationally, rendering geographic funds redundant.",
+          "price": 87.15
+        },
+        {
+          "ticker": "VOO",
+          "bias": "Bullish",
+          "notes": "Recommended as the core foundational US broad market ETF for the portfolio due to its ultra-low 0.03% expense ratio and proven ~15% 10-year annualized return.",
+          "price": 712.78
+        },
+        {
+          "ticker": "VTI",
+          "bias": "Bullish",
+          "notes": "Endorsed alongside VOO as an ideal foundational core index fund providing broad, low-cost (0.03% expense ratio) exposure to the total US stock market.",
+          "price": 381.1
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "Selected as the superior replacement for bonds in the safety allocation due to its low beta (0.69), durable cash flow, and 14 consecutive years of dividend growth. In 2022, it dropped only 3% while generating a 3%+ dividend yield and has grown 61% over the past 5 years.",
+          "price": 33.72
+        },
+        {
+          "ticker": "VTV",
+          "bias": "Bullish",
+          "notes": "Recommended as an alternative low-beta value fund for the safety allocation, particularly inside taxable brokerage accounts for higher earners seeking to reduce dividend tax drag compared to SCHD.",
+          "price": 221.94
+        },
+        {
+          "ticker": "SCHG",
+          "bias": "Bullish",
+          "notes": "Favored as the top growth engine ETF for the updated three-fund portfolio, highlighted for delivering an 18.7% 10-year annualized return through broad-based growth exposure.",
+          "price": 36.27
+        },
+        {
+          "ticker": "QQQM",
+          "bias": "Bullish",
+          "notes": "Identified as one of the host's preferred broad-based growth ETFs to capture the technology and upside portion of the portfolio.",
+          "price": 305.27
+        },
+        {
+          "ticker": "VUG",
+          "bias": "Bullish",
+          "notes": "Endorsed as an effective broad growth ETF to fulfill the high-reward slice of the modernized three-fund portfolio.",
+          "price": 91.02
+        },
+        {
+          "ticker": "SPMO",
+          "bias": "Bullish",
+          "notes": "Host specifically highlights SPMO as an ETF he loves for filling the growth allocation of the portfolio.",
+          "price": 152.14
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Retirees should keep approximately three years of net living expenses in a high-yield savings account or cash equivalents so they can weather standard 1-2 year market downturns without selling equities at a loss.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-22",
+      "url": "https://www.youtube.com/shorts/OC9cRh7Tu88",
+      "title": "Trump Promises a $5,000 Dividend Check to ALL American Adults",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A proposed $5,000 dividend check to roughly 240 million American adults would cost an estimated $1.2 trillion, an amount unlikely to be funded by tariff revenues which totaled only $184 billion net after refunds. With the U.S. government facing a projected deficit exceeding $2 trillion for fiscal year 2026, the math and thin congressional margins make such a payout highly improbable.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-22",
+      "url": "https://www.youtube.com/shorts/2QdjKQPAmfU",
+      "title": "Buy These 5 Assets Before The Fed's Next Move",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "If the Federal Reserve hikes rates due to persistent 4% inflation and energy/tariff shocks, assets that historically benefit include short-term Treasuries, floating-rate senior loans, energy/commodities, banks, and dividend-paying value stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "If the Fed cuts rates to relieve labor market strain and ease debt servicing costs, top beneficiaries include dollar-debasement hedges (gold, silver, Bitcoin), real estate, homebuilders, and small-cap/tech growth equities.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising national debt exceeding $40 trillion and heavy borrowing needs have driven Treasury yields to multi-decade highs, elevating consumer mortgage rates and government interest expenses as nearly one-third of federal debt readjusts in 2026.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-22",
+      "url": "https://www.youtube.com/shorts/PFO6vqQbvYU",
+      "title": "3 STOCKS TO WATCH NOW! 📈 SEPTEMBER 22",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NXT",
+          "bias": "Bullish",
+          "notes": "The company has zero debt and has experienced an over 50% pullback from its $160 high down to $80, triggering a buy signal that prompted the host to enter a position.",
+          "price": 83.15
+        },
+        {
+          "ticker": "ENPH",
+          "bias": "Bullish",
+          "notes": "Down from an all-time high of $363 to around $34, this battery and solar energy company presents a beat-down long-term buying opportunity.",
+          "price": 34.76
+        },
+        {
+          "ticker": "SEDG",
+          "bias": "Bullish",
+          "notes": "SolarEdge previously rallied from the $10-$20 range up to $80 and has pulled back significantly, triggering a buy signal in September.",
+          "price": 35.61
+        }
+      ]
+    },
     {
       "date": "2026-09-22",
       "url": "https://www.youtube.com/shorts/D8UdumwOv6Q",
