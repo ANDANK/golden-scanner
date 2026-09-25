@@ -5,6 +5,81 @@
   "videos": [
     {
       "date": "2026-09-24",
+      "url": "https://www.youtube.com/shorts/5_1Qb34GAUE",
+      "title": "HUGE GAINS! 📈 recapping my $UNI & GAMESTOP trades",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "UNI",
+          "bias": "Bearish",
+          "notes": "Locked in profits around $9.40 after accumulating between $2.50 and $3.20, anticipating the token needs to cool off and could pull back to around $6.50.",
+          "price": null
+        },
+        {
+          "ticker": "GME",
+          "bias": "Bearish",
+          "notes": "Cashed out around an 80% gain after entering at $18, citing a daily sell alert signal and proximity to the resistance red zone, despite potential upside to $28.",
+          "price": 25.02
+        }
+      ]
+    },
+    {
+      "date": "2026-09-25",
+      "url": "https://www.youtube.com/shorts/t5p8pUbDRgA",
+      "title": "\"The Recession Is Cancelled\" - Wall Street",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "According to S&P Global, U.S. corporate profits surged 28.9% year-over-year—nearly four times the historical average—driven by AI efficiency gains and price hikes outpacing corporate revenue growth.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Reported inflation stands at 3.4% with gas prices up nearly 30% over the past year, prompting the Federal Reserve to raise interest rates to cool the economy and corporate borrowing.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Treasury yields have reached multi-decade highs with the 10-year exceeding 5.1%, offering guaranteed 5-6% returns that now actively compete for capital against the stock market.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-23",
+      "url": "https://www.youtube.com/shorts/HisxdmW1_kk",
+      "title": "THESE 3 STOCKS LOOK CHEAP ‼️ SEPTEMBER 23",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "Oracle is sitting on its 4-year average around $144, representing a historically reliable buying opportunity going back to 2005. Stop-losses can be placed around $129, $125, or the previous low at $114, with room to add more if it drops toward $100.",
+          "price": 144.56
+        },
+        {
+          "ticker": "IBM",
+          "bias": "Bullish",
+          "notes": "IBM tapped its 4-year average down at 204, bounced back up, and is now consolidating in a range. The host likes the stock as long as it holds over 200.",
+          "price": 232.76
+        },
+        {
+          "ticker": "CLX",
+          "bias": "Bullish",
+          "notes": "Although the chart is in despair, Clorox is trading at an attractive 30% discount below its 4-year average of 120.",
+          "price": 83.94
+        }
+      ]
+    },
+    {
+      "date": "2026-09-24",
       "url": "https://www.youtube.com/shorts/lmhmf_l8aBA",
       "title": "$ORCL STOCK ANALYSIS 📈 SEPTEMBER 24",
       "channel": "@overkilltrading",
