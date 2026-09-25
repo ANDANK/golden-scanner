@@ -1,8 +1,122 @@
 {
-  "updated": "2026-09-24",
+  "updated": "2026-09-25",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-24",
+      "url": "https://www.youtube.com/shorts/lmhmf_l8aBA",
+      "title": "$ORCL STOCK ANALYSIS 📈 SEPTEMBER 24",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "The host considers Oracle to be at a good buy price trading at/below its 4-year moving average around $120-$130, planning to add more if it drops to $100 with long-term expectations of reaching $300-$400 backed by strong backlog and a 15% stake in TikTok USA.",
+          "price": 139.54
+        }
+      ]
+    },
+    {
+      "date": "2026-09-24",
+      "url": "https://www.youtube.com/shorts/JjllTy0wfhA",
+      "title": "Legendary Stock Just entered BUY territory‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 10-year Treasury yield reaching multi-year highs continues to push mortgage rates higher, increasing borrowing costs across the economy.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A continued decline in oil prices could create a slightly bullish market setup by lowering Treasury yields and reducing the risk of further Federal Reserve rate hikes.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Next year's projected $1.1T to $1.4T in hyperscaler capex represents a pivotal market catalyst, threatening software margins if spending is too high or semiconductor demand if it disappoints.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-24",
+      "url": "https://www.youtube.com/shorts/R42ZG58x9T4",
+      "title": "The 2026 Great Economic Reset Is Starting",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve is shifting its stance toward raising interest rates to fight inflation, counteracting government efforts to stimulate the economy and increasing recession risks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "U.S. national debt has surpassed $40 trillion with a debt-to-GDP ratio near 125%, making the economy dangerously reliant on continuous deficit spending.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "About one-third of U.S. national debt is set to readjust at higher interest rates, driving national debt interest payments to be the government's fastest-growing expense.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To outgrow its debt load, the government is prioritizing five key growth areas: artificial intelligence, energy infrastructure, domestic rare earth metals, manufacturing, and deregulation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Prolonged higher interest rates threaten the private equity and private credit sectors with increased defaults and bankruptcies, as underwater assets can no longer be refinanced cheaply.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Higher interest rate environments favor value investments, treasuries, and cash yields while reducing capital flows into highly speculative assets.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-24",
+      "url": "https://www.youtube.com/shorts/GADfgcZz9Eg",
+      "title": "3 STOCKS TO WATCH NOW 📈 SEPTEMBER 24",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "HIMS",
+          "bias": "Bullish",
+          "notes": "HIMS is consolidating around its 4-year moving average above 24 and giving a buy signal while market sentiment is quiet.",
+          "price": 29.28
+        },
+        {
+          "ticker": "NVO",
+          "bias": "Bullish",
+          "notes": "NVO is down from 140 to around 40 dollars and sitting in the Fibonacci golden zone, offering a strong long-term play for a drug maker generating 12 billion dollars a quarter.",
+          "price": 38.62
+        },
+        {
+          "ticker": "NXT",
+          "bias": "Bullish",
+          "notes": "NXT is triggering its first buy signal since 2024 within a heavily beaten-down solar sector.",
+          "price": 79.97
+        }
+      ]
+    },
     {
       "date": "2026-09-23",
       "url": "https://www.youtube.com/shorts/fWCRiOq4TEw",
