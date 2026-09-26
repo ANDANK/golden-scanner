@@ -1,8 +1,128 @@
 {
-  "updated": "2026-09-25",
+  "updated": "2026-09-26",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-26",
+      "url": "https://www.youtube.com/shorts/tWNMm38R5Vc",
+      "title": "I SOLD $ENA FOR A 200% GAIN AND BOUGHT SOMETHING ELSE",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ENA",
+          "bias": "Bearish",
+          "notes": "Taking profits after a 200% to 237% gain from the 8-cent entry as the token has entered the sell zone. Capital is being rotated out despite the possibility of further upside.",
+          "price": null
+        },
+        {
+          "ticker": "ATOM",
+          "bias": "Bullish",
+          "notes": "Rotating capital into ATOM at the $2 level, viewing it as beaten down with significant upside toward its prior $45 high. The asset has not expanded on the weekly chart yet and yields around 14% APY via staking on Coinbase.",
+          "price": 4.35
+        }
+      ]
+    },
+    {
+      "date": "2026-09-25",
+      "url": "https://www.youtube.com/shorts/R9gi7NzuPsk",
+      "title": "25 Minutes Retirement Strategy for anyone with $50,000",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Implied volatility is statistically higher than realized volatility, meaning option options are frequently overpriced over the long term and favor option sellers.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Achieving full retirement through options income generally requires a multi-six-figure portfolio to generate sustainable six-figure annual cash flow.",
+          "price": null
+        },
+        {
+          "ticker": "HIMS",
+          "bias": "Bullish",
+          "notes": "The host is bullish on Hims due to its compelling business model and exceptionally strong marketing department.",
+          "price": 29.42
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host favors SoFi as a growth candidate as it scales its fintech operations and improves profit margins.",
+          "price": 16.58
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "The host considers Netflix stock cheap and recommends selling put options at a $65 strike price with the goal of collecting premium or taking assignment.",
+          "price": 71.15
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "The host expects Palantir to trade above $200 per share, driven by strong growth in both government and commercial sectors, making LEAP call options attractive.",
+          "price": 189.67
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host is extremely bullish on Nvidia, highlighting its massive 64% profit margins, fast revenue expansion, and attractive relative P/E ratio.",
+          "price": 225.07
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "The host is bullish on Amazon due to its dominance in cloud computing and AI infrastructure, suggesting a 235/225 put credit spread.",
+          "price": 249.67
+        }
+      ]
+    },
+    {
+      "date": "2026-09-23",
+      "url": "https://www.youtube.com/shorts/hUMYoMBwBis",
+      "title": "TESTING TESTING 12",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "UNI",
+          "bias": "Bullish",
+          "notes": "UNI reached a one-year high and is currently trading around $10.44 following a strong rally from the $3.00 level.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-24",
+      "url": "https://www.youtube.com/shorts/3uqr_tf8fr8",
+      "title": "The Only 2 Indicators I Use to Make $60,673/month Options Trading",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Neutral",
+          "notes": "NVIDIA is currently trading right at its 30-day moving average and in the middle of its Bollinger Bands, reflecting a period of consolidation within its broader trend.",
+          "price": 224.58
+        },
+        {
+          "ticker": "BE",
+          "bias": "Bearish",
+          "notes": "Bloom Energy has moved beyond its upper Bollinger Band and far above its 30-day moving average, making it statistically overextended, expensive, and high-risk.",
+          "price": 266.65
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Combining a 30-day simple moving average with 20-period, 2-standard-deviation Bollinger Bands helps evaluate expected price ranges, timing entries, and stock overextension for option trading.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-24",
       "url": "https://www.youtube.com/shorts/5_1Qb34GAUE",
