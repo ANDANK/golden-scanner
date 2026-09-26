@@ -1,0 +1,42 @@
+{
+  "date": "2026-09-26",
+  "tag": "FTF",
+  "rows": [
+    {
+      "ticker": "AAPL",
+      "price": 341.07000732421875,
+      "sector": "Mega Tech",
+      "tier": "Fresh",
+      "score": 11,
+      "slope_52w": 30.61,
+      "slope_26w": 24.06,
+      "slope_ratio": 0.786,
+      "touch_pct": 6.19,
+      "bounce_pct": 21.98,
+      "wks_since_touch": 12,
+      "macd_gap": 1.256,
+      "macd_delta_3w": 1.758,
+      "accel_3w": 6.59,
+      "dist_200w": 56.86,
+      "vol_ratio": 0.851
+    },
+    {
+      "ticker": "ETN",
+      "price": 439.9800109863281,
+      "sector": "Industrials",
+      "tier": "Fresh",
+      "score": 9,
+      "slope_52w": 28.54,
+      "slope_26w": 9.29,
+      "slope_ratio": 0.325,
+      "touch_pct": 2.07,
+      "bounce_pct": 13.69,
+      "wks_since_touch": 1,
+      "macd_gap": 0.004,
+      "macd_delta_3w": 1.264,
+      "accel_3w": 7.09,
+      "dist_200w": 49.6,
+      "vol_ratio": 0.875
+    }
+  ]
+}
