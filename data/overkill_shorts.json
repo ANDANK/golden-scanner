@@ -1,8 +1,113 @@
 {
-  "updated": "2026-09-26",
+  "updated": "2026-09-27",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-27",
+      "url": "https://www.youtube.com/shorts/Zpy_BoUPm4Y",
+      "title": "$NIO STOCK ANALYSIS 📈 SEPTEMBER 26",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NIO",
+          "bias": "Bullish",
+          "notes": "The host sees the stock as an attractive buy around $3.50 with a strong bottom at $3, noting it previously reached $70 and generates about $4 billion per quarter. He also highlights easing US-China trade tensions and tariff cuts as positive catalysts.",
+          "price": 3.58
+        }
+      ]
+    },
+    {
+      "date": "2026-09-26",
+      "url": "https://www.youtube.com/shorts/zIwQnCBaFDE",
+      "title": "🚨 Stock Market is Set to Do the UNTHINKABLE",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historically since 1970, investing in the S&P 500 at an all-time high generated an average return of 9.6% over the following 12 months, illustrating that staying invested long-term outweighs timing the market.",
+          "price": null
+        },
+        {
+          "ticker": "SPMO",
+          "bias": "Bullish",
+          "notes": "SPMO remains a core holding that the host dollar-cost averages into monthly following its rebalance, which removed Nvidia and Broadcom and added Apple to its top holdings.",
+          "price": 152.92
+        },
+        {
+          "ticker": "AAPL",
+          "bias": "Bullish",
+          "notes": "Apple is up over 30% year-to-date as its lower AI capex spending relative to other Big Tech peers preserves short-term profitability, making it a key position in SPMO.",
+          "price": 341.07
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "SCHD remains a monthly dollar-cost average target following a Q3 rebalance that raised tech exposure to 12% to capture strong dividend growth and capital appreciation.",
+          "price": 33.21
+        },
+        {
+          "ticker": "QCOM",
+          "bias": "Bullish",
+          "notes": "Qualcomm surged to the top position in SCHD during its Q3 rebalance, giving the ETF reliable cash flow and higher dividend growth potential.",
+          "price": 201.97
+        },
+        {
+          "ticker": "TXN",
+          "bias": "Bullish",
+          "notes": "Texas Instruments became a top holding in SCHD after the Q3 rebalance, providing strong cash flows and dividend support without high valuation risk.",
+          "price": 278.07
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 10-year Treasury yield rising to 5.2% offers guaranteed 5%+ returns, drawing capital away from equities and putting pressure on stock valuations.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Brent crude oil rising back above $100 per barrel threatens to push inflation higher, which could compel the Federal Reserve to maintain aggressive rate policies.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Markets are pricing in a 71% chance of another Fed rate hike next month, as resilient job data and economic growth keep inflationary pressures alive.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US and China extended a temporary trade truce, but ongoing competition over critical rare earth minerals and AI technology remains a persistent market risk.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-22",
+      "url": "https://www.youtube.com/shorts/6job46gSvZk",
+      "title": "How She Makes $20,000/Month Trading Options",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "The host highlights Meta as a top-performing stock that is positioned to be a major winner.",
+          "price": 736.6
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host emphasizes that options trading on SoFi remains highly profitable even when the stock trades sideways for extended periods.",
+          "price": 17.16
+        }
+      ]
+    },
     {
       "date": "2026-09-22",
       "url": "https://www.youtube.com/shorts/uLvc85arWuk",
