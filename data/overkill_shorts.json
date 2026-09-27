@@ -5,6 +5,21 @@
   "videos": [
     {
       "date": "2026-09-27",
+      "url": "https://www.youtube.com/shorts/yLEqjUh_KIc",
+      "title": "$NFLX STOCK 🚨 SEPTEMBER 26",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "The host remains a buyer of Netflix at current levels near its 4-year average, but emphasizes setting a stop-loss at $64 to protect against a potential drop toward $47.",
+          "price": 71.15
+        }
+      ]
+    },
+    {
+      "date": "2026-09-27",
       "url": "https://www.youtube.com/shorts/Zpy_BoUPm4Y",
       "title": "$NIO STOCK ANALYSIS 📈 SEPTEMBER 26",
       "channel": "@overkilltrading",
