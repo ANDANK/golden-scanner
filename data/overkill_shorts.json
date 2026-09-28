@@ -1,8 +1,74 @@
 {
-  "updated": "2026-09-27",
+  "updated": "2026-09-28",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-28",
+      "url": "https://www.youtube.com/shorts/05MfiNo99T4",
+      "title": "How I Pick Stocks to Sell Puts for $8,000/Month in Passive Income",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When selling cash-secured puts, prioritize company quality over high premiums, ensuring you are comfortable holding the stock for 6 to 12 months if assigned. Look for solid revenue growth, a strong balance sheet, and tight option bid-ask spreads with high open interest.",
+          "price": null
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "The host is very bullish on Amazon, driven by the massive profitability and growth of AWS. He recommends aggressively selling 40-delta cash-secured puts (such as the November 20th $245 strike) to collect premium or acquire shares.",
+          "price": 246.15
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host considers Nvidia one of the best stocks to sell put options on, citing massive AI demand, over 7.5 million developers on its platform, and strong balance sheet health. He considers its price near the middle of its Bollinger Bands to be fairly valued and suitable for aggressive put selling.",
+          "price": 228.86
+        },
+        {
+          "ticker": "MARA",
+          "bias": "Bearish",
+          "notes": "The host views MARA as a hype stock lacking a competitive advantage and notes that it lost $1.3 billion despite rising sales. He strongly advises against selling put options on it due to poor fundamentals and weak option liquidity.",
+          "price": 12.11
+        },
+        {
+          "ticker": "PTON",
+          "bias": "Bearish",
+          "notes": "The host labels Peloton an awful stock to trade, highlighting falling sales from $2.8 billion to $2.45 billion. He points out that wide option bid-ask spreads erode trading returns, making put selling unattractive.",
+          "price": 4.8
+        },
+        {
+          "ticker": "COIN",
+          "bias": "Bullish",
+          "notes": "Despite a challenging recent period, the host remains bullish on Coinbase due to its strong brand reputation and dominance among retail investors for crypto transactions.",
+          "price": 191.79
+        }
+      ]
+    },
+    {
+      "date": "2026-09-28",
+      "url": "https://www.youtube.com/shorts/lCTZmQqLbqY",
+      "title": "Why The Fed Wants Bitcoin To Explode",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The U.S. government has accumulated approximately 328,000 seized Bitcoin to establish a strategic reserve aimed at bolstering its balance sheet against its $40 trillion national debt.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Eliminating the federal government's $2 trillion deficit spending would contract U.S. GDP by over 6%, triggering a recession projected to be 50% worse than the 2008 financial crisis.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-27",
       "url": "https://www.youtube.com/shorts/yLEqjUh_KIc",
