@@ -1,8 +1,74 @@
 {
-  "updated": "2026-09-28",
+  "updated": "2026-09-29",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-28",
+      "url": "https://www.youtube.com/shorts/BV_sNGqveGI",
+      "title": "We have to make a BIG move NOW‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Jeremy heavily criticizes Nvidia's $235 billion share buyback announcement as a poor capital allocation decision, arguing they are repurchasing shares at peak margins right before an anticipated chip cycle slowdown in 2028.",
+          "price": 228.86
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Jeremy strongly supports AMD's $8.2 billion stock deal to acquire World Labs, trusting CEO Lisa Sue's strategy to capture the next wave of spatial AI.",
+          "price": 607.87
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Oil prices are currently driving the broader stock market, as higher crude costs push Treasury yields and mortgage rates up, creating headwind risks for equities.",
+          "price": null
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Jeremy bought $12,000 of RH stock, viewing the heavily discounted cyclical name as a rare opportunity for 3x upside over the next 12 to 24 months as housing eventually recovers.",
+          "price": 122.08
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Jeremy added nearly $14,000 of Netflix, seeing minimal downside risk and a high probability for a 2x to 3x return over the next three to five years based on its attractive forward P/E.",
+          "price": 69.23
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "Jeremy bought $9,200 worth of American Express at a forward P/E of around 17, praising its recurring membership revenue model and customer loyalty.",
+          "price": 306.33
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Jeremy picked up another 25 shares of Celsius Holdings at $28.44, continuing to aggressively accumulate while the stock trades in the $27 to $32 range.",
+          "price": 28.0
+        }
+      ]
+    },
+    {
+      "date": "2026-09-28",
+      "url": "https://www.youtube.com/shorts/9rZLdaGcKFg",
+      "title": "$QNT HUGE MOVE 📈 SEPTEMBER 28",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "QNT",
+          "bias": "Bearish",
+          "notes": "The host advises against buying or chasing QNT at current levels following a 300%+ rally from the $55-$70 buy zone, stating that positions should be sold rather than chased when price and indicators reach the top.",
+          "price": 49.11
+        }
+      ]
+    },
     {
       "date": "2026-09-28",
       "url": "https://www.youtube.com/shorts/05MfiNo99T4",
