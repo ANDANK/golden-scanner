@@ -4,6 +4,42 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-09-29",
+      "url": "https://www.youtube.com/shorts/XKthNqWxNgg",
+      "title": "Nvidia (NVDA) Massive $150 Billion Buyback Opportunity!",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Trading around $229 per share with a $150 billion buyback and strong revenue growth, the host sets price targets of $250 in the next 3 months and $300 by 2027. Instead of buying outright, he favors selling cash-secured puts or using poor man's covered calls to generate income and control shares with less capital.",
+          "price": 228.12
+        }
+      ]
+    },
+    {
+      "date": "2026-09-29",
+      "url": "https://www.youtube.com/shorts/DW5FqZvSenI",
+      "title": "NVIDIA Just Announced $150 BILLION… Now What?",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Host is bullish on Nvidia following its $150B buyback authorization and 106% YoY revenue growth, noting the stock trades at 16.5x forward earnings versus a 15-year average of 30x. He sees support at $200 per share, a 6-to-12-month target of $280-$290, and upside potential above $300.",
+          "price": 228.3
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Selling cash-secured put options can be used as an alternative strategy to traditional dollar-cost averaging, enabling investors to earn option premiums while waiting to acquire shares at a target discount if assigned.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-09-28",
       "url": "https://www.youtube.com/shorts/BV_sNGqveGI",
       "title": "We have to make a BIG move NOW‼️",
