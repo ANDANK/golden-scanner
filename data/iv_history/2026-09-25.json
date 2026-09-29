@@ -1,116 +1,116 @@
 {
   "date": "2026-09-25",
-  "saved_utc": "2026-09-25 23:27 UTC",
+  "saved_utc": "2026-09-29 00:29 UTC",
   "rows": [
     {
       "ticker": "TQQQ",
-      "iv_atm": 0.5127,
-      "iv_otm": 0.592,
-      "skew": 0.0793,
+      "iv_atm": 0.5198,
+      "iv_otm": 0.6128,
+      "skew": 0.093,
       "rv": 0.4699,
-      "iv_rv": 1.091,
+      "iv_rv": 1.106,
       "price": 79.6,
-      "dte": 27,
-      "spread_pct": 4.4
+      "dte": 23,
+      "spread_pct": 5.0
     },
     {
       "ticker": "SOXL",
-      "iv_atm": 1.0505,
-      "iv_otm": 1.0689,
-      "skew": 0.0184,
+      "iv_atm": 1.1073,
+      "iv_otm": 1.1281,
+      "skew": 0.0208,
       "rv": 1.2087,
-      "iv_rv": 0.869,
+      "iv_rv": 0.916,
       "price": 151.45,
-      "dte": 27,
-      "spread_pct": 24.6
+      "dte": 23,
+      "spread_pct": 13.8
     },
     {
       "ticker": "UPRO",
-      "iv_atm": 0.4154,
-      "iv_otm": 0.5316,
-      "skew": 0.1162,
+      "iv_atm": 0.4757,
+      "iv_otm": 0.5115,
+      "skew": 0.0358,
       "rv": 0.3202,
-      "iv_rv": 1.297,
+      "iv_rv": 1.486,
       "price": 152.2,
-      "dte": 27,
-      "spread_pct": 54.1
+      "dte": 23,
+      "spread_pct": 57.5
     },
     {
       "ticker": "TECL",
-      "iv_atm": 0.6793,
-      "iv_otm": 0.746,
-      "skew": 0.0667,
+      "iv_atm": 0.7253,
+      "iv_otm": 0.7858,
+      "skew": 0.0605,
       "rv": 0.5878,
-      "iv_rv": 1.156,
+      "iv_rv": 1.234,
       "price": 234.5,
-      "dte": 20,
-      "spread_pct": 11.1
+      "dte": 16,
+      "spread_pct": 51.6
     },
     {
       "ticker": "FAS",
-      "iv_atm": 0.53,
-      "iv_otm": 0.5265,
-      "skew": -0.0035,
+      "iv_atm": 0.5377,
+      "iv_otm": 0.5409,
+      "skew": 0.0032,
       "rv": 0.4026,
-      "iv_rv": 1.316,
+      "iv_rv": 1.336,
       "price": 152.29,
-      "dte": 27,
-      "spread_pct": 72.0
+      "dte": 23,
+      "spread_pct": 54.5
     },
     {
       "ticker": "TNA",
-      "iv_atm": 0.5105,
-      "iv_otm": 0.5659,
-      "skew": 0.0554,
+      "iv_atm": 0.5361,
+      "iv_otm": 0.6043,
+      "skew": 0.0682,
       "rv": 0.3762,
-      "iv_rv": 1.357,
+      "iv_rv": 1.425,
       "price": 60.36,
-      "dte": 27,
-      "spread_pct": 15.1
+      "dte": 23,
+      "spread_pct": 30.4
     },
     {
       "ticker": "LABU",
-      "iv_atm": 0.9164,
-      "iv_otm": 0.9433,
-      "skew": 0.0269,
+      "iv_atm": 0.9753,
+      "iv_otm": 1.0164,
+      "skew": 0.0411,
       "rv": 0.8421,
-      "iv_rv": 1.088,
+      "iv_rv": 1.158,
       "price": 252.47,
-      "dte": 27,
-      "spread_pct": 28.3
+      "dte": 23,
+      "spread_pct": 31.4
     },
     {
       "ticker": "SPY",
-      "iv_atm": 0.108,
-      "iv_otm": 0.2396,
-      "skew": 0.1316,
+      "iv_atm": 0.1111,
+      "iv_otm": 0.2492,
+      "skew": 0.1381,
       "rv": 0.1076,
-      "iv_rv": 1.004,
+      "iv_rv": 1.033,
       "price": 771.35,
-      "dte": 27,
-      "spread_pct": 1.7
+      "dte": 23,
+      "spread_pct": 1.6
     },
     {
       "ticker": "QQQ",
-      "iv_atm": 0.1648,
-      "iv_otm": 0.278,
-      "skew": 0.1132,
+      "iv_atm": 0.1666,
+      "iv_otm": 0.2849,
+      "skew": 0.1183,
       "rv": 0.1589,
-      "iv_rv": 1.037,
+      "iv_rv": 1.048,
       "price": 744.5,
-      "dte": 27,
-      "spread_pct": 2.6
+      "dte": 23,
+      "spread_pct": 2.4
     },
     {
       "ticker": "IWM",
-      "iv_atm": 0.1636,
-      "iv_otm": 0.26,
-      "skew": 0.0964,
+      "iv_atm": 0.1735,
+      "iv_otm": 0.2715,
+      "skew": 0.098,
       "rv": 0.1269,
-      "iv_rv": 1.289,
+      "iv_rv": 1.367,
       "price": 281.97,
-      "dte": 27,
-      "spread_pct": 5.0
+      "dte": 23,
+      "spread_pct": 4.7
     }
   ]
 }
