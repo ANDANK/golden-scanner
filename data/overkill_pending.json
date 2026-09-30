@@ -2,22 +2,13 @@
   "checked": "2026-09-30",
   "pending": [
     {
-      "video_id": "IuponVQiZ7U",
-      "title": "$USAR STOCK 📈 SEPTEMBER 29",
-      "date": "2026-09-29",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/IuponVQiZ7U"
-    },
-    {
-      "video_id": "ASLpETNOzKY",
-      "title": "overkill trading indicator setup 📈",
-      "date": "2026-09-29",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/ASLpETNOzKY"
+      "video_id": "t-7ILKqI8Kw",
+      "title": "5 AI Stocks I'd Buy and Hold for the Next 5 Years (Ranked Worst to Best)",
+      "date": "2026-09-30",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/t-7ILKqI8Kw"
     },
     {
       "video_id": "lNsddnL9e-c",
@@ -45,6 +36,15 @@
       "channel_name": "ClearValue Tax",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/JGxfrLlDIzw"
+    },
+    {
+      "video_id": "ASLpETNOzKY",
+      "title": "overkill trading indicator setup 📈",
+      "date": "2026-09-29",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/ASLpETNOzKY"
     },
     {
       "video_id": "UanW8GGwypE",

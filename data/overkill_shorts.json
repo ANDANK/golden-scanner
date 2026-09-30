@@ -5,6 +5,48 @@
   "videos": [
     {
       "date": "2026-09-29",
+      "url": "https://www.youtube.com/shorts/IuponVQiZ7U",
+      "title": "$USAR STOCK 📈 SEPTEMBER 29",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "USR",
+          "bias": "Bullish",
+          "notes": "The host likes where USR is trading around $14 and recommends waiting for a green buy signal to start or add to a position, using $11 as a potential level to dollar-cost average if it pulls back further.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-30",
+      "url": "https://www.youtube.com/shorts/YA_LQWTY-6s",
+      "title": "How To Turn $500 a Month Into a $3,700 Passive Income",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To successfully build passive income and reach financial independence, prioritize investing a portion of your income first before spending what remains, rather than attempting to invest whatever is left over.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Reinvesting dividend cash flow over a multi-decade horizon significantly accelerates portfolio compounding, potentially yielding a larger asset base and higher annual cash flow than solely focusing on capital appreciation and converting later.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Real Estate Investment Trusts (REITs) are legally required by the 90% rule to distribute at least 90% of their taxable income as dividends to shareholders, offering steady cash flow without direct property management responsibilities.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-29",
       "url": "https://www.youtube.com/shorts/bhpHJVTJXb4",
       "title": "THESE 3 STOCKS LOOK CHEAP 📈 SEPTEMBER 29 $NFLX",
       "channel": "@overkilltrading",
