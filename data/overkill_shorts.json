@@ -1,8 +1,56 @@
 {
-  "updated": "2026-09-29",
+  "updated": "2026-09-30",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-29",
+      "url": "https://www.youtube.com/shorts/bhpHJVTJXb4",
+      "title": "THESE 3 STOCKS LOOK CHEAP 📈 SEPTEMBER 29 $NFLX",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 4-year moving average (EMA) strategy aims to identify fair value by buying assets at or below their 4-year mean, avoiding purchases when prices are extended at a high premium.",
+          "price": null
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Netflix is trading around $70, down from $130, placing it below its 4-year moving average where the host sees a solid buying opportunity.",
+          "price": 70.3
+        },
+        {
+          "ticker": "DIS",
+          "bias": "Bullish",
+          "notes": "Disney is sitting at its 4-year moving average down from $120, driven long-term by rapid expansion in its streaming ecosystem including Disney+, Hulu, and ESPN.",
+          "price": 105.41
+        },
+        {
+          "ticker": "PARA",
+          "bias": "Bullish",
+          "notes": "Paramount is down to around $10 from $90 and is the host's top pick in the streaming space due to its ongoing corporate acquisitions and underlying business confidence.",
+          "price": 0.69
+        }
+      ]
+    },
+    {
+      "date": "2026-09-29",
+      "url": "https://www.youtube.com/shorts/-IakhOsoaxg",
+      "title": "$XRP CHART 📈 SEPTEMBER 29",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "XRP",
+          "bias": "Bullish",
+          "notes": "Extremely bullish as long as price holds above $1.20, eyeing a potential breakout back toward $3.50 heading into October. He considers sitting near or below the 200 EMA a discounted buy zone during peak market fear.",
+          "price": 16.69
+        }
+      ]
+    },
     {
       "date": "2026-09-29",
       "url": "https://www.youtube.com/shorts/XKthNqWxNgg",
