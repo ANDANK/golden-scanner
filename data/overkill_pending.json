@@ -1,9 +1,27 @@
 {
-  "checked": "2026-09-30",
+  "checked": "2026-10-01",
   "pending": [
     {
+      "video_id": "LGUewAMj5H8",
+      "title": "My Top Secret Stock Portfolio Revealed‼️(NEVER shown before)",
+      "date": "2026-10-01",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/LGUewAMj5H8"
+    },
+    {
+      "video_id": "CoC-KDvJXv8",
+      "title": "8 STOCKS TO WATCH IN OCTOBER 📈",
+      "date": "2026-09-30",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/CoC-KDvJXv8"
+    },
+    {
       "video_id": "t-7ILKqI8Kw",
-      "title": "5 AI Stocks I'd Buy and Hold for the Next 5 Years (Ranked Worst to Best)",
+      "title": "If You Missed Palantir... These 5 AI Stocks are Next",
       "date": "2026-09-30",
       "channel": "@InvestwithHenry",
       "channel_name": "Invest w/ Henry",
@@ -20,15 +38,6 @@
       "url": "https://www.youtube.com/shorts/lNsddnL9e-c"
     },
     {
-      "video_id": "FAQNNLw4D48",
-      "title": "October Is Here.. What Usually Happens to Stocks",
-      "date": "2026-09-29",
-      "channel": "@NolanGouveia",
-      "channel_name": "Nolan Gouveia",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/FAQNNLw4D48"
-    },
-    {
       "video_id": "JGxfrLlDIzw",
       "title": "Mortgage Rates Are Going Higher Because of the Government",
       "date": "2026-09-29",
@@ -36,24 +45,6 @@
       "channel_name": "ClearValue Tax",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/JGxfrLlDIzw"
-    },
-    {
-      "video_id": "ASLpETNOzKY",
-      "title": "overkill trading indicator setup 📈",
-      "date": "2026-09-29",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/ASLpETNOzKY"
-    },
-    {
-      "video_id": "UanW8GGwypE",
-      "title": "We Just Entered A Higher-Rate World (Nobody's Ready)",
-      "date": "2026-09-29",
-      "channel": "@MinorityMindset",
-      "channel_name": "Minority Mindset",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/UanW8GGwypE"
     },
     {
       "video_id": "zhCVbfOsd8E",

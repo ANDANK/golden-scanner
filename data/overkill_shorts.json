@@ -1,8 +1,68 @@
 {
-  "updated": "2026-09-30",
+  "updated": "2026-10-01",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-09-29",
+      "url": "https://www.youtube.com/shorts/FAQNNLw4D48",
+      "title": "October Is Here.. What Usually Happens to Stocks",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historically during midterm election years, October has been the strongest month of the presidential cycle, with the S&P 500 averaging a 3.3% gain from 1950 to 2017.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "October frequently acts as a turnaround month, having marked the bottom for 13 post-WWII bear markets, with the S&P 500 rising from its October low through year-end in 93% of years since 1957.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Despite historical seasonal strength, the host notes the market currently feels overpriced and expects an eventual correction, emphasizing portfolio risk management over short-term predictions.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-29",
+      "url": "https://www.youtube.com/shorts/UanW8GGwypE",
+      "title": "We Just Entered A Higher-Rate World (Nobody's Ready)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising geopolitical tensions drove oil prices up, while gold prices fell as investors shifted to 10-year Treasuries yielding around 5.2% as a yield-bearing safe haven.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Surging Treasury yields increase U.S. national debt servicing costs and push banks to raise interest rates on consumer mortgages, auto loans, and credit cards.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Markets are pricing in a 75% chance of a Federal Reserve interest rate hike in late October, with expectations for another potential rate increase in December to curb inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Effective wealth-building strategies include consistent automated investing, taking advantage of market crashes caused by panic selling, and positioning for broader market shifts.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-29",
       "url": "https://www.youtube.com/shorts/IuponVQiZ7U",
