@@ -1,8 +1,170 @@
 {
-  "updated": "2026-10-01",
+  "updated": "2026-10-02",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-01",
+      "url": "https://www.youtube.com/shorts/saNw7ioD8Yo",
+      "title": "3 STOCKS TO WATCH OCTOBER 📈 (PART 2)",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NE",
+          "bias": "Bullish",
+          "notes": "NE has pulled back from $100 to $76 near its fair value level of $73, creating a favorable 1- to 6-month swing trade setup.",
+          "price": 41.72
+        },
+        {
+          "ticker": "TSLA",
+          "bias": "Bullish",
+          "notes": "The host is a buyer of Tesla at $350 and near $300, targeting a potential breakout back toward the $500 level.",
+          "price": 354.11
+        },
+        {
+          "ticker": "UPS",
+          "bias": "Bullish",
+          "notes": "The host recently bought UPS, expecting a potential rebound as the stock tests a double bottom at the $90 support level.",
+          "price": 93.89
+        }
+      ]
+    },
+    {
+      "date": "2026-10-01",
+      "url": "https://www.youtube.com/shorts/LGUewAMj5H8",
+      "title": "My Top Secret Stock Portfolio Revealed‼️(NEVER shown before)",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising long-term Treasury yields paired with falling short-term yields suggest the bond market is pricing in persistent, 1970s-style inflation that could last another 5 to 10 years.",
+          "price": null
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bearish",
+          "notes": "Despite record earnings and revenue guidance beats, earnings and margins are likely near a cyclical multi-year peak over the next 12 to 24 months, creating major downside risk.",
+          "price": 1097.39
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Revenue growth rates are poised to plummet by 2028 due to customer debt limits, the law of large numbers, and increasing competition from AMD.",
+          "price": 230.86
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Positioned to deliver the best growth rates among mega-cap tech stocks through 2028, with long-term leadership in physical AI and robotics driven by its Xilinx integration, targeting $1,000+ per share.",
+          "price": 615.73
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Trading with a forward P/E well under 20, the stock presents an easy buying opportunity driven by sticky subscriptions, pricing power, and an expanding advertising business.",
+          "price": 67.85
+        },
+        {
+          "ticker": "NKE",
+          "bias": "Bullish",
+          "notes": "Trading at a forward P/E under 20 around $35, the company is poised to double earnings per share over the next two to three years through margin recovery and cost-cutting.",
+          "price": 35.15
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "At $15 per share, the company has an enormous multi-year growth runway as its expanding base of younger members matures into higher incomes and credit profiles.",
+          "price": 15.84
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Offers multiple growth drivers including pricing power on undervalued products, retail shelf expansion, international growth, and expanding into skincare.",
+          "price": 104.09
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Ranked as the top buy in the market at $27, offering substantial margin and EPS upside with far less fundamental risk than the market is pricing in.",
+          "price": 27.41
+        }
+      ]
+    },
+    {
+      "date": "2026-09-29",
+      "url": "https://www.youtube.com/shorts/JGxfrLlDIzw",
+      "title": "Mortgage Rates Are Going Higher Because of the Government",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US median home prices reached $398,596 as of end of August, up 2.2% year-over-year, showing national home prices have held steady rather than crashing.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US housing inventory sits at 1.53 million homes for sale, up 2.7% year-over-year, but overall inventory growth is decelerating significantly and remains low historically.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Average 30-year fixed mortgage rates remain above 7% as they track rising 10-year Treasury note yields plus a 1-2% risk spread.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Housing market transaction volume remains frozen due to low buyer affordability and existing homeowners unwilling to sell and give up 3% to 4% mortgage rates for 7% rates.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Approximately 24.3% of US homes are still selling above list price, so strong deals often require quick offers rather than lowball negotiating.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "California remains the leading state for net domestic outward migration, while Florida remains the top destination state and influx into Texas has stalled.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-01",
+      "url": "https://www.youtube.com/shorts/gSyGX_Rgd4A",
+      "title": "The Mortgage Market Is Breaking",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Over $1 trillion in commercial real estate loans are set to reset at significantly higher interest rates, causing property valuation drops, developer defaults, fire sales, and potential risks for banks holding commercial debt.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Mortgage rates reaching 7% have driven housing affordability to historic lows, causing real estate transaction volumes to slow dramatically, sellers to cut prices, and houses to sit on the market longer.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A primary home should be treated as a liability rather than an investment, and buyers should only purchase if they can afford 20% down, upfront move-in expenses, and monthly costs that leave room for saving and investing.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-09-29",
       "url": "https://www.youtube.com/shorts/FAQNNLw4D48",

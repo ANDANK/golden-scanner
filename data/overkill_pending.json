@@ -1,31 +1,13 @@
 {
-  "checked": "2026-10-01",
+  "checked": "2026-10-02",
   "pending": [
-    {
-      "video_id": "LGUewAMj5H8",
-      "title": "My Top Secret Stock Portfolio Revealed‼️(NEVER shown before)",
-      "date": "2026-10-01",
-      "channel": "@FinancialEducation",
-      "channel_name": "Financial Ed",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/LGUewAMj5H8"
-    },
-    {
-      "video_id": "gSyGX_Rgd4A",
-      "title": "The Mortgage Market Is Breaking",
-      "date": "2026-10-01",
-      "channel": "@MinorityMindset",
-      "channel_name": "Minority Mindset",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/gSyGX_Rgd4A"
-    },
     {
       "video_id": "CoC-KDvJXv8",
       "title": "8 STOCKS TO WATCH IN OCTOBER 📈",
       "date": "2026-09-30",
       "channel": "@overkilltrading",
       "channel_name": "OverKill",
-      "reason": "failed",
+      "reason": "queued",
       "url": "https://www.youtube.com/shorts/CoC-KDvJXv8"
     },
     {
@@ -38,6 +20,15 @@
       "url": "https://www.youtube.com/shorts/t-7ILKqI8Kw"
     },
     {
+      "video_id": "ASLpETNOzKY",
+      "title": "overkill trading indicator setup 📈",
+      "date": "2026-09-29",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/ASLpETNOzKY"
+    },
+    {
       "video_id": "lNsddnL9e-c",
       "title": "LIVE CHART REQUESTS 📈",
       "date": "2026-09-29",
@@ -45,15 +36,6 @@
       "channel_name": "OverKill",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/lNsddnL9e-c"
-    },
-    {
-      "video_id": "JGxfrLlDIzw",
-      "title": "Mortgage Rates Are Going Higher Because of the Government",
-      "date": "2026-09-29",
-      "channel": "@ClearValueTax",
-      "channel_name": "ClearValue Tax",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/JGxfrLlDIzw"
     },
     {
       "video_id": "zhCVbfOsd8E",
