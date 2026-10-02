@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-02",
+  "tag": "FTF",
+  "rows": [
+    {
+      "ticker": "EMR",
+      "price": 158.57,
+      "verdict": "Strong Setup",
+      "combo": "3MF+5RB",
+      "scanners": "1Mom \u00b7 3MF \u00b7 4TS \u00b7 5RB",
+      "edge_score": 0.55,
+      "n": 3613,
+      "hold_range": [
+        10,
+        30
+      ]
+    }
+  ]
+}
