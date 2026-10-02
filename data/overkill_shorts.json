@@ -4,6 +4,102 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-10-02",
+      "url": "https://www.youtube.com/shorts/-vzKs8DRmlo",
+      "title": "The Fed Just Admitted AI Is Making You Poorer",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Fed Governor Bar indicated that higher interest rates are likely coming in 2026, with inflation expected to remain elevated for longer than anticipated.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve reported that the surge in investment and demand for artificial intelligence has become a measurable driver of higher prices and inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "President Trump advocated for self-regulation among AI companies via a morally binding accord to maintain rapid innovation in the global technology competition against China.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Wealth is built through continuous investing in broad market index funds like the S&P 500, and it is accelerated by buying heavily during market downturns or identifying major market shifts.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "An S&P Global report states that the U.S. economy is currently expanding at its fastest rate since 2021.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-09-30",
+      "url": "https://www.youtube.com/shorts/CoC-KDvJXv8",
+      "title": "8 STOCKS TO WATCH IN OCTOBER 📈",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "UPS",
+          "bias": "Bullish",
+          "notes": "UPS has strong support around $90 with a solid dividend, looking ready for a strong move in October following a major pullback.",
+          "price": 93.44
+        },
+        {
+          "ticker": "IONQ",
+          "bias": "Bullish",
+          "notes": "A quantum computing stock in a growing industry that has pulled back to a good entry point for October.",
+          "price": 43.86
+        },
+        {
+          "ticker": "GILT",
+          "bias": "Bullish",
+          "notes": "Satellite stock trading near fair value around $9.80 with positive signals following a steep pullback.",
+          "price": 9.87
+        },
+        {
+          "ticker": "ENPH",
+          "bias": "Bullish",
+          "notes": "Solar company that is heavily beaten up but well-positioned as the solar industry grows.",
+          "price": 32.99
+        },
+        {
+          "ticker": "PLNT",
+          "bias": "Bullish",
+          "notes": "Planet Fitness is a solid business that has been severely beaten down from $115 to $40.",
+          "price": 42.22
+        },
+        {
+          "ticker": "SEDG",
+          "bias": "Bullish",
+          "notes": "Solar stock showing green buy signals after a deep pullback.",
+          "price": 31.87
+        },
+        {
+          "ticker": "PSKY",
+          "bias": "Bullish",
+          "notes": "Paramount looks very attractive trading around the $10 level.",
+          "price": 10.33
+        },
+        {
+          "ticker": "INTU",
+          "bias": "Bullish",
+          "notes": "Included as one of the eight stocks expected to post strong returns in October.",
+          "price": 275.71
+        }
+      ]
+    },
+    {
       "date": "2026-10-01",
       "url": "https://www.youtube.com/shorts/saNw7ioD8Yo",
       "title": "3 STOCKS TO WATCH OCTOBER 📈 (PART 2)",
