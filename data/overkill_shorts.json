@@ -1,8 +1,137 @@
 {
-  "updated": "2026-10-02",
+  "updated": "2026-10-03",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-02",
+      "url": "https://www.youtube.com/shorts/DKS7r9kKB98",
+      "title": "4 STOCKS TO WATCH IN OCTOBER 📈 (PART 3)",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "GIL",
+          "bias": "Bullish",
+          "notes": "The stock has pulled back 50% from $20 to $10 and is sitting right on its 4-year moving average (200 EMA) with green dot buy signals flashing after capitulation.",
+          "price": 41.0
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "The stock is currently sitting in a range at its 4-year moving average, where the host is looking for a green dot signal for a trade into the end of the year.",
+          "price": 142.3
+        },
+        {
+          "ticker": "NXT",
+          "bias": "Bullish",
+          "notes": "The solar stock appears to be bottoming around $76 with indicator support and strong earnings, poised to benefit longer-term from growing energy demand.",
+          "price": 84.3
+        },
+        {
+          "ticker": "AMSC",
+          "bias": "Bullish",
+          "notes": "The stock has pulled back to $30 right into its 4-year moving average line, which the host views as an attractive buying opportunity.",
+          "price": 30.01
+        }
+      ]
+    },
+    {
+      "date": "2026-10-02",
+      "url": "https://www.youtube.com/shorts/hGruKBJfqIM",
+      "title": "I spent $63,000 on these 6 stocks today‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Continues to be one of the hottest stocks in the entire market as semiconductor stocks remain strong.",
+          "price": 633.91
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "While semiconductor stocks are rolling hard and making the market look bullish, countless other companies are being devastated and hitting multi-year lows.",
+          "price": null
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Bought over $7,000 worth around $26/share, viewing it as the most attractive risk-reward opportunity in the stock market over the next three years.",
+          "price": 26.75
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "Bought over $6,000 worth just above $300/share, considering it a great long-term company to accumulate heavily.",
+          "price": 302.78
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Executed a large buy of over $13,000 worth of shares around $67 a share.",
+          "price": 67.06
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Made it his largest purchase of the session with nearly $16,000 invested around the $15 price level.",
+          "price": 15.77
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Bought over $12,000 worth of shares around $120, remaining very positive on the company's outlook for the next few years.",
+          "price": 120.46
+        },
+        {
+          "ticker": "WYNN",
+          "bias": "Bullish",
+          "notes": "Bought over $9,000 worth of stock, citing massive upside potential over the next few years and extreme growth from their upcoming Middle East property.",
+          "price": 75.88
+        }
+      ]
+    },
+    {
+      "date": "2026-10-02",
+      "url": "https://www.youtube.com/shorts/x-fT1nv7sSk",
+      "title": "The Jobs Report is Much Worse Than It Looks",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The September jobs report added only 29,000 jobs versus the 84,000 expected, while July was revised down to a net loss of 10,000 jobs and August to 133,000. Unemployment also rose from 4.1% to 4.2%, signaling a continuing labor market slowdown.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Reported wage growth at 3.1% is lagging behind the official CPI inflation rate of 3.4%, resulting in negative real wage growth for households.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Both 10-year and 30-year Treasury yields climbed higher throughout the day, defying the typical trend where yields fall following a weak jobs report.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The odds of the Federal Reserve keeping rates unchanged at the October meeting rose from 35.8% to 77.3% after the weak jobs report. However, markets still price an 86.5% probability of a rate hike at the December meeting.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The technology sector led job cuts in September with 10,799 cuts, up 77% from August, accounting for 29% of all cuts in 2026. AI was cited as the primary reason for job reductions, driving over 120,000 cuts year-to-date.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-10-02",
       "url": "https://www.youtube.com/shorts/-vzKs8DRmlo",

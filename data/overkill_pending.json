@@ -1,6 +1,33 @@
 {
-  "checked": "2026-10-02",
+  "checked": "2026-10-03",
   "pending": [
+    {
+      "video_id": "GMEYyeMWyig",
+      "title": "Piranha overkill trading indicators",
+      "date": "2026-10-02",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/GMEYyeMWyig"
+    },
+    {
+      "video_id": "WLsLFM4qF24",
+      "title": "ETHEREUM CHART UPDATE 📈 OCTOBER 2",
+      "date": "2026-10-02",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/WLsLFM4qF24"
+    },
+    {
+      "video_id": "szGnPhmcqSI",
+      "title": "OVERKILL TRADING INDICATOR ‼️",
+      "date": "2026-10-01",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/szGnPhmcqSI"
+    },
     {
       "video_id": "t-7ILKqI8Kw",
       "title": "If You Missed Palantir... These 5 AI Stocks are Next",
