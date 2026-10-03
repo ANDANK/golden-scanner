@@ -1,0 +1,114 @@
+{
+  "date": "2026-10-03",
+  "tag": "default",
+  "rows": [
+    {
+      "ticker": "TJX",
+      "color": "Green",
+      "stars": 5,
+      "price": 130.9600067138672,
+      "dot_date": "2026-09-21",
+      "event_date": "2026-09-21",
+      "bars_ago": 1
+    },
+    {
+      "ticker": "WMT",
+      "color": "Green",
+      "stars": 5,
+      "price": 106.05000305175781,
+      "dot_date": "2026-09-07",
+      "event_date": "2026-09-07",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "NI",
+      "color": "Green",
+      "stars": 5,
+      "price": 41.900001525878906,
+      "dot_date": "2026-09-07",
+      "event_date": "2026-09-07",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "AWK",
+      "color": "Red",
+      "stars": 4,
+      "price": 138.9199981689453,
+      "dot_date": "2026-09-14",
+      "event_date": "2026-09-14",
+      "bars_ago": 2
+    },
+    {
+      "ticker": "WDAY",
+      "color": "Red",
+      "stars": 4,
+      "price": 186.27999877929688,
+      "dot_date": "2026-09-07",
+      "event_date": "2026-09-07",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "BIIB",
+      "color": "Red",
+      "stars": 4,
+      "price": 212.5,
+      "dot_date": "2026-09-07",
+      "event_date": "2026-09-07",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "MDT",
+      "color": "Red",
+      "stars": 3,
+      "price": 91.63843536376953,
+      "dot_date": "2026-09-07",
+      "event_date": "2026-09-07",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "GPC",
+      "color": "Red",
+      "stars": 3,
+      "price": 134.05999755859375,
+      "dot_date": "2026-09-07",
+      "event_date": "2026-09-07",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "ABT",
+      "color": "Red",
+      "stars": 4,
+      "price": 110.36000061035156,
+      "dot_date": "2026-08-31",
+      "event_date": "2026-08-31",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "LYFT",
+      "color": "Red",
+      "stars": 3,
+      "price": 16.899999618530273,
+      "dot_date": "2026-08-31",
+      "event_date": "2026-08-31",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "KKR",
+      "color": "Red",
+      "stars": 3,
+      "price": 109.72000122070312,
+      "dot_date": "2026-08-31",
+      "event_date": "2026-08-31",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "AXON",
+      "color": "Red",
+      "stars": 3,
+      "price": 566.5599975585938,
+      "dot_date": "2026-08-31",
+      "event_date": "2026-08-31",
+      "bars_ago": 4
+    }
+  ]
+}
