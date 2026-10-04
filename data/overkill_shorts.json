@@ -1,8 +1,50 @@
 {
-  "updated": "2026-10-03",
+  "updated": "2026-10-04",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-04",
+      "url": "https://www.youtube.com/shorts/9ymRJ9tk07Q",
+      "title": "Covered Calls Cost Me $200,000 (Here's What I Do Now)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "AAOI",
+          "bias": "Bullish",
+          "notes": "The host believes the stock is going to blow up toward $150 and holds June 17, 2027 $90 strike LEAPS call options for growth.",
+          "price": 115.59
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Selling call options captures less edge than selling puts because the market underestimates upward momentum, resulting in calls being assigned more frequently than their delta implies.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors selling covered calls must decide whether to optimize for income near the money, preserve capital appreciation far out of the money, or use strikes to systematically exit a position.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-02",
+      "url": "https://www.youtube.com/shorts/WLsLFM4qF24",
+      "title": "ETHEREUM CHART UPDATE 📈 OCTOBER 2",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "notes": "Ethereum has broken out of its downtrend following a return-to-mean bounce from the $1,500–$1,600 support zone up to $2,400. The host expects sideways action or continued upside, holding until price expands significantly above the 4-year moving average to take profits.",
+          "price": 25.46
+        }
+      ]
+    },
     {
       "date": "2026-10-03",
       "url": "https://www.youtube.com/shorts/N4EJ7EtjkQY",
