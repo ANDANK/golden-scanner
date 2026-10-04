@@ -2,13 +2,13 @@
   "checked": "2026-10-03",
   "pending": [
     {
-      "video_id": "GMEYyeMWyig",
-      "title": "Piranha overkill trading indicators",
-      "date": "2026-10-02",
+      "video_id": "1TWh2dH0zfQ",
+      "title": "FREE TRADING COURSE 📈",
+      "date": "2026-10-03",
       "channel": "@overkilltrading",
       "channel_name": "OverKill",
       "reason": "queued",
-      "url": "https://www.youtube.com/shorts/GMEYyeMWyig"
+      "url": "https://www.youtube.com/shorts/1TWh2dH0zfQ"
     },
     {
       "video_id": "WLsLFM4qF24",
@@ -16,8 +16,17 @@
       "date": "2026-10-02",
       "channel": "@overkilltrading",
       "channel_name": "OverKill",
-      "reason": "failed",
+      "reason": "queued",
       "url": "https://www.youtube.com/shorts/WLsLFM4qF24"
+    },
+    {
+      "video_id": "GMEYyeMWyig",
+      "title": "Piranha overkill trading indicators",
+      "date": "2026-10-02",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/GMEYyeMWyig"
     },
     {
       "video_id": "szGnPhmcqSI",
@@ -63,15 +72,6 @@
       "channel_name": "OverKill",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/zhCVbfOsd8E"
-    },
-    {
-      "video_id": "ODk3fsXfG3s",
-      "title": "my trading indicators + trading view",
-      "date": "2026-09-27",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/ODk3fsXfG3s"
     },
     {
       "video_id": "w-S6OnQ-3lA",
