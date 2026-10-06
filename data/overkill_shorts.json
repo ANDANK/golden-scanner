@@ -1,8 +1,41 @@
 {
-  "updated": "2026-10-04",
+  "updated": "2026-10-06",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-05",
+      "url": "https://www.youtube.com/shorts/Y5KGLUyiU5Q",
+      "title": "4 STOCKS TO WATCH THIS WEEK 📈 OCTOBER 5 $UBER",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "UBER",
+          "bias": "Bullish",
+          "notes": "The stock dropped about 36% from $100 to $64 and has been chopping sideways near its 4-year moving average mean. Sitting just under $70, it is trading at a fair price valuation and is considered a great stock to own.",
+          "price": 69.48
+        },
+        {
+          "ticker": "NVO",
+          "bias": "Bullish",
+          "notes": "Down from $140 to roughly $37, the stock is trading in discount territory below its 4-year moving average. Strong earnings and GLP-1 drug adoption support the thesis as long as it holds the $34 support level.",
+          "price": 37.54
+        },
+        {
+          "ticker": "LNC",
+          "bias": "Bullish",
+          "notes": "The stock experienced a huge pullback from $30 down to $7 and is displaying a weekly buy signal. The host recently entered this trade following the sharp sell-off.",
+          "price": 40.91
+        },
+        {
+          "ticker": "GDRX",
+          "bias": "Bullish",
+          "notes": "The stock is attempting to bounce off its yearly moving average while sitting well below its 4-year moving average. It stands to benefit from shifts toward online medical ordering.",
+          "price": 3.36
+        }
+      ]
+    },
     {
       "date": "2026-10-04",
       "url": "https://www.youtube.com/shorts/9ymRJ9tk07Q",
