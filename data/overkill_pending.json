@@ -1,5 +1,5 @@
 {
-  "checked": "2026-10-06",
+  "checked": "2026-10-07",
   "pending": [
     {
       "video_id": "NDNR40EKUAE",
@@ -16,7 +16,7 @@
       "date": "2026-10-05",
       "channel": "@overkilltrading",
       "channel_name": "OverKill",
-      "reason": "failed",
+      "reason": "queued",
       "url": "https://www.youtube.com/shorts/fipCJcvYCpM"
     },
     {
@@ -36,6 +36,15 @@
       "channel_name": "Minority Mindset",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/DYvnf0tszC4"
+    },
+    {
+      "video_id": "1TWh2dH0zfQ",
+      "title": "FREE TRADING COURSE 📈",
+      "date": "2026-10-03",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/1TWh2dH0zfQ"
     },
     {
       "video_id": "GMEYyeMWyig",
@@ -63,24 +72,6 @@
       "channel_name": "Invest w/ Henry",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/t-7ILKqI8Kw"
-    },
-    {
-      "video_id": "ASLpETNOzKY",
-      "title": "overkill trading indicator setup 📈",
-      "date": "2026-09-29",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/ASLpETNOzKY"
-    },
-    {
-      "video_id": "lNsddnL9e-c",
-      "title": "LIVE CHART REQUESTS 📈",
-      "date": "2026-09-29",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/lNsddnL9e-c"
     },
     {
       "video_id": "w-S6OnQ-3lA",

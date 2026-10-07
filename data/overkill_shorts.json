@@ -1,8 +1,77 @@
 {
-  "updated": "2026-10-06",
+  "updated": "2026-10-07",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-06",
+      "url": "https://www.youtube.com/shorts/1INouvqQ450",
+      "title": "THESE 3 STOCKS LOOK CHEAP 📈 OCTOBER 6",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host entered a position around $15 to $16, noting the stock has pulled back over 50% from $32-$35 and is currently sitting at fair value on its 4-year moving average.",
+          "price": 15.76
+        },
+        {
+          "ticker": "DOW",
+          "bias": "Bullish",
+          "notes": "Highlights Dow consolidating around $27 with a 5% to 6% dividend yield, expecting a buy signal to print within the next couple of days.",
+          "price": 28.16
+        },
+        {
+          "ticker": "GRAB",
+          "bias": "Bullish",
+          "notes": "Views Grab as a buy down at the $3 level based on historical buy signals triggered when the indicator wave reaches its current low range.",
+          "price": 3.07
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "url": "https://www.youtube.com/shorts/It-FHNKUXa8",
+      "title": "META Stock Just Gave Investors a Huge Opportunity",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "The host remains long-term bullish with a target of $900 to $1,000 by 2027, driven by strong core advertising growth and AI monetization potential. However, with the stock surpassing $700, he believes short-term momentum is tapped out and is taking profits on LEAP options while holding shares and shifting toward covered calls.",
+          "price": 738.88
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "url": "https://www.youtube.com/shorts/rO0rdSVB3Cw",
+      "title": "$META COIN PYPL STOCK ANALYSIS 📈 OCTOBER 6",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "META",
+          "bias": "Bearish",
+          "notes": "The host is looking to sell or take profits around 739 as the price is well above its 200 EMA fair value, suggesting a stop loss around 714 to 710.",
+          "price": 738.88
+        },
+        {
+          "ticker": "COIN",
+          "bias": "Bullish",
+          "notes": "The host remains bullish on Coinbase as it consolidates in a stealth phase, setting a stop loss at 155 and expecting a crypto-led breakout into the end of the year.",
+          "price": 185.74
+        },
+        {
+          "ticker": "PYPL",
+          "bias": "Bullish",
+          "notes": "The host sees strong potential for PayPal to move above $50, citing potential buyout ability and strong chart setup.",
+          "price": 54.61
+        }
+      ]
+    },
     {
       "date": "2026-10-05",
       "url": "https://www.youtube.com/shorts/Y5KGLUyiU5Q",
