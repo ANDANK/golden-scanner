@@ -4,6 +4,138 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-10-07",
+      "url": "https://www.youtube.com/shorts/FTh2sURNjyM",
+      "title": "If You're 50, This Is The Plan To Retire By 58 (2026 Update)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Using a taxable brokerage account for early retirement spending minimizes reported income, as only the capital gains count toward income for ACA health insurance subsidy calculations rather than the full distribution amount.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Maxing an HSA, paying medical bills out of pocket, and keeping receipts allows for tax-free reimbursements years later, while ongoing HSA contributions continue to reduce modified adjusted gross income for health insurance subsidies.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Under the Rule of 55, employees who leave their employer in or after the calendar year they turn 55 can take penalty-free withdrawals directly from that employer's 401(k), but rolling the funds into an IRA voids this exemption.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Retiring before Medicare at 65 requires strict control of taxable income to stay beneath ACA subsidy cliffs ($86,560 for a married couple in 2027), as crossing the threshold triggers a full clawback of premium subsidies.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The gap years between early retirement and age 65 provide a low-income window to systematically execute Roth conversions at lower tax brackets before Medicare surcharges (IRMAA) and Social Security trigger.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Claiming Social Security at age 62 permanently reduces benefits by 30% for those born in 1960 or later, whereas delaying to age 70 increases monthly checks by 24% and magnifies future annual cost-of-living adjustments.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "url": "https://www.youtube.com/shorts/iEiIvS7MXjQ",
+      "title": "The United States is Headed for a Debt Crisis",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US national debt has climbed past $40 trillion with a debt-to-GDP ratio of 127%, driving Treasury yields higher due to an oversupply of debt and diminished demand at lower interest rates.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US interest expenses are projected to reach $1.1 trillion against roughly $5 trillion in tax collections, consuming 22 cents of every tax dollar and raising the risk of a sovereign debt crisis and severe inflation.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "url": "https://www.youtube.com/shorts/DYvnf0tszC4",
+      "title": "Ray Dalio Says Higher Interest Rates Will Break The Economy",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Federal Reserve interest rate hiking cycles historically last between one and three years and typically pop existing market bubbles after the cycle concludes rather than during the hikes.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising interest rates are placing acute pressure on private equity and private credit industries due to readjusting debt costs, compressed valuation multiples, and liquidity constraints leading to withdrawal freezes.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A proven wealth-building strategy is consistent dollar-cost averaging into broad index funds like the S&P 500, while wealth acceleration comes from buying during major market crashes and identifying capital shifts before they hit headlines.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "url": "https://www.youtube.com/shorts/XT3JefvtB6A",
+      "title": "5 undervalued stocks I bought today!",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "VST",
+          "bias": "Bullish",
+          "notes": "Added a heavy position in Vistra Corp due to its 20-year contracts supplying power to data centers for companies like Meta and Amazon, alongside high-profile backing.",
+          "price": 166.9
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Bought additional shares as the stock consolidates in a 6-month base, expecting explosive future price action supported by improving fundamentals and customer LTV growth.",
+          "price": 15.63
+        },
+        {
+          "ticker": "AOI",
+          "bias": "Bullish",
+          "notes": "Added LEAP options on AOI following a recent price pullback.",
+          "price": null
+        },
+        {
+          "ticker": "RKLB",
+          "bias": "Bullish",
+          "notes": "Initiated a small position following a 53% drop from all-time highs, citing cheap valuation and $2.4 billion in government contracts.",
+          "price": 71.99
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "Initiated a position following a 52% decline over the past year, pointing to its role in AI cloud infrastructure and strong insider and retail buying interest.",
+          "price": 143.68
+        }
+      ]
+    },
+    {
       "date": "2026-10-06",
       "url": "https://www.youtube.com/shorts/1INouvqQ450",
       "title": "THESE 3 STOCKS LOOK CHEAP 📈 OCTOBER 6",
