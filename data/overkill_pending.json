@@ -1,23 +1,32 @@
 {
-  "checked": "2026-10-07",
+  "checked": "2026-10-08",
   "pending": [
     {
-      "video_id": "zBZjpEMI244",
-      "title": "5 Stocks I'm LOADING UP NOW!",
+      "video_id": "GI6zYE_ME8o",
+      "title": "LIVE CHART REQUESTS 📈",
       "date": "2026-10-07",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/zBZjpEMI244"
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/GI6zYE_ME8o"
     },
     {
-      "video_id": "NDNR40EKUAE",
-      "title": "7 Stocks to Buy BEFORE October 31, 2026‼️",
-      "date": "2026-10-06",
-      "channel": "@FinancialEducation",
-      "channel_name": "Financial Ed",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/NDNR40EKUAE"
+      "video_id": "bNCXLexca7k",
+      "title": "5 STOCKS TO WATCH NOW 📈 DISCORD CHART REQUESTS 10/7",
+      "date": "2026-10-07",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/bNCXLexca7k"
+    },
+    {
+      "video_id": "BNZOYrgMc14",
+      "title": "$IREN STOCK ANALYSIS 📈 OCTOBER 7",
+      "date": "2026-10-07",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/BNZOYrgMc14"
     },
     {
       "video_id": "fipCJcvYCpM",
@@ -25,8 +34,17 @@
       "date": "2026-10-05",
       "channel": "@overkilltrading",
       "channel_name": "OverKill",
-      "reason": "failed",
+      "reason": "queued",
       "url": "https://www.youtube.com/shorts/fipCJcvYCpM"
+    },
+    {
+      "video_id": "1TWh2dH0zfQ",
+      "title": "FREE TRADING COURSE 📈",
+      "date": "2026-10-03",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/1TWh2dH0zfQ"
     },
     {
       "video_id": "GMEYyeMWyig",
@@ -52,7 +70,7 @@
       "date": "2026-09-30",
       "channel": "@InvestwithHenry",
       "channel_name": "Invest w/ Henry",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/t-7ILKqI8Kw"
     },
     {
