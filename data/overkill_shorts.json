@@ -4,6 +4,57 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-10-08",
+      "url": "https://www.youtube.com/shorts/Xq-7WrK_faY",
+      "title": "TECH STOCKS SELLING OFF 🚨 OCTOBER 8 $QQQ",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "QQQ",
+          "bias": "Bearish",
+          "notes": "The tech sector is overbought and extended far above its four-year average, showing double-top patterns and sell signals. If it cannot break through 750, it could see a steep drop into year-end.",
+          "price": 747.58
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "The stock is flashing a sell signal and showing a potential double top. If it breaks down below 220, the host expects it to enter a freefall.",
+          "price": 230.48
+        },
+        {
+          "ticker": "MSFT",
+          "bias": "Bearish",
+          "notes": "The stock has triggered a sell signal at the top of its extended trading zone.",
+          "price": 522.61
+        },
+        {
+          "ticker": "MRVL",
+          "bias": "Bearish",
+          "notes": "The chip stock has triggered a sell signal alongside other extended tech names.",
+          "price": 274.66
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bearish",
+          "notes": "After an 800% run from $85 to $620, the stock is in blow-off danger territory and triggering a sell signal, with the host expecting a retrace toward its four-year average.",
+          "price": 620.68
+        },
+        {
+          "ticker": "SOXS",
+          "bias": "Bullish",
+          "notes": "The host is buying this inverse semiconductor ETF at 33 to short the sector, planning to take profits on a move back up to the white indicator line.",
+          "price": 33.79
+        },
+        {
+          "ticker": "SQQQ",
+          "bias": "Bullish",
+          "notes": "The host is holding this inverse tech ETF expecting it to rise as the broader tech sector pulls back.",
+          "price": 33.37
+        }
+      ]
+    },
+    {
       "date": "2026-10-09",
       "url": "https://www.youtube.com/shorts/1AxgZYdv69M",
       "title": "Trump's New $90 Medicare Payments — Who Qualifies?",
