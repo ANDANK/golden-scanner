@@ -1,8 +1,38 @@
 {
-  "updated": "2026-10-08",
+  "updated": "2026-10-09",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-09",
+      "url": "https://www.youtube.com/shorts/1AxgZYdv69M",
+      "title": "Trump's New $90 Medicare Payments — Who Qualifies?",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A one-time $90 Medicare Part B rebate funded by the Medicare Improvement Fund is being automatically distributed in October to approximately 20.8 million Americans on original Medicare. Beneficiaries enrolled in Medicare Advantage, receiving Medicaid premium assistance, or subject to high-income adjustment surcharges are excluded.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "url": "https://www.youtube.com/shorts/SQ2SFK9OkBg",
+      "title": "ETHEREUM SELLING OFF 🚨 OCTOBER 8",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "notes": "The host advises against panicking during the current pullback, noting Ethereum is experiencing a return-to-the-mean bounce similar to past cycle setups. He is watching the daily chart for a buy signal, anticipating the price will hold at fair value before another major move up.",
+          "price": 23.48
+        }
+      ]
+    },
     {
       "date": "2026-10-07",
       "url": "https://www.youtube.com/shorts/yxHOR-cS4LI",
