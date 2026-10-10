@@ -1,8 +1,74 @@
 {
-  "updated": "2026-10-09",
+  "updated": "2026-10-10",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-10",
+      "url": "https://www.youtube.com/shorts/lbAiv5sUn3A",
+      "title": "The Stock Market Is Ignoring a HUGE Warning Sign",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With the 10-year Treasury yield exceeding 5% and the S&P 500 earnings yield around 4%, elevated borrowing costs and high interest rates pose valuation risks to expensive growth stocks if corporate earnings decelerate.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should avoid panic selling based on economic warning signs, as markets are forward-looking and historically recover before economic conditions improve, causing market timers to miss major rebounds.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors nearing or in retirement should hold one to three years of planned portfolio withdrawals in cash or short-term Treasury funds like SGOV to prevent being forced to sell equities during a downturn.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Covered call ETFs like QQQI and SPYI can provide monthly distributions alongside growth ETFs like VOO and QQQM, though investors must recognize distribution yield does not equal total return.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Key economic catalysts in October that could cause market volatility include inflation data on October 14th, the Federal Reserve decision on October 28th, and GDP plus PCE inflation reports on October 29th.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "url": "https://www.youtube.com/shorts/03OOA8xwRT4",
+      "title": "3 Big Stocks to Buy Right Now? October 2026",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "OKLO",
+          "bias": "Bearish",
+          "notes": "The company is burning cash, relying heavily on equity financing, and remains years away from profitability. Elevated interest rates are hurting its valuation, making it too early to invest despite the long-term thesis.",
+          "price": 34.7
+        },
+        {
+          "ticker": "NEE",
+          "bias": "Bearish",
+          "notes": "While a strong defensive compounder, its profit upside is largely capped by regulatory rates and fixed long-term contracts. At its current elevated historical valuation, there is not enough upside to justify aggressive buying.",
+          "price": 77.38
+        },
+        {
+          "ticker": "VST",
+          "bias": "Bullish",
+          "notes": "Hyperscalers are actively seeking massive amounts of reliable energy for data centers, creating a prime window for operational power producers. Vistra is able to charge peak market rates and produce substantial free cash flow from its existing nuclear and natural gas plants.",
+          "price": 161.48
+        }
+      ]
+    },
     {
       "date": "2026-10-09",
       "url": "https://www.youtube.com/shorts/sM3aPl7V5DU",
