@@ -4,6 +4,27 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-10-09",
+      "url": "https://www.youtube.com/shorts/sM3aPl7V5DU",
+      "title": "VST LEAP Position and LEAP Challenge Update!",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "VST",
+          "bias": "Bullish",
+          "notes": "The host holds June 2027 LEAP calls with a price target of $180 to $200 over the next two to three quarters. He highlights Vistra's existing power and nuclear assets backed by long-term Meta and Amazon deals, with management guiding $3.9B to $4.7B in 2026 adjusted free cash flow.",
+          "price": 161.48
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "U.S. electricity demand is entering a structural boom driven by AI data centers requiring 24/7 reliable power and domestic manufacturing reshoring, facing supply constraints due to the multi-year lead times and billions required to build new generation.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-10-08",
       "url": "https://www.youtube.com/shorts/Xq-7WrK_faY",
       "title": "TECH STOCKS SELLING OFF 🚨 OCTOBER 8 $QQQ",
