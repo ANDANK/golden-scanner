@@ -1,8 +1,23 @@
 {
-  "updated": "2026-10-10",
+  "updated": "2026-10-12",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-11",
+      "url": "https://www.youtube.com/shorts/I8jMGj1EFV0",
+      "title": "Don't Buy Semicondutor Stocks Just Yet! Here's why",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The primary bottleneck for AI has shifted from semiconductors to energy, as hyperscalers face power constraints that delay data center operations. According to Goldman Sachs, data center power demand is projected to more than double by 2027, making energy and transmission infrastructure crucial beneficiaries of the AI boom.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-10-10",
       "url": "https://www.youtube.com/shorts/lbAiv5sUn3A",
