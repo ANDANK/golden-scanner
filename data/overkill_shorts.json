@@ -1,8 +1,335 @@
 {
-  "updated": "2026-10-12",
+  "updated": "2026-10-17",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-15",
+      "url": "https://www.youtube.com/shorts/wsuAxrrILuY",
+      "title": "3 STOCKS TO WATCH AFTER PULLING BACK 📈 OCTOBER 15 $IONQ",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "RIOT",
+          "bias": "Bullish",
+          "notes": "After topping out around 25, the stock has pulled back to roughly 15 into the golden zone, presenting an attractive buying setup for a target move back up.",
+          "price": 15.5
+        },
+        {
+          "ticker": "IONQ",
+          "bias": "Bullish",
+          "notes": "The host is starting to accumulate and buy again after the stock pulled back from 72 down to 34 into the golden zone.",
+          "price": 34.35
+        },
+        {
+          "ticker": "LEN",
+          "bias": "Bullish",
+          "notes": "Considered the least risky play among beaten-up homebuilders, offering an upside of around 64% from $77 back to the target red zone.",
+          "price": 77.69
+        }
+      ]
+    },
+    {
+      "date": "2026-10-17",
+      "url": "https://www.youtube.com/shorts/7-1XfW3vPfk",
+      "title": "🚨 The Next 2 Weeks Could Change Everything for Stocks",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising Treasury yields, with the 10-year yield briefly topping 5.3%, continue to pressure valuations across growth and technology stocks as borrowing costs climb. Watching the 5% level on the 10-year Treasury is critical, as persistent yields above this mark could trigger further market volatility.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "September CPI inflation increased to 3.7% year-over-year, exceeding expectations and rising from 3.4% in August, largely fueled by a 9.1% monthly spike in gasoline prices. This resurgence in inflation caused the market-implied probability of another Federal Reserve rate hike to rise from 22% to roughly 35%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Key upcoming market catalysts include the Federal Reserve's interest rate decision, third-quarter GDP, and the PCE inflation report. In addition, mega-cap earnings from companies like Apple, Microsoft, Meta, Google, and Amazon will dictate whether the technology sector rebounds or faces extended selling.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-16",
+      "url": "https://www.youtube.com/shorts/eugYDXXxerU",
+      "title": "Market Tanking‼️ Do this now",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With the Nasdaq down around 5% from recent highs, market pullbacks could worsen when compared to historical drops of 23% to over 50%, so investors should be mentally prepared.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Avoid utilizing margin and short-term options, as margin calls exacerbate sharp sell-offs and taking on leverage near all-time highs carries severe downside risk.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Focus on buying dips in fundamentally strong companies for a 5-to-10-year horizon rather than trading short-term multi-week fluctuations.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-14",
+      "url": "https://www.youtube.com/shorts/ha3xza39fNY",
+      "title": "12 Years Of Brutal Option Selling Advice In 90 Minutes",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "The host views Netflix as attractive in the low 70s due to its predictable business model, recurring revenue, and compelling valuation following its pullback.",
+          "price": 70.57
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host considers Nvidia around $200 per share a complete steal and generates income selling out-of-the-money puts at the 195 strike.",
+          "price": 221.3
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "The host names SoFi his top candidate for selling puts and running the wheel strategy after a 14% monthly pullback brought it under $16 per share.",
+          "price": 14.22
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host likes AMD as a wheel strategy candidate with strong business fundamentals and solid option premiums as it captures market share behind Nvidia in AI.",
+          "price": 570.82
+        },
+        {
+          "ticker": "NBIS",
+          "bias": "Bullish",
+          "notes": "The host is holding shares and postponing selling covered calls because he expects the stock to climb toward the $240 to $250 range.",
+          "price": 186.01
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When selecting stocks for option selling or the wheel strategy, target implied volatility between 30% and 60% to balance worthwhile premiums against excessive volatility.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Only sell cash-secured puts on fundamentally sound companies with revenue growth, cash flow, and a moat that you are genuinely willing to hold long-term if assigned.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-16",
+      "url": "https://www.youtube.com/shorts/gXZTOrZCHbk",
+      "title": "Americans Are Spending More Money — But There's a BIG Problem",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Headline retail sales rose 0.8% month-over-month against expectations of 0.3%, but sales are reported in nominal dollars; stripping out rising gasoline prices, growth was only 0.2%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "According to the Federal Reserve, one out of five US households is behind on loan payments—the highest rate since 2008—with over 60% of Americans living paycheck to paycheck.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Persistent inflation may lead the Federal Reserve to hold interest rates higher for longer, which reduces the present value of future corporate earnings and pressures stock market valuations.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-14",
+      "url": "https://www.youtube.com/shorts/iaDwiehwAac",
+      "title": "This Is A Stock Market Warning - Get Ready Before It's Too Late | Graham Stephan",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "More investor wealth is lost waiting for market crashes than staying invested and holding through downturns, making consistent buying preferable to attempting to time market tops.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Federal Reserve intervention to buy long-term Treasuries and suppress yields on $40 trillion in national debt will likely devalue the dollar long-term and fuel an asset melt-up.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High mortgage rates, property taxes, and insurance currently make renting 30% to 50% cheaper than buying an equivalent home, turning primary homeownership into a lifestyle choice rather than an ROI-driven investment.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Acquiring new rental properties is generally unfavorable in the current market because high financing and operational costs prevent cash-flow metrics from penciling out profitably.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-15",
+      "url": "https://www.youtube.com/shorts/yw6O5Pxb8B0",
+      "title": "(Pa Nkoh) 🇨🇲🇺🇸🙏🏽 AMAZON STOCK ANALYSIS 📈 OCTOBER 15 $AMZN",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "AMZN",
+          "bias": "Bearish",
+          "notes": "The host advises against buying right now because the stock is trading too far above its four-year moving average fair value. He suggests placing a stop loss around 240 to sell if broken, aiming to buy back lower around 200.",
+          "price": 254.76
+        }
+      ]
+    },
+    {
+      "date": "2026-10-13",
+      "url": "https://www.youtube.com/shorts/wsAPdABbe4Y",
+      "title": "This Market Dip is a GIFT (6 Stocks to Buy NOW)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Headline index gains in the S&P 500 and Nasdaq have been heavily concentrated in tech and energy, while consumer discretionary, communication services, financials, and utilities lag behind.",
+          "price": null
+        },
+        {
+          "ticker": "CI",
+          "bias": "Bullish",
+          "notes": "Trading around $268 at approximately 8 times forward earnings and a 0.75 PEG ratio, Cigna offers a 2.3% dividend yield. PBM regulatory headwinds have created a buying opportunity while management targets 10% to 14% annual earnings growth through 2030.",
+          "price": 282.53
+        },
+        {
+          "ticker": "ADBE",
+          "bias": "Bullish",
+          "notes": "Trading around $238 (down about two-thirds from its high) at roughly 9 times forward earnings with a 0.64 PEG, Adobe is repurchasing significant amounts of its own stock. The core business remains strong, generating record revenue and $2.52 billion in quarterly operating cash flow.",
+          "price": 236.28
+        },
+        {
+          "ticker": "MCD",
+          "bias": "Bullish",
+          "notes": "Hitting 52-week lows due to lower-income consumer headwinds, McDonald's trades at roughly 17 to 18 times forward earnings with a 3.3% dividend yield. Morningstar gives it a wide moat with a $295 fair value target, viewing its 5% global sales growth as proof the business is fundamentally intact.",
+          "price": 235.81
+        },
+        {
+          "ticker": "PEP",
+          "bias": "Bullish",
+          "notes": "Trading at 14.5 times forward earnings with a 4.7% dividend yield, PepsiCo has pulled back 36% from its high to a 52-week low on stalling volume growth. Morningstar assigns it a five-star rating with a $169 fair value target, underpinned by pricing power across its staple brands.",
+          "price": 127.3
+        },
+        {
+          "ticker": "CAT",
+          "bias": "Bullish",
+          "notes": "Caterpillar's data center power generation business is surging with a $72 billion backlog, but the stock trades around 25 to 30 times forward earnings after pulling back 20% from highs. While analyst consensus is a buy with a $980 price target, the host warns valuation remains elevated and the stock could fall further before recovering.",
+          "price": 772.78
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "Oracle is down 58% from its high, trading at 17 times forward earnings and a 0.55 PEG with a massive $664 billion backlog, offering large upside with an average analyst target near $240 to $250. However, it belongs strictly in a high-risk sleeve due to over $100 billion in debt, negative free cash flow, and heavy concentration in OpenAI.",
+          "price": 143.2
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Effective dip buying requires verifying that price drops reflect temporary market fear rather than a broken business, dollar-cost averaging in tranches, and sizing position risk appropriately.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-12",
+      "url": "https://www.youtube.com/shorts/M5jPiJhJoEM",
+      "title": "Your Portfolio is about to GO INSANE‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "An explosion in put buying on the NASDAQ 100 indicates heavy institutional hedging ahead of earnings season, potentially setting up a 5% to 15% market pullback if reports disappoint.",
+          "price": null
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Projected to reach $675 to $775 over the next 30 days driven by accelerating revenue growth in CPUs and GPUs that should easily beat Q3 guidance and blow past low analyst EPS estimates.",
+          "price": 594.24
+        },
+        {
+          "ticker": "META",
+          "bias": "Neutral",
+          "notes": "Expected to stay range-bound between $575 and $775 until capital expenditure spending slows down or until its new Muse product clearly monetizes and convinces investors of major incremental growth.",
+          "price": 742.96
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Sees favorable short-term risk/reward with upside potential toward $35+ versus $25 downside, supported by rapid international expansion and strong growth from the Alani brand.",
+          "price": 28.39
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Expected to exit the year between $100 and $140 as Wall Street analyst estimates for revenue and EPS growth are far too conservative given international growth and retail underpenetration.",
+          "price": 109.94
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Fundamentals remain strong and the stock should exit the year above $20, though short-term price performance will heavily depend on whether Treasury yields move lower.",
+          "price": 15.23
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Remains an enduring long-term buy with huge growth in e-commerce and ads, though short-term stock performance will hinge on AWS accelerating growth past 48%.",
+          "price": 259.53
+        },
+        {
+          "ticker": "PEP",
+          "bias": "Bullish",
+          "notes": "Viewed as an easy money buy down over 20% across five years, trading at a 14 forward P/E with a 4%+ dividend yield after posting 17% EPS growth.",
+          "price": 126.68
+        },
+        {
+          "ticker": "CCL",
+          "bias": "Bullish",
+          "notes": "Considered an attractive value opportunity at an 11.4 forward P/E, benefiting from strong secular travel demand among budget-conscious families and retiring baby boomers.",
+          "price": 26.48
+        }
+      ]
+    },
     {
       "date": "2026-10-11",
       "url": "https://www.youtube.com/shorts/I8jMGj1EFV0",
