@@ -4,6 +4,90 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-10-12",
+      "url": "https://www.youtube.com/shorts/9UWOHAvgACY",
+      "title": "This PMCC Trade Brings $1,700 Premium on $2,500 Capital",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host holds a 1-year price target of $280 (up from roughly $229) and a short-term target of $245, driven by accelerating AI infrastructure spending and major customer commitments like AWS deploying 2 million GPUs. He views the stock as a consistent compounder with limited drawdown risk and is structuring a Poor Man's Covered Call strategy around it.",
+          "price": 226.32
+        }
+      ]
+    },
+    {
+      "date": "2026-10-13",
+      "url": "https://www.youtube.com/shorts/gA1M97kn25I",
+      "title": "Social Security 2027 COLA — Your New Benefit Amount",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Social Security benefits are projected to receive an approximate 3.5% cost of living adjustment for 2027, though net payout gains will be partially offset by an expected $6.60 monthly increase in standard Medicare Part B premiums to $209.50.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 2027 COLA applies automatically without application to retirement, disability, survivor, and SSI benefits, with increased payouts starting in January 2027 (December 31, 2026 for SSI recipients).",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Alongside COLA, the SSA will update key thresholds for 2027 including maximum earnings subject to payroll taxes and retirement earnings test limits for working early claimants.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-14",
+      "url": "https://www.youtube.com/shorts/JK9PIc-Sj2w",
+      "title": "$USAR and MP STOCK ANALYSIS 🚨 OCTOBER 14",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "USAAR",
+          "bias": "Bullish",
+          "notes": "The host believes the stock will eventually return to all-time highs despite current downside, viewing price below the yearly moving average as discount territory. Investors should wait for the next signal or look to average down rather than panic sell.",
+          "price": null
+        },
+        {
+          "ticker": "MP",
+          "bias": "Bullish",
+          "notes": "After pulling back to $40 from the $70-$80 range, the stock is sitting back at its prior signal level. The host views it as a long-term hold and advises looking to average down if it drops further toward $30.",
+          "price": 39.95
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When an investment declines, selling at a loss can be used for tax-loss harvesting to offset taxable capital gains elsewhere.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-12",
+      "url": "https://www.youtube.com/shorts/-uxt2UdW0zo",
+      "title": "Is $AAOI Stock Still a Buy?",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "AAOI",
+          "bias": "Bullish",
+          "notes": "Repeated at-the-market share offerings have diluted shareholders and kept the stock down 50% from all-time highs, but the capital is being used to expand capacity to meet surging demand without taking on expensive debt. If dilution slows as revenue and profits ramp up, the stock could trade over $200 per share again.",
+          "price": 100.68
+        }
+      ]
+    },
+    {
       "date": "2026-10-17",
       "url": "https://www.youtube.com/shorts/XqOv2Vi57uU",
       "title": "Every Stock I'm Buying in This Pullback (5 New Buys)",
