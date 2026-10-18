@@ -4,6 +4,165 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-10-17",
+      "url": "https://www.youtube.com/shorts/XqOv2Vi57uU",
+      "title": "Every Stock I'm Buying in This Pullback (5 New Buys)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A hotter-than-expected CPI report has sparked renewed market concerns that the Federal Reserve may keep interest rates higher for longer or hike again, creating an attractive pullback opportunity.",
+          "price": null
+        },
+        {
+          "ticker": "CRWV",
+          "bias": "Bullish",
+          "notes": "Trading around $63 per share well below its moving average, the stock looks massively undervalued given its huge revenue growth and $104 billion backlog. The host expects it to rebound back toward its moving average in the mid-to-high $80s.",
+          "price": 61.39
+        },
+        {
+          "ticker": "NBIS",
+          "bias": "Bullish",
+          "notes": "Trading under $175 after dropping below its Bollinger Band, the stock is heavily discounted despite multi-billion dollar contracts with Microsoft, Meta, and Nvidia. The host sees fair value around $200 per share and prefers selling put options.",
+          "price": 165.47
+        },
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "Now trading at $130 down from over $300, Oracle's AI cloud infrastructure business is seeing triple-digit growth with $664 billion in remaining performance obligations. The host sees an undervalued setup with a price target around $150 per share.",
+          "price": 128.23
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "At $15 per share, the stock is trading at a strong support floor while the business demonstrates high customer lifetime value and 40% revenue growth. The host views it as deeply undervalued and ultimately worth in the high $20s ($27 to $29).",
+          "price": 14.55
+        },
+        {
+          "ticker": "IREN",
+          "bias": "Bullish",
+          "notes": "After plunging from the high $40s, the host is aggressively buying the dip due to its valuable 5+ gigawatts of power capacity and rapidly expanding AI cloud contracts with Microsoft and others.",
+          "price": 26.99
+        }
+      ]
+    },
+    {
+      "date": "2026-10-15",
+      "url": "https://www.youtube.com/shorts/CbCsVbU14TM",
+      "title": "Stocks Face a New Threat From Inflation",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A hotter-than-expected CPI inflation report has increased the likelihood of higher interest rates for longer, causing stock markets, precious metals, and Bitcoin to drop.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising energy prices, particularly diesel fuel, are the primary inflation concern because diesel is critical for shipping, trucking, and farming, adding substantial costs across the supply chain.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-15",
+      "url": "https://www.youtube.com/shorts/4HqqpHjM4-k",
+      "title": "ETHEREUM, BITCOIN, $XRP CHART ANALYSIS 📈 OCTOBER 15",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "notes": "The host added to his position as Ethereum sits at its 4-year moving average mean, viewing it as an attractive entry price. He highlights a green monthly chart signal that historically triggered multi-year bull runs ahead of an expected expansion phase.",
+          "price": 23.38
+        },
+        {
+          "ticker": "XRP",
+          "bias": "Bullish",
+          "notes": "The host notes XRP is currently sitting right at its 4-year moving average, placing it in his designated buying zone.",
+          "price": 15.0
+        }
+      ]
+    },
+    {
+      "date": "2026-10-13",
+      "url": "https://www.youtube.com/shorts/uJokZPBEMec",
+      "title": "Yes, retiring is really this easy with option trading",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To scale an options portfolio for retirement, use deep in-the-money LEAP call options (targeting a 70 delta, 1+ year out) for aggressive growth, then shift into selling cash-secured puts and the wheel strategy targeting 3% income as the portfolio grows.",
+          "price": null
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host views Nvidia as the premier AI leader and believes it still offers significant upside opportunity through long-dated LEAP options.",
+          "price": 228.52
+        },
+        {
+          "ticker": "SHOP",
+          "bias": "Bullish",
+          "notes": "The host holds a LEAP option on Shopify that is up over 114%, noting the stock still has room to run even as it approaches his 50% to 80% profit-taking target.",
+          "price": 176.52
+        },
+        {
+          "ticker": "AAOI",
+          "bias": "Bullish",
+          "notes": "Despite his LEAP position recently pulling back into a loss, the host remains long-term bullish on the company and is holding the position rather than trying to time short-term moves.",
+          "price": 97.78
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bearish",
+          "notes": "The host is unenthusiastic about buying Palantir at current levels because the stock is trading near 52-week highs, preferring to avoid stretched valuations.",
+          "price": 208.67
+        },
+        {
+          "ticker": "VST",
+          "bias": "Bullish",
+          "notes": "The host bought LEAP options on Vistra, citing favorable industry fundamentals and an attractive entry point near technical support.",
+          "price": 162.36
+        }
+      ]
+    },
+    {
+      "date": "2026-10-14",
+      "url": "https://www.youtube.com/shorts/KU9v3iPFLow",
+      "title": "CPI Inflation Report Worse Than Expected — Stocks Are Falling",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "September headline CPI inflation came in hotter than expected at 3.7% versus 3.6% projected, increasing the market-implied odds of an October Fed rate hike from 22% to 32.7% and pressuring risk assets.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Elevated diesel fuel prices, averaging around $6.30 per gallon due to constrained refined oil product flows, remain the primary driver injecting inflation across supply chains.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Lower long-duration Treasury yields on the 10-year note and 30-year bond will be the required catalyst before equities can realistically push back toward new record highs.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-10-15",
       "url": "https://www.youtube.com/shorts/wsuAxrrILuY",
       "title": "3 STOCKS TO WATCH AFTER PULLING BACK 📈 OCTOBER 15 $IONQ",
