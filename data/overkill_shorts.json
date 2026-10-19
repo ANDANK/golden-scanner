@@ -1,8 +1,29 @@
 {
-  "updated": "2026-10-17",
+  "updated": "2026-10-19",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-19",
+      "url": "https://www.youtube.com/shorts/LaBiYw1ZKF4",
+      "title": "Stocks Have Done THIS After Every Midterm Election Since 1950",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historically, the president's party tends to lose congressional seats in midterm elections, averaging losses of 25.7 House seats and 3.6 Senate seats over the last 20 midterms, often leading to divided government.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Since 1950, the S&P 500 has risen 12 months after midterm elections 19 out of 19 times with an average gain of 15.4%, driven by the elimination of election uncertainty and subsequent political gridlock.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-10-14",
       "url": "https://www.youtube.com/shorts/ol0-FYSbq-o",
