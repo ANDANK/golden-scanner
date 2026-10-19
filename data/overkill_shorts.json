@@ -4,6 +4,21 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-10-14",
+      "url": "https://www.youtube.com/shorts/ol0-FYSbq-o",
+      "title": "STOCKS ARE CRASHING 🚨 What to do NOW! (OCTOBER 14)",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "QQQ",
+          "bias": "Bearish",
+          "notes": "QQQ is down 3% and looks like it may just be starting a larger pullback, which could present buying opportunities over the coming weeks and months.",
+          "price": 728.95
+        }
+      ]
+    },
+    {
       "date": "2026-10-12",
       "url": "https://www.youtube.com/shorts/9UWOHAvgACY",
       "title": "This PMCC Trade Brings $1,700 Premium on $2,500 Capital",

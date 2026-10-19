@@ -2,15 +2,6 @@
   "checked": "2026-10-17",
   "pending": [
     {
-      "video_id": "ol0-FYSbq-o",
-      "title": "STOCKS ARE CRASHING 🚨 What to do NOW! (OCTOBER 14)",
-      "date": "2026-10-14",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/ol0-FYSbq-o"
-    },
-    {
       "video_id": "TjSmQaP9ZJk",
       "title": "my trading indicators (how to download them)",
       "date": "2026-10-14",
@@ -88,7 +79,7 @@
       "date": "2026-09-30",
       "channel": "@InvestwithHenry",
       "channel_name": "Invest w/ Henry",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/t-7ILKqI8Kw"
     },
     {
