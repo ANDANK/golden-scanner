@@ -1,8 +1,74 @@
 {
-  "updated": "2026-10-19",
+  "updated": "2026-10-20",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-20",
+      "url": "https://www.youtube.com/shorts/3G0pBX5Rf8U",
+      "title": "$7.9 TRILLION Is Sitting in Cash. Is Everyone Making a Mistake?",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Calculate your cash 'protect number' by totaling 3 to 6 months of living expenses plus any known spending expected within the next 12 months. Any savings exceeding this target should be allocated toward long-term growth assets rather than sitting in cash.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Retirees should maintain approximately two years of planned withdrawals in cash to avoid having to sell equities during a market downturn. The remainder of the portfolio should remain invested to protect against inflation and longevity risk.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Vanguard research indicates that lump-sum investing outperforms spreading allocations across installments roughly 68% of the time. If waiting induces panic, a fixed dollar-cost averaging schedule across a short window provides a sound behavioral compromise.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Holding long-term retirement capital in cash to time a market drop carries substantial opportunity cost; historical Schwab and Fidelity studies show that even buying at annual market peaks significantly outperformed remaining in cash over long horizons.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-19",
+      "url": "https://www.youtube.com/shorts/DhBEcm5JXhg",
+      "title": "4 STOCKS TO WATCH NOW 📈 OCTOBER 19 $IREN",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "CLSK",
+          "bias": "Bullish",
+          "notes": "The stock has experienced capitulation and pulled back to around $8.50, with the host waiting for a green dot signal to confirm a bottom entry.",
+          "price": 8.46
+        },
+        {
+          "ticker": "RIOT",
+          "bias": "Bullish",
+          "notes": "Riot dropped 50% from $30 to $13 and is sitting right at its 4-year moving average mean, waiting for a green dot confirmation to buy.",
+          "price": 13.97
+        },
+        {
+          "ticker": "IRON",
+          "bias": "Bullish",
+          "notes": "After pulling back from $70 down to $27, the wave is down below the white line, setting up an attractive opportunity while waiting for a green dot.",
+          "price": 78.93
+        },
+        {
+          "ticker": "KLA",
+          "bias": "Bullish",
+          "notes": "The host likes this setup going into November as it has already triggered a green dot signal.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-10-19",
       "url": "https://www.youtube.com/shorts/qycfwnWNY88",
