@@ -5,6 +5,78 @@
   "videos": [
     {
       "date": "2026-10-19",
+      "url": "https://www.youtube.com/shorts/qycfwnWNY88",
+      "title": "3 STOCKS TO WATCH THIS WEEK 📈 OCTOBER 19",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "BA",
+          "bias": "Bullish",
+          "notes": "Boeing triggered a weekly buy signal around $190 after a pullback from $240 to $180, with buyers stepping in ahead of upcoming earnings.",
+          "price": 191.42
+        },
+        {
+          "ticker": "NVO",
+          "bias": "Bullish",
+          "notes": "Novo Nordisk has triggered a buy signal and is forming a higher low around $38 after dropping from $140 despite record revenue, ahead of earnings in two weeks.",
+          "price": 38.42
+        },
+        {
+          "ticker": "UNH",
+          "bias": "Bullish",
+          "notes": "UnitedHealth looks good heading into year-end as part of a broader bullish view on the healthcare sector.",
+          "price": 406.88
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Celsius is establishing a strong base around $26 and flashing multiple buy signals, setting up a 1-to-6 month swing trade.",
+          "price": 29.72
+        }
+      ]
+    },
+    {
+      "date": "2026-10-19",
+      "url": "https://www.youtube.com/shorts/3P14bHG23cI",
+      "title": "This is the next Millionaire Maker‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The broader market is fairly valued rather than in a bubble, justified by unprecedented 40% to 60%+ net margins and strong double-digit revenue growth among the top mega-cap tech leaders.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Big tech faces hundreds of billions in non-cash depreciation over the next 5 to 6 years as rapidly purchased AI chips become obsolete, which will pressure future reported EPS and net margins.",
+          "price": null
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Ranked as a top stock for upside over the next three years due to its enduring brand strength, Pepsi distribution backing, and long-term international expansion potential.",
+          "price": 29.72
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Expected to be a major beneficiary of an anticipated housing market rebound alongside improved margin profiles stemming from smaller, more cost-effective store formats.",
+          "price": 114.03
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Positioned to eventually evolve into a financial giant with a potential $100B+ market cap as it consistently scales its member base and executes an asset-light cross-selling model.",
+          "price": 14.3
+        }
+      ]
+    },
+    {
+      "date": "2026-10-19",
       "url": "https://www.youtube.com/shorts/LaBiYw1ZKF4",
       "title": "Stocks Have Done THIS After Every Midterm Election Since 1950",
       "channel": "@ClearValueTax",
