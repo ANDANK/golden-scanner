@@ -1,0 +1,344 @@
+{
+  "date": "2026-10-21",
+  "tag": "FTF",
+  "rows": [
+    {
+      "ticker": "LYFT",
+      "price": 16.99,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+5RB+8Cross",
+      "scanners": "1Mom \u00b7 5RB \u00b7 8Cross\u00b7W",
+      "edge_score": 0.97,
+      "n": 3878,
+      "hold_range": [
+        10,
+        60
+      ]
+    },
+    {
+      "ticker": "PGR",
+      "price": 219.11,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+5RB+8Cross",
+      "scanners": "1Mom \u00b7 5RB \u00b7 8Cross\u00b7W",
+      "edge_score": 0.97,
+      "n": 3878,
+      "hold_range": [
+        10,
+        60
+      ]
+    },
+    {
+      "ticker": "AVY",
+      "price": 175.56,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+5RB+8Cross",
+      "scanners": "1Mom \u00b7 5RB \u00b7 6Prime \u00b7 8Cross\u00b7W",
+      "edge_score": 0.97,
+      "n": 3878,
+      "hold_range": [
+        10,
+        60
+      ]
+    },
+    {
+      "ticker": "CDW",
+      "price": 152.65,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross\u00b7W",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "BR",
+      "price": 175.12,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 6Prime \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "CI",
+      "price": 298.5,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross\u00b7W",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "AIG",
+      "price": 80.66,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross\u00b7W",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "CB",
+      "price": 356.27,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "WRB",
+      "price": 74.08,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "CBOE",
+      "price": 306.47,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "HLT",
+      "price": 346.04,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "RL",
+      "price": 381.77,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "MDLZ",
+      "price": 63.34,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 6Prime \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "CL",
+      "price": 93.39,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "RSG",
+      "price": 229.03,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross\u00b7W",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "KMI",
+      "price": 33.39,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "ED",
+      "price": 109.69,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "AMT",
+      "price": 183.03,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "XLP",
+      "price": 87.21,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "FOXA",
+      "price": 65.27,
+      "verdict": "Strong Setup",
+      "combo": "5RB+8Cross",
+      "scanners": "5RB \u00b7 7Square \u00b7 8Cross",
+      "edge_score": 0.57,
+      "n": 6325,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "SPGI",
+      "price": 427.83,
+      "verdict": "Strong Setup",
+      "combo": "5RB+8Cross",
+      "scanners": "5RB \u00b7 6Prime \u00b7 8Cross",
+      "edge_score": 0.57,
+      "n": 6325,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "ROP",
+      "price": 383.5,
+      "verdict": "Strong Setup",
+      "combo": "5RB+8Cross",
+      "scanners": "5RB \u00b7 6Prime \u00b7 8Cross",
+      "edge_score": 0.57,
+      "n": 6325,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "PH",
+      "price": 966.26,
+      "verdict": "Strong Setup",
+      "combo": "6Prime+7Square+8Cross",
+      "scanners": "6Prime \u00b7 7Square \u00b7 8Cross",
+      "edge_score": 0.47,
+      "n": 2978,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "ROST",
+      "price": 238.66,
+      "verdict": "Strong Setup",
+      "combo": "7Square+8Cross",
+      "scanners": "7Square \u00b7 8Cross",
+      "edge_score": 0.43,
+      "n": 10416,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "ALLE",
+      "price": 155.44,
+      "verdict": "Strong Setup",
+      "combo": "7Square+8Cross",
+      "scanners": "7Square \u00b7 8Cross",
+      "edge_score": 0.43,
+      "n": 10416,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "EGP",
+      "price": 196.72,
+      "verdict": "Strong Setup",
+      "combo": "7Square+8Cross",
+      "scanners": "7Square \u00b7 8Cross",
+      "edge_score": 0.43,
+      "n": 10416,
+      "hold_range": [
+        10,
+        30
+      ]
+    }
+  ]
+}
