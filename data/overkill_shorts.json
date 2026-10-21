@@ -1,8 +1,44 @@
 {
-  "updated": "2026-10-20",
+  "updated": "2026-10-21",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-20",
+      "url": "https://www.youtube.com/shorts/mMxIr4MOa2c",
+      "title": "$ORCL STOCK 📈 OCTOBER 20",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "Oracle is currently trading at a discount at or below its 200-week EMA, which historically signals an ideal buying level. The host highlights strong support around $135 and notes the bottom was established around $113.",
+          "price": 131.14
+        }
+      ]
+    },
+    {
+      "date": "2026-10-20",
+      "url": "https://www.youtube.com/shorts/0mNEaTkAEwQ",
+      "title": "OVERKILL MONTHLY TRADING STRATEGY 📈 (PART 2)",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "notes": "Ethereum has triggered a monthly green dot indicator, which historically signals a one- to two-year bull run. The host views the current pullback on the monthly candle as a bear trap and considers Ethereum a major buy on the daily chart.",
+          "price": 23.23
+        },
+        {
+          "ticker": "BTC",
+          "bias": "Bullish",
+          "notes": "Bitcoin shows a monthly bottom signal that historically precedes strong one- to two-year bull cycles. The host notes that Bitcoin has barely pulled back despite broader market fear and remains in an upward macro trend.",
+          "price": 36.48
+        }
+      ]
+    },
     {
       "date": "2026-10-20",
       "url": "https://www.youtube.com/shorts/3G0pBX5Rf8U",
