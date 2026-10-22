@@ -1,8 +1,188 @@
 {
-  "updated": "2026-10-21",
+  "updated": "2026-10-22",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-21",
+      "url": "https://www.youtube.com/shorts/HzcABHKluyo",
+      "title": "CLSK $BMNR BSX STOCK ANALYSIS 📈 OCTOBER 21",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "CLSK",
+          "bias": "Bullish",
+          "notes": "CleanSpark flashed a rare golden dot signal around $8 after dropping 50% from $22. The host targets a move back to the $18-$22 red zone, offering about 150% upside.",
+          "price": 8.75
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Expects the overall crypto market to trend significantly higher heading into the end of the year.",
+          "price": null
+        },
+        {
+          "ticker": "BMR",
+          "bias": "Bullish",
+          "notes": "Flashed a green dot buy signal sitting around $20, with roughly 150% upside potential back up to its target red zone.",
+          "price": 1.5
+        },
+        {
+          "ticker": "BSX",
+          "bias": "Bullish",
+          "notes": "Trading at a major discount around $40 after falling from $110, placing it far below its 4-year average on the weekly chart.",
+          "price": 44.51
+        }
+      ]
+    },
+    {
+      "date": "2026-10-22",
+      "url": "https://www.youtube.com/shorts/QJKwg0ZknMM",
+      "title": "I might SELL this Stock‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "The host refuses to sell shares, citing low revenue expectations, a modest forward P/E under 20, and long-term upside from its emerging AI platform.",
+          "price": 241.78
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bearish",
+          "notes": "The host is tempted to trim his position and use the stock as an ATM machine, warning that a forward P/E above 50 creates elevated downside risk if high growth targets are missed.",
+          "price": 153.12
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "The host views the double-digit drop as a major buying opportunity with a forward P/E around 17 to 18, and plans to expand his position to over $250,000.",
+          "price": 65.04
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host calls AMD a must-own stock that could reach $1,000+ driven by broad capex expansion and long-term chip demand powering Meta's Muse platform.",
+          "price": 552.72
+        },
+        {
+          "ticker": "META",
+          "bias": "Neutral",
+          "notes": "The host gave Meta's quarter a D grade due to soaring capex and expenses, forecasting the stock will remain rangebound between $575 and $775 over the next one to two years.",
+          "price": 697.52
+        }
+      ]
+    },
+    {
+      "date": "2026-10-21",
+      "url": "https://www.youtube.com/shorts/xL2EWiekE5g",
+      "title": "7 NEW PURCHASES I MADE LIVE!",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Selling put options generates upfront income and allows investors to set an effective purchase price lower than current market value, but it should only be done on stocks an investor is comfortable owning long-term.",
+          "price": null
+        },
+        {
+          "ticker": "MSFT",
+          "bias": "Bullish",
+          "notes": "The host holds a long-term target of $600 for Microsoft based on strong fundamental business scaling and sold a $510 put option to collect $985 in premium, targeting an effective cost basis near $500.",
+          "price": 532.95
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Expecting Amazon to reach $300+ per share by 2027 driven by its AWS, e-commerce, and advertising segments, the host sold two December 18 put contracts at a $255 strike price to collect $2,310 in premium.",
+          "price": 262.37
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Bullish on Meta's rapidly scaling ad revenue ahead of earnings, the host sold a December 18 put contract to collect $2,320 in premium.",
+          "price": 697.52
+        },
+        {
+          "ticker": "NBIX",
+          "bias": "Bullish",
+          "notes": "Viewing NBIX as significantly undervalued after a 23% drop in one month, the host sold two put contracts at a $155 strike price to collect $2,890 in total premium.",
+          "price": 141.31
+        },
+        {
+          "ticker": "AAL",
+          "bias": "Bullish",
+          "notes": "Favoring American Airlines as a reliable range-bound trade for small portfolios, the host sold 10 November 20 put contracts at an $11.50 strike price to collect $450 in premium.",
+          "price": 12.24
+        },
+        {
+          "ticker": "QQQ",
+          "bias": "Bullish",
+          "notes": "The host executed a 0 DTE trade on QQQ, selling eight put contracts at a $719 strike price to generate approximately $300 in immediate premium.",
+          "price": 725.2
+        }
+      ]
+    },
+    {
+      "date": "2026-10-21",
+      "url": "https://www.youtube.com/shorts/OeoZ53d2Hz8",
+      "title": "The 5 Mega Threats Facing America's Economy Right Now",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Federal Reserve Governor Michael Barr stated there is no clear path to lowering inflation back to the 2% target in a reasonable timeframe from its current level of around 3.4%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High oil prices remain the primary catalyst for persistent inflation, as elevated energy costs directly inflate manufacturing, electricity, and consumer goods prices.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Federal Reserve interest rate hikes defend the US dollar's value but exert downward pressure on economic growth and stock market valuations.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "US Treasury yields exceeding 5% draw capital away from the stock market by offering investors high risk-free guaranteed returns.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Retail investors can gain exposure to high-yielding 7% to 9% sovereign emerging market bonds through US dollar-denominated ETFs.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The AI boom is single-handedly sustaining US stock market gains, with nearly half of the S&P 500 stocks down over 20% when AI-related equities are excluded.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Escalating energy costs and long-term production contract renewals in 2027-2028 pose major bottleneck risks to continued profit margin growth in the AI hardware industry.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US national debt has reached roughly 125% of GDP, putting the nation in a deficit position that relies on accelerating economic growth to manage.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-10-20",
       "url": "https://www.youtube.com/shorts/mMxIr4MOa2c",
