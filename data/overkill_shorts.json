@@ -5,6 +5,66 @@
   "videos": [
     {
       "date": "2026-10-21",
+      "url": "https://www.youtube.com/shorts/bElqFiFHB_g",
+      "title": "THESE 3 STOCKS LOOK BULLISH! 📈 OCTOBER 21 $MSTR",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Bitcoin and the broader crypto market are anticipated to explode to significantly higher prices toward the end of the year.",
+          "price": null
+        },
+        {
+          "ticker": "MSTR",
+          "bias": "Bullish",
+          "notes": "MSTR is sitting in the Fibonacci golden zone on the daily chart, offering a potential 124% upside move toward the upper red target zone on a 1- to 6-month swing trade.",
+          "price": 153.48
+        },
+        {
+          "ticker": "CLSK",
+          "bias": "Bullish",
+          "notes": "The stock has triggered a rare daily gold dot buy signal while sitting at the bottom of the Fibonacci retracement, presenting a prime crypto play.",
+          "price": 8.75
+        }
+      ]
+    },
+    {
+      "date": "2026-10-22",
+      "url": "https://www.youtube.com/shorts/KugcwLi6aqw",
+      "title": "When to Take Profit on Options (Exit Rules)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "WMT",
+          "bias": "Bullish",
+          "notes": "The host views Walmart as a core stabilizer stock that he has strong conviction in, expecting it to trade at or above $115 by March 2027. He manages his position by rolling his in-the-money $110 covered call up to $115 for a small 35-cent net debit to gain $5 in upside while avoiding capital gains taxes.",
+          "price": 120.51
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When selling cash-secured puts, the standard approach is to hold until expiration to capture 100% of the premium or take share assignment, only closing early to lock in profits if a large gain (such as 50%) occurs in a very short time.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "For deep in-the-money covered calls on long-term winning holdings, rolling the call to a later expiration and higher strike price preserves the shares and avoids triggering a large tax bill.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Traders should avoid repeatedly rolling losing options contracts to prevent the position from becoming too large and creating excessive portfolio risk, sticking to rolling only once.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-21",
       "url": "https://www.youtube.com/shorts/HzcABHKluyo",
       "title": "CLSK $BMNR BSX STOCK ANALYSIS 📈 OCTOBER 21",
       "channel": "@overkilltrading",

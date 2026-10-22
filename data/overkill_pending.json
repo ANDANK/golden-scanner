@@ -2,13 +2,22 @@
   "checked": "2026-10-22",
   "pending": [
     {
-      "video_id": "bElqFiFHB_g",
-      "title": "THESE 3 STOCKS LOOK BULLISH! 📈 OCTOBER 21 $MSTR",
-      "date": "2026-10-21",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
+      "video_id": "3bbswrh6BNI",
+      "title": "The Hidden Truth About ETF Investing",
+      "date": "2026-10-22",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
       "reason": "failed",
-      "url": "https://www.youtube.com/shorts/bElqFiFHB_g"
+      "url": "https://www.youtube.com/shorts/3bbswrh6BNI"
+    },
+    {
+      "video_id": "5oWCcRkkI9s",
+      "title": "The U.S. Government's 2026 Financial Results Are In... It's Bad",
+      "date": "2026-10-22",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/5oWCcRkkI9s"
     },
     {
       "video_id": "4v6mo5zbfWo",
@@ -16,7 +25,7 @@
       "date": "2026-10-20",
       "channel": "@overkilltrading",
       "channel_name": "OverKill",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/4v6mo5zbfWo"
     },
     {
