@@ -1,0 +1,292 @@
+{
+  "date": "2026-10-22",
+  "tag": "FTF",
+  "rows": [
+    {
+      "ticker": "FOXA",
+      "price": 67.0,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+5RB+8Cross",
+      "scanners": "1Mom \u00b7 5RB \u00b7 8Cross",
+      "edge_score": 0.97,
+      "n": 3878,
+      "hold_range": [
+        10,
+        60
+      ]
+    },
+    {
+      "ticker": "LYFT",
+      "price": 17.25,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+5RB+8Cross",
+      "scanners": "1Mom \u00b7 5RB \u00b7 8Cross\u00b7W",
+      "edge_score": 0.97,
+      "n": 3878,
+      "hold_range": [
+        10,
+        60
+      ]
+    },
+    {
+      "ticker": "REGN",
+      "price": 807.48,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+5RB+8Cross",
+      "scanners": "1Mom \u00b7 5RB \u00b7 8Cross",
+      "edge_score": 0.97,
+      "n": 3878,
+      "hold_range": [
+        10,
+        60
+      ]
+    },
+    {
+      "ticker": "ROP",
+      "price": 398.21,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+5RB+8Cross",
+      "scanners": "1Mom \u00b7 5RB \u00b7 8Cross",
+      "edge_score": 0.97,
+      "n": 3878,
+      "hold_range": [
+        10,
+        60
+      ]
+    },
+    {
+      "ticker": "ALLE",
+      "price": 157.03,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+5RB+8Cross",
+      "scanners": "1Mom \u00b7 5RB \u00b7 8Cross",
+      "edge_score": 0.97,
+      "n": 3878,
+      "hold_range": [
+        10,
+        60
+      ]
+    },
+    {
+      "ticker": "AVY",
+      "price": 178.12,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+5RB+8Cross",
+      "scanners": "1Mom \u00b7 5RB \u00b7 8Cross\u00b7W",
+      "edge_score": 0.97,
+      "n": 3878,
+      "hold_range": [
+        10,
+        60
+      ]
+    },
+    {
+      "ticker": "CDW",
+      "price": 154.99,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross\u00b7W",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "BR",
+      "price": 179.99,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "CI",
+      "price": 306.6,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross\u00b7W",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "AIG",
+      "price": 81.88,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross\u00b7W",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "CB",
+      "price": 357.75,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "CBOE",
+      "price": 315.0,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "HLT",
+      "price": 359.29,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "MDLZ",
+      "price": 63.99,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "CL",
+      "price": 94.54,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "RSG",
+      "price": 232.98,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross\u00b7W",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "ED",
+      "price": 111.98,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "AMT",
+      "price": 183.56,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "XLP",
+      "price": 87.75,
+      "verdict": "Strong Setup",
+      "combo": "1Mom+8Cross",
+      "scanners": "1Mom \u00b7 8Cross",
+      "edge_score": 0.95,
+      "n": 9780,
+      "hold_range": [
+        10,
+        90
+      ]
+    },
+    {
+      "ticker": "SPGI",
+      "price": 438.12,
+      "verdict": "Strong Setup",
+      "combo": "5RB+8Cross",
+      "scanners": "5RB \u00b7 8Cross",
+      "edge_score": 0.57,
+      "n": 6325,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "CCL",
+      "price": 27.06,
+      "verdict": "Strong Setup",
+      "combo": "5RB+8Cross",
+      "scanners": "5RB \u00b7 8Cross",
+      "edge_score": 0.57,
+      "n": 6325,
+      "hold_range": [
+        10,
+        30
+      ]
+    },
+    {
+      "ticker": "EGP",
+      "price": 201.25,
+      "verdict": "Strong Setup",
+      "combo": "6Prime+7Square+8Cross",
+      "scanners": "6Prime \u00b7 7Square \u00b7 8Cross",
+      "edge_score": 0.47,
+      "n": 2978,
+      "hold_range": [
+        10,
+        30
+      ]
+    }
+  ]
+}
