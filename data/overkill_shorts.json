@@ -1,8 +1,128 @@
 {
-  "updated": "2026-10-22",
+  "updated": "2026-10-23",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-22",
+      "url": "https://www.youtube.com/shorts/8ZssxKICqWg",
+      "title": "NVDA $APLD SE STOCK ANALYSIS 📈 OCTOBER 22",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "The stock was rejected around $240, failed to make new highs, and is expected to undergo a correction. Recommends taking profits rather than buying at current levels.",
+          "price": 212.21
+        },
+        {
+          "ticker": "SOXS",
+          "bias": "Bullish",
+          "notes": "Holds a heavy position in the semiconductor bear ETF, which gained 20% on the day, remaining committed to shorting chip stocks.",
+          "price": 53.45
+        },
+        {
+          "ticker": "APLD",
+          "bias": "Bullish",
+          "notes": "Likes the setup near $19 at its 4-year moving average and prior-year lows, watching for a buy signal to enter after the recent selloff.",
+          "price": 19.09
+        }
+      ]
+    },
+    {
+      "date": "2026-10-22",
+      "url": "https://www.youtube.com/shorts/3bbswrh6BNI",
+      "title": "The Hidden Truth About ETF Investing",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Morningstar research revealed that poor investor timing and panic selling caused the average dollar in mutual funds and ETFs to lag fund returns by roughly 1.1 percentage points annually over a 10-year period.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Asset location can significantly impact net wealth; placing income-generating investments like bond funds into tax-advantaged accounts while keeping tax-efficient broad stock ETFs in taxable accounts reduces tax drag.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Owning multiple growth, momentum, and broad-market index ETFs often creates heavy hidden overlap in the same mega-cap companies rather than providing genuine diversification.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Small differences in investment fees compound substantially over time; an annual fee of 1% versus a 0.03% ETF expense ratio can reduce a $100,000 portfolio by roughly $234,000 over 30 years at an 8% return.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "An investor's personal savings and contribution rate typically has a far greater impact on final retirement wealth than agonizing over minor differences between similar broad-market index funds.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-22",
+      "url": "https://www.youtube.com/shorts/lxEwtPOZqOw",
+      "title": "Stocks are Tanking‼️ I just did this ✅",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "October is historically volatile and typically clears up around Halloween, setting up for a rally through November and December, though investors should mentally prepare for a potential prolonged sell-off like in 2018.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-22",
+      "url": "https://www.youtube.com/shorts/5oWCcRkkI9s",
+      "title": "The U.S. Government's 2026 Financial Results Are In... It's Bad",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "In fiscal year 2026, the US government collected $5.4 trillion in revenue against $7.4 trillion in spending, generating a $2 trillion annual deficit.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Social Security and Medicare outlays exceeded dedicated payroll tax collections by $900 billion in FY2026, accelerating Social Security toward projected insolvency by 2032.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Annual US government interest payments topped $1 trillion on a national debt exceeding $40 trillion, with $10.6 trillion of debt requiring refinancing at higher interest rates in FY2027.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US debt-to-GDP ratio reached 126%, significantly above the 100% threshold that indicates major long-term fiscal distress.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "As political cuts to major budget items remain unlikely, the government is expected to inflate the debt away through money printing, making asset ownership essential to combat inflation.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-10-21",
       "url": "https://www.youtube.com/shorts/bElqFiFHB_g",
