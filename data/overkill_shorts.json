@@ -5,6 +5,33 @@
   "videos": [
     {
       "date": "2026-10-22",
+      "url": "https://www.youtube.com/shorts/OSuzHDjN8LY",
+      "title": "THESE 3 STOCKS LOOK BULLISH NOW 📈 OCTOBER 22",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "MGM",
+          "bias": "Bullish",
+          "notes": "MGM has dropped from $50 to $30 and is trading below its 4-year average in oversold RSI territory, presenting a bottoming opportunity at past support levels.",
+          "price": 29.5
+        },
+        {
+          "ticker": "RKT",
+          "bias": "Bullish",
+          "notes": "Rocket Mortgage has fallen from $24 to $11 and is issuing a buy signal while trading below its 4-year average as part of a beaten-up real estate sector.",
+          "price": 11.74
+        },
+        {
+          "ticker": "NVO",
+          "bias": "Bullish",
+          "notes": "Novo Nordisk is sitting at 4-year lows around $40 below its 4-year average and flashing a buy signal despite generating record earnings.",
+          "price": 39.43
+        }
+      ]
+    },
+    {
+      "date": "2026-10-22",
       "url": "https://www.youtube.com/shorts/8ZssxKICqWg",
       "title": "NVDA $APLD SE STOCK ANALYSIS 📈 OCTOBER 22",
       "channel": "@overkilltrading",
