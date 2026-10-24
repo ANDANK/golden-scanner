@@ -4,6 +4,102 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-10-24",
+      "url": "https://www.youtube.com/shorts/PYxG2JO2d_0",
+      "title": "STOP Funding Your 401k?! (The Truth to Build Real Wealth)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Always capture the full employer 401(k) match first, as a standard 50% match on 6% of pay yields an immediate guaranteed 50% return that outperforms other investments.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Pay off high-interest debt (e.g., credit cards around 22%) and build an emergency fund before contributing beyond the 401(k) match, as paying down 22% debt provides a guaranteed return superior to market averages.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Accumulating too much in pre-tax retirement accounts can trigger heavy RMDs at age 75, pushing retirees into higher tax brackets and Medicare IRMAA surcharges.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High earners age 50 and older making more than $150,000 in employer wages are required by law to allocate their catch-up retirement contributions to Roth accounts.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors planning to retire early should allocate heavily to a taxable brokerage account to bridge the gap before age 59.5, since capital can be accessed anytime and long-term capital gains rates can be as low as 0%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When deciding on 401(k) contributions, lean towards Roth if in the 10% or 12% tax bracket, consider a 50/50 split in the 22% bracket, and lean traditional in the 24%+ bracket unless you already hold over $1 million in pre-tax assets past age 45.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-24",
+      "url": "https://www.youtube.com/shorts/9emjRl37D5A",
+      "title": "How I’d Invest $100,000 While the Market Is Bleeding",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When building a portfolio during a market pullback, consider allocating 20% to cash as dry powder, 65% to the wheel strategy using 20-30 delta options with 30-45 day expirations, and 15% to deep in-the-money LEAPS.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Use the VIX as an indicator to deploy cash; when the VIX rises above 25 or 35, option premiums are elevated, creating attractive entry points to put cash to work.",
+          "price": null
+        },
+        {
+          "ticker": "HOOD",
+          "bias": "Bullish",
+          "notes": "Host sets a fair value price target of $120 per share for Robinhood and recommends buying a deep in-the-money LEAP call option paired with selling calls to run a poor man's covered call strategy.",
+          "price": 95.07
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "With SoFi down significantly, the host recommends selling the $13 put option to collect premium and establish a lower net cost basis.",
+          "price": 14.61
+        },
+        {
+          "ticker": "AAL",
+          "bias": "Bullish",
+          "notes": "Host favors American Airlines for cash-flow strategies and recommends selling the $11 put option.",
+          "price": 12.11
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Host views Nvidia as a dominant AI market leader, comfortable allocating up to $20,000 into the stock within a $100,000 portfolio.",
+          "price": 210.96
+        },
+        {
+          "ticker": "V",
+          "bias": "Bullish",
+          "notes": "Host highlights Visa as an exceptionally strong business due to its 51% profit margin, making payment processors attractive core holdings.",
+          "price": 407.92
+        }
+      ]
+    },
+    {
       "date": "2026-10-23",
       "url": "https://www.youtube.com/shorts/7xnw5tXspTA",
       "title": "THESE 2 STOCKS TOOK RETAIL TRADERS MONEY IN 2026 | $IREN",
