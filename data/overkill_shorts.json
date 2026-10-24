@@ -1,8 +1,191 @@
 {
-  "updated": "2026-10-23",
+  "updated": "2026-10-24",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-23",
+      "url": "https://www.youtube.com/shorts/7xnw5tXspTA",
+      "title": "THESE 2 STOCKS TOOK RETAIL TRADERS MONEY IN 2026 | $IREN",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "IRON",
+          "bias": "Bullish",
+          "notes": "The stock has pulled back to its four-year moving average mean after trading at peak levels between $60 and $80, setting up a potential buy opportunity once a green dot signal appears.",
+          "price": 74.51
+        },
+        {
+          "ticker": "USR",
+          "bias": "Bullish",
+          "notes": "The host is looking to buy between $7 and $9 following a drop from $30, waiting for the first green dot signal to confirm the entry.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-23",
+      "url": "https://www.youtube.com/shorts/0XIZhWXYOMY",
+      "title": "You have NO CLUE what’s about to come‼️Get mentally Ready Now",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The recent 7.5% drop in the Q's is normal market volatility, but investors should mentally prepare for the possibility of a deeper pullback similar to late 2018.",
+          "price": null
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "The host views Celsius as really attractive in the $20s for long-term investors.",
+          "price": 28.47
+        },
+        {
+          "ticker": "WYNN",
+          "bias": "Bullish",
+          "notes": "The stock is seen as incredibly attractive for long-term investors at $72, even if it potentially drops to $62 in the short term.",
+          "price": 72.73
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "The host identifies RH as a great investment opportunity in the current market.",
+          "price": 137.43
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "American Express is cited as a great investment opportunity for long-term investors.",
+          "price": 313.22
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "The host highlights Netflix as another great buying opportunity.",
+          "price": 65.85
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "SoFi is considered a buy at current levels heading into earnings, with any post-earnings weakness presenting an even better buying opportunity.",
+          "price": 14.61
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "The host sees Amazon as already a buy at current prices, noting any pullback following earnings would be a great buying opportunity.",
+          "price": 248.0
+        }
+      ]
+    },
+    {
+      "date": "2026-10-23",
+      "url": "https://www.youtube.com/shorts/CQeZsYwHPno",
+      "title": "Stocks Have Done THIS After Every Midterm Election Since 1950",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historically since 1950, the stock market has been positive 12 months following midterm elections 19 out of 19 times, averaging a 15.4% return (excluding dividends) compared to its standard 9.7% annual average.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-23",
+      "url": "https://www.youtube.com/shorts/e28-fsxvHXY",
+      "title": "Do This Every Time You Get Paid (5 Simple Steps)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Perform a monthly financial audit by tracking all income and expenses like a business P&L to eliminate unused subscriptions and curb discretionary overspending.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To get out of the 'financial danger zone,' prioritize building a starter emergency fund of $2,000 before aggressively paying off all high-interest credit card debt.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Automate money management using a 75/15/10 allocation across separate bank accounts: cap spending at 75% of income, invest a minimum of 15%, and save at least 10%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Keep 3 to 12 months of living expenses in a liquid high-yield savings account for emergencies rather than investing it in volatile assets like the stock market.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Protect accumulated assets by opting for low-cost term life insurance over whole life insurance, investing the difference independently, and utilizing proper estate and tax planning.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-23",
+      "url": "https://www.youtube.com/shorts/wKRQ_tPT9yA",
+      "title": "6 STOCKS READY TO SELLOFF 📉 OCTOBER 23",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "MA",
+          "bias": "Bearish",
+          "notes": "Mastercard has rallied from 450 to 623 and is now in the red zone with a red dot signal. The host anticipates a pullback or correction and advises taking profits or selling.",
+          "price": 623.6
+        },
+        {
+          "ticker": "MSFT",
+          "bias": "Bearish",
+          "notes": "The host named Microsoft as one of the stocks to sell right now under his trading rules.",
+          "price": 524.51
+        },
+        {
+          "ticker": "BRK.B",
+          "bias": "Bearish",
+          "notes": "Berkshire Hathaway moved up from $450 in May to $540, triggering a red dot in the red zone. The host advises taking profits at these levels.",
+          "price": null
+        },
+        {
+          "ticker": "V",
+          "bias": "Bearish",
+          "notes": "Visa is flashing a red dot signal high in the red zone. The host views this as an opportunity to take profits.",
+          "price": 407.92
+        },
+        {
+          "ticker": "BLK",
+          "bias": "Bearish",
+          "notes": "BlackRock is showing a red dot in the red zone around 1,100 after running up from 950 in June. The host advises taking profits here before another potential sell-off.",
+          "price": 1118.25
+        },
+        {
+          "ticker": "MO",
+          "bias": "Bearish",
+          "notes": "Altria has reached the top target zone at 74 after running from around $30 in 2023. With a red dot appearing in the red zone, the host expects a pullback and recommends taking profits.",
+          "price": 74.31
+        },
+        {
+          "ticker": "ACN",
+          "bias": "Bearish",
+          "notes": "Accenture is triggering a red dot sell signal in the red zone, indicating it is time to sell or take profits.",
+          "price": 249.37
+        }
+      ]
+    },
     {
       "date": "2026-10-22",
       "url": "https://www.youtube.com/shorts/OSuzHDjN8LY",
