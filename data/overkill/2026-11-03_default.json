@@ -1,0 +1,303 @@
+{
+  "date": "2026-11-03",
+  "tag": "default",
+  "rows": [
+    {
+      "ticker": "PLD",
+      "color": "Green",
+      "stars": 5,
+      "price": 129.64999389648438,
+      "dot_date": "2026-11-02",
+      "event_date": "2026-11-02",
+      "bars_ago": 0
+    },
+    {
+      "ticker": "TMUS",
+      "color": "Green",
+      "stars": 4,
+      "price": 146.92999267578125,
+      "dot_date": "2026-10-26",
+      "event_date": "2026-10-26",
+      "bars_ago": 1
+    },
+    {
+      "ticker": "NVR",
+      "color": "Green",
+      "stars": 4,
+      "price": 5727.77001953125,
+      "dot_date": "2026-10-26",
+      "event_date": "2026-10-26",
+      "bars_ago": 1
+    },
+    {
+      "ticker": "CHTR",
+      "color": "Green",
+      "stars": 3,
+      "price": 102.18000030517578,
+      "dot_date": "2026-10-26",
+      "event_date": "2026-10-26",
+      "bars_ago": 1
+    },
+    {
+      "ticker": "WPC",
+      "color": "Green",
+      "stars": 5,
+      "price": 63.77000045776367,
+      "dot_date": "2026-10-19",
+      "event_date": "2026-10-19",
+      "bars_ago": 2
+    },
+    {
+      "ticker": "WYNN",
+      "color": "Green",
+      "stars": 3,
+      "price": 75.9800033569336,
+      "dot_date": "2026-10-19",
+      "event_date": "2026-10-19",
+      "bars_ago": 2
+    },
+    {
+      "ticker": "HD",
+      "color": "Green",
+      "stars": 5,
+      "price": 290.6199951171875,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "DUK",
+      "color": "Green",
+      "stars": 5,
+      "price": 117.69000244140625,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "PEG",
+      "color": "Green",
+      "stars": 5,
+      "price": 71.7300033569336,
+      "dot_date": "2026-10-06",
+      "event_date": "2026-10-06",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "FE",
+      "color": "Green",
+      "stars": 5,
+      "price": 45.36000061035156,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "O",
+      "color": "Green",
+      "stars": 5,
+      "price": 54.43988800048828,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "BND",
+      "color": "Green",
+      "stars": 5,
+      "price": 70.25,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "LOW",
+      "color": "Green",
+      "stars": 4,
+      "price": 184.401611328125,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "ES",
+      "color": "Green",
+      "stars": 4,
+      "price": 66.0999984741211,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "CPT",
+      "color": "Green",
+      "stars": 4,
+      "price": 97.5999984741211,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "UDR",
+      "color": "Green",
+      "stars": 4,
+      "price": 33.876014709472656,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "IEF",
+      "color": "Green",
+      "stars": 4,
+      "price": 89.43000030517578,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "LQD",
+      "color": "Green",
+      "stars": 4,
+      "price": 102.58000183105469,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "MCD",
+      "color": "Green",
+      "stars": 3,
+      "price": 235.64999389648438,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "PEP",
+      "color": "Green",
+      "stars": 3,
+      "price": 126.68000030517578,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "XYL",
+      "color": "Green",
+      "stars": 3,
+      "price": 102.58999633789062,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "OLN",
+      "color": "Green",
+      "stars": 3,
+      "price": 14.710000038146973,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "FNGD",
+      "color": "Green",
+      "stars": 3,
+      "price": 23.049999237060547,
+      "dot_date": "2026-10-12",
+      "event_date": "2026-10-12",
+      "bars_ago": 3
+    },
+    {
+      "ticker": "SRE",
+      "color": "Green",
+      "stars": 5,
+      "price": 78.16000366210938,
+      "dot_date": "2026-10-05",
+      "event_date": "2026-10-05",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "PPL",
+      "color": "Green",
+      "stars": 5,
+      "price": 32.95000076293945,
+      "dot_date": "2026-10-05",
+      "event_date": "2026-10-05",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "CMS",
+      "color": "Green",
+      "stars": 5,
+      "price": 64.02999877929688,
+      "dot_date": "2026-10-05",
+      "event_date": "2026-10-05",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "EIX",
+      "color": "Green",
+      "stars": 5,
+      "price": 53.36216354370117,
+      "dot_date": "2026-10-05",
+      "event_date": "2026-10-05",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "LNT",
+      "color": "Green",
+      "stars": 5,
+      "price": 63.80337142944336,
+      "dot_date": "2026-10-05",
+      "event_date": "2026-10-05",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "ODFL",
+      "color": "Green",
+      "stars": 4,
+      "price": 179.3699951171875,
+      "dot_date": "2026-10-05",
+      "event_date": "2026-10-05",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "CARR",
+      "color": "Green",
+      "stars": 3,
+      "price": 55.492305755615234,
+      "dot_date": "2026-10-05",
+      "event_date": "2026-10-05",
+      "bars_ago": 4
+    },
+    {
+      "ticker": "DVN",
+      "color": "Red",
+      "stars": 3,
+      "price": 48.630001068115234,
+      "dot_date": "2026-11-02",
+      "event_date": "2026-11-02",
+      "bars_ago": 0
+    },
+    {
+      "ticker": "HUM",
+      "color": "Red",
+      "stars": 3,
+      "price": 416.3357238769531,
+      "dot_date": "2026-10-26",
+      "event_date": "2026-10-26",
+      "bars_ago": 1
+    },
+    {
+      "ticker": "MSFT",
+      "color": "Red",
+      "stars": 3,
+      "price": 533.52001953125,
+      "dot_date": "2026-10-19",
+      "event_date": "2026-10-19",
+      "bars_ago": 2
+    }
+  ]
+}
