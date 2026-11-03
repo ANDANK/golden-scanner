@@ -4,6 +4,240 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-11-03",
+      "url": "https://www.youtube.com/shorts/XRFvp-jfiBQ",
+      "title": "and Paper $MU STOCK ANALYSIS 📉 NOVEMBER 2",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "MU",
+          "bias": "Bearish",
+          "notes": "The host advises against buying MU after issuing a sell signal around $1,200, noting the stock trades at a 57% premium to its fair value moving average. He is waiting for a deep pullback to the $300–$400 level before considering buying again.",
+          "price": 847.95
+        }
+      ]
+    },
+    {
+      "date": "2026-11-03",
+      "url": "https://www.youtube.com/shorts/4f_5eca_a7Q",
+      "title": "The 10 Years Before Retirement Are More Dangerous Than You Think",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Sequence of returns risk means that severe market downturns right before or early in retirement can permanently impair portfolio longevity when forced withdrawals coincide with falling prices. Early losses require significantly larger gains later just to break even compared to losses during the accumulation phase.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Moving an entire portfolio to cash near retirement eliminates market risk but creates significant long-term inflation risk. Investors should instead calculate their net annual spending gap after Social Security or pension income and keep roughly two years of that gap in liquid reserves.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Asset allocation should be driven by personal risk capacity—such as guaranteed income sources, withdrawal timing, and spending flexibility—rather than simplified rules of thumb based solely on age.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A simplified portfolio strategy can utilize three ETF categories to balance growth and stability: broad market index funds, higher-volatility growth funds, and lower-volatility value or dividend funds.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-27",
+      "url": "https://www.youtube.com/shorts/cbnnNew54IM",
+      "title": "Early Buyers of this 1 Stock is life changing‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "ANT",
+          "bias": "Bearish",
+          "notes": "The host is avoiding Anthropic's upcoming IPO at a projected $2 trillion valuation, citing its $80.7 billion first-half net loss, massive compute obligations, and unrealistic valuation compared to established tech giants.",
+          "price": null
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Although bearish in the short term due to range-bound price action, the host remains bullish over a 5-to-10-year horizon given Meta's strong profitability, massive ecosystem, and proven ability to innovate and pivot.",
+          "price": 620.19
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host sees potential for AMD to reach $1,000 per share in the short-to-medium term, driven by an upcoming semiconductor bull cycle running into Q1 and potential margin or earnings surprises on its November 3rd report.",
+          "price": 560.26
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "The host believes The Cheesecake Factory is trading at a significant discount with a forward P/E of 23, supported by its resilient core restaurants and nationwide expansion opportunities for Flower Child and North Italia.",
+          "price": 108.47
+        },
+        {
+          "ticker": "WYNN",
+          "bias": "Bullish",
+          "notes": "The host is aggressively buying Wynn Resorts down 41.5% over the past year, citing its high-net-worth international clientele, upcoming 2027 Middle East resort, and proactive debt refinancing that pushes major obligations out to 2034 and 2035.",
+          "price": 72.42
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "The host is accumulating RH as a buy-the-fear play during 25-year lows in pending home sales, noting that the company's revenue, margins, and free cash flow are improving while major debt maturities are pushed to 2028 and 2030.",
+          "price": 140.76
+        }
+      ]
+    },
+    {
+      "date": "2026-11-03",
+      "url": "https://www.youtube.com/shorts/EgHIGajmM18",
+      "title": "Do This Today To Get Rich (While Most People Fall Behind)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "SGOV",
+          "bias": "Bullish",
+          "notes": "SGOV provides exposure to short-term treasuries yielding approximately 3.7% annually with monthly payouts, offering yield while shielding earnings from state and local taxes.",
+          "price": 100.44
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Moving cash from traditional banks into high-yield savings accounts paying 3% to 3.5% helps protect purchasing power against 3.5% inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Tax law provisions offer write-offs up to $25,000 for tip income, $12,500 for overtime income, and $10,000 in interest on loans for US-made vehicles.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Children born between 2025 and 2028 qualify for a Trump Account featuring a $1,000 government contribution invested in low-cost index funds.",
+          "price": null
+        },
+        {
+          "ticker": "AIQ",
+          "bias": "Bullish",
+          "notes": "AIQ is a Global X ETF that provides broad investment exposure to artificial intelligence and technology growth.",
+          "price": 59.44
+        },
+        {
+          "ticker": "BOTZ",
+          "bias": "Bullish",
+          "notes": "BOTZ is a Global X ETF offering targeted investment exposure to the robotics and automation industry.",
+          "price": 32.28
+        },
+        {
+          "ticker": "SMH",
+          "bias": "Bullish",
+          "notes": "SMH is a VanEck ETF that provides investment exposure to semiconductor manufacturers powering AI expansion.",
+          "price": 516.85
+        },
+        {
+          "ticker": "SOXX",
+          "bias": "Bullish",
+          "notes": "SOXX is an iShares ETF giving investors direct exposure to the semiconductor industry.",
+          "price": 463.37
+        },
+        {
+          "ticker": "XLE",
+          "bias": "Bullish",
+          "notes": "XLE provides broad exposure to oil and gas equities to capitalize on increasing national energy demands.",
+          "price": 66.97
+        },
+        {
+          "ticker": "VDE",
+          "bias": "Bullish",
+          "notes": "VDE is a Vanguard ETF offering comprehensive market coverage across the broader energy sector.",
+          "price": 186.49
+        },
+        {
+          "ticker": "REMX",
+          "bias": "Bullish",
+          "notes": "REMX provides specialized ETF exposure to rare earth metal and mineral supply chain producers.",
+          "price": 49.56
+        },
+        {
+          "ticker": "EWJ",
+          "bias": "Bullish",
+          "notes": "EWJ offers ETF exposure to Japanese equities, benefiting from favorable US trade policy and economic alignment.",
+          "price": 92.5
+        },
+        {
+          "ticker": "EWZ",
+          "bias": "Bullish",
+          "notes": "EWZ provides ETF exposure to Brazilian equities, offering insulation from primary global tariff disputes.",
+          "price": 31.78
+        },
+        {
+          "ticker": "INDA",
+          "bias": "Bullish",
+          "notes": "INDA offers ETF exposure to Indian markets as manufacturing and supply chains relocate out of China.",
+          "price": 48.72
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Building a dedicated cash reserve alongside regular dollar-cost averaging enables investors to buy discounted assets during severe market downturns.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-01",
+      "url": "https://www.youtube.com/shorts/jdA9Ysij9Do",
+      "title": "$PLTR STOCK ANALYSIS 🚨 OCTOBER 31",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "PLTR",
+          "bias": "Bearish",
+          "notes": "The host believes PLTR is ready to roll over, citing a double top pattern and the stock trading at a 45% premium above its 4-year mean ahead of earnings.",
+          "price": 178.34
+        }
+      ]
+    },
+    {
+      "date": "2026-11-01",
+      "url": "https://www.youtube.com/shorts/jRLeEDTWPo4",
+      "title": "🚨 MAJOR BUY: Last EASY Wealth Opportunity For Decades",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Despite recent pullbacks driven by AI bubble fears, major indexes like the S&P 500 and Nasdaq remain up over 12% for the year. This indicates a market pullback rather than a bear market, creating opportunities to buy quality stocks at a discount.",
+          "price": null
+        },
+        {
+          "ticker": "APP",
+          "bias": "Bullish",
+          "notes": "AppLovin is down 65% from its high, presenting a strong value opportunity backed by 53% revenue growth last quarter, $4.5B in LTM free cash flow, and an ad-flywheel model. Key risks include $3.5B in debt against $3B in cash, vulnerability to ad spend pullbacks, short seller activity, and shareholder lawsuits.",
+          "price": 228.85
+        },
+        {
+          "ticker": "ARM",
+          "bias": "Bullish",
+          "notes": "ARM has fallen nearly 50% from its high despite strong fundamentals, including 22% revenue growth to a record $1.29B, $3.9B in cash with no long-term debt, and reliable chip royalty cash flows. The stock is expected to increase following its November 4th earnings report, though risks include a high valuation multiple and an ongoing licensing dispute with Qualcomm.",
+          "price": 196.79
+        }
+      ]
+    },
+    {
       "date": "2026-11-02",
       "url": "https://www.youtube.com/shorts/qD7wIZUBNM0",
       "title": "4 STOCKS READY TO SELL OFF 📉 NOV 2 $APPL",
