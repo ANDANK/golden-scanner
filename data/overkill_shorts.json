@@ -1,8 +1,371 @@
 {
-  "updated": "2026-10-24",
+  "updated": "2026-11-03",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-02",
+      "url": "https://www.youtube.com/shorts/qD7wIZUBNM0",
+      "title": "4 STOCKS READY TO SELL OFF 📉 NOV 2 $APPL",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ELF",
+          "bias": "Bearish",
+          "notes": "ELF has surged from $50 up to $110 and is now flashing a sell signal at the top of its wave. The host advises taking profits here rather than buying, waiting for a pullback before re-entering.",
+          "price": 110.68
+        },
+        {
+          "ticker": "AAPL",
+          "bias": "Bearish",
+          "notes": "Apple is flashing a sell signal ahead of earnings, prompting the host to hold a short position into the report. He wants to see the stock pull back toward previous buying zones before considering an entry.",
+          "price": 338.32
+        },
+        {
+          "ticker": "PANW",
+          "bias": "Bearish",
+          "notes": "Palo Alto is signaling a major sell after running up over 140% from March entry levels around $150. The host views it as overextended and expects it to pull back toward reality.",
+          "price": 351.72
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Nvidia triggered a sell signal recently and its monthly chart looks concerning alongside broader tech weakness. The host advises against buying at current elevated levels and recommends selling or trimming positions.",
+          "price": 202.06
+        }
+      ]
+    },
+    {
+      "date": "2026-10-31",
+      "url": "https://www.youtube.com/shorts/LvoM5Ry4eqo",
+      "title": "🚨BEST Stock Investing Opportunity of 2026 - AI Boom or Bust?!",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve maintained interest rates at its latest meeting, but commentary leaves the door open to a December rate hike, contributing to recent market volatility alongside high tech valuations.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Surging debt in AI infrastructure buildouts poses refinancing risks between 2027 and 2029, especially for smaller operators relying on high-yield debt and payment-in-kind interest rather than positive free cash flow.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Holding broad index and tech funds like VOO, QQQM, and VGT often creates hidden overlapping exposure to heavily indebted AI growth stocks, underscoring the need to audit and rebalance portfolios into value.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-03",
+      "url": "https://www.youtube.com/shorts/OWPdf27MmSk",
+      "title": "If you own stocks DO THIS BEFORE ITS TOO LATE‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The market is experiencing a sector rotation out of AI-related stocks rather than a genuine market crash or major correction, as breadth remains strong in areas like housing and consumer discretionary.",
+          "price": null
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host expects Wall Street to rotate back into AMD and spark a broader semiconductor recovery through April. He remains a long-term holder with a multi-year price target of $1,000+ per share.",
+          "price": 466.84
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Neutral",
+          "notes": "Despite stellar revenue growth, Palantir faces upcoming growth deceleration, spiking cost of revenue, and an elevated valuation. Over the next 12 months, the host views the stock as a Hold between $125 and $200, a Sell over $200, and a Buy under $125.",
+          "price": 178.34
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Trading in the $20s, Celsius is viewed as the host's next Palantir-style setup with potential upside of 200% to 500%. He expects revenue growth to outperform expectations from 2027 to 2029 alongside long-term margin expansion, targeting $100+.",
+          "price": 29.96
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "Estee Lauder reported strong quarterly results highlighted by a fivefold increase in net earnings and improving gross margins. Trading around $104, the host sees substantial recovery potential with the stock having the room to double or triple.",
+          "price": 104.77
+        }
+      ]
+    },
+    {
+      "date": "2026-11-02",
+      "url": "https://www.youtube.com/shorts/oVHsGB1J07o",
+      "title": "5 LEAPS Options I’m Buying NOW (Huge Opportunity)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Host sees strong long-term upside to $350 per share by 2027, backed by massive consumer distribution, TPU chips, and cloud growth, while targeting Dec 2027 deep-in-the-money call LEAPs.",
+          "price": 278.99
+        },
+        {
+          "ticker": "AAOI",
+          "bias": "Bullish",
+          "notes": "High-risk play driven by demand for 800G/1.6G optical transceivers exceeding capacity into 2027; host expects a potential return to $100 per share and is buying Jan 2028 $80 strike LEAP calls.",
+          "price": 62.5
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "AWS acceleration (39% YoY growth) and strong margins offset heavy AI CapEx, with a price target of $280 per share using Sep 2027 $235 strike LEAP calls.",
+          "price": 245.63
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Believes the deep selloff creates a bargain at 18x forward earnings with 34.6% operating margins, targeting a rebound to $80 per share via Sep 2027 $55 strike LEAP call options.",
+          "price": 62.34
+        },
+        {
+          "ticker": "VST",
+          "bias": "Bullish",
+          "notes": "Positioned to benefit from the AI data center electricity shortage, with the host forecasting the stock to surpass $180 per share by late 2027 using Sep 2027 $140 strike LEAPs.",
+          "price": 134.61
+        }
+      ]
+    },
+    {
+      "date": "2026-11-02",
+      "url": "https://www.youtube.com/shorts/42KMkBSrIpo",
+      "title": "Tax Loss Harvesting — Pay Less Taxes on Stocks in 2026",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Tax loss harvesting involves selling losing stock positions by December 31st to realize capital losses that offset realized capital gains and minimize tax liabilities for the year.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Under the wash-sale rule, investors cannot repurchase the same stock within 30 days before or after selling it for a loss to claim the tax write-off, though purchasing a similar stock in the same sector is allowed.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "If realized losses exceed realized gains in a tax year, the net losses carry forward indefinitely to offset future gains, and up to $3,000 can be deducted annually against ordinary income.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-02",
+      "url": "https://www.youtube.com/shorts/o8L5OBgF6pw",
+      "title": "China Just Popped The AI Bubble (Prepare Now)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Chinese AI stocks have fallen 40% in recent months, triggering worker layoffs despite central bank rate cuts.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The S&P 500 is driven primarily by the Magnificent Seven tech stocks making up 35% of the index, while over 80% of constituent stocks are down 10% or more.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve keeping interest rates higher for longer due to inflation risks popping the U.S. AI market bubble, mirroring past crashes in 2000 and 2008.",
+          "price": null
+        },
+        {
+          "ticker": "URA",
+          "bias": "Bullish",
+          "notes": "URA offers exposure to uranium and nuclear energy companies, positioning it to benefit as tech firms seek nuclear power for AI data centers.",
+          "price": 32.93
+        },
+        {
+          "ticker": "XLU",
+          "bias": "Bullish",
+          "notes": "XLU provides broad exposure to utility companies, which stand to gain from rising power demand driven by AI infrastructure.",
+          "price": 43.67
+        },
+        {
+          "ticker": "XLE",
+          "bias": "Bullish",
+          "notes": "XLE offers broad energy industry exposure as overall energy demand increases to support artificial intelligence expansion.",
+          "price": 67.25
+        },
+        {
+          "ticker": "REMX",
+          "bias": "Bullish",
+          "notes": "REMX focuses on rare earth and strategic metals essential for manufacturing AI chips, robotics, and power grid components.",
+          "price": 50.26
+        },
+        {
+          "ticker": "XME",
+          "bias": "Bullish",
+          "notes": "XME provides broad exposure to metals and mining companies supporting domestic U.S. supply chain expansion for critical minerals.",
+          "price": 97.66
+        },
+        {
+          "ticker": "BOTZ",
+          "bias": "Bullish",
+          "notes": "BOTZ gives targeted exposure to robotics and AI hardware companies as physical AI technology gains traction.",
+          "price": 32.27
+        },
+        {
+          "ticker": "ROBO",
+          "bias": "Bullish",
+          "notes": "ROBO focuses on global robotics and automation hardware as an investment play on physical AI applications.",
+          "price": 74.81
+        },
+        {
+          "ticker": "RSP",
+          "bias": "Bullish",
+          "notes": "RSP provides equal-weighted S&P 500 exposure, offering a potential value play on non-tech stocks currently in correction territory.",
+          "price": 219.98
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "SCHD provides exposure to dividend-paying value companies with growing profits, offering steady income and downside buffer during market volatility.",
+          "price": 35.9
+        },
+        {
+          "ticker": "KWEB",
+          "bias": "Bullish",
+          "notes": "KWEB offers broad exposure to Chinese internet tech stocks, presenting potential long-term upside following recent market pullbacks.",
+          "price": 23.35
+        },
+        {
+          "ticker": "CQQQ",
+          "bias": "Bullish",
+          "notes": "CQQQ gives exposure to Chinese technology companies for investors seeking discounted tech valuations despite regulatory and currency risks.",
+          "price": 38.5
+        }
+      ]
+    },
+    {
+      "date": "2026-11-02",
+      "url": "https://www.youtube.com/shorts/AuVA-2zxnwI",
+      "title": "$PYPL STOCK ANALYSIS 📈 NOVEMBER 2",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "PYPL",
+          "bias": "Bullish",
+          "notes": "PayPal has established a new bottom around 50 following strong earnings results and is expected to continue pushing up. The host targets at least the 75 price range, citing PayPal's strong fintech positioning and ownership of Venmo.",
+          "price": 58.78
+        }
+      ]
+    },
+    {
+      "date": "2026-10-27",
+      "url": "https://www.youtube.com/shorts/3yIP13-NlwM",
+      "title": "The S&P 500 Is Hiding a Very Different Stock Market",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The S&P 500 has become heavily top-heavy, with the 10 largest companies representing 37.8% of the index as of August 31, while 52% of constituent stocks traded below their 200-day moving averages as of late September.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The equal-weight S&P 500 index outperformed the standard market-cap weighted index by roughly 7 percentage points in 2022, though equal weighting inherently tilts toward value and systematically trims relative winners.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should check their portfolios for underlying stock overlap across ETFs to avoid unintentionally concentrating holdings in the same mega-cap companies, and evaluate portfolio allocation over multi-year horizons rather than short-term moves.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-29",
+      "url": "https://www.youtube.com/shorts/hZHvYGnaxGQ",
+      "title": "I F’d up‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Google is down nearly 30% from all-time highs and trades at an attractive forward P/E around 19 compared to its historical 23 median. The host views this post-earnings selloff as a significant long-term buying opportunity backed by 25% top-line growth and booming Cloud operating profit.",
+          "price": 283.82
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bearish",
+          "notes": "The host plans to sell his remaining position, citing an earnings miss, uninspiring guidance, and out-of-control operating expenses that compressed operating income by 33%. He argues ServiceNow trades at too rich a valuation for its deteriorating bottom-line performance.",
+          "price": 109.67
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Cheesecake Factory delivered an outstanding quarter with 14% revenue growth and operating income up 101%. The host considers it an absolute hold into the 2030s due to margin expansion and the nationwide rollout of Flower Child.",
+          "price": 113.12
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host believes AMD is the most exciting trillion-dollar-tier stock to own for 2027, projecting superior growth rates versus peers. While hyperscaler capex suggests revenue may not deliver shock-and-awe beats near term, short-term pullbacks remain attractive dip-buying opportunities.",
+          "price": 566.42
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bearish",
+          "notes": "The host expects continued selling pressure heading into year-end as institutional investors look to tax-loss harvest their heavily underwater positions in the final months of trading.",
+          "price": 62.05
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Although the stock remains cold in the short term, the host notes Celsius retains insane long-term upside potential.",
+          "price": 28.16
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "The host prefers holding Salesforce over ServiceNow because it trades with much lower expectations and has reliable leadership under Marc Benioff.",
+          "price": 230.9
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "The host highlights Palantir as an elite company operating on a different level, effectively monetizing enterprise AI demand while keeping operating expenses tightly in check.",
+          "price": 196.42
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should never evaluate a company's quarter strictly by immediate stock price movements. Thoroughly reviewing conference calls and financial statements is essential to adjusting underlying business growth and return projections.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-10-24",
       "url": "https://www.youtube.com/shorts/PYxG2JO2d_0",
