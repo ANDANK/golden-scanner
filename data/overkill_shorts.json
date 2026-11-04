@@ -4,6 +4,99 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-11-01",
+      "url": "https://www.youtube.com/shorts/dROVrPxRbII",
+      "title": "OVERKILL TRADE ALERTS 🚨📈",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "Oracle is currently in buying territory after a significant pullback, with a green dot buy signal expected on the weekly chart within the next 1 to 3 weeks indicating returning bullish momentum.",
+          "price": 119.22
+        }
+      ]
+    },
+    {
+      "date": "2026-11-02",
+      "url": "https://www.youtube.com/shorts/wp-BzhR_1i4",
+      "title": "If You Missed Palantir or Nvidia. This is Far Bigger",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD stands to benefit from the shift toward agentic AI and robotics, which require a significantly higher ratio of CPUs to GPUs for task orchestration and memory management. The host believes this impending surge in CPU demand is not yet fully priced into the stock.",
+          "price": 466.84
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The evolution of AI from basic chatbots to autonomous agents and robotics requires significantly more memory and CPU capacity to handle multi-step task execution.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Short-term market pullbacks in AI technology stocks offer strong long-term buying opportunities as adoption crosses key cost-benefit inflection points.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-01",
+      "url": "https://www.youtube.com/shorts/1E5eQwL3FtA",
+      "title": "Brazil Just Collapsed Its Economy (A Warning For America)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Brazil's stock market dropped over 20% and its currency, the real, crashed following Lula's unexpected presidential election victory, creating volatility across Latin American markets.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Brazilian stocks trade at a valuation discount of roughly 10x P/E compared to 25x in the US, while Brazilian government debt yields 13-14% compared to 4-5% on US Treasuries.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Following a similar 20% stock market drop after Lula's 2002 election win, Brazilian stocks went on a 1,200% rally between 2002 and 2008 as market panic settled and commodity demand grew.",
+          "price": null
+        },
+        {
+          "ticker": "EWZ",
+          "bias": "Bullish",
+          "notes": "The iShares MSCI Brazil ETF provides broad exposure to the Brazilian economy across financials, energy, and materials to invest in cheap market valuations.",
+          "price": 32.16
+        },
+        {
+          "ticker": "FLBR",
+          "bias": "Bullish",
+          "notes": "The Franklin FTSE Brazil ETF provides broad exposure to Brazilian equities similar to EWZ but at a lower expense ratio.",
+          "price": 20.11
+        },
+        {
+          "ticker": "BRAZ",
+          "bias": "Bullish",
+          "notes": "The Global X MSCI Brazil ETF offers actively managed exposure to Brazilian equities, though it carries a higher expense ratio.",
+          "price": 27.49
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve indicated that inflation may stay higher for longer and interest rates could rise, alongside growing concerns regarding artificial intelligence companies.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-11-03",
       "url": "https://www.youtube.com/shorts/XRFvp-jfiBQ",
       "title": "and Paper $MU STOCK ANALYSIS 📉 NOVEMBER 2",
