@@ -1,8 +1,158 @@
 {
-  "updated": "2026-11-03",
+  "updated": "2026-11-04",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-04",
+      "url": "https://www.youtube.com/shorts/1DkvHJDHI6Y",
+      "title": "MARKETS GOING CRAZY AFTER MIDTERMS 📈 NOVEMBER 4",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host expresses a strong short-term market outlook heading into the end of the year following midterm elections, advising traders to buy based on chart setups and breakouts rather than news or political outcomes.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-04",
+      "url": "https://www.youtube.com/shorts/sTynwCiOQoc",
+      "title": "The UNTHINKABLE is About to Happen to Palantir Stock",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "PLTR",
+          "bias": "Bearish",
+          "notes": "Palantir is overvalued in the short term following Q3 earnings because its P/E ratio is not coming down fast enough. Although mean reversion could push the stock back up to its $186 moving average, the host considers prices above $200 unreasonable and prefers entering around $165 to $175 by selling put options.",
+          "price": 172.25
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Google is considered significantly undervalued and represents a strong long-term buying opportunity. The host recommends holding shares and selling covered calls, such as a $290 strike expiring in December, to capture upside while collecting extra income.",
+          "price": 290.95
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Option selling on equities with high implied volatility provides higher premium income, but positions must be scaled down to manage downside risk.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-04",
+      "url": "https://www.youtube.com/shorts/JyzWC6675KA",
+      "title": "Jamie Dimon \"Prepare For The AI Credit Crisis\"",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "GOOGL",
+          "bias": "Bearish",
+          "notes": "Google stock experienced a steep drop due to investor concerns over high AI debt and the heavy reinvestment of free cash flow into AI while existing business segments slow down.",
+          "price": 290.9
+        },
+        {
+          "ticker": "INTC",
+          "bias": "Bearish",
+          "notes": "Intel stock crashed as investors grew concerned about its AI-related debt burdens and potential underperformance relative to AI growth expectations.",
+          "price": 57.83
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising interest rates and tightening credit spreads could lead to a corporate credit crisis as tech and AI companies struggle to afford refinancing high debt levels.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Consistently purchasing broad market funds on an automated schedule over decades is a proven core strategy for building long-term wealth regardless of market conditions.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-04",
+      "url": "https://www.youtube.com/shorts/YmmmMoNaMiM",
+      "title": "ETHEREUM DOING THE RIPSKY!! 📈 NOVEMBER 4 $ETH",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "notes": "Ethereum is currently sitting near its four-year moving average at a fair price, which the host views as a bear trap before a major move higher. He expects a rally into a mania phase toward the end of the year or into early next year, advising to hold until the price extends far above the moving average.",
+          "price": 23.02
+        }
+      ]
+    },
+    {
+      "date": "2026-11-04",
+      "url": "https://www.youtube.com/shorts/dXIkaWZCO0c",
+      "title": "STOCKS ARE ABOUT TO RIP (Don't Miss This)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Since 1950, the stock market has finished higher one year after midterm elections 100% of the time, with the S&P 500 averaging a 15.1% gain and the Nasdaq averaging 20%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Year three of the presidential term is historically the highest-performing year for stocks as political uncertainty resolves into a powerful rally.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Stock market recoveries often start while investors are still anxious, making periods of market uncertainty major long-term buying opportunities.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-28",
+      "url": "https://www.youtube.com/shorts/1oGV0xCL_8c",
+      "title": "Fed Holds Interest Rates as Inflation Fuels Disagreement",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve voted 10-2 to keep interest rates steady at 4.0%, as a strong labor market offers no immediate pressure to cut rates while inflation remains elevated.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Fed plans to continue moderate asset purchases, though the host expects aggressive money printing to return if a new economic emergency arises.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Market expectations heavily favor a rate increase at the December meeting, with an 86.5% probability of a hike versus a 13.6% chance of holding rates flat.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve is considering limiting policy decision meetings to seven in 2027 and six in 2028, reserving non-decision meetings purely for discussion and reflection.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-11-01",
       "url": "https://www.youtube.com/shorts/dROVrPxRbII",

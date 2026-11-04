@@ -1,6 +1,24 @@
 {
-  "checked": "2026-11-03",
+  "checked": "2026-11-04",
   "pending": [
+    {
+      "video_id": "rZv64Vg9O7k",
+      "title": "The Stock Market Could EXPLODE After This Election",
+      "date": "2026-11-04",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/rZv64Vg9O7k"
+    },
+    {
+      "video_id": "YtY3s6rNmP0",
+      "title": ".TheGod $GOOG STOCK ANALYSIS 🚨 OCTOBER 31",
+      "date": "2026-10-31",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/YtY3s6rNmP0"
+    },
     {
       "video_id": "LmPYjPVU5ro",
       "title": ".T $ORCL STOCK ANALYSIS 📈 OCTOBER 31",
@@ -18,15 +36,6 @@
       "channel_name": "OverKill",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/bxeXF7QH8f0"
-    },
-    {
-      "video_id": "YtY3s6rNmP0",
-      "title": ".TheGod $GOOG STOCK ANALYSIS 🚨 OCTOBER 31",
-      "date": "2026-10-31",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/YtY3s6rNmP0"
     },
     {
       "video_id": "gxNfOgXpK_w",
@@ -101,13 +110,13 @@
       "url": "https://www.youtube.com/shorts/A4Zj98xGQaA"
     },
     {
-      "video_id": "1GZA2wfu_CM",
-      "title": "$GOOG",
+      "video_id": "mHWrPLIwHZU",
+      "title": "I Said SOFI Earnings Will Do This. Here’s What's Next!",
       "date": "2026-10-29",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
       "reason": "queued",
-      "url": "https://www.youtube.com/shorts/1GZA2wfu_CM"
+      "url": "https://www.youtube.com/shorts/mHWrPLIwHZU"
     },
     {
       "video_id": "Vr8R1ajLUvM",
@@ -119,24 +128,6 @@
       "url": "https://www.youtube.com/shorts/Vr8R1ajLUvM"
     },
     {
-      "video_id": "mHWrPLIwHZU",
-      "title": "I Said SOFI Earnings Will Do This. Here’s What's Next!",
-      "date": "2026-10-29",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/mHWrPLIwHZU"
-    },
-    {
-      "video_id": "Ry7H0M_XQbQ",
-      "title": "$IONQ STOCK ANALYSIS 📈 OCTOBER 28",
-      "date": "2026-10-28",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/Ry7H0M_XQbQ"
-    },
-    {
       "video_id": "ByYlPXDkaTg",
       "title": "The Only 3 ETFs You Ever Need (Buy These ASAP)",
       "date": "2026-10-28",
@@ -144,15 +135,6 @@
       "channel_name": "Minority Mindset",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/ByYlPXDkaTg"
-    },
-    {
-      "video_id": "1oGV0xCL_8c",
-      "title": "Fed Holds Interest Rates as Inflation Fuels Disagreement",
-      "date": "2026-10-28",
-      "channel": "@ClearValueTax",
-      "channel_name": "ClearValue Tax",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/1oGV0xCL_8c"
     },
     {
       "video_id": "E178RoE1kjU",
@@ -227,15 +209,6 @@
       "url": "https://www.youtube.com/shorts/st2fw260BxE"
     },
     {
-      "video_id": "t-7ILKqI8Kw",
-      "title": "If You Missed Palantir... These 5 AI Stocks are Next",
-      "date": "2026-09-30",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/t-7ILKqI8Kw"
-    },
-    {
       "video_id": "w-S6OnQ-3lA",
       "title": "Good Afternoon.",
       "date": "2026-05-01",
@@ -243,15 +216,6 @@
       "channel_name": "In The Money",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
-    },
-    {
-      "video_id": "AdGhjaFeIHw",
-      "title": "Anthropic Hired AI Therapist for #claude",
-      "date": "2026-03-07",
-      "channel": "@InTheMoneyAdam",
-      "channel_name": "In The Money",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/AdGhjaFeIHw"
     },
     {
       "video_id": "H8unf5ArniE",
