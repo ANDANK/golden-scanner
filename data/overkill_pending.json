@@ -2,31 +2,13 @@
   "checked": "2026-11-05",
   "pending": [
     {
-      "video_id": "rZv64Vg9O7k",
-      "title": "The Stock Market Could EXPLODE After This Election",
-      "date": "2026-11-04",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/rZv64Vg9O7k"
-    },
-    {
       "video_id": "bxeXF7QH8f0",
       "title": "trading software 📈",
       "date": "2026-10-31",
       "channel": "@overkilltrading",
       "channel_name": "OverKill",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/bxeXF7QH8f0"
-    },
-    {
-      "video_id": "7VuAF-z0WLU",
-      "title": "$INTC HUGE SELLOFF 📉 OCTOBER 30",
-      "date": "2026-10-30",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/7VuAF-z0WLU"
     },
     {
       "video_id": "NkWPrrT0t8M",
@@ -36,15 +18,6 @@
       "channel_name": "Minority Mindset",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/NkWPrrT0t8M"
-    },
-    {
-      "video_id": "7Da9XbFpIPI",
-      "title": "Something Is Seriously Wrong at the Federal Reserve",
-      "date": "2026-10-30",
-      "channel": "@ClearValueTax",
-      "channel_name": "ClearValue Tax",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/7Da9XbFpIPI"
     },
     {
       "video_id": "yPUIA-yh5UU",
@@ -128,15 +101,6 @@
       "url": "https://www.youtube.com/shorts/KWE66LAr3TA"
     },
     {
-      "video_id": "04eSMyK2oGw",
-      "title": "Americans Are Spending More Money — But There's a BIG Problem",
-      "date": "2026-10-27",
-      "channel": "@ClearValueTax",
-      "channel_name": "ClearValue Tax",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/04eSMyK2oGw"
-    },
-    {
       "video_id": "296kChoo9YU",
       "title": "These ETFs Will Create Millionaires - Your Turn To Buy",
       "date": "2026-10-27",
@@ -189,15 +153,6 @@
       "channel_name": "In The Money",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
-    },
-    {
-      "video_id": "AdGhjaFeIHw",
-      "title": "Anthropic Hired AI Therapist for #claude",
-      "date": "2026-03-07",
-      "channel": "@InTheMoneyAdam",
-      "channel_name": "In The Money",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/AdGhjaFeIHw"
     },
     {
       "video_id": "H8unf5ArniE",
@@ -315,6 +270,15 @@
       "channel_name": "In The Money",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/kyYGpgsZXWc"
+    },
+    {
+      "video_id": "BK0SCBWLj6c",
+      "title": "How to Trade Futures on Robinhood by InTheMoney",
+      "date": "2025-04-04",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/BK0SCBWLj6c"
     }
   ]
 }

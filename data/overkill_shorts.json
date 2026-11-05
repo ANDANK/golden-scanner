@@ -4,6 +4,243 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-11-05",
+      "url": "https://www.youtube.com/shorts/2DwE9XmCQIU",
+      "title": "🚨Dips like this don’t come often (DOUBLE DOWN)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Hotter September inflation and 10-year Treasury yields above 5% keep pressure on the Fed, with markets anticipating a potential rate hike by December.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High-growth speculative stocks suffer more during rate spikes because distant future cash flows are heavily discounted and high borrowing costs increase dilution and debt risks.",
+          "price": null
+        },
+        {
+          "ticker": "BRKB",
+          "bias": "Neutral",
+          "notes": "Host is holding his position after a rally to near record highs, citing strong earnings and energy sector strength, but is pausing new purchases as the stock is no longer cheap.",
+          "price": null
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Host doubled down on his position at $280 following a post-earnings sell-off, viewing massive AI infrastructure spending as a positive long-term driver despite short-term free cash flow hit.",
+          "price": 283.49
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Neutral",
+          "notes": "Host is holding his existing position as record revenue and member growth continue, but is holding off on buying more until profitability consistently outpaces share dilution.",
+          "price": 16.05
+        },
+        {
+          "ticker": "DRM",
+          "bias": "Bullish",
+          "notes": "Host is holding and adding on major dips to this AI memory ETF, citing massive demand for suppliers like Micron and SK Hynix despite high volatility and potential cycle slowing.",
+          "price": null
+        },
+        {
+          "ticker": "APLD",
+          "bias": "Bullish",
+          "notes": "Host is holding and accumulating on irrational dips, encouraged by surging data center lease revenues and $6.7 million in insider share purchases despite high debt levels.",
+          "price": 14.47
+        },
+        {
+          "ticker": "IREN",
+          "bias": "Bullish",
+          "notes": "Host is holding and buying selective dips following its pivot to AI cloud infrastructure backed by Microsoft and Nvidia contracts, looking past recent site performance criticisms.",
+          "price": 18.59
+        },
+        {
+          "ticker": "IONQ",
+          "bias": "Bearish",
+          "notes": "Host is cutting all new capital allocations to the stock due to heavy share dilution from recent acquisitions and capital raises, while retaining existing shares for long-term potential.",
+          "price": 26.58
+        }
+      ]
+    },
+    {
+      "date": "2026-11-05",
+      "url": "https://www.youtube.com/shorts/IULoJhCOb2U",
+      "title": "Once You Learn Price Action, Trading Becomes Embarrassingly Simple",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "NVIDIA has key support between $190 and $208 and is currently trading near the bottom of its Bollinger Band. The host is bullish at these levels and comfortable selling 40-delta put options in anticipation of a rebound.",
+          "price": 182.03
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Palantir faced resistance over $200 and fell to $175, placing it below its lower Bollinger Band near $165 support. The host views $175 as fair value and is comfortable selling higher-delta put options.",
+          "price": 154.35
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should focus on simple price action and historical support or resistance levels rather than cluttering charts with complex technical indicators.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When a stock trades below its lower Bollinger Band at key support, selling put options is favorable, whereas selling covered calls is risky due to the high likelihood of a rapid rebound.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-30",
+      "url": "https://www.youtube.com/shorts/7Da9XbFpIPI",
+      "title": "Something Is Seriously Wrong at the Federal Reserve",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Starting in 2027, the Federal Reserve plans to adjust its eight-meeting annual schedule by dedicating one meeting exclusively to monetary policy strategy without rate decisions, reducing policy-setting meetings to seven in 2027 and six in 2028.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve held interest rates unchanged at its recent meeting despite elevated inflation, opting to evaluate incoming economic data rather than committing to immediate rate hikes or explicit forward guidance.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-05",
+      "url": "https://www.youtube.com/shorts/C19Zthvoaf4",
+      "title": "The Election Just Triggered A New Market Regime",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Democratic control of Congress alongside a Republican presidency is expected to result in political gridlock, which could slow down government spending to curb inflation but potentially weaken economic growth.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Clean energy and renewables are poised to benefit under Democratic congressional leadership as investors anticipate new subsidies, tax credits, and federal funding.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Healthcare companies, including hospitals and pharmaceuticals, stand to gain as government tax dollars are directed toward affordable and expanded healthcare programs.",
+          "price": null
+        },
+        {
+          "ticker": "SGOV",
+          "bias": "Bullish",
+          "notes": "The host highlights SGOV as a solid ETF for short-term Treasury exposure, yielding 3% to 4% in interest free from state and local taxes while interest rates remain high.",
+          "price": 100.45
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Precious metals like gold and silver saw increased demand as investors sought defensive assets against potential recession risks tied to reduced government stimulus.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "AI infrastructure and data center stocks face near-term political hurdles and volatility under Democratic leadership, though the AI industry is expected to grow significantly over the next five years.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve signaled growing concern that inflation may stay elevated for longer, requiring interest rates to potentially rise further.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-30",
+      "url": "https://www.youtube.com/shorts/7VuAF-z0WLU",
+      "title": "$INTC HUGE SELLOFF 📉 OCTOBER 30",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "INTC",
+          "bias": "Bearish",
+          "notes": "Intel has capitulated down to $64 following a sell signal around $131-$140. The host warns against buying the current dip and is waiting for a buy signal near the 4-year mean around $50.",
+          "price": 65.76
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Nvidia triggered a sell signal around $235 in October, and the host expects the stock to pull back further toward its 4-year mean line.",
+          "price": 204.64
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Avoid buying assets stretched far above their 4-year average during mania phases, and instead wait for price to return to or drop below the mean before entering long positions.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-04",
+      "url": "https://www.youtube.com/shorts/rZv64Vg9O7k",
+      "title": "The Stock Market Could EXPLODE After This Election",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historically, when a Republican president loses control of Congress to Democrats during midterm elections, the S&P 500 averages gains of 2.1% after 1 month, 10.7% after 3 months, 17.5% after 6 months, and 15.5% after 1 year.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "JP Morgan believes a Democrat sweep could generate significant volatility in AI stocks, but considers any election-related sell-off to be a buying opportunity.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Heading into elections, the NASDAQ fell nearly 10% to price in political uncertainty, though a divided government could ultimately lower regulatory uncertainty and curb spending.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-27",
+      "url": "https://www.youtube.com/shorts/04eSMyK2oGw",
+      "title": "Americans Are Spending More Money — But There's a BIG Problem",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising retail sales and higher consumer spending do not automatically indicate stronger consumer demand, as increased expenditures often simply reflect higher prices and inflation across everyday necessities.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-10-31",
       "url": "https://www.youtube.com/shorts/YtY3s6rNmP0",
       "title": ".TheGod $GOOG STOCK ANALYSIS 🚨 OCTOBER 31",
