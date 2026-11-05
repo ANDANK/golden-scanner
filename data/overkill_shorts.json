@@ -1,8 +1,338 @@
 {
-  "updated": "2026-11-04",
+  "updated": "2026-11-05",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-10-31",
+      "url": "https://www.youtube.com/shorts/YtY3s6rNmP0",
+      "title": ".TheGod $GOOG STOCK ANALYSIS 🚨 OCTOBER 31",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "GOOGL",
+          "bias": "Bearish",
+          "notes": "Expects Google to continue correcting down toward its four-year moving average in the 220 to 240 range before offering a new buy signal.",
+          "price": 278.99
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "According to Charlie Munger's principle, investors should buy a stock whenever its price falls to hit the 200 EMA on the weekly chart.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-05",
+      "url": "https://www.youtube.com/shorts/XostOIXQ7Mw",
+      "title": "My Stock just BLUE UP‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Semiconductor stocks should be purchased when market sentiment is negative and no one is talking about them, rather than during periods of heavy excitement and widespread coverage.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "According to Goldman Sachs prime brokerage data, hedge funds reduced leverage in October at the fastest pace since March, dropping net leverage by 4.2 percentage points to 73.4%.",
+          "price": null
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Believes the stock has completed its short-term flush and projects it to reach over $1,000 to $1,300 per share by 2029-2030 based on a base case of $162 billion in 2030 revenue.",
+          "price": 488.78
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Following 51% net sales growth and raised full-year revenue guidance to over $2 billion, he reiterates a year-end target of $120 to $140 and a long-term target of $300 to $500.",
+          "price": 113.63
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Considers it the best stock under a $1 billion market cap due to management's successful turnaround and expects the share price to exit the year above $5.",
+          "price": 4.44
+        },
+        {
+          "ticker": "RVLV",
+          "bias": "Bullish",
+          "notes": "Despite short-term expense issues that dragged down net income in Q3, he expects 20% revenue growth to persist and management to get operating costs back under control.",
+          "price": 19.98
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bullish",
+          "notes": "Outperforming a weak restaurant industry with 14% revenue growth and 92% net income growth in Q3, supported by a 10-year growth runway from concepts like North Italia and Flower Child.",
+          "price": 115.39
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Ranked as his top Magnificent Seven buy due to its dominant e-commerce business, strong advertising segment, and proven return on capital expenditure through AWS.",
+          "price": 266.03
+        },
+        {
+          "ticker": "META",
+          "bias": "Bullish",
+          "notes": "Ranked as his second-favorite Magnificent Seven buy for long-term investors, though massive capital expenditure increases may limit substantial stock upside over the next 1 to 2 years.",
+          "price": 630.0
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Ranked as his third-favorite Magnificent Seven stock, driven by resilient search revenue, strong YouTube performance, and staggering growth in Google Cloud.",
+          "price": 288.93
+        },
+        {
+          "ticker": "SHOP",
+          "bias": "Bullish",
+          "notes": "Highlights it as the most underrated $100B+ market cap company following Q3 revenue growth of 32%, operating income growth of 66%, and strong Q4 guidance.",
+          "price": 153.03
+        }
+      ]
+    },
+    {
+      "date": "2026-11-05",
+      "url": "https://www.youtube.com/shorts/89sTk4r8F58",
+      "title": "This $5,200 Trade Collects $1,100/mo Income",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "The stock has fallen 24% over the last 3 months to $277, creating a strong opportunity to execute a bullish poor man's covered call strategy using long-dated deep-in-the-money LEAP call options paired with short-term call sales.",
+          "price": 288.93
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A poor man's covered call strategy involves buying a long-term, deep-in-the-money LEAP call option (preferably around a 0.70 delta) to replace owning 100 shares at a fraction of the capital, then selling short-term out-of-the-money call options against it to collect income.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-04",
+      "url": "https://www.youtube.com/shorts/1Y5vBU3mY3s",
+      "title": "Democrats Win Congress: What Happens to Trump and Your Money?",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historically going back to 1950, the S&P 500 has closed higher 12 months after midterm elections 19 out of 19 times.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "President Trump's promised $5,000 stimulus check will not be issued because Republicans failed to maintain control of the House and Senate.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "While the Democratic House may vote to impeach President Trump, the Senate lacks the 67-vote two-thirds majority required to remove him from office.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Congress controls federal spending and could withhold additional war funding to pressure a military withdrawal from Iran, which could help lower energy prices and inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Divided government and political gridlock will likely slow down the rate at which the cost of living worsens, though prices are still expected to rise.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-31",
+      "url": "https://www.youtube.com/shorts/gxNfOgXpK_w",
+      "title": "Watch This Before November 3",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With annual US government spending around $7.5 trillion, midterm election outcomes dictate major economic shifts by determining which industries receive federal funding and legislative support.",
+          "price": null
+        },
+        {
+          "ticker": "MADE",
+          "bias": "Bullish",
+          "notes": "Beneficiary of potential Republican midterm wins focused on domestic manufacturing reshoring; holds 112 US capital goods and machinery companies.",
+          "price": 33.84
+        },
+        {
+          "ticker": "WELD",
+          "bias": "Bullish",
+          "notes": "Targeted play on domestic manufacturing reshoring if Republicans take Congress, holding 22 US-based manufacturing companies.",
+          "price": 50.55
+        },
+        {
+          "ticker": "XLI",
+          "bias": "Bullish",
+          "notes": "Broad industrial ETF holding 83 of the largest US industrial companies that stand to benefit from Republican manufacturing incentives.",
+          "price": 169.71
+        },
+        {
+          "ticker": "FCG",
+          "bias": "Bullish",
+          "notes": "Offers exposure to 41 natural gas-focused companies that could benefit from Republican legislation favoring fossil fuel production.",
+          "price": 30.9
+        },
+        {
+          "ticker": "XLE",
+          "bias": "Bullish",
+          "notes": "Holds 21 major US oil and gas companies like Exxon and Chevron, benefiting if Republicans pass pro-fossil fuel legislation.",
+          "price": 67.25
+        },
+        {
+          "ticker": "MLPX",
+          "bias": "Bullish",
+          "notes": "Tracks 29 energy infrastructure companies owning oil and gas pipelines, benefiting from increased domestic fossil fuel pumping under Republicans.",
+          "price": 74.33
+        },
+        {
+          "ticker": "KBE",
+          "bias": "Bullish",
+          "notes": "Broad banking ETF holding 107 stocks that could see higher profitability if a Republican Congress reduces financial sector regulations.",
+          "price": 67.23
+        },
+        {
+          "ticker": "KRE",
+          "bias": "Bullish",
+          "notes": "Holds 167 US regional banks that stand to profit from looser regulatory oversight and expanded lending activity under Republicans.",
+          "price": 73.73
+        },
+        {
+          "ticker": "KBWB",
+          "bias": "Bullish",
+          "notes": "Focuses on 26 of the largest US megabanks which benefit short-term from financial deregulation and increased credit issuance.",
+          "price": 89.6
+        },
+        {
+          "ticker": "ITA",
+          "bias": "Bullish",
+          "notes": "Aerospace and defense ETF heavily weighted in major defense contractors benefiting from proposed record defense budget increases under Republicans.",
+          "price": 214.68
+        },
+        {
+          "ticker": "XAR",
+          "bias": "Bullish",
+          "notes": "Equally weighted ETF of 50 aerospace and defense companies positioned to gain from expanded government military spending.",
+          "price": 231.09
+        },
+        {
+          "ticker": "SHLD",
+          "bias": "Bullish",
+          "notes": "Focuses on 50 defense technology companies benefiting from increased military tech spending and rising geopolitical tensions.",
+          "price": 63.56
+        },
+        {
+          "ticker": "IHF",
+          "bias": "Bullish",
+          "notes": "Holds 61 US healthcare providers and insurers that could benefit if Democrats win and enact expanded healthcare funding and tax credits.",
+          "price": 59.0
+        },
+        {
+          "ticker": "XHS",
+          "bias": "Bullish",
+          "notes": "Equally weighted ETF of 61 healthcare service companies that stand to gain from Democratic healthcare legislation.",
+          "price": 141.41
+        },
+        {
+          "ticker": "XHV",
+          "bias": "Bullish",
+          "notes": "Holds 61 major healthcare providers and insurers with concentrated exposure to companies benefiting from Democratic healthcare spending.",
+          "price": null
+        },
+        {
+          "ticker": "OZM",
+          "bias": "Bullish",
+          "notes": "Directly targets GLP-1 drug makers and weight loss medication providers that could see expanded government Medicare/Medicaid coverage if Democrats win.",
+          "price": null
+        },
+        {
+          "ticker": "IHE",
+          "bias": "Bullish",
+          "notes": "Holds 53 US pharmaceutical companies benefiting from rising demand and potential Democratic policy support for weight loss medications.",
+          "price": 106.92
+        },
+        {
+          "ticker": "PPH",
+          "bias": "Bullish",
+          "notes": "Concentrated fund holding 25 of the largest global pharmaceutical companies producing high-demand medications like weight loss drugs.",
+          "price": 119.21
+        },
+        {
+          "ticker": "ICLN",
+          "bias": "Bullish",
+          "notes": "Global clean energy ETF holding 103 companies positioned to benefit if Democrats extend expiring wind and solar tax credits.",
+          "price": 15.73
+        },
+        {
+          "ticker": "TAN",
+          "bias": "Bullish",
+          "notes": "Solar-focused ETF holding 36 companies that depend on Democratic legislative efforts to extend clean energy tax incentives.",
+          "price": 42.07
+        },
+        {
+          "ticker": "QCLN",
+          "bias": "Bullish",
+          "notes": "Holds 57 green energy companies tied to electric vehicle fuel cells and chips, benefiting from Democratic climate initiatives.",
+          "price": 44.04
+        },
+        {
+          "ticker": "PAVE",
+          "bias": "Bullish",
+          "notes": "Tracks 98 US infrastructure construction and supply companies that profit from federal infrastructure spending favored by Democrats.",
+          "price": 54.45
+        },
+        {
+          "ticker": "GRID",
+          "bias": "Bullish",
+          "notes": "Holds 122 companies focused on building and upgrading the electrical grid, benefiting from federal energy infrastructure investment.",
+          "price": 164.28
+        },
+        {
+          "ticker": "IFRA",
+          "bias": "Bullish",
+          "notes": "Broad infrastructure ETF holding 161 utility, industrial, and materials companies benefiting from Democratic infrastructure bills.",
+          "price": 58.64
+        }
+      ]
+    },
+    {
+      "date": "2026-10-31",
+      "url": "https://www.youtube.com/shorts/LmPYjPVU5ro",
+      "title": ".T $ORCL STOCK ANALYSIS 📈 OCTOBER 31",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ORCL",
+          "bias": "Bullish",
+          "notes": "The host is long on Oracle (ORCL) and views it as very bullish as long as it holds support above $110. He notes the stock is trading below its four-year moving average fair value while making $19 billion a quarter.",
+          "price": 119.22
+        }
+      ]
+    },
     {
       "date": "2026-11-04",
       "url": "https://www.youtube.com/shorts/1DkvHJDHI6Y",

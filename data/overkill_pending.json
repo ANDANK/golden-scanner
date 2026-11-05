@@ -1,5 +1,5 @@
 {
-  "checked": "2026-11-04",
+  "checked": "2026-11-05",
   "pending": [
     {
       "video_id": "rZv64Vg9O7k",
@@ -7,26 +7,8 @@
       "date": "2026-11-04",
       "channel": "@InvestwithHenry",
       "channel_name": "Invest w/ Henry",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/rZv64Vg9O7k"
-    },
-    {
-      "video_id": "YtY3s6rNmP0",
-      "title": ".TheGod $GOOG STOCK ANALYSIS 🚨 OCTOBER 31",
-      "date": "2026-10-31",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/YtY3s6rNmP0"
-    },
-    {
-      "video_id": "LmPYjPVU5ro",
-      "title": ".T $ORCL STOCK ANALYSIS 📈 OCTOBER 31",
-      "date": "2026-10-31",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/LmPYjPVU5ro"
     },
     {
       "video_id": "bxeXF7QH8f0",
@@ -36,15 +18,6 @@
       "channel_name": "OverKill",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/bxeXF7QH8f0"
-    },
-    {
-      "video_id": "gxNfOgXpK_w",
-      "title": "Watch This Before November 3",
-      "date": "2026-10-31",
-      "channel": "@MinorityMindset",
-      "channel_name": "Minority Mindset",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/gxNfOgXpK_w"
     },
     {
       "video_id": "7VuAF-z0WLU",
@@ -216,6 +189,15 @@
       "channel_name": "In The Money",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
+    },
+    {
+      "video_id": "AdGhjaFeIHw",
+      "title": "Anthropic Hired AI Therapist for #claude",
+      "date": "2026-03-07",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/AdGhjaFeIHw"
     },
     {
       "video_id": "H8unf5ArniE",
