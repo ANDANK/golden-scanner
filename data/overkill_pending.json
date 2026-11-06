@@ -1,68 +1,41 @@
 {
-  "checked": "2026-11-05",
+  "checked": "2026-11-06",
   "pending": [
+    {
+      "video_id": "8LkoLxb8gOU",
+      "title": "💧 how to download the trading indicators 📈",
+      "date": "2026-11-05",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/8LkoLxb8gOU"
+    },
+    {
+      "video_id": "TbiCRIqM4rk",
+      "title": "$H🕸️ $MU STOCK IS CRASHING 🚨 NOVEMBER 5",
+      "date": "2026-11-05",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/TbiCRIqM4rk"
+    },
+    {
+      "video_id": "iALtyeuk5kk",
+      "title": "3 STOCKS TO WATCH ON THE DIP 📈 NOVEMBER 5 $IONQ",
+      "date": "2026-11-05",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/iALtyeuk5kk"
+    },
     {
       "video_id": "bxeXF7QH8f0",
       "title": "trading software 📈",
       "date": "2026-10-31",
       "channel": "@overkilltrading",
       "channel_name": "OverKill",
-      "reason": "failed",
+      "reason": "queued",
       "url": "https://www.youtube.com/shorts/bxeXF7QH8f0"
-    },
-    {
-      "video_id": "NkWPrrT0t8M",
-      "title": "It's Official: The Fed Is Getting Nervous About The Economy",
-      "date": "2026-10-30",
-      "channel": "@MinorityMindset",
-      "channel_name": "Minority Mindset",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/NkWPrrT0t8M"
-    },
-    {
-      "video_id": "yPUIA-yh5UU",
-      "title": "4 STOCKS TO WATCH IN NOVEMBER 📈 (PART 2)",
-      "date": "2026-10-29",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/yPUIA-yh5UU"
-    },
-    {
-      "video_id": "pM6swYpiQ_0",
-      "title": "3 STOCKS TO WATCH IN NOVEMBER 📈 (PART 3)",
-      "date": "2026-10-29",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/pM6swYpiQ_0"
-    },
-    {
-      "video_id": "KVycotJ9mTg",
-      "title": "$NFLX STOCK ANALYSIS 📈 OCTOBER 29",
-      "date": "2026-10-29",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/KVycotJ9mTg"
-    },
-    {
-      "video_id": "A4Zj98xGQaA",
-      "title": "THESE 4 STOCKS LOOK CHEAP 🚨 OCTOBER 29",
-      "date": "2026-10-29",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/A4Zj98xGQaA"
-    },
-    {
-      "video_id": "mHWrPLIwHZU",
-      "title": "I Said SOFI Earnings Will Do This. Here’s What's Next!",
-      "date": "2026-10-29",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/mHWrPLIwHZU"
     },
     {
       "video_id": "Vr8R1ajLUvM",
@@ -70,7 +43,7 @@
       "date": "2026-10-29",
       "channel": "@MinorityMindset",
       "channel_name": "Minority Mindset",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/Vr8R1ajLUvM"
     },
     {
@@ -81,15 +54,6 @@
       "channel_name": "Minority Mindset",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/ByYlPXDkaTg"
-    },
-    {
-      "video_id": "E178RoE1kjU",
-      "title": "Nvidia Price Target Revealed for 2027",
-      "date": "2026-10-27",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/E178RoE1kjU"
     },
     {
       "video_id": "KWE66LAr3TA",
@@ -117,15 +81,6 @@
       "channel_name": "Invest w/ Henry",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/LBny5igyZbM"
-    },
-    {
-      "video_id": "Ym0EMJUokg4",
-      "title": "Margin Debt: How Investors Lose Everything in The Stock Market",
-      "date": "2026-10-26",
-      "channel": "@ClearValueTax",
-      "channel_name": "ClearValue Tax",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/Ym0EMJUokg4"
     },
     {
       "video_id": "ZEryJi9yCug",

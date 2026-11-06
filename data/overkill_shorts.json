@@ -1,8 +1,149 @@
 {
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-06",
+      "url": "https://www.youtube.com/shorts/JU2umpkNwVo",
+      "title": "4 STOCKS READY TO EXPLODE IN 2027 📈(NOV 5) $FSLR",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host expects the solar sector to be a top-performing sector over the next 1-2 years, as solar stocks are breaking out of a bottom pattern and tend to outperform when Democrats are in control.",
+          "price": null
+        },
+        {
+          "ticker": "ENPH",
+          "bias": "Bullish",
+          "notes": "The host re-entered a position around $40 after seeing a chart reversal signal similar to a prior major bull run, noting that tides are turning for solar.",
+          "price": 28.97
+        },
+        {
+          "ticker": "FSLR",
+          "bias": "Bullish",
+          "notes": "The stock is breaking out strongly after a buy signal last week and a gap up, currently sitting at its 4-year moving average buy zone.",
+          "price": 195.76
+        },
+        {
+          "ticker": "NXT",
+          "bias": "Bullish",
+          "notes": "Highlighted as ChatGPT's top solar pick, the stock found a bottom in September, traded sideways, and is now breaking out.",
+          "price": 99.58
+        }
+      ]
+    },
+    {
+      "date": "2026-10-29",
+      "url": "https://www.youtube.com/shorts/mHWrPLIwHZU",
+      "title": "I Said SOFI Earnings Will Do This. Here’s What's Next!",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Host sees SoFi as undervalued following strong Q3 earnings, 51% cross-buy acceleration, and raised guidance. He targets a stock price of $25 to $28 per share by 2027 and expects market cap to reach $30B+ within 12 to 18 months.",
+          "price": 17.61
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Rule of 40 metric is calculated by adding quarterly year-over-year revenue growth to adjusted EBITDA margin, serving as a measure of combined top-line growth and bottom-line profitability.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-26",
+      "url": "https://www.youtube.com/shorts/Ym0EMJUokg4",
+      "title": "Margin Debt: How Investors Lose Everything in The Stock Market",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Margin debt allows investors to borrow money against their collateral to increase purchasing power, which amplifies potential investment gains but also magnifies losses during market downturns.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Severe market drops can trigger margin calls and forced liquidations, creating a negative feedback loop where widespread selling drives stock prices even lower.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Following a major market crash, the Federal Reserve is likely to intervene by printing trillions of dollars, injecting liquidity that ultimately boosts stock prices and nominal corporate earnings.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-30",
+      "url": "https://www.youtube.com/shorts/NkWPrrT0t8M",
+      "title": "It's Official: The Fed Is Getting Nervous About The Economy",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve is keeping interest rates steady for now but indicated potential future rate hikes to combat 3.5% inflation and lower it to its 2% target.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "President Trump is pushing for interest rates of 1% or less to lower servicing costs on the $40 trillion national debt and spur economic growth.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "High oil prices, new tariffs, massive government spending, and the heavy energy requirements of AI data centers are contributing to elevated inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Gold, silver, and Bitcoin experienced price declines following signals of prolonged high Fed interest rates, which strengthen the US dollar and weigh on debasement assets.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Despite the S&P 500 trading near record highs, over 80% of its constituent stocks are down 10% or more, leaving index returns heavily dependent on big-tech AI stocks.",
+          "price": null
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bearish",
+          "notes": "Google stock dropped over 10% in a single day as massive spending on AI pushed its free cash flow into negative territory while search volume growth slowed.",
+          "price": 279.84
+        }
+      ]
+    },
+    {
+      "date": "2026-10-27",
+      "url": "https://www.youtube.com/shorts/E178RoE1kjU",
+      "title": "Nvidia Price Target Revealed for 2027",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Nvidia reported quarterly revenue of $96.2 billion (106% YoY growth) and nearly $60 billion in profit, while forecasting $108 billion in revenue next quarter and ~70% growth for FY2028. The host expects the stock to reach $300 per share or more by 2027 as AI infrastructure spending continues.",
+          "price": 217.94
+        }
+      ]
+    },
     {
       "date": "2026-11-05",
       "url": "https://www.youtube.com/shorts/2DwE9XmCQIU",
