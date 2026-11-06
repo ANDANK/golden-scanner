@@ -5,6 +5,243 @@
   "videos": [
     {
       "date": "2026-11-06",
+      "url": "https://www.youtube.com/shorts/v9yr0ZA-grQ",
+      "title": "18 Lessons That Save You $100,000 in This Market",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "APP",
+          "bias": "Bullish",
+          "notes": "AppLovin was identified as an undervalued stock that gained roughly 50% in a week, helping weather broader market downturns.",
+          "price": 397.46
+        },
+        {
+          "ticker": "WMT",
+          "bias": "Bullish",
+          "notes": "Host holds a $1 million position in Walmart, citing its run from $110 to over $125 as proof that strong, non-hyped businesses protect wealth during market sell-offs.",
+          "price": 125.49
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bearish",
+          "notes": "Host views Palantir as way too expensive at $200 per share and is waiting for a pullback to $165 before considering an entry.",
+          "price": 161.15
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Prioritize capital preservation over chasing short-term returns during market downturns, ensuring survival to compound wealth in future bull markets.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Sell put options on strong businesses you genuinely want to own to collect elevated volatility premiums while waiting to acquire shares at lower prices.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Avoid overconcentrating capital into single sectors like AI stocks, as improper position sizing leads to severe portfolio drawdowns during market corrections.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Maintain dry powder (cash reserves) during market pullbacks rather than allocating all buying power upfront, as downturns can extend lower than expected.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Use deep-in-the-money long-dated call options (LEAPs) selectively during sell-offs to gain leveraged upside exposure while dollar-cost averaging into positions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Avoid selling covered calls against 100% of your portfolio during sharp market dips so you do not cap gains when the market rebounds quickly.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-06",
+      "url": "https://www.youtube.com/shorts/cZHIrgZPYvQ",
+      "title": "The \"Buy The Dip Era\" Just Ended",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve has indicated a commitment to protecting the dollar over propping up the stock market, meaning high inflation may prevent traditional rate cuts or money printing during economic downturns.",
+          "price": null
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Michael Burry warned of circular financing risks around Nvidia, where the company invests capital into AI startups that then turn around and use those funds to buy Nvidia chips.",
+          "price": 187.85
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bearish",
+          "notes": "Alphabet experienced a severe single-day stock decline after reporting lower revenue from its core business and spending all of its free cash flow on AI infrastructure.",
+          "price": 285.12
+        },
+        {
+          "ticker": "INTC",
+          "bias": "Bearish",
+          "notes": "Intel stock suffered a major drop after management raised concerns regarding how much money the company will ultimately generate from its AI initiatives.",
+          "price": 56.63
+        },
+        {
+          "ticker": "QQQ",
+          "bias": "Neutral",
+          "notes": "QQQ provides broad tech sector exposure but carries higher volatility and suffers steeper drawdowns during interest rate hikes and AI sector sell-offs compared to the S&P 500.",
+          "price": 658.21
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "During market corrections, investors can utilize phased dollar-cost averaging by gradually buying pre-selected quality stocks or ETFs in larger amounts as prices decline.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-05",
+      "url": "https://www.youtube.com/shorts/iALtyeuk5kk",
+      "title": "3 STOCKS TO WATCH ON THE DIP 📈 NOVEMBER 5 $IONQ",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NQ",
+          "bias": "Bullish",
+          "notes": "The host is looking to add to his position in quantum computing play NQ following strong earnings and a pullback from $70 to $27, targeting a 6-month swing trade.",
+          "price": null
+        },
+        {
+          "ticker": "NVO",
+          "bias": "Bullish",
+          "notes": "The host recently added to his position in NVO after it beat earnings by about $1 billion in revenue, expecting a major move up over a 6-month timeframe.",
+          "price": 40.3
+        },
+        {
+          "ticker": "UBER",
+          "bias": "Bullish",
+          "notes": "The host views Uber as a resilient business model that will hold up well in a recession, making its drop to $67 a good buying price.",
+          "price": 68.78
+        }
+      ]
+    },
+    {
+      "date": "2026-10-27",
+      "url": "https://www.youtube.com/shorts/KWE66LAr3TA",
+      "title": "The Stock Market Just Diverged—Here’s What It Means",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "VRT",
+          "bias": "Bullish",
+          "notes": "Vertiv dropped 37% over three months despite profit per share jumping 60% last quarter and projected 36% growth next year. A major catalyst is Vertiv's power and cooling equipment rolling out by year-end to support Nvidia's server power architecture changes.",
+          "price": 208.56
+        },
+        {
+          "ticker": "NBIS",
+          "bias": "Bullish",
+          "notes": "Nebius is trading $120 below its peak despite quarterly revenue surging 454% to $582 million and annual run-rate reaching $3 billion. While borrowing costs and heavy capex of $20 billion to $25 billion pose near-term risks, Wall Street is significantly undervaluing its AI cloud buildout.",
+          "price": 170.47
+        },
+        {
+          "ticker": "BE",
+          "bias": "Bullish",
+          "notes": "Bloom Energy posted record quarterly revenue of $1.2 billion (up 138%) and raised full-year guidance to $4.4 billion-$4.6 billion, with potential to 2x or 3x over the next two to three years on data center power demand. The stock carries high volatility with a beta of four and depends heavily on sustained AI infrastructure buildouts.",
+          "price": 218.5
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 10-year Treasury yield around 5% to 5.31% acts as gravity on asset prices, forcing stocks to work harder to justify risk when risk-free government bonds pay over 5%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Expected S&P 500 profits rose 10% since late June while prices increased only 3.5%, and 72 companies raised profit guidance heading into earnings season—the highest total since 2006.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The sharp pullback in AI and chip stocks was largely driven by overleveraged hedge funds hitting margin calls and being forced to liquidate positions simultaneously, rather than business weakness.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-29",
+      "url": "https://www.youtube.com/shorts/Vr8R1ajLUvM",
+      "title": "It’s Over: America Can’t Inflate Away The $40T Debt",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "President Trump suggested using inflation to diminish the real value of the $40 trillion national debt, which functions as a hidden tax on wage earners while benefiting asset-holding investors.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Treasury Secretary Scott Bessent proposed a '333 plan' to outgrow national debt by targeting 3% GDP growth, reducing the budget deficit to 3%, and raising domestic oil production by 3 million barrels per day.",
+          "price": null
+        },
+        {
+          "ticker": "SMH",
+          "bias": "Bullish",
+          "notes": "Highlighted as a key semiconductor ETF providing exposure to chipmakers, an industry heavily backed by US government tax dollars to lead in global AI development.",
+          "price": 561.67
+        },
+        {
+          "ticker": "SOXX",
+          "bias": "Bullish",
+          "notes": "Identified as a top semiconductor ETF option for gaining targeted exposure to the hardware and AI computing sector supported by federal policy.",
+          "price": 171.29
+        },
+        {
+          "ticker": "QQQ",
+          "bias": "Bullish",
+          "notes": "Provides broad exposure to the 100 largest non-financial tech companies, which stand to benefit from government push and spending in artificial intelligence.",
+          "price": 715.34
+        },
+        {
+          "ticker": "REMX",
+          "bias": "Bullish",
+          "notes": "Offers exposure to rare earth and strategic metals producers as federal efforts and tariffs aim to rebuild domestic critical mineral supply chains.",
+          "price": 52.69
+        },
+        {
+          "ticker": "XLI",
+          "bias": "Bullish",
+          "notes": "Captures the industrial sector and stands to gain from US policy initiatives designed to re-shore domestic manufacturing.",
+          "price": 170.13
+        },
+        {
+          "ticker": "XME",
+          "bias": "Bullish",
+          "notes": "Provides exposure to metals and mining companies essential for constructing domestic infrastructure and secure material supply chains.",
+          "price": 101.05
+        }
+      ]
+    },
+    {
+      "date": "2026-11-06",
       "url": "https://www.youtube.com/shorts/JU2umpkNwVo",
       "title": "4 STOCKS READY TO EXPLODE IN 2027 📈(NOV 5) $FSLR",
       "channel": "@overkilltrading",
