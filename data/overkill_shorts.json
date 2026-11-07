@@ -5,6 +5,294 @@
   "videos": [
     {
       "date": "2026-11-07",
+      "url": "https://www.youtube.com/shorts/H6wqMLVLtz4",
+      "title": "3 STOCKS TO WATCH NOW 📈 NOVEMBER 6 (PART 2)",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "MTZ",
+          "bias": "Bullish",
+          "notes": "MTZ has triggered a buy signal following a volatile post-earnings week, matching a similar technical setup from April.",
+          "price": 174.1
+        },
+        {
+          "ticker": "SCO",
+          "bias": "Bullish",
+          "notes": "The inverse oil ETF is highlighted as a buy, with the host expecting it to gain as oil companies face profit-taking and pull back.",
+          "price": 18.77
+        },
+        {
+          "ticker": "BU",
+          "bias": "Bullish",
+          "notes": "This Chinese stock has triggered a buy signal with an apparent bottom at 75, mirroring a past level where it staged a strong rally.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Chinese and solar stocks are highlighted as the top two sectors to watch with Democrats taking control of the House and Senate.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-07",
+      "url": "https://www.youtube.com/shorts/pkx6hznOo-g",
+      "title": "Be careful..",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Market corrections of 10% to 20% are a normal part of long-term investing, and selling out of fear turns temporary volatility into permanent losses.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Retirees should maintain an emergency fund covering three years of living expenses to safely navigate bear market periods without selling stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Attempting to time exact market bottoms is exceedingly difficult and risks missing key recovery days; dollar-cost averaging is far more reliable.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Asset allocations must align with personal risk tolerance so that normal market fluctuations do not provoke emotional panic selling.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-07",
+      "url": "https://www.youtube.com/shorts/OJEnkUwLYIk",
+      "title": "This 1 Stock goes up don’t matter what‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Up 17% over the past month despite market weakness, showing independent strength and trading upward regardless of broad market trends.",
+          "price": 32.16
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Showing strong earnings and resilience during market pullbacks, with the host targeting an exit price between $120 and $140 by year-end.",
+          "price": 116.14
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host views long-term trajectory as much higher and sees it primed for an end-of-year catch-up rally driven by institutional capital and ongoing capex spending.",
+          "price": 449.04
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Positioned as a prime high-beta candidate for underperforming hedge funds seeking to catch up into year-end following aggressive short-term liquidation.",
+          "price": 690.0
+        },
+        {
+          "ticker": "WYNN",
+          "bias": "Bullish",
+          "notes": "Gained 5% following weak earnings, signaling to the host that bad news is fully priced in and creating a divergence primed for further upside.",
+          "price": 83.11
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "Viewed as primed to move higher, with the host projecting the stock could exit the year trading between $120 and $140.",
+          "price": 110.06
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Demonstrating improving underlying gross margins, expanding profitability, and over $100M in cash with no debt, with expectations to exit the year well above $5.",
+          "price": 4.67
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Stabilizing oil prices over the next six months could cool inflation fears and send the 10-year Treasury yield lower, potentially moving mortgage rates into the 5% range.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-28",
+      "url": "https://www.youtube.com/shorts/ByYlPXDkaTg",
+      "title": "The Only 3 ETFs You Ever Need (Buy These ASAP)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "VOO",
+          "bias": "Bullish",
+          "notes": "Provides broad exposure to the 500 largest U.S. companies and has delivered an average annual return of 15.6% over the past 10 years. It serves as a core foundation for both long-term generational wealth and steady economic growth.",
+          "price": 709.9
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "Focuses on high-quality companies with track records of growing dividends, generating an average 12.5% annual return over the last decade alongside a ~3.8% dividend yield. It is ideal for investors seeking cash flow paired with slow-and-steady capital appreciation.",
+          "price": 35.09
+        },
+        {
+          "ticker": "VXUS",
+          "bias": "Bullish",
+          "notes": "Offers broad exposure to thousands of international companies outside the United States, averaging 9.2% annual growth over 10 years. It provides global diversification and acts as a hedge against U.S. dollar depreciation.",
+          "price": 83.75
+        },
+        {
+          "ticker": "VNQ",
+          "bias": "Bullish",
+          "notes": "Provides exposure to the real estate sector across apartments, offices, and commercial properties with an average dividend yield around 3.7%. It is designed specifically for investors prioritizing consistent monthly cash flow.",
+          "price": 91.79
+        },
+        {
+          "ticker": "VYMI",
+          "bias": "Bullish",
+          "notes": "Invests in high-dividend international companies that often yield higher payouts than U.S. peers due to faster underlying economic growth abroad. It has generated roughly 10.4% annual returns over the last decade with a current yield near 3.6%.",
+          "price": 101.41
+        },
+        {
+          "ticker": "VUG",
+          "bias": "Bullish",
+          "notes": "Focuses on high-growth companies that reinvest earnings into expanding market share and user growth, generating an 18.3% average annual return over the past 10 years. It carries higher upside potential during low-rate regimes, though with elevated volatility.",
+          "price": 88.81
+        },
+        {
+          "ticker": "QQQ",
+          "bias": "Bullish",
+          "notes": "Tracks the top 100 non-financial companies on the Nasdaq with heavy exposure to dominant tech firms reinvesting aggressively into AI and new technologies. It returned an average of 21% annually over the last decade.",
+          "price": 725.61
+        },
+        {
+          "ticker": "VBK",
+          "bias": "Bullish",
+          "notes": "Targets fast-growing small-cap companies aiming for rapid expansion and market share gains. It has averaged 10.9% annual returns over the past 10 years as an aggressive growth vehicle.",
+          "price": 336.78
+        },
+        {
+          "ticker": "BND",
+          "bias": "Bullish",
+          "notes": "Invests in global bonds to provide steady interest payments and damp portfolio volatility. It offers lower upside than equities but acts as a stabilizing anchor for conservative, low-risk portfolios.",
+          "price": 71.19
+        },
+        {
+          "ticker": "VIG",
+          "bias": "Bullish",
+          "notes": "Holds mature companies with established records of consistently growing profits and increasing dividend payouts year after year. It generated approximately 13.2% annually over the last 10 years for lower-volatility growth.",
+          "price": 245.96
+        },
+        {
+          "ticker": "GLD",
+          "bias": "Bullish",
+          "notes": "Provides direct exposure to physical gold as a traditional hedge against inflation and the devaluation of the U.S. dollar. It has grown roughly 12.1% annually over the past decade.",
+          "price": 373.51
+        },
+        {
+          "ticker": "SCHP",
+          "bias": "Bullish",
+          "notes": "Invests in Treasury Inflation-Protected Securities (TIPS) whose payouts adjust upward with rising inflation rates. It serves as a defensive holding to protect purchasing power against currency debasement.",
+          "price": 25.63
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Implement an 'Always Be Buying' (ABB) strategy by automatically investing fixed amounts on a set schedule regardless of market direction, economic cycles, or headlines. Dollar-cost averaging eliminates the emotional pitfalls of market timing.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-06",
+      "url": "https://www.youtube.com/shorts/ZdlkaFK97Js",
+      "title": "THESE 4 STOCKS LOOK BULLISH 📈 NOVEMBER 6️⃣",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Chinese stocks tend to perform very well historically when Democrats are in control of the U.S. House and Senate.",
+          "price": null
+        },
+        {
+          "ticker": "BABA",
+          "bias": "Bullish",
+          "notes": "Alibaba showed double confirmation buy signals at around $105, indicating a potential bottom heading into the end of the year.",
+          "price": 109.45
+        },
+        {
+          "ticker": "BIDU",
+          "bias": "Bullish",
+          "notes": "Baidu has sold off from $160 down to $80 over the last year and is now showing buy signals for a 1-to-6 month swing trade.",
+          "price": 81.87
+        },
+        {
+          "ticker": "PDD",
+          "bias": "Bullish",
+          "notes": "PDD is breaking out around $83 after finding support around $76, showing strong buy signals ahead of its earnings on the 19th.",
+          "price": 83.03
+        },
+        {
+          "ticker": "JD",
+          "bias": "Bullish",
+          "notes": "JD.com is flashing the same bullish technical setup as the other top Chinese stocks.",
+          "price": 29.11
+        }
+      ]
+    },
+    {
+      "date": "2026-10-26",
+      "url": "https://www.youtube.com/shorts/ZEryJi9yCug",
+      "title": "Do These 5 Things ASAP Before You Buy Any Stock",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Pay off high-interest credit card debt before investing in the stock market, as eliminating ~22% APY debt provides a guaranteed return that beats historical market average returns.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Establish a cash emergency fund of at least $2,000 outside of the market to prevent being forced to sell depressed stock holdings during personal emergencies or downturns.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Leverage AI tools like ChatGPT or Claude for investment research by asking specific, detailed prompts about growth, metrics, and competitors rather than generic buy/sell questions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Define your investing strategy across growth, income, or wealth preservation before picking stocks, as an individual stock's suitability depends on personal financial objectives.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Keep cash reserves set aside during good times to aggressively purchase discounted assets during recessions and market panics when widespread overselling occurs.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-07",
       "url": "https://www.youtube.com/shorts/3w6MkBlYzvY",
       "title": "4 STOCKS TO WATCH NEXT WEEK 📈 NOVEMBER 6 (PART 3)",
       "channel": "@overkilltrading",
