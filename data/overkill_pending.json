@@ -1,13 +1,31 @@
 {
-  "checked": "2026-11-06",
+  "checked": "2026-11-07",
   "pending": [
+    {
+      "video_id": "H6wqMLVLtz4",
+      "title": "3 STOCKS TO WATCH NOW 📈 NOVEMBER 6 (PART 2)",
+      "date": "2026-11-07",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/H6wqMLVLtz4"
+    },
+    {
+      "video_id": "OJEnkUwLYIk",
+      "title": "This 1 Stock goes up don’t matter what‼️",
+      "date": "2026-11-07",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/OJEnkUwLYIk"
+    },
     {
       "video_id": "ZdlkaFK97Js",
       "title": "THESE 4 STOCKS LOOK BULLISH 📈 NOVEMBER 6️⃣",
       "date": "2026-11-06",
       "channel": "@overkilltrading",
       "channel_name": "OverKill",
-      "reason": "failed",
+      "reason": "queued",
       "url": "https://www.youtube.com/shorts/ZdlkaFK97Js"
     },
     {
@@ -29,40 +47,13 @@
       "url": "https://www.youtube.com/shorts/TbiCRIqM4rk"
     },
     {
-      "video_id": "bxeXF7QH8f0",
-      "title": "trading software 📈",
-      "date": "2026-10-31",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/bxeXF7QH8f0"
-    },
-    {
       "video_id": "ByYlPXDkaTg",
       "title": "The Only 3 ETFs You Ever Need (Buy These ASAP)",
       "date": "2026-10-28",
       "channel": "@MinorityMindset",
       "channel_name": "Minority Mindset",
-      "reason": "queued",
+      "reason": "failed",
       "url": "https://www.youtube.com/shorts/ByYlPXDkaTg"
-    },
-    {
-      "video_id": "296kChoo9YU",
-      "title": "These ETFs Will Create Millionaires - Your Turn To Buy",
-      "date": "2026-10-27",
-      "channel": "@MinorityMindset",
-      "channel_name": "Minority Mindset",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/296kChoo9YU"
-    },
-    {
-      "video_id": "LBny5igyZbM",
-      "title": "The UNTHINKABLE is About to Happen to Your Portfolio",
-      "date": "2026-10-26",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/LBny5igyZbM"
     },
     {
       "video_id": "ZEryJi9yCug",
@@ -74,15 +65,6 @@
       "url": "https://www.youtube.com/shorts/ZEryJi9yCug"
     },
     {
-      "video_id": "st2fw260BxE",
-      "title": "Why Doesn't Everybody Sell Covered Calls? (And Why I Do)",
-      "date": "2026-10-25",
-      "channel": "@InvestwithHenry",
-      "channel_name": "Invest w/ Henry",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/st2fw260BxE"
-    },
-    {
       "video_id": "w-S6OnQ-3lA",
       "title": "Good Afternoon.",
       "date": "2026-05-01",
@@ -90,6 +72,15 @@
       "channel_name": "In The Money",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
+    },
+    {
+      "video_id": "AdGhjaFeIHw",
+      "title": "Anthropic Hired AI Therapist for #claude",
+      "date": "2026-03-07",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/AdGhjaFeIHw"
     },
     {
       "video_id": "H8unf5ArniE",

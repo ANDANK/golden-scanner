@@ -1,8 +1,284 @@
 {
-  "updated": "2026-11-06",
+  "updated": "2026-11-07",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-07",
+      "url": "https://www.youtube.com/shorts/3w6MkBlYzvY",
+      "title": "4 STOCKS TO WATCH NEXT WEEK 📈 NOVEMBER 6 (PART 3)",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ALB",
+          "bias": "Bullish",
+          "notes": "Lithium mining company ALB has triggered a buy signal, similar to a previous setup that saw it move from 50 up to 220.",
+          "price": 99.25
+        },
+        {
+          "ticker": "MSOS",
+          "bias": "Bullish",
+          "notes": "Cannabis ETF MSOS is showing a buy signal around 4, making cannabis stocks look interesting.",
+          "price": 4.24
+        },
+        {
+          "ticker": "CPNG",
+          "bias": "Bullish",
+          "notes": "South Korean e-commerce company CPNG is displaying buy signals at lower technical levels.",
+          "price": 16.29
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Advises avoiding American stocks in favor of looking offshore, noting that Chinese stocks and other international names look strong.",
+          "price": null
+        },
+        {
+          "ticker": "PTRN",
+          "bias": "Bullish",
+          "notes": "PTRN, which has a partnership with Amazon, pulled back from 30 to 15 and is now triggering a buy signal.",
+          "price": 18.27
+        }
+      ]
+    },
+    {
+      "date": "2026-10-26",
+      "url": "https://www.youtube.com/shorts/LBny5igyZbM",
+      "title": "The UNTHINKABLE is About to Happen to Your Portfolio",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "WMT",
+          "bias": "Bullish",
+          "notes": "The host holds Walmart as a major position, noting that it performed well and protected his portfolio during the tech sell-off as capital rotated into consumer staples.",
+          "price": 120.29
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "The host is up 600% on Palantir after investing early at the IPO and adding at $100, highlighting its growth to $200 to illustrate the benefit of holding quality stocks through volatility.",
+          "price": 198.84
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The 2.9% drop in the Nasdaq 100 was driven by sector rotation out of high-valuation AI tech stocks and into defensive sectors like consumer staples, utilities, healthcare, and financials.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Goldman Sachs data shows hedge funds shorting global tech stocks at a five-year high with a 5-to-1 short-to-buy ratio, increasing the potential for a sharp short squeeze.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "AI data center construction has relied on a record $105 billion in project finance borrowing this year, with high-yield junk bonds paying up to 16% due to credit risks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should stick to a dollar-cost averaging schedule and define concrete rules to buy more shares when quality stocks fall 10% to 20% below 52-week highs.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-06",
+      "url": "https://www.youtube.com/shorts/y8GV4baiNvk",
+      "title": "The Jobs Report Just Changed the Outlook for Interest Rates",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The October US labor market report showed 165,000 net jobs added versus 59,000 expected, with the unemployment rate falling from 4.2% to 4.1%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Annual wage growth was 3.1% in October, trailing the 3.7% CPI inflation rate and resulting in a net decrease in real purchasing power for average workers.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Following the strong jobs report, the CME FedWatch tool showed market odds of a December Fed interest rate hike increasing from 66.4% to 79.1%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The food sector led October job cuts with 9,677 positions lost, and overall economic conditions have overtaken AI as the primary stated reason for workforce reductions.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-07",
+      "url": "https://www.youtube.com/shorts/HFwMRVw8Hc0",
+      "title": "3 STOCKS TO WATCH NOW 📈 NOVEMBER 6 (PART 1)",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "PLUG",
+          "bias": "Bullish",
+          "notes": "Plug Power triggered a technical buy signal after a heavy sell-off, with green energy plays favored under Democratic leadership. Previous instances of this buy signal led to major price rallies.",
+          "price": 1.45
+        },
+        {
+          "ticker": "ALK",
+          "bias": "Bullish",
+          "notes": "Alaska Airlines is flashing a buy signal ahead of the holiday travel season, which the host expects will drive strong performance for airline stocks through the end of the year.",
+          "price": 38.94
+        },
+        {
+          "ticker": "T",
+          "bias": "Bullish",
+          "notes": "This solar ETF has flashed a rare buy signal, which last occurred in April 2025 before a rally from $28 to $70. The host considers solar to be the top sector to watch right now.",
+          "price": 21.63
+        }
+      ]
+    },
+    {
+      "date": "2026-10-25",
+      "url": "https://www.youtube.com/shorts/st2fw260BxE",
+      "title": "Why Doesn't Everybody Sell Covered Calls? (And Why I Do)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "When a covered call moves into the money, investors can roll the option by buying back the short call and selling a new call at a higher strike price to adjust the ceiling upward and maintain stock ownership without triggering a taxable share sale.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-10-27",
+      "url": "https://www.youtube.com/shorts/296kChoo9YU",
+      "title": "These ETFs Will Create Millionaires - Your Turn To Buy",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Systematically dollar-cost averaging into broad markets builds long-term wealth, while market crashes and government-backed industrial shifts provide high-return opportunities to accelerate wealth.",
+          "price": null
+        },
+        {
+          "ticker": "AIQ",
+          "bias": "Bullish",
+          "notes": "Serves as an ETF option providing broad exposure across the expanding artificial intelligence industry.",
+          "price": 63.66
+        },
+        {
+          "ticker": "SMHX",
+          "bias": "Bullish",
+          "notes": "A VanEck ETF investing in 23 companies involved in designing the semiconductors that power AI.",
+          "price": 55.6
+        },
+        {
+          "ticker": "XSD",
+          "bias": "Bullish",
+          "notes": "An SPDR ETF holding 47 chip companies to capture exposure to the manufacturing side of semiconductors.",
+          "price": 484.86
+        },
+        {
+          "ticker": "DTCR",
+          "bias": "Bullish",
+          "notes": "An ETF that provides broad exposure to physical data center buildings and their operating companies.",
+          "price": 26.13
+        },
+        {
+          "ticker": "IBOT",
+          "bias": "Bullish",
+          "notes": "A VanEck ETF that invests in 69 companies manufacturing industrial robots, software, and specialized chips.",
+          "price": 63.4
+        },
+        {
+          "ticker": "KOID",
+          "bias": "Bullish",
+          "notes": "A KraneShares ETF holding about 50 humanoid robotics companies, many of which are based in China.",
+          "price": 34.48
+        },
+        {
+          "ticker": "ROBO",
+          "bias": "Bullish",
+          "notes": "An ETF providing exposure to approximately 80 global robotics and automation supply chain companies.",
+          "price": 77.18
+        },
+        {
+          "ticker": "MP",
+          "bias": "Bullish",
+          "notes": "A domestic US rare earth mining company that received tax dollar investments from the White House to secure critical mineral supplies.",
+          "price": 40.87
+        },
+        {
+          "ticker": "REMX",
+          "bias": "Bullish",
+          "notes": "A VanEck ETF holding 37 companies involved in mining and processing rare earths in China, Australia, and the US.",
+          "price": 54.2
+        },
+        {
+          "ticker": "REXC",
+          "bias": "Bullish",
+          "notes": "An ETF holding 41 rare earth metal companies explicitly located outside of China.",
+          "price": 13.54
+        },
+        {
+          "ticker": "SETM",
+          "bias": "Bullish",
+          "notes": "The Sprott Critical Materials ETF offering broad exposure across 156 companies in the metals and mining industry.",
+          "price": 26.08
+        },
+        {
+          "ticker": "XLE",
+          "bias": "Bullish",
+          "notes": "An ETF that owns 21 of the largest US oil and gas companies benefiting from elevated energy demand and geopolitical supply risks.",
+          "price": 68.21
+        },
+        {
+          "ticker": "GRID",
+          "bias": "Bullish",
+          "notes": "A First Trust ETF holding 123 power grid infrastructure companies essential for connecting electricity to AI data centers.",
+          "price": 167.05
+        },
+        {
+          "ticker": "NLR",
+          "bias": "Bullish",
+          "notes": "A VanEck ETF investing in 28 companies across the nuclear energy supply chain, including reactor utilities and uranium miners.",
+          "price": 94.92
+        },
+        {
+          "ticker": "ITA",
+          "bias": "Bullish",
+          "notes": "An iShares ETF holding 50 US aerospace and defense contractors poised to benefit from rising federal defense budgets.",
+          "price": 68.74
+        },
+        {
+          "ticker": "XAR",
+          "bias": "Bullish",
+          "notes": "An SPDR ETF providing equal-weighted exposure across 50 US defense and aerospace equipment companies.",
+          "price": 224.45
+        },
+        {
+          "ticker": "SHLD",
+          "bias": "Bullish",
+          "notes": "A Global X ETF offering targeted exposure to 50 defense technology companies focused on cybersecurity, AI, and advanced military hardware.",
+          "price": 63.24
+        }
+      ]
+    },
     {
       "date": "2026-11-06",
       "url": "https://www.youtube.com/shorts/v9yr0ZA-grQ",
