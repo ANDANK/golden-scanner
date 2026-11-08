@@ -4,6 +4,21 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-11-05",
+      "url": "https://www.youtube.com/shorts/TbiCRIqM4rk",
+      "title": "$H🕸️ $MU STOCK IS CRASHING 🚨 NOVEMBER 5",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "MU",
+          "bias": "Bearish",
+          "notes": "The host sees more downside ahead after a weekly capitulation candle, targeting a drop down to the four-year moving average around $300 to $400 before considering it a buy.",
+          "price": 656.39
+        }
+      ]
+    },
+    {
       "date": "2026-11-07",
       "url": "https://www.youtube.com/shorts/H6wqMLVLtz4",
       "title": "3 STOCKS TO WATCH NOW 📈 NOVEMBER 6 (PART 2)",
