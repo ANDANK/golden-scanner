@@ -1,8 +1,140 @@
 {
-  "updated": "2026-11-07",
+  "updated": "2026-11-09",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-09",
+      "url": "https://www.youtube.com/shorts/B0jz-hL7erA",
+      "title": "3 stocks set to explode in November 📈 (NOV 9) $UBER",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "UBER",
+          "bias": "Bullish",
+          "notes": "Consolidating sideways at fair value on its 4-year moving average around $70 in a 'smart money' stealth phase, with green dot signals suggesting it is ready to explode into year-end.",
+          "price": 71.17
+        },
+        {
+          "ticker": "ENP",
+          "bias": "Bullish",
+          "notes": "Flashing a low-wave buy signal similar to a prior setup that ran from $28 to around $80, with solar stocks looking poised to explode into the end of the year.",
+          "price": null
+        },
+        {
+          "ticker": "SKYDANCE",
+          "bias": "Bullish",
+          "notes": "Bottomed around $6.70 and trading near $8 ahead of after-bell earnings, significantly beaten down from an all-time high of $90 with a fresh buy signal this week.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-09",
+      "url": "https://www.youtube.com/shorts/OSgTEcIMBL8",
+      "title": "IRS Announces 2027 Tax Changes — What You Need to Know",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The IRS updated the 2027 tax brackets with a 3.2% inflation adjustment based on CPI reports, shifting bracket thresholds higher so more income is taxed at lower rates.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "For tax year 2027, standard deductions are increased by 3.1% and HSA contribution limits rise by 2.3%, while student loan interest deductions remain unadjusted for inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Traditional IRA and HSA contributions can be completed until April 15 of the following year to count toward 2026 taxes, whereas tax loss harvesting must be executed by December 31.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Contributions to 529 plans do not offer federal tax deductions, but growth and withdrawals remain tax-free for qualified education expenses and may offer state income tax deductions.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-09",
+      "url": "https://www.youtube.com/shorts/1DefQtwG35Q",
+      "title": "China Just Created The Best Investment Opportunity Of The Decade - Buy These Assets ASAP",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "China is scheduled to block rare earth metal exports to the U.S. starting January 10, 2027, accelerating a major capital shift toward domestic supply chain independence.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The U.S. government established a loan program of up to $10 billion for Project Vault to create a domestic stockpile of rare earth metals and mitigate supply chain halts.",
+          "price": null
+        },
+        {
+          "ticker": "MP",
+          "bias": "Bullish",
+          "notes": "The U.S. government invested over $400 million into MP Materials to help rebuild domestic rare earth processing capabilities.",
+          "price": 37.75
+        },
+        {
+          "ticker": "REMX",
+          "bias": "Bullish",
+          "notes": "VanEck Rare Earth and Strategic Metals ETF (REMX) provides diversified exposure to companies producing, refining, and recycling rare earth metals.",
+          "price": 53.72
+        },
+        {
+          "ticker": "SATM",
+          "bias": "Bullish",
+          "notes": "Sprott Critical Metals ETF (SATM) offers broad basket exposure to rare earths alongside critical commodities like uranium, copper, lithium, and silver.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-09",
+      "url": "https://www.youtube.com/shorts/txveZJ_S-R0",
+      "title": "DON’T SLEEP ON THESE 3 STOCKS 🚨 NOV 9",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "LIT",
+          "bias": "Bullish",
+          "notes": "The Lithium & Battery ETF (LIT) has pulled back from 90 to 60 and recently triggered a buy signal, indicating a potential reversal for the sector.",
+          "price": 61.35
+        },
+        {
+          "ticker": "LAC",
+          "bias": "Bullish",
+          "notes": "Lithium Americas (LAC) flashed a buy signal while sitting at its two-year low ahead of Friday earnings, leading the host to buy shares today.",
+          "price": 2.02
+        },
+        {
+          "ticker": "ALB",
+          "bias": "Bullish",
+          "notes": "Albemarle (ALB) has pulled back from 220 down to 100 and triggered a buy signal last week.",
+          "price": 99.12
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Lithium mining, Chinese equities, and solar stocks are highlighted as key sectors setting up strong opportunities through the end of the year.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-11-05",
       "url": "https://www.youtube.com/shorts/TbiCRIqM4rk",
