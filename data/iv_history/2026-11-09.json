@@ -1,0 +1,116 @@
+{
+  "date": "2026-11-09",
+  "saved_utc": "2026-11-10 02:52 UTC",
+  "rows": [
+    {
+      "ticker": "TQQQ",
+      "iv_atm": 0.6948,
+      "iv_otm": 0.834,
+      "skew": 0.1392,
+      "rv": 1.0885,
+      "iv_rv": 0.638,
+      "price": 57.58,
+      "dte": 23,
+      "spread_pct": 37.9
+    },
+    {
+      "ticker": "SOXL",
+      "iv_atm": 1.4905,
+      "iv_otm": 1.5054,
+      "skew": 0.0149,
+      "rv": 2.5549,
+      "iv_rv": 0.583,
+      "price": 56.2,
+      "dte": 23,
+      "spread_pct": 29.4
+    },
+    {
+      "ticker": "UPRO",
+      "iv_atm": 0.4971,
+      "iv_otm": 0.5942,
+      "skew": 0.0971,
+      "rv": 0.6807,
+      "iv_rv": 0.73,
+      "price": 137.91,
+      "dte": 23,
+      "spread_pct": 56.8
+    },
+    {
+      "ticker": "TECL",
+      "iv_atm": 0.8735,
+      "iv_otm": 0.9803,
+      "skew": 0.1068,
+      "rv": 1.4186,
+      "iv_rv": 0.616,
+      "price": 144.35,
+      "dte": 37,
+      "spread_pct": 14.2
+    },
+    {
+      "ticker": "FAS",
+      "iv_atm": 0.5867,
+      "iv_otm": 0.6211,
+      "skew": 0.0344,
+      "rv": 0.6334,
+      "iv_rv": 0.926,
+      "price": 175.62,
+      "dte": 23,
+      "spread_pct": 70.6
+    },
+    {
+      "ticker": "TNA",
+      "iv_atm": 0.5405,
+      "iv_otm": 0.6958,
+      "skew": 0.1553,
+      "rv": 0.7972,
+      "iv_rv": 0.678,
+      "price": 58.9,
+      "dte": 23,
+      "spread_pct": 42.7
+    },
+    {
+      "ticker": "LABU",
+      "iv_atm": 1.0004,
+      "iv_otm": 1.0416,
+      "skew": 0.0412,
+      "rv": 1.3235,
+      "iv_rv": 0.756,
+      "price": 245.11,
+      "dte": 23,
+      "spread_pct": 26.0
+    },
+    {
+      "ticker": "SPY",
+      "iv_atm": 0.1432,
+      "iv_otm": 0.299,
+      "skew": 0.1558,
+      "rv": 0.2227,
+      "iv_rv": 0.643,
+      "price": 752.69,
+      "dte": 23,
+      "spread_pct": 1.9
+    },
+    {
+      "ticker": "QQQ",
+      "iv_atm": 0.2426,
+      "iv_otm": 0.3607,
+      "skew": 0.1181,
+      "rv": 0.3587,
+      "iv_rv": 0.676,
+      "price": 679.35,
+      "dte": 23,
+      "spread_pct": 2.7
+    },
+    {
+      "ticker": "IWM",
+      "iv_atm": 0.185,
+      "iv_otm": 0.3005,
+      "skew": 0.1155,
+      "rv": 0.2636,
+      "iv_rv": 0.702,
+      "price": 282.51,
+      "dte": 23,
+      "spread_pct": 7.7
+    }
+  ]
+}
