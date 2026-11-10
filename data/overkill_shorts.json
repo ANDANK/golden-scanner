@@ -1,8 +1,101 @@
 {
-  "updated": "2026-11-09",
+  "updated": "2026-11-10",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-10",
+      "url": "https://www.youtube.com/shorts/TEQXTcqoQrk",
+      "title": "Social Security’s 2032 Problem: How Should You Plan Around It?",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Social Security Old Age and Survivors Insurance (OASI) Trust Fund is projected to deplete reserves in late 2032, after which ongoing tax revenues are expected to cover approximately 78% of scheduled retirement benefits.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Retirees should stress-test their financial plans by modeling a 22% reduction in expected Social Security income to see how an increased withdrawal rate impacts portfolio sustainability.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To cushion against potential Social Security benefit cuts, consider keeping approximately two years' worth of the expected annual benefit shortfall in cash to prevent selling investments in a down market.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-10",
+      "url": "https://www.youtube.com/shorts/Ul3P2ddsPys",
+      "title": "An Opportunity Like This Won't Come Again... (Emergency Update)",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Considers the stock under $180 an absolute steal following a recent dip and expects it to reach $200 per share by Q1 or Q2 of 2027. Sees it as a stable play positioned to reach a $10 trillion valuation in the next 3 to 5 years.",
+          "price": 168.07
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Believes the company is developing competitive AI chips alongside Nvidia and projects the stock will hit $600 per share in 2027.",
+          "price": 513.81
+        },
+        {
+          "ticker": "BE",
+          "bias": "Bullish",
+          "notes": "Solves the critical AI power bottleneck with fuel cell technology that generates electricity on-site, bypassing years of electrical grid delays. Views power infrastructure as a massive 5-year investment theme and expects the stock to continue rising.",
+          "price": 184.14
+        },
+        {
+          "ticker": "NBIS",
+          "bias": "Bullish",
+          "notes": "Despite high capital expenditure risks to build out specialized AI cloud infrastructure, expects long-term price targets of $200 to $300 per share due to strong insider activity, cash flow, and demand.",
+          "price": 132.35
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rising borrowing costs in the corporate bond market are putting debt-dependent companies under pressure, historically signaling pre-crash stress, though higher yields can also reflect economic growth.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-10",
+      "url": "https://www.youtube.com/shorts/Ur30WNmapTQ",
+      "title": "We Need To Talk About This Stock Market",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Strong labor market data with jobless claims hitting a 57-year low reduces the likelihood of Federal Reserve economic stimulus, keeping the central bank focused on protecting the dollar and fighting inflation.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Market breadth shows vulnerability as approximately 80% of S&P 500 stocks are down 10% or more, with broad index gains heavily concentrated in an intertwined AI sector characterized by circular financing.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should consistently dollar-cost average into broad market index funds while maintaining cash reserves to capitalize on market downturns rather than panic selling during corrections.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-11-09",
       "url": "https://www.youtube.com/shorts/B0jz-hL7erA",
