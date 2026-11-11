@@ -1,8 +1,65 @@
 {
-  "updated": "2026-11-10",
+  "updated": "2026-11-11",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-10",
+      "url": "https://www.youtube.com/shorts/Q-WF5RdHpgw",
+      "title": "The #1 Stock to Buy Right Now‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Honest was projected to hit at least $5 by year-end, with the potential to exit the year closer to $7 if momentum continues.",
+          "price": 5.2
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Following strong earnings beats, the stock is positioned to potentially push past $40 by year-end if upcoming Nielsen data confirms improving core brand volume alongside Alani's growth.",
+          "price": 32.8
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Neutral",
+          "notes": "While trading at a low forward P/E, 60%+ net margins are likely unsustainable and revenue growth is decelerating, creating long-term cloudiness 3 years out compared to other opportunities.",
+          "price": 168.89
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The company is entering an accelerating growth cycle for revenue, margins, and earnings, giving it unlimited upside potential that justifies a higher valuation multiple.",
+          "price": 515.21
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Viewed as a superior opportunity over Estee Lauder due to massive revenue and profit growth rates and a deeper grasp of modern social-media-driven marketing.",
+          "price": 118.51
+        },
+        {
+          "ticker": "EL",
+          "bias": "Bullish",
+          "notes": "The company is executing well with strong operating income and EPS growth without needing huge sales gains, positioning it to be a solid multi-year money maker.",
+          "price": 113.43
+        },
+        {
+          "ticker": "NKE",
+          "bias": "Bullish",
+          "notes": "Currently at an earnings trough with a 4%+ dividend yield, Nike is poised for significant margin and EPS expansion heading into 2027 as global market restructurings conclude.",
+          "price": 38.67
+        },
+        {
+          "ticker": "BBWI",
+          "bias": "Bullish",
+          "notes": "A top dividend pick around $21 offering a yield near 4% with a low payout ratio and reliable profitability regardless of consumer sentiment.",
+          "price": 21.65
+        }
+      ]
+    },
     {
       "date": "2026-11-10",
       "url": "https://www.youtube.com/shorts/TEQXTcqoQrk",
