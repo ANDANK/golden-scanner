@@ -1,8 +1,170 @@
 {
-  "updated": "2026-11-11",
+  "updated": "2026-11-12",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-12",
+      "url": "https://www.youtube.com/shorts/ou1JECedovg",
+      "title": "AMD Investors‼️Shocking Development",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD is seeing accelerating growth rates, margins, and EPS, with the host positioning it as a future semiconductor leader and a $1,000+ stock long term.",
+          "price": 552.9
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Potential departure of CEO Jensen Huang could leave Nvidia in a significantly weakened competitive position over the next 10 to 20 years.",
+          "price": 173.73
+        }
+      ]
+    },
+    {
+      "date": "2026-11-11",
+      "url": "https://www.youtube.com/shorts/WsxGTJ6B2Wg",
+      "title": "This $2,500 Trade Collects $1,000 Income",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Views the drop under $170 as a major buying opportunity, arguing underlying AI fundamentals remain strong despite board investigations into CEO Jensen Huang and macro spending concerns. Suggests selling Dec 18 $165 put options or opening a Poor Man's Covered Call using Sep $160 LEAPs ahead of Nov 17 earnings and Nov 18 congressional testimony.",
+          "price": 173.73
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "AI infrastructure spending and computing demand are expected to expand continuously over the next several years as major tech companies compete for compute capacity, persisting through temporary spending slowdowns.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-12",
+      "url": "https://www.youtube.com/shorts/pH_qqZuEly4",
+      "title": "Jensen Huang Fired? Our Boy Chose Cheeks Over Chips",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Host avoided buying the 8% after-hours dip following news that CEO Jensen Huang might be ousted, warning that losing key leadership creates significant downside risk for the stock.",
+          "price": 173.73
+        },
+        {
+          "ticker": "META",
+          "bias": "Bearish",
+          "notes": "Host raised concerns over Meta's AI capital expenditures, noting they issued Class C shares for funding while their credit default swap spreads reached record highs.",
+          "price": 628.77
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Host pulled 30% out of his AI portfolio sleeve to hold off on buying until downside volatility settles, cautioning that tech companies are cannibalizing free cash flow to fund AI capex.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-11",
+      "url": "https://www.youtube.com/shorts/FNJbma4DcR4",
+      "title": "Gold Prices: Why I Believe They're Going Much Higher",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Gold experienced a 30% correction from its peak of approximately $5,600 per ounce in January 2026 due to higher interest rates, profit-taking, and forced liquidations, which the host views as a long-term buying opportunity.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Central banks net purchased 321 tons of gold in Q3 2026 (up 42% year-over-year) and 675 tons in the first nine months of 2026 as institutional reserves shift away from fiat sovereign debt.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Long-term catalysts expected to drive gold prices higher include persistent inflation, declining confidence in fiat currencies, eventual necessity of lower interest rates, and potential quantitative easing.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-11",
+      "url": "https://www.youtube.com/shorts/eXemiD5fWvA",
+      "title": "The IRS Quietly Changed The Rules For 2027",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "In 2027, IRS income tax bracket income thresholds and the standard deduction for married couples filing jointly will increase to $33,200, allowing W-2 workers to lower their overall tax liability.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Long-term capital gains tax brackets will expand in 2027, enabling married couples filing jointly to pay 0% tax on up to $102,100 of investment income, or up to $135,300 tax-free when combined with the standard deduction.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "C-corporation tax rates remain at 21%, while small business owners operating as S-corps, LLCs, or partnerships can utilize the 20% Qualified Business Income (QBI) deduction on top of standard deductions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "In 2027, 401(k) contribution limits will rise to $25,500 with an $8,500 catch-up, HSA limits will increase to $4,500, and IRA limits will remain flat at $7,500 with a $1,100 catch-up.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Chinese AI stocks have fallen 40%, indicating a major pullback in international AI equity markets.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-11",
+      "url": "https://www.youtube.com/shorts/zLCa_8Q7G6I",
+      "title": "$AMZN TTD IREN STOCK ANALYSIS 📈 NOVEMVER 11",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "AMZN",
+          "bias": "Bearish",
+          "notes": "Amazon is currently trading well above its four-year moving average fair value, so the host recommends avoiding it until a deeper correction brings it back toward the mean.",
+          "price": 266.17
+        },
+        {
+          "ticker": "TTD",
+          "bias": "Bullish",
+          "notes": "The Trade Desk is breaking out above its 9 EMA after dropping from $140 to $16, with a bottom likely in at $12, making it an attractive buy on pullbacks.",
+          "price": 15.98
+        },
+        {
+          "ticker": "IRON",
+          "bias": "Bullish",
+          "notes": "IRON has pulled back sharply from around $70 into fear territory below the white line, offering a strong buying opportunity once the green dot signal appears.",
+          "price": 87.08
+        }
+      ]
+    },
     {
       "date": "2026-11-10",
       "url": "https://www.youtube.com/shorts/Q-WF5RdHpgw",

@@ -1,6 +1,33 @@
 {
-  "checked": "2026-11-11",
+  "checked": "2026-11-12",
   "pending": [
+    {
+      "video_id": "q203tuChj-I",
+      "title": "IONQ $APLD PLTR STOCK ANALYSIS 📈 NOVEMBER 11",
+      "date": "2026-11-11",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/q203tuChj-I"
+    },
+    {
+      "video_id": "mGmPTLKpY_Q",
+      "title": "how to set up overkill trading indicators 📈",
+      "date": "2026-11-11",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/mGmPTLKpY_Q"
+    },
+    {
+      "video_id": "8LkoLxb8gOU",
+      "title": "💧 how to download the trading indicators 📈",
+      "date": "2026-11-05",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/8LkoLxb8gOU"
+    },
     {
       "video_id": "w-S6OnQ-3lA",
       "title": "Good Afternoon.",
@@ -9,6 +36,15 @@
       "channel_name": "In The Money",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
+    },
+    {
+      "video_id": "AdGhjaFeIHw",
+      "title": "Anthropic Hired AI Therapist for #claude",
+      "date": "2026-03-07",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/AdGhjaFeIHw"
     },
     {
       "video_id": "H8unf5ArniE",
