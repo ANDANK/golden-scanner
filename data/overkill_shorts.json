@@ -5,6 +5,33 @@
   "videos": [
     {
       "date": "2026-11-12",
+      "url": "https://www.youtube.com/shorts/8OnnN1KsgvE",
+      "title": "3 STOCKS TO WATCH NOW 🚨 NOVEMBER 12",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "MTZ",
+          "bias": "Bullish",
+          "notes": "The stock has pulled back significantly and is showing buy signals between $190 and $210, mimicking a previous setup that led to a major rally.",
+          "price": 185.06
+        },
+        {
+          "ticker": "LLY",
+          "bias": "Bearish",
+          "notes": "With the stock reaching around $1,400 and the wave indicator showing overextended enthusiasm, the host recommends selling on the next red dot signal.",
+          "price": 1432.79
+        },
+        {
+          "ticker": "CRWV",
+          "bias": "Bullish",
+          "notes": "After dropping to $57 despite strong earnings, the host favors the stock above $43 and expects a buy signal to print within one to three weeks.",
+          "price": 56.73
+        }
+      ]
+    },
+    {
+      "date": "2026-11-12",
       "url": "https://www.youtube.com/shorts/ou1JECedovg",
       "title": "AMD Investors‼️Shocking Development",
       "channel": "@FinancialEducation",
