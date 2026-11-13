@@ -1,8 +1,224 @@
 {
-  "updated": "2026-11-12",
+  "updated": "2026-11-13",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-12",
+      "url": "https://www.youtube.com/shorts/y35XrhSWssI",
+      "title": "$NVDA STOCK IS SETTING UP 📈 NOVEMBER 12",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host is looking to buy NVDA as it pulls back around $165, waiting for a green dot buy signal to confirm a momentum shift. He notes he will aggressively buy if the price drops to $130 ahead of its upcoming earnings call.",
+          "price": 166.19
+        }
+      ]
+    },
+    {
+      "date": "2026-11-12",
+      "url": "https://www.youtube.com/shorts/Ub_NbI7z6xg",
+      "title": "Jensen Huang Resigned! What's Next For Nvidia?",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The speaker views the volatility following CEO Jensen Huang's resignation as a strong buying opportunity caused by a personal scandal rather than broken business fundamentals. He is actively buying LEAP options and sold $190 put options, noting that anything under $190 per share represents good value.",
+          "price": 166.19
+        }
+      ]
+    },
+    {
+      "date": "2026-11-12",
+      "url": "https://www.youtube.com/shorts/iwkEc0k3hRk",
+      "title": "The Last Time The Fed Did This, Regular People Got Rich (It's Happening Again)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historical data shows that when the Federal Reserve cuts interest rates and then reverses course to raise them again due to persistent inflation, this U-turn cycle has historically triggered economic recessions and significant stock market downturns.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With U.S. debt-to-GDP now exceeding 125%, higher interest rates impose a much heavier burden on the economy than in past decades, prompting the Treasury to buy back its own debt to stabilize bond yields.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Maintaining cash in dry powder via high-yield savings accounts or short-term Treasuries allows investors to generate 3.5% to 4% interest while preparing to buy discounted assets during market pullbacks.",
+          "price": null
+        },
+        {
+          "ticker": "SGOV",
+          "bias": "Bullish",
+          "notes": "SGOV is a Treasury-backed ETF offering around 3.5% in interest without state or local tax liability. It serves as a tax-efficient option for parking cash reserves.",
+          "price": 100.53
+        },
+        {
+          "ticker": "GLD",
+          "bias": "Neutral",
+          "notes": "GLD provides paper exposure to gold, which acts as a store of value and hedge during periods of inflation and currency uncertainty. The host notes gold is cyclical and prefers holding physical gold over paper ETFs.",
+          "price": 354.89
+        },
+        {
+          "ticker": "VNQ",
+          "bias": "Bullish",
+          "notes": "VNQ is a Vanguard ETF that provides broad exposure to the real estate sector along with dividend cash flow. It offers an easy way to gain real estate inflation-hedging benefits without physical property management.",
+          "price": 96.44
+        },
+        {
+          "ticker": "SCHH",
+          "bias": "Bullish",
+          "notes": "SCHH is a Schwab ETF offering broad exposure to real estate equities and REIT dividends, serving as a liquid real estate investment option.",
+          "price": 23.69
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "SCHD is a Schwab ETF focused on strong dividend-paying companies that consistently increase payouts. It provides defensive cash flow that typically holds up better during market downturns.",
+          "price": 35.93
+        },
+        {
+          "ticker": "NOBL",
+          "bias": "Bullish",
+          "notes": "NOBL tracks S&P 500 Dividend Aristocrats that have increased dividend payouts for at least 25 consecutive years, offering exposure to stable, high-quality value companies.",
+          "price": 60.56
+        },
+        {
+          "ticker": "VOO",
+          "bias": "Bullish",
+          "notes": "VOO provides broad index exposure to the 500 largest U.S. companies in the S&P 500. The host holds VOO personally and advocates an 'Always Be Buying' dollar-cost averaging strategy over the long term.",
+          "price": 696.0
+        },
+        {
+          "ticker": "SPY",
+          "bias": "Bullish",
+          "notes": "SPY offers broad low-cost exposure to the S&P 500 index, capturing the long-term historical 10% average annual growth of the U.S. economy.",
+          "price": 757.12
+        }
+      ]
+    },
+    {
+      "date": "2026-11-12",
+      "url": "https://www.youtube.com/shorts/3Yi4MPhlGb4",
+      "title": "3 STOCKS TO BUY ON THE DIP 📈 NOVEMBER 12",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "CAT",
+          "bias": "Bullish",
+          "notes": "Caterpillar has pulled back over 40% from its high, and the host is waiting for a green dot buy signal below the white line to buy the dip.",
+          "price": 605.28
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Nvidia is sitting near support at $165, with the host waiting for a buy signal to trigger and ideally looking to buy closer to its 4-year average around $130.",
+          "price": 166.19
+        },
+        {
+          "ticker": "AXON",
+          "bias": "Bullish",
+          "notes": "Axon Enterprise sold off after missing earnings and revenue, but it is currently trading below its 4-year fair value average, setting up a buying opportunity once a signal appears.",
+          "price": 307.11
+        }
+      ]
+    },
+    {
+      "date": "2026-11-12",
+      "url": "https://www.youtube.com/shorts/WV3UtZz-Bgk",
+      "title": "🚨 BUYING HEAVY TODAY (BEST AI stocks NOT NVDA)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "AVGO",
+          "bias": "Bullish",
+          "notes": "Broadcom manufactures custom AI chips for tech giants like Google and saw its AI chip sales more than triple last quarter as it gains AI market share.",
+          "price": 364.36
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD makes competing AI chips to Nvidia and recently signed a deal with OpenAI to supply them.",
+          "price": 585.3
+        },
+        {
+          "ticker": "TSM",
+          "bias": "Bullish",
+          "notes": "Taiwan Semiconductor manufactures chips for Nvidia, AMD, and Broadcom, positioning it to profit regardless of which chipmaker dominates.",
+          "price": 405.49
+        },
+        {
+          "ticker": "ASML",
+          "bias": "Bullish",
+          "notes": "ASML holds a monopoly as the only company globally that produces the lithography machines required to print the most advanced microchips.",
+          "price": 1497.12
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Micron is one of the three main producers of the high-speed memory essential for AI processors.",
+          "price": 798.44
+        }
+      ]
+    },
+    {
+      "date": "2026-11-12",
+      "url": "https://www.youtube.com/shorts/3i0_zK1wLnQ",
+      "title": "Down On NVDA, NBIS or Bloom Eneregy? Do this NOW!",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host views Nvidia as a bargain opportunity following sell-offs over CEO personal headlines, pointing to 69% YoY revenue growth and 73% data center growth. He recommends buying shares or selling 165 or 170 strike puts for December 18.",
+          "price": 166.19
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "The host sees stability for Palantir around $165 per share and plans to generate income by selling covered calls between $165 and $200. He highlights strong YoY commercial growth of 148% and government growth of 96%.",
+          "price": 171.58
+        },
+        {
+          "ticker": "CRWV",
+          "bias": "Bullish",
+          "notes": "Following an earnings beat with $3.66 billion in revenue and a $132.5 billion backlog, the host expects CoreWeave to rise to $75-$85 per share in 2027.",
+          "price": 56.6
+        },
+        {
+          "ticker": "BE",
+          "bias": "Bullish",
+          "notes": "The host expects Bloom Energy to see 20% to 25% near-term growth and eventually reach $300 per share, with long-term market cap potential over $100 billion.",
+          "price": 201.93
+        },
+        {
+          "ticker": "NBIS",
+          "bias": "Bullish",
+          "notes": "The host expects Nebius to recover back to its June levels of $275-$286 per share, driven by 500% YoY revenue growth.",
+          "price": 128.64
+        },
+        {
+          "ticker": "IREN",
+          "bias": "Neutral",
+          "notes": "The host is holding his small position and selling covered calls after IREN delayed its $4 billion ARR target to January 2027, noting the stock has limited further downside.",
+          "price": 19.48
+        }
+      ]
+    },
     {
       "date": "2026-11-12",
       "url": "https://www.youtube.com/shorts/8OnnN1KsgvE",
