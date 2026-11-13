@@ -4,6 +4,105 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-11-13",
+      "url": "https://www.youtube.com/shorts/0JRXKwY8SEE",
+      "title": "Nvidia Lost Its CEO. Three Stocks Could Win From the Fallout",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "AMD's Instinct MI GPUs are gaining adoption among major cloud providers like Microsoft and Meta, driving 97% year-over-year growth in data center revenue. The host expects market share gains in AI to propel the stock toward $650 per share over the next three months.",
+          "price": 530.28
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Despite leadership drama and recent market sell-offs creating uncertainty, the host remains bullish on Nvidia long-term due to its dominant CUDA software ecosystem and the rapidly expanding overall AI market.",
+          "price": 161.58
+        },
+        {
+          "ticker": "AVGO",
+          "bias": "Bullish",
+          "notes": "Broadcom is positioned to capitalize on tech companies diversifying AI chip suppliers through custom ASIC development—such as Google's TPUs—and high-speed data center networking. Its AI semiconductor revenue surged 221% year-over-year to $16.7 billion.",
+          "price": 345.11
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Google combines a highly profitable core ad business in Search and YouTube with self-sufficient AI infrastructure, including custom TPUs and Cloud revenue growing 103% year-over-year. Trading at an attractive forward P/E of around 22, the host expects its long-term valuation to top $5 trillion.",
+          "price": 295.24
+        }
+      ]
+    },
+    {
+      "date": "2026-11-13",
+      "url": "https://www.youtube.com/shorts/5ntnKmLSNCg",
+      "title": "Nvidia Just Flipped The Everything Bubble - Do This Now",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Jensen Huang's sudden departure creates major leadership uncertainty and threatens to disrupt Nvidia's circular financing model that has funded key AI players, creating downside risk for the stock.",
+          "price": 161.77
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Inflation is estimated to be accelerating toward 4%, prompting Federal Reserve discussions about potentially aggressive interest rate hikes, including a possible 0.5% increase in December.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Debasement assets like gold, silver, and Bitcoin face downward pressure as the Federal Reserve prioritizes dollar preservation and higher interest rates.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Uncertainty surrounding an Iran deal threatens to keep oil prices elevated, which directly fuels broader inflation through higher fuel, shipping, and agricultural fertilizer costs.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Consistently dollar-cost averaging into broad market index funds like the S&P 500 across all market conditions remains a proven foundational strategy for long-term wealth building.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-11",
+      "url": "https://www.youtube.com/shorts/q203tuChj-I",
+      "title": "IONQ $APLD PLTR STOCK ANALYSIS 📈 NOVEMBER 11",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "IONQ",
+          "bias": "Bullish",
+          "notes": "Host is bullish on IONQ following strong earnings, noting the stock is giving a buy signal at its 4-year moving average around $35.",
+          "price": 34.06
+        },
+        {
+          "ticker": "APLD",
+          "bias": "Bullish",
+          "notes": "Host is bullish on APLD after a 70% pullback, stating that the stock appears to have bottomed around $12 to $13 and is in buy territory.",
+          "price": 17.91
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bearish",
+          "notes": "Host is bearish on buying PLTR at current levels, noting the stock is overextended far above its moving average and needs to pull back to around $100 before he would turn bullish.",
+          "price": 172.4
+        }
+      ]
+    },
+    {
       "date": "2026-11-12",
       "url": "https://www.youtube.com/shorts/y35XrhSWssI",
       "title": "$NVDA STOCK IS SETTING UP 📈 NOVEMBER 12",

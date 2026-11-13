@@ -2,22 +2,13 @@
   "checked": "2026-11-13",
   "pending": [
     {
-      "video_id": "b7ZvfWlYLwA",
-      "title": "LIVE CHART REQUESTS 📈",
-      "date": "2026-11-11",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/b7ZvfWlYLwA"
-    },
-    {
-      "video_id": "q203tuChj-I",
-      "title": "IONQ $APLD PLTR STOCK ANALYSIS 📈 NOVEMBER 11",
-      "date": "2026-11-11",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/q203tuChj-I"
+      "video_id": "fUeT2fnVeKk",
+      "title": "HUGE NEWS for all investors! 📈",
+      "date": "2026-11-12",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/fUeT2fnVeKk"
     },
     {
       "video_id": "mGmPTLKpY_Q",
@@ -36,6 +27,15 @@
       "channel_name": "In The Money",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
+    },
+    {
+      "video_id": "AdGhjaFeIHw",
+      "title": "Anthropic Hired AI Therapist for #claude",
+      "date": "2026-03-07",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "reason": "failed",
+      "url": "https://www.youtube.com/shorts/AdGhjaFeIHw"
     },
     {
       "video_id": "H8unf5ArniE",
