@@ -1,8 +1,221 @@
 {
-  "updated": "2026-11-13",
+  "updated": "2026-11-14",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-14",
+      "url": "https://www.youtube.com/shorts/ieJON4UiZyE",
+      "title": "4 STOCKS TO BUY/HOLD ON THE DIP 📈 NOVEMBER 13",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NXT",
+          "bias": "Bullish",
+          "notes": "Pulled back from $160 to $80 and triggered a MACD crossover along with green dot buy signals. Looking for continuation to the upside following this week's pullback.",
+          "price": 95.03
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Shares have pulled back from $65 to $30 while revenue and quarterly earnings continue to grow. Indicator signals show multiple green dots indicating a buy.",
+          "price": 32.42
+        },
+        {
+          "ticker": "UBER",
+          "bias": "Bullish",
+          "notes": "Consolidating sideways in a stealth accumulation phase with strong support at $70. Sitting at its four-year average and printed a new green dot buy signal.",
+          "price": 69.69
+        },
+        {
+          "ticker": "NVO",
+          "bias": "Bullish",
+          "notes": "Finding a bottom around $40 after declining from $140. Triggered a buy signal around $38 and is beginning to break out after a period of consolidation.",
+          "price": 41.63
+        }
+      ]
+    },
+    {
+      "date": "2026-11-14",
+      "url": "https://www.youtube.com/shorts/x7RiDC-cE0g",
+      "title": "What a mess.. (Must act before Tuesday 11/17)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "October CPI came in hotter than expected (headline up 0.4% vs 0.3% expected, core up 0.3% vs 0.2%), driving Treasury yields higher. Persistent inflation raises the risk of further Fed tightening or higher-for-longer rates, putting downward pressure on growth stock valuations.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With financing remaining expensive due to elevated rates, investors should favor cash-heavy, recession-proof companies with strong balance sheets over debt-reliant growth stocks. Investors should also check for portfolio overconcentration across overlapping tech and AI ETFs.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-14",
+      "url": "https://www.youtube.com/shorts/hJ4jacgJdYU",
+      "title": "We gotta Move NOW‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "The host projects AMD to reach between $1,000 and $2,000 per share over the next several years driven by robust revenue growth. He considers recent extreme price volatility to be driven by short-term traders rather than changing long-term fundamentals.",
+          "price": 534.06
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "AAII investor sentiment shows 51.4% of investors are bearish, which historically indicates an attractive multi-year buying opportunity for long-term investors.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The S&P 500 forward P/E ratio sits at a fair level of 18, suggesting the overall market does not currently suffer from a broad valuation bubble.",
+          "price": null
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Host expects Celsius to deliver a 30% to 50% relief rally as the core brand returns to growth alongside Alani by 2027, projecting a mid-20s to 30s CAGR through 2030.",
+          "price": 32.42
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Host views ELF as a high-quality buy-and-hold stock to accumulate on any price weakness, projecting long-term compound annual returns in the 20% to 30% range through 2030.",
+          "price": 117.98
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Host expects Honest stock to finish the year above $5 per share, with potential upside reaching toward the $7 range during a strong year-end market move.",
+          "price": 5.01
+        }
+      ]
+    },
+    {
+      "date": "2026-11-14",
+      "url": "https://www.youtube.com/shorts/rS-ipjJCWxc",
+      "title": "Cathie Wood Is Bullish on NVIDIA Stock… Here's My Options Trade",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Host views Nvidia as significantly undervalued around $166 per share with a forward P/E near 21 following a CEO drama sell-off, recommending selling $165 strike put options for ~$12 premium or buying LEAPS as AI infrastructure demand remains strong.",
+          "price": 162.85
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "To diversify options strategies, traders can sell put contracts across multiple staggered expiration dates, such as one, two, and three months out.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-14",
+      "url": "https://www.youtube.com/shorts/eSkRta5aldE",
+      "title": "Trump’s 2027 Plan To Wipe Out The $40 Trillion Debt",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Federal Reserve has shifted from generating profits for the US Treasury to incurring operating losses because the interest rates it pays on bank reserves exceed the yield earned on debt acquired between 2020 and 2022.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Genius Act, taking effect in early 2027, mandates that stablecoin issuers back their tokens one-to-one with US Treasuries, effectively creating forced buyers to help stabilize the short-term US bond market.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The US government is looking to monetize its balance sheet by potentially revaluing gold reserves to market prices around $4,000 an ounce and retaining seized Bitcoin in a Strategic Crypto Reserve.",
+          "price": null
+        },
+        {
+          "ticker": "AIQ",
+          "bias": "Bullish",
+          "notes": "Provides ETF exposure to the artificial intelligence sector, which stands to benefit from government policy and spending aimed at maintaining US leadership in AI.",
+          "price": 58.72
+        },
+        {
+          "ticker": "ROBO",
+          "bias": "Bullish",
+          "notes": "Gives targeted ETF exposure to robotics and hardware automation companies as investment expands beyond software into physical AI application.",
+          "price": 72.11
+        },
+        {
+          "ticker": "SMH",
+          "bias": "Bullish",
+          "notes": "Offers semiconductor ETF exposure to capitalize on federal funding and tax incentives driving domestic microchip manufacturing.",
+          "price": 486.75
+        },
+        {
+          "ticker": "REMX",
+          "bias": "Bullish",
+          "notes": "Captures potential upside in rare earth metal producers as the US rebuilds domestic supply chains in response to Chinese trade restrictions.",
+          "price": 50.02
+        },
+        {
+          "ticker": "ITA",
+          "bias": "Bullish",
+          "notes": "Provides exposure to defense contractors benefiting from heightened global geopolitical conflicts and expanded US military budgets.",
+          "price": 71.51
+        },
+        {
+          "ticker": "DTCR",
+          "bias": "Bullish",
+          "notes": "Gives exposure to data center owners and infrastructure companies required to store data and power expanding AI computing needs.",
+          "price": 25.37
+        },
+        {
+          "ticker": "QTUM",
+          "bias": "Bullish",
+          "notes": "Offers ETF exposure to quantum computing companies as federal initiatives target advanced computing capabilities.",
+          "price": 130.1
+        },
+        {
+          "ticker": "SGOV",
+          "bias": "Bullish",
+          "notes": "Provides short-term US Treasury exposure for monthly yield generation while holding cash during uncertain market conditions, offering state tax exemption benefits.",
+          "price": 100.56
+        },
+        {
+          "ticker": "GLD",
+          "bias": "Bullish",
+          "notes": "Serves as a liquid paper-gold ETF to hedge portfolios against US dollar inflation and expanding federal debt levels.",
+          "price": 355.45
+        },
+        {
+          "ticker": "IBIT",
+          "bias": "Bullish",
+          "notes": "Provides spot Bitcoin ETF exposure for investors seeking an alternative digital store of value to hedge against currency debasement.",
+          "price": 38.94
+        },
+        {
+          "ticker": "VXUS",
+          "bias": "Bullish",
+          "notes": "Offers broad international equity exposure to help diversify portfolios away from US economic risk and dollar-denominated assets.",
+          "price": 82.64
+        }
+      ]
+    },
     {
       "date": "2026-11-13",
       "url": "https://www.youtube.com/shorts/0JRXKwY8SEE",
