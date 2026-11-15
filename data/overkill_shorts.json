@@ -1,8 +1,47 @@
 {
-  "updated": "2026-11-14",
+  "updated": "2026-11-15",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-15",
+      "url": "https://www.youtube.com/shorts/4N-aBjn7-d8",
+      "title": "The Fed Is Preparing For Something Big In December",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With U.S. national debt at $40 trillion, annual interest payments are projected to hit a record $1.05 trillion in 2026, creating severe economic strain as the debt rolls over at higher interest rates.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Borrowers should prioritize paying off variable-rate debt such as credit cards and refinancing or locking in adjustable-rate mortgages before expected rate hikes increase borrowing costs further.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should hold cash in high-yield savings accounts or short-term Treasury funds earning 3.5% to 4% yield to build reserves for buying opportunities during market downturns.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Higher interest rates put downward pressure on speculative and unprofitable growth companies, pushing institutional capital into proven, profitable value and dividend-paying stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Consistent long-term dollar-cost averaging into the broad economy via index funds, complemented by hedges like gold and international equities, remains an effective strategy through market cycles.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-11-14",
       "url": "https://www.youtube.com/shorts/ieJON4UiZyE",
