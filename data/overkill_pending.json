@@ -1,6 +1,15 @@
 {
-  "checked": "2026-11-15",
+  "checked": "2026-11-16",
   "pending": [
+    {
+      "video_id": "mGmPTLKpY_Q",
+      "title": "how to set up overkill trading indicators 📈",
+      "date": "2026-11-11",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/mGmPTLKpY_Q"
+    },
     {
       "video_id": "w-S6OnQ-3lA",
       "title": "Good Afternoon.",
@@ -9,6 +18,15 @@
       "channel_name": "In The Money",
       "reason": "failed",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
+    },
+    {
+      "video_id": "AdGhjaFeIHw",
+      "title": "Anthropic Hired AI Therapist for #claude",
+      "date": "2026-03-07",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/AdGhjaFeIHw"
     },
     {
       "video_id": "H8unf5ArniE",
@@ -126,15 +144,6 @@
       "channel_name": "In The Money",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/kyYGpgsZXWc"
-    },
-    {
-      "video_id": "BK0SCBWLj6c",
-      "title": "How to Trade Futures on Robinhood by InTheMoney",
-      "date": "2025-04-04",
-      "channel": "@InTheMoneyAdam",
-      "channel_name": "In The Money",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/BK0SCBWLj6c"
     }
   ]
 }

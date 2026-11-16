@@ -1,8 +1,134 @@
 {
-  "updated": "2026-11-15",
+  "updated": "2026-11-16",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-16",
+      "url": "https://www.youtube.com/shorts/Rtn-LQlP8j4",
+      "title": "$NVDA STOCK IS SETTING UP 📈 NOVEMBER 12",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host is monitoring Nvidia around $165 ahead of earnings, waiting for a green momentum buy signal before entering. He noted he will aggressively buy if the stock sells off further to the $130 level.",
+          "price": 156.14
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "During broader market and crypto corrections, the host advises patience and waiting for confirmed technical buy signals rather than trying to call exact bottoms.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-16",
+      "url": "https://www.youtube.com/shorts/Vv5VtAixHas",
+      "title": "The Only 5 ETFs you NEED 2027 📈 #etfinvesting",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "VOO",
+          "bias": "Bullish",
+          "notes": "Tracks about 500 of America's largest companies and serves as the primary foundation for a portfolio heading into 2027.",
+          "price": 680.26
+        },
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "Holds about 100 dividend-paying stocks, serving as a safer portfolio allocation that provides dividend income.",
+          "price": 35.86
+        },
+        {
+          "ticker": "QQQM",
+          "bias": "Bullish",
+          "notes": "Tracks the Nasdaq 100 for broad growth exposure and bets on the future trajectory of technology.",
+          "price": 272.49
+        },
+        {
+          "ticker": "VGT",
+          "bias": "Bullish",
+          "notes": "Focuses purely on the technology sector and is recommended as a small satellite holding in the portfolio.",
+          "price": 107.82
+        },
+        {
+          "ticker": "SPMO",
+          "bias": "Bullish",
+          "notes": "A momentum ETF that reshuffles twice a year toward market leaders, acting as an all-around top performing fund.",
+          "price": 128.06
+        }
+      ]
+    },
+    {
+      "date": "2026-11-16",
+      "url": "https://www.youtube.com/shorts/XKh6IDZGTOM",
+      "title": "The Great Stock Market Crash of like late fallish ‘26",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Market drawdowns and red years are a normal part of investing, making dips an opportunity to buy more if you have spare cash.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should avoid putting in too much cash without maintaining adequate liquidity, though margin rates at around 5.5% are cheaper than credit card interest.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-16",
+      "url": "https://www.youtube.com/shorts/SpfTkrMGXmU",
+      "title": "The Stock Market Is A Lie (Here’s Who’s Really Buying)",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Current stock market growth is primarily driven by record ETF inflows at 7% of GDP and record margin debt at 4.6% of GDP, rather than corporate buybacks or 401(k) contributions.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Record levels of margin debt pose a severe structural risk to the market because price declines can trigger broker margin calls and forced selling, exacerbating market crashes.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Heavy reliance on index funds introduces hidden risks, including over-concentration in top tech companies, disregard for stock valuations, and the potential for magnified sell-offs during panics.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Always Be Buying strategy of consistently dollar-cost averaging into broad market ETFs builds long-term wealth, provided investors do not panic sell during severe downturns.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should keep cash reserves during good economic times to buy high-quality assets at steep discounts when market panic leads to overselling.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Retail investors should avoid using margin debt to trade stocks because it dramatically multiplies downside risk and can force liquidation at the worst possible prices.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-11-15",
       "url": "https://www.youtube.com/shorts/terD3n_yL_4",
