@@ -5,6 +5,27 @@
   "videos": [
     {
       "date": "2026-11-15",
+      "url": "https://www.youtube.com/shorts/terD3n_yL_4",
+      "title": "Nvidia: I Won't Say it Again. Buy LEAPs Monday 9:30am",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host is strongly bullish on Nvidia following a 28% drop over the past month down to $162, viewing earnings on the 17th as a major catalyst. He proposes a poor man's covered call by purchasing a September 17, 2027 $155 LEAP call and selling a January 15, 2027 $180 call option against it.",
+          "price": 162.85
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A poor man's covered call utilizes a deep in-the-money LEAP call option (typically around 70 delta, 1 to 2 years to expiration) as a substitute for 100 shares of stock, allowing investors to sell shorter-term call options for regular income at a fraction of the capital cost.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-15",
       "url": "https://www.youtube.com/shorts/4N-aBjn7-d8",
       "title": "The Fed Is Preparing For Something Big In December",
       "channel": "@MinorityMindset",
