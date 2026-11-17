@@ -1,14 +1,50 @@
 {
-  "checked": "2026-11-16",
+  "checked": "2026-11-17",
   "pending": [
     {
-      "video_id": "mGmPTLKpY_Q",
-      "title": "how to set up overkill trading indicators 📈",
+      "video_id": "N8gcWdmsSBg",
+      "title": "BITCOIN BACK TO THE BOTTOM OF THE TRADING RANGE 📈 NOVEMBER 16",
+      "date": "2026-11-17",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/N8gcWdmsSBg"
+    },
+    {
+      "video_id": "D4ZQnlNOZfw",
+      "title": "$XRP 📈 HUGE TEST OF SUPPORT!! 🚨 NOVEMBER 16",
+      "date": "2026-11-17",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/D4ZQnlNOZfw"
+    },
+    {
+      "video_id": "JfNIXsfqO6Y",
+      "title": "BITCOIN BACK TO THE BOTTOM OF THE TRADING RANGE 📈 NOVEMBER 16",
+      "date": "2026-11-16",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/JfNIXsfqO6Y"
+    },
+    {
+      "video_id": "P7MnmuHUY98",
+      "title": "$XRP 📈 HUGE TEST OF SUPPORT!! 🚨 NOVEMBER 16",
+      "date": "2026-11-16",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/P7MnmuHUY98"
+    },
+    {
+      "video_id": "b7ZvfWlYLwA",
+      "title": "LIVE CHART REQUESTS 📈",
       "date": "2026-11-11",
       "channel": "@overkilltrading",
       "channel_name": "OverKill",
       "reason": "queued",
-      "url": "https://www.youtube.com/shorts/mGmPTLKpY_Q"
+      "url": "https://www.youtube.com/shorts/b7ZvfWlYLwA"
     },
     {
       "video_id": "w-S6OnQ-3lA",
@@ -135,15 +171,6 @@
       "channel_name": "In The Money",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/EvSzOc_g4J8"
-    },
-    {
-      "video_id": "kyYGpgsZXWc",
-      "title": "You Will Be Okay",
-      "date": "2025-04-04",
-      "channel": "@InTheMoneyAdam",
-      "channel_name": "In The Money",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/kyYGpgsZXWc"
     }
   ]
 }

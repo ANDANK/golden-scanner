@@ -1,8 +1,107 @@
 {
-  "updated": "2026-11-16",
+  "updated": "2026-11-17",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-17",
+      "url": "https://www.youtube.com/shorts/A6f-evkz85Y",
+      "title": "BITCOIN BACK TO THE BOTTOM OF THE TRADING RANGE 📈 NOVEMBER 16",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "BTC",
+          "bias": "Bullish",
+          "notes": "Bitcoin has pulled back to the bottom of its trading range around August levels in extreme fear territory. The host views this bottom golden Fibonacci zone as a major risk-on buying opportunity before a move back toward 90.",
+          "price": 28.74
+        },
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "notes": "Ethereum has dropped back down to its July support levels at the bottom of its trading range, offering another entry point where buyers previously stepped in.",
+          "price": 17.35
+        },
+        {
+          "ticker": "LINK",
+          "bias": "Bullish",
+          "notes": "Chainlink has dropped from 15 down to 9 after six consecutive down weeks. Sitting in its bottom golden zone, it is in an accumulation phase rather than a selling phase.",
+          "price": 2.79
+        }
+      ]
+    },
+    {
+      "date": "2026-11-17",
+      "url": "https://www.youtube.com/shorts/n1dXGMGkorY",
+      "title": "The Unthinkable will happen to your stocks‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Projects a conservative base-case compound annual growth rate of 26% to 27% through 2030, supported by 10% average revenue growth across Celsius, Alani, Rockstar, and international markets.",
+          "price": 31.57
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "Views Amex as an easy money opportunity capable of delivering around a 30% CAGR through 2030, driven by steady 8% revenue growth, 12% net income growth, and heavy share buybacks.",
+          "price": 319.05
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Considers the stock a buy at $500, projecting it will reach $1,000 to $2,000 per share over the next few years.",
+          "price": 504.28
+        },
+        {
+          "ticker": "ELF",
+          "bias": "Bullish",
+          "notes": "Reiterates as a buy with conservative base-case estimates of $3.3 billion in revenue and under $500 million in net income by 2030, generating a CAGR deep in the 20s.",
+          "price": 115.95
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Finds the stock highly attractive under $15 and is prepared to average up on his position, though cautions against overexposure due to banking-sector risks.",
+          "price": 14.85
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Maintains that Amazon is consistently a buy due to its resilient business model, becoming even more attractive if it pulls back 20% or more from its highs.",
+          "price": 257.75
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Intends to aggressively buy shares anytime the stock trades below $125.",
+          "price": 126.16
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host holds $1.8 million in cash yielding around 4% and will only deploy $800,000 once mega-cap tech pulls back significantly and retail sentiment remains above 50% bearish for multiple consecutive weeks.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-17",
+      "url": "https://www.youtube.com/shorts/GDkxTLk8zZw",
+      "title": "$XRP 📈 HUGE TEST OF SUPPORT!! 🚨 NOVEMBER 16",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "XRP",
+          "bias": "Bullish",
+          "notes": "After dropping for multiple weeks to under $1.00 and hitting extreme fear territory below its four-year moving average, the host views this as an accumulation zone. He expects XRP to find a bottom around $0.90 (near the recent $0.88 low) and bounce going into December.",
+          "price": 10.65
+        }
+      ]
+    },
     {
       "date": "2026-11-16",
       "url": "https://www.youtube.com/shorts/Rtn-LQlP8j4",
