@@ -1,8 +1,371 @@
 {
-  "updated": "2026-11-17",
+  "updated": "2026-11-20",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-20",
+      "url": "https://www.youtube.com/shorts/mD00f2S2kSA",
+      "title": "ETHEREUM 🚨 NOVEMBER 19",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "ETH",
+          "bias": "Bullish",
+          "notes": "Ethereum is testing the bottom of its trading range around $1,500-$1,800 in what the host views as a bear trap. He is waiting for a green buy signal before adding to positions, expecting a massive move higher to follow in November or December.",
+          "price": 16.77
+        }
+      ]
+    },
+    {
+      "date": "2026-11-19",
+      "url": "https://www.youtube.com/shorts/lLF98PgsgLw",
+      "title": "🚨Biggest Investing Opportunity of the Decade Won't Last Long.. (6 Top Growth Stocks)",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Alphabet is a top buy due to its established cash-generating business and strong cloud growth, reaching $30.7 billion in Q3 2026 cloud revenue (+103% YoY). The key risk is AI potentially disrupting traditional online search profitability.",
+          "price": 272.66
+        },
+        {
+          "ticker": "AVGO",
+          "bias": "Bullish",
+          "notes": "Broadcom is well-positioned in custom AI accelerators and networking technology, generating $16.7 billion in AI semiconductor revenue and $13.7 billion in free cash flow. The main risk is high revenue concentration among a small number of massive technology customers.",
+          "price": 346.65
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bullish",
+          "notes": "Micron is benefiting heavily from demand for high-bandwidth memory (HBM) in AI processors, boosting Q4 2026 revenue to $54.2 billion. However, investors must monitor cyclical memory pricing and margin sustainability as supply expands.",
+          "price": 690.44
+        },
+        {
+          "ticker": "COHR",
+          "bias": "Bullish",
+          "notes": "Coherent provides optical communications and photonics technology to connect massive AI data centers, achieving $2.37 billion in Q1 2027 revenue (+50% YoY). Key risks include capital intensity and execution in a highly competitive market.",
+          "price": 214.94
+        },
+        {
+          "ticker": "APLD",
+          "bias": "Bullish",
+          "notes": "Applied Digital offers high upside as an AI data center infrastructure developer backed by $36 billion in contracted lease revenue. However, it carries high financial risk with $6.4 billion in debt and ongoing quarterly net losses.",
+          "price": 13.98
+        },
+        {
+          "ticker": "IONQ",
+          "bias": "Bullish",
+          "notes": "IonQ is a speculative quantum computing investment with Q3 2026 revenue growing 336% YoY to $173.8 million. It requires a long time horizon beyond 2030 due to ongoing EBITDA losses and potential shareholder dilution.",
+          "price": 22.71
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Growth portfolios should be built on a diversified ETF foundation, allocating larger positions to established, cash-generating tech companies and smaller stakes to highly speculative or debt-heavy investments.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-20",
+      "url": "https://www.youtube.com/shorts/UQrjH9VzL5c",
+      "title": "AMD & Market Emergency‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The NASDAQ has dropped over 15% from its October high into a medium-sized correction, while other major indices like the S&P 500, Russell 2000, and Dow Jones have dropped 8% to 13%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Aggressive tax-loss harvesting is expected in December for stocks down 30% or more from their 52-week highs, as investors look to offset large capital gains taken earlier in the year.",
+          "price": null
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Views AMD as a $1,000 to $2,000 long-term stock, dismissing Hunterbrook Capital's short report alleging export control violations as an unfounded move to push down a resilient stock.",
+          "price": 489.19
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "Purchased shares at $183 during the market sell-off, bringing the position up to a 4% portfolio weighting.",
+          "price": 183.31
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Bought 2,222 shares at $4.46, calling it the most attractive stock under a $1 billion market cap in the entire market.",
+          "price": 4.48
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Bought 100 shares at $110 as part of a $70,000 buying wave across high-conviction positions.",
+          "price": 110.9
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Purchased 500 shares at $30.85, bringing its weight to nearly 6% of the public account.",
+          "price": 30.72
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Purchased 777 shares at $13.67, viewing any price under $15 as a major buying opportunity while maintaining disciplined position sizing.",
+          "price": 13.53
+        }
+      ]
+    },
+    {
+      "date": "2026-11-19",
+      "url": "https://www.youtube.com/shorts/Kg0224jpyyc",
+      "title": "HUGE Nvidia Update! I'm Up $600,000 On My Biggest Position",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "WMT",
+          "bias": "Bullish",
+          "notes": "Walmart serves as a primary defensive stabilizer stock with strong fundamentals, consistent cash flow, and resilience against overall market volatility.",
+          "price": 126.04
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Despite a recent pullback to $152 per share, Nvidia maintains solid earnings growth and a forward P/E under 20, with a price target of $200+ per share and a $5 trillion market cap in 1 to 1.5 years.",
+          "price": 145.98
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Google serves as a major core holding used to generate consistent income through covered call option strategies.",
+          "price": 272.66
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Holding multiple tech and AI stocks does not provide true diversification due to high correlation, so portfolios should keep AI exposure under 50% and include defensive non-tech sectors.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-19",
+      "url": "https://www.youtube.com/shorts/yWGeLAL9RtQ",
+      "title": "Stock Market is Falling: Should You Buy Stocks Now?",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Expected Fed interest rate hikes of 0.75% to 1.0% are much less aggressive than the 4.25% increases seen in 2022, making a repeat of the 2022 market crash unlikely without a new black swan event.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historically since 1950, the S&P 500 has closed higher 12 months after midterm elections in 19 out of 19 instances, with an average return of 15.4%.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The host advises dollar-cost averaging into market declines incrementally while retaining cash reserves in case a black swan event causes a deeper 20% to 30% drop.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-19",
+      "url": "https://www.youtube.com/shorts/7YUH244pUNg",
+      "title": "The Anthropic IPO Explained",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Modern tech companies are going public at massive valuations, such as Anthropic at $1.5 trillion, meaning private investors capture early growth and public investors face lower potential upside compared to 1990s IPOs.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Persistently high inflation and potential Federal Reserve interest rate hikes place significant downward pressure on speculative, high-valuation tech stocks.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Magnificent Seven tech stocks make up roughly one-third of the S&P 500, causing AI sector volatility to heavily pull down broad market index funds.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should save cash during market peaks to take advantage of fear-driven downturns by purchasing quality long-term assets at discounted valuations.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-20",
+      "url": "https://www.youtube.com/shorts/7aDWViNvOJI",
+      "title": "TECH STOCKS WILL BOTTOM WHEN THIS HAPPENS 🚨 $QQQ NOV 19",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "QQQ",
+          "bias": "Bullish",
+          "notes": "The host notes that QQQ is currently in a high-fear capitulation zone, which historically marks the best buying opportunity once a green dot signal confirms the bottom.",
+          "price": 645.04
+        }
+      ]
+    },
+    {
+      "date": "2026-11-17",
+      "url": "https://www.youtube.com/shorts/Bh3t58iJWzY",
+      "title": "I Ranked Every Overhyped Investing Habit Worst to Best",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Waiting for a stock market crash to invest long-term capital harms overall returns. A Schwab study showed that investing immediately each year yielded $170,500 over 20 years compared to just $47,400 left in short-term T-bills.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Avoid chasing last year's top-performing sectors or ETFs. Morningstar data showed dollar-weighted investor returns averaged 8.7% annually over ten years versus the 9.9% fund return due to poor timing.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Limit portfolio checking to monthly or weekly intervals to prevent emotional overreactions and impulsive trades driven by intraday market noise.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Avoid making individual stock picks the core of a retirement portfolio due to high volatility; 79% of active US large-cap funds underperformed the S&P 500 in 2025.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Do not alter asset allocation in response to daily news or Fed announcements, as frequent trading significantly drags down long-term portfolio performance.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Rebalance portfolios when allocations drift, using tax-deferred accounts for direct rebalancing or directing new contributions toward underperforming sectors in taxable accounts.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Focus on low-cost, diversified funds with expense ratios below 0.10% to 0.20%, as high fund fees compound into tens of thousands of dollars in lost returns over decades.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Put investments on autopilot with recurring contributions, and maintain a three-year retirement spending reserve split between one year of liquid cash and two years of short-term treasuries or CDs.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-18",
+      "url": "https://www.youtube.com/shorts/zKQzbjBwGVM",
+      "title": "I Just Sold",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Purchased $33,000 worth of Celsius stock, projecting a mid-20s percentage CAGR on a conservative base case and expecting the stock to return to $100+ over the next few years.",
+          "price": 32.75
+        },
+        {
+          "ticker": "WYNN",
+          "bias": "Bullish",
+          "notes": "Bought 200 shares in the low $80s, anticipating strong long-term upside driven by the hype and eventual opening of its Middle East property in 2027.",
+          "price": 83.2
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Bought over $36,000 of SoFi stock, believing the company is on track to become a top 10 global financial institution over the next decade if it avoids overleverage.",
+          "price": 14.11
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Purchased $33,000 of Netflix stock, projecting a 31% midpoint compound annual growth rate through 2030 under his base case scenario.",
+          "price": 59.82
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "Bought nearly $24,000 of American Express in the low $300s, forecasting ~30% CAGR under a base case due to its high-net-worth customer base and sticky revenues.",
+          "price": 315.4
+        },
+        {
+          "ticker": "CAKE",
+          "bias": "Bearish",
+          "notes": "Sold 1,222 shares ($144,000) of Cheesecake Factory because the rapid rally stole future returns, lowering the projected CAGR to around 14%.",
+          "price": 120.05
+        },
+        {
+          "ticker": "CRM",
+          "bias": "Bullish",
+          "notes": "Maintains a $202,000 position, favoring Salesforce's double-digit top-line growth profile, strong leadership, and attractive valuation compared to other SaaS peers.",
+          "price": 190.4
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Holds a $156,000 position in Palantir, noting that while valuation remains rich, its numbers are strong and long-term risk-reward is becoming increasingly attractive.",
+          "price": 156.67
+        },
+        {
+          "ticker": "NOW",
+          "bias": "Bearish",
+          "notes": "Sold all ServiceNow shares due to deteriorating profitability and an unappealing risk-reward ratio relative to its high valuation.",
+          "price": 90.59
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A broad drop in commodities—with oil down 21% month-to-date and copper down 14%—signals potential recession risks while easing long-term inflation pressures.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should avoid using margin, call options, and leveraged ETFs, as they drastically compound downside risk and can lead to total portfolio destruction during drawdowns.",
+          "price": null
+        }
+      ]
+    },
     {
       "date": "2026-11-17",
       "url": "https://www.youtube.com/shorts/A6f-evkz85Y",
