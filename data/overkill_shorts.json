@@ -4,6 +4,144 @@
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
     {
+      "date": "2026-11-19",
+      "url": "https://www.youtube.com/shorts/XVW1BrD1Wdk",
+      "title": "NVDA COMING DOWN INTO SUPPORT 🚨 NOVEMBER 19 $NVDA",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host likes Nvidia's price following a 30-40% sell-off and expects a bottom around $130, noting that the RSI is currently very oversold.",
+          "price": 145.98
+        }
+      ]
+    },
+    {
+      "date": "2026-11-20",
+      "url": "https://www.youtube.com/shorts/H1PsZnH2P9E",
+      "title": "Pure panic in Market‼️🚩",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "SNDK",
+          "bias": "Bearish",
+          "notes": "SanDisk stock fell another 15% today and is down over 70% from its 52-week highs amid widespread panic selling in AI-related stocks.",
+          "price": 79.24
+        },
+        {
+          "ticker": "MU",
+          "bias": "Bearish",
+          "notes": "Micron stock is down over 50% from its highs above $1,200 a share and appears positioned to potentially break into the $500 range.",
+          "price": 594.51
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bearish",
+          "notes": "AMD is in a sharp panic sell-off, dropping another 11% today as momentum unwinds across AI-related trades.",
+          "price": 424.39
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Nvidia dropped another 7% today to $135, falling significantly from its recent level of $220.",
+          "price": 125.53
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The steep decline in AI-related stocks is primarily driven by market mechanics and leverage unwinding rather than deteriorating fundamentals or cancelled data center projects.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "During broad market crashes or deep corrections, panic selling eventually impacts all equities, including defensive safety stocks.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-17",
+      "url": "https://www.youtube.com/shorts/P_qC8tgR9YE",
+      "title": "The 6 Stocks Set To Recover Super Fast",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Believes NVIDIA will return to $200 per share by 2027 due to strong AI computing demand and its CUDA ecosystem advantage. Recommends selling a January $155 strike put option for a $12.85 premium to get a break-even price around $142.",
+          "price": 155.46
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Views Google as a strong value anywhere below $300 per share, driven by rapid Google Cloud growth and new AI TPU chips. Suggests selling a January $275 put option or a $265/$260 put credit spread to collect premium.",
+          "price": 280.2
+        },
+        {
+          "ticker": "TSLA",
+          "bias": "Bullish",
+          "notes": "Predicts Tesla could reach $500 per share in 2 to 5 years based on its robotaxi, energy storage, and cash flow growth. Recommends selling a $350 strike put option to collect premium or acquire shares at a lower entry price.",
+          "price": 380.11
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Bullish",
+          "notes": "Considers Palantir attractive around $160 per share following strong earnings showing 96% revenue growth and surging commercial adoption. Suggests selling a December 18 $160 strike put option.",
+          "price": 156.56
+        },
+        {
+          "ticker": "BE",
+          "bias": "Bullish",
+          "notes": "Views Bloom Energy as a prime turn-around play around $177 because its fuel cells solve critical electrical grid bottlenecks for AI data centers. Recommends selling a January 15, 2027 covered call at the $200 strike to capture both upside and premium.",
+          "price": 173.46
+        },
+        {
+          "ticker": "SPACEX",
+          "bias": "Bullish",
+          "notes": "Sees SpaceX's 40% pullback to $137 as a buying opportunity given its strong revenue, profitability turn-around, and reusable Starship progress. Suggests selling a December 18 $130 strike put option to capture a roughly 5% premium.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-17",
+      "url": "https://www.youtube.com/shorts/gMJ_VuZoN10",
+      "title": "The Fed Is Raising Interest Rates… A BIG Stock Market Opportunity Is Coming",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Strong labor market data and higher CPI inflation report readings have made a Federal Reserve rate hike at the December 9th meeting virtually certain, with CME FedWatch showing a 97.4% chance of a 25 basis point increase.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Markets favor an additional 25 basis point rate increase at the January 27th Fed meeting (67.9% probability), contradicting previous projections that rate hikes would end after December.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Elevated interest rates will severely squeeze US government finances as nearly $9 trillion in debt—including $6.72 trillion in refinancing due in 2027—must be issued at higher yields.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Short-term market pressure from rising interest rates could offer attractive stock entry points prior to expected eventual rate cuts that will spur asset inflation.",
+          "price": null
+        }
+      ]
+    },
+    {
       "date": "2026-11-20",
       "url": "https://www.youtube.com/shorts/mD00f2S2kSA",
       "title": "ETHEREUM 🚨 NOVEMBER 19",
