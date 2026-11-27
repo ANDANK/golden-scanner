@@ -1,8 +1,359 @@
 {
-  "updated": "2026-11-20",
+  "updated": "2026-11-26",
   "channel": "@overkilltrading",
   "note": "Non-crypto Shorts only. New-video detection runs twice daily via GitHub Actions (scripts/refresh_overkill_shorts.py, writes data/overkill_pending.json); picks are extracted on request in a Claude session. 'Dot' = his wave-indicator signal as stated in the video (Green=buy / Red=sell/trim / None=not formed). NFA.",
   "videos": [
+    {
+      "date": "2026-11-26",
+      "url": "https://www.youtube.com/shorts/uUwgZ-Yu6NY",
+      "title": "A Special Thanksgiving Message to My Investing Family",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Historical S&P 500 data going back to 1950 shows that roughly 80% of 1-year holding periods, 98% of 10-year periods, and 100% of rolling 20-year periods produced positive total returns.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Research from Hartford Funds reveals that 76% of the stock market's best days happen during bear markets or within the first two months of a bull market. Missing just the 10 best days from 1996 through 2025 reduces a $10,000 S&P 500 investment from $192,000 to approximately $85,000, underscoring the severe cost of trying to time the market.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-26",
+      "url": "https://www.youtube.com/shorts/rWGCYCtZMKM",
+      "title": "Biggest Move since 2000‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "Purchased shares around $306–$308, noting that anything around or below $300 offers an attractive entry with low downside risk and potential to significantly outperform the market in coming years.",
+          "price": 312.39
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Bought shares at $12.50, viewing the company as set up to become a financial giant over the next decade if management avoids overleveraging, with a long-term potential price target of $100+.",
+          "price": 13.07
+        },
+        {
+          "ticker": "AMZN",
+          "bias": "Bullish",
+          "notes": "Added 50 shares at $241, reiterating that Amazon is a dependable long-term compounder and 'always a buy.'",
+          "price": 244.43
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Acquired 80 shares at $108, noting strength driven by declining 10-year Treasury yields, which improves market sentiment for a housing recovery next year.",
+          "price": 112.42
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "December is likely to see heavy volatility and tax-loss selling, especially among overcrowded AI and semiconductor stocks that suffered sharp declines in the second half of the year.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Controlling the gap between income and expenses is the single most important foundation for investing success, as excess cash flow keeps investors on offense during market sell-offs.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-26",
+      "url": "https://www.youtube.com/shorts/ZE_CC7ipRK8",
+      "title": "Buying LEAPs on NVDA at $125",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "picks": [
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "The host views Nvidia as a good opportunity at $125 per share, calling a 1-year 120-strike LEAP call option with a breakeven around $150 an absolute steal.",
+          "price": 149.3
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "LEAP options suffer significantly less daily theta decay than 30-day options (roughly $4 per day versus $26.5 per day), giving an investment thesis more time to play out without forcing immediate timing accuracy.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-23",
+      "url": "https://www.youtube.com/shorts/SyLToFJZdE4",
+      "title": "Your Portfolio is Destroyed and Your Life is Over",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
+      "picks": [
+        {
+          "ticker": "SOXX",
+          "bias": "Bullish",
+          "notes": "Despite a severe drop of around 38% in semiconductors, the host refuses to rotate out and argues for buying the dip rather than panic selling.",
+          "price": 140.22
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bullish",
+          "notes": "Believes the market panic regarding leadership, CapEx, and probes is overblown noise, noting that multiples have compressed while fundamentals and revenues remain exceptionally strong.",
+          "price": 165.05
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Points out that AMD's quarterly financials and profit trends continue to point in the right direction, making it worth accumulating despite short-term market pain.",
+          "price": 453.46
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should maintain liquidity, pay down high-interest debt, avoid overleveraging on margin, and consistently dollar-cost average into market drawdowns.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-24",
+      "url": "https://www.youtube.com/shorts/v1dyZH_RfdY",
+      "title": "Housing Market: Did Baby Boomers Have It Easier?",
+      "channel": "@ClearValueTax",
+      "channel_name": "ClearValue Tax",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Comparing housing affordability today against 1985 shows both eras faced similar difficulty: Baby Boomers endured 12% to 14% mortgage rates, whereas today's buyers face higher price-to-income ratios (4.31 years of income vs. 3.2 years).",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Current U.S. housing data reflects a national median home price of $388,634 alongside an average 30-year fixed mortgage rate of 7.28%.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "url": "https://www.youtube.com/shorts/7c3PNhkhEZ4",
+      "title": "The Biggest Change To The Stock Market In 100 Years",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Companies are waiting much longer to go public, raising private equity to achieve multi-billion or trillion-dollar valuations before IPOing, which shifts the vast majority of early-stage growth gains to private investors rather than retail public investors.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The massive rise in passive ETF investing drives significant automatic inflows into member stocks, incentivizing private companies to delay going public until they meet the size and profitability criteria required to enter major indices like the S&P 500.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "A three-pillar investing framework consists of automated weekly dollar-cost averaging regardless of market direction, keeping dry powder ready to capitalize on emotional market crashes, and deploying capital toward major secular market shifts.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-24",
+      "url": "https://www.youtube.com/shorts/91JeDyFWqnw",
+      "title": "XRP AND CHAINLINK 📈 NOVEMBER 24 $XRP",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "picks": [
+        {
+          "ticker": "XRP",
+          "bias": "Bullish",
+          "notes": "XRP is trading at a 32% discount to its 4-year average fair value of $1.35 around 90 cents to a dollar. The host views this sell-off as a bear trap bottom ahead of an expected parabolic run into 2027 and 2028.",
+          "price": 10.24
+        },
+        {
+          "ticker": "LINK",
+          "bias": "Bullish",
+          "notes": "Chainlink is showing relative strength by holding above its June low of $7 while trading below its 4-year average. The host considers this deep discount territory an attractive buying opportunity for long-term investors.",
+          "price": 2.69
+        }
+      ]
+    },
+    {
+      "date": "2026-11-24",
+      "url": "https://www.youtube.com/shorts/8wCd6HOodmw",
+      "title": "I’ll Teach You to Invest Like a PRO, Just Give Me 14 Minutes",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "picks": [
+        {
+          "ticker": "SCHD",
+          "bias": "Bullish",
+          "notes": "Serves as a primary component of the host's core three-fund portfolio, focusing on dividend-paying value stocks that help cushion overall market drawdowns.",
+          "price": 34.89
+        },
+        {
+          "ticker": "VOO",
+          "bias": "Bullish",
+          "notes": "Tracks the S&P 500 and forms a foundational core allocation in the host's long-term portfolio.",
+          "price": 660.71
+        },
+        {
+          "ticker": "QQQM",
+          "bias": "Bullish",
+          "notes": "Provides long-term growth exposure to the Nasdaq 100 as one of the host's core ETF positions.",
+          "price": 262.78
+        },
+        {
+          "ticker": "MSFT",
+          "bias": "Bullish",
+          "notes": "One of the host's largest individual stock holdings, which he intends to hold long term through market volatility.",
+          "price": 496.13
+        },
+        {
+          "ticker": "GOOGL",
+          "bias": "Bullish",
+          "notes": "Maintained as a top individual stock position due to strong long-term growth conviction.",
+          "price": 279.05
+        },
+        {
+          "ticker": "BRK.B",
+          "bias": "Bullish",
+          "notes": "Held as a core individual stock position that the host expects to perform very well over the long run.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Investors should determine their exact time horizon and drawdown tolerance before picking funds to avoid being forced to sell during market downturns.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Regularly inspect the top 10 holdings of your ETFs to prevent excessive fund overlap and over-concentration in heavily weighted sectors like AI.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Purchasing great companies at excessive valuations can result in capital losses even if company earnings double over time.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Ignore short-term scary headlines, as the US market has ended positive roughly 75% of years since 1980 regardless of political or economic cycles.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "With 79% of active large-cap managers underperforming the S&P 500 in 2025, investors should emphasize low-cost index ETFs, consistent monthly contributions, and systematic rebalancing.",
+          "price": null
+        }
+      ]
+    },
+    {
+      "date": "2026-11-24",
+      "url": "https://www.youtube.com/shorts/gCWCEbs54n0",
+      "title": "Once in 20 year Short Squeeze‼️",
+      "channel": "@FinancialEducation",
+      "channel_name": "Financial Ed",
+      "picks": [
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "The Nasdaq needs to gain another 500 to 600 points and clear its prior high to confirm a true recovery rather than repeating lower-high rally failures seen in 2018.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Significant tax-loss harvesting is expected during the first three weeks of December on stocks down heavily in H2, creating attractive buying opportunities for long-term investors.",
+          "price": null
+        },
+        {
+          "ticker": "",
+          "bias": "Neutral",
+          "notes": "Spikes in the VIX above 35 to 40 historically serve as strong buy signals for long-term investors, even if they do not pinpoint the exact market bottom.",
+          "price": null
+        },
+        {
+          "ticker": "AMD",
+          "bias": "Bullish",
+          "notes": "Host sees AMD as a $1,000 to $2,000 long-term stock, expecting its data center revenue growth rate to surpass Nvidia's while gaming and client segments rebound in 2027.",
+          "price": 413.27
+        },
+        {
+          "ticker": "NVDA",
+          "bias": "Bearish",
+          "notes": "Host views Nvidia's 30%+ single-day jump as unhealthy and cautions that the stock faces H2 tax-loss harvesting, executive leadership distractions, and regulatory investigations.",
+          "price": 155.38
+        },
+        {
+          "ticker": "CELH",
+          "bias": "Bullish",
+          "notes": "Host projects Celsius to experience a massive growth run from 2027 to 2029 and plans to let it expand into a major portfolio position.",
+          "price": 28.51
+        },
+        {
+          "ticker": "NFLX",
+          "bias": "Bullish",
+          "notes": "Despite potential tax-loss harvesting pressure in December, host plans to accumulate Netflix heavily into year-end for multi-year upside.",
+          "price": 58.87
+        },
+        {
+          "ticker": "AXP",
+          "bias": "Bullish",
+          "notes": "Host intends to buy American Express heavily during year-end weakness, expecting it to expand into a 7% to 9% portfolio allocation over time.",
+          "price": 308.63
+        },
+        {
+          "ticker": "NKE",
+          "bias": "Bullish",
+          "notes": "Host maintains long-term conviction in Nike despite heavy short-term losses, expecting earnings and margins to re-accelerate once top-line growth recovers.",
+          "price": 35.75
+        },
+        {
+          "ticker": "RH",
+          "bias": "Bullish",
+          "notes": "Host plans to add to RH during December weakness, targeting a broader housing market rebound driven by declining interest rates between 2027 and 2029.",
+          "price": 103.45
+        },
+        {
+          "ticker": "SOFI",
+          "bias": "Bullish",
+          "notes": "Host plans to use December tax-loss selling to build his SoFi position toward 10,000 shares due to strong long-term upside.",
+          "price": 12.86
+        },
+        {
+          "ticker": "HNST",
+          "bias": "Bullish",
+          "notes": "Host highlights accelerating fundamentals under current leadership, projecting Honest Company stock to hit $10 and eventually $20 long-term.",
+          "price": 4.52
+        },
+        {
+          "ticker": "PLTR",
+          "bias": "Neutral",
+          "notes": "While acknowledging Palantir as an exceptional business, host expects the stock to remain relatively range-bound between $125 and $200.",
+          "price": 161.18
+        }
+      ]
+    },
     {
       "date": "2026-11-19",
       "url": "https://www.youtube.com/shorts/XVW1BrD1Wdk",

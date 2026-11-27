@@ -1,6 +1,123 @@
 {
-  "checked": "2026-11-20",
+  "checked": "2026-11-26",
   "pending": [
+    {
+      "video_id": "fzTMtLZweN8",
+      "title": "Exactly how I'd turn $50k into $200k with LEAPS Options ASAP (without taking crazy risk)",
+      "date": "2026-11-25",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/fzTMtLZweN8"
+    },
+    {
+      "video_id": "0HfYdOaFmD0",
+      "title": "Watch Before Wednesday 930am #NVDA #SOFI #PLTR #QQQ",
+      "date": "2026-11-25",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/0HfYdOaFmD0"
+    },
+    {
+      "video_id": "4CsR5nD0UNY",
+      "title": "The UNTHINKABLE is About to Happen to NVIDIA (NOT What You Think)",
+      "date": "2026-11-24",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/4CsR5nD0UNY"
+    },
+    {
+      "video_id": "RmqVHuFLOXk",
+      "title": "Trump Just Saved The Stock Market",
+      "date": "2026-11-24",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/RmqVHuFLOXk"
+    },
+    {
+      "video_id": "Dc_kyAHYSwk",
+      "title": "Unthinkable Is Coming this week",
+      "date": "2026-11-23",
+      "channel": "@InvestwithHenry",
+      "channel_name": "Invest w/ Henry",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/Dc_kyAHYSwk"
+    },
+    {
+      "video_id": "ZFeXrGgUXx8",
+      "title": "They’re About To Reset The Price Of Gold, Silver, And Bitcoin",
+      "date": "2026-11-23",
+      "channel": "@MinorityMindset",
+      "channel_name": "Minority Mindset",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/ZFeXrGgUXx8"
+    },
+    {
+      "video_id": "STJZK7SDND0",
+      "title": "NETFLIX SETTING UP FOR A GENERATIONAL TRADE 🚨📈 NOVEMBER 21 $NFLX",
+      "date": "2026-11-22",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/STJZK7SDND0"
+    },
+    {
+      "video_id": "jENCMHKKqEU",
+      "title": "2 STOCKS TO WATCH IN DECEMBER 📈 $NVDA",
+      "date": "2026-11-22",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/jENCMHKKqEU"
+    },
+    {
+      "video_id": "g0z2LR10wF4",
+      "title": "Getting started with overkill trading ⚔️ Here is where to Start",
+      "date": "2026-11-22",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/g0z2LR10wF4"
+    },
+    {
+      "video_id": "XQbtZVu2t1c",
+      "title": "🚨 MAJOR Stock Sell-Off Begins.. (My Buy Plan)",
+      "date": "2026-11-21",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/XQbtZVu2t1c"
+    },
+    {
+      "video_id": "DYMaHZsiSKk",
+      "title": "BITCOIN DOUBLE BOTTOM 🚨 NOVEMBER 20 $BTC",
+      "date": "2026-11-20",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/DYMaHZsiSKk"
+    },
+    {
+      "video_id": "L4D6r3f8xlk",
+      "title": "NVIDIA STOCK TARGET HIT 🚨🚨 NOVEMBER 20 $NVDA",
+      "date": "2026-11-20",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/L4D6r3f8xlk"
+    },
+    {
+      "video_id": "UrNvqTDuNfc",
+      "title": "ORCL CRM $HOOD STOCK ANALYSIS 📈 NOVEMBER 18",
+      "date": "2026-11-18",
+      "channel": "@overkilltrading",
+      "channel_name": "OverKill",
+      "reason": "queued",
+      "url": "https://www.youtube.com/shorts/UrNvqTDuNfc"
+    },
     {
       "video_id": "-hwXLUjbMrI",
       "title": "THIS IS HUGE FOR BITCOIN! 📈 NOVEMBER 18",
@@ -25,17 +142,8 @@
       "date": "2026-11-18",
       "channel": "@MinorityMindset",
       "channel_name": "Minority Mindset",
-      "reason": "failed",
+      "reason": "queued",
       "url": "https://www.youtube.com/shorts/ozB7zOEHWQE"
-    },
-    {
-      "video_id": "UrNvqTDuNfc",
-      "title": "ORCL CRM $HOOD STOCK ANALYSIS 📈 NOVEMBER 18",
-      "date": "2026-11-18",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "failed",
-      "url": "https://www.youtube.com/shorts/UrNvqTDuNfc"
     },
     {
       "video_id": "BfGkjeAqN-I",
@@ -65,22 +173,13 @@
       "url": "https://www.youtube.com/shorts/l3Ql5YUCcHw"
     },
     {
-      "video_id": "N8gcWdmsSBg",
-      "title": "BITCOIN BACK TO THE BOTTOM OF THE TRADING RANGE 📈 NOVEMBER 16",
+      "video_id": "iGPsppH04n8",
+      "title": "hi",
       "date": "2026-11-17",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
+      "channel": "@InTheMoneyAdam",
+      "channel_name": "In The Money",
       "reason": "queued",
-      "url": "https://www.youtube.com/shorts/N8gcWdmsSBg"
-    },
-    {
-      "video_id": "D4ZQnlNOZfw",
-      "title": "$XRP 📈 HUGE TEST OF SUPPORT!! 🚨 NOVEMBER 16",
-      "date": "2026-11-17",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/D4ZQnlNOZfw"
+      "url": "https://www.youtube.com/shorts/iGPsppH04n8"
     },
     {
       "video_id": "l9menYD3fHI",
@@ -88,26 +187,17 @@
       "date": "2026-11-17",
       "channel": "@MinorityMindset",
       "channel_name": "Minority Mindset",
-      "reason": "failed",
+      "reason": "queued",
       "url": "https://www.youtube.com/shorts/l9menYD3fHI"
     },
     {
-      "video_id": "JfNIXsfqO6Y",
-      "title": "BITCOIN BACK TO THE BOTTOM OF THE TRADING RANGE 📈 NOVEMBER 16",
-      "date": "2026-11-16",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
+      "video_id": "fUeT2fnVeKk",
+      "title": "HUGE NEWS for all investors! 📈",
+      "date": "2026-11-12",
+      "channel": "@NolanGouveia",
+      "channel_name": "Nolan Gouveia",
       "reason": "queued",
-      "url": "https://www.youtube.com/shorts/JfNIXsfqO6Y"
-    },
-    {
-      "video_id": "P7MnmuHUY98",
-      "title": "$XRP 📈 HUGE TEST OF SUPPORT!! 🚨 NOVEMBER 16",
-      "date": "2026-11-16",
-      "channel": "@overkilltrading",
-      "channel_name": "OverKill",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/P7MnmuHUY98"
+      "url": "https://www.youtube.com/shorts/fUeT2fnVeKk"
     },
     {
       "video_id": "w-S6OnQ-3lA",
@@ -115,7 +205,7 @@
       "date": "2026-05-01",
       "channel": "@InTheMoneyAdam",
       "channel_name": "In The Money",
-      "reason": "failed",
+      "reason": "queued",
       "url": "https://www.youtube.com/shorts/w-S6OnQ-3lA"
     },
     {
@@ -225,15 +315,6 @@
       "channel_name": "In The Money",
       "reason": "queued",
       "url": "https://www.youtube.com/shorts/AKMu5SjQ_YE"
-    },
-    {
-      "video_id": "EvSzOc_g4J8",
-      "title": "VTI Creates Your Own Great Depression",
-      "date": "2025-07-03",
-      "channel": "@InTheMoneyAdam",
-      "channel_name": "In The Money",
-      "reason": "queued",
-      "url": "https://www.youtube.com/shorts/EvSzOc_g4J8"
     }
   ]
 }
